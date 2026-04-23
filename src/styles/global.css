@@ -1,1 +1,120 @@
+/*
+ * El Brenz dle Val del Nos — Global Stylesheet
+ * Tailwind 4 + Design Tokens da config_app.branding_visual_system
+ *
+ * Realizzato pro-bono da NosLab S.a.s. · noslab.it
+ * Motto: Rais fonde no le 'nglacia
+ */
+
 @import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS · EL BRENZ
+   Fonte di verità: DB Supabase config_app.branding_visual_system
+   Approvato dal Direttivo il 22 aprile 2026
+═══════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ─── Palette ─────────────────────────────────────────── */
+  --color-verde-foresta: #1E2E26;
+  --color-verde-foresta-2: #25382E;
+  --color-crema-base: #F8F1E4;
+  --color-crema-tenue: #FDF9F0;
+  --color-crema-su-scuro: #F5EEDD;
+  --color-oro-ambra: #C8923E;
+  --color-oro-chiaro: #D9A94E;
+  --color-nero-testo: #0F0F0F;
+  --color-grigio-neutro: #6B6B6B;
+  --color-grigio-divider: #E5DFCF;
+
+  /* Bandiera ladina (simbolo identitario primario) */
+  --color-ladino-blu: #1E4FB4;
+  --color-ladino-bianco: #FFFFFF;
+  --color-ladino-verde: #1E9C48;
+
+  /* ─── Tipografia ──────────────────────────────────────── */
+  --font-display: "Playfair Display", "Canela", "PT Serif Pro", Georgia, serif;
+  --font-body: "Source Serif 4", "Source Serif Pro", "Lora", Georgia, serif;
+  --font-ui: "Inter", "Source Sans Pro", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+
+  /* ─── Animazioni custom ──────────────────────────────── */
+  --animate-fade-in-slow: fade-in-slow 800ms ease-out both;
+}
+
+@keyframes fade-in-slow {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STILI BASE
+═══════════════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font-body);
+    color: var(--color-nero-testo);
+    background: var(--color-crema-base);
+    line-height: 1.6;
+    font-size: 17px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: var(--color-oro-ambra);
+    color: var(--color-crema-base);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   COMPONENTI DI MARCHIO · WORDMARK EL BRENZ
+   Composizione: El [tondo nero] Brenz [corsivo oro] dle Val del Nos [tondo nero]
+═══════════════════════════════════════════════════════════ */
+
+@layer components {
+  .wordmark {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    line-height: 1;
+    letter-spacing: -0.005em;
+    display: inline-flex;
+    gap: 0.18em;
+    align-items: baseline;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .wordmark .tondo {
+    font-style: normal;
+    font-weight: 400;
+    color: var(--color-nero-testo);
+  }
+
+  .wordmark .corsivo-oro {
+    font-style: italic;
+    font-weight: 500;
+    color: var(--color-oro-ambra);
+  }
+
+  .wordmark--dark .tondo {
+    color: var(--color-crema-su-scuro);
+  }
+
+  @media (max-width: 30rem) {
+    .wordmark { font-size: 1.6rem; }
+  }
+}

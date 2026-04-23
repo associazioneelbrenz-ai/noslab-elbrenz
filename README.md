@@ -1,97 +1,114 @@
-# noslab-elbrenz
+# El *Brenz* dle Val del Nos
 
-> **Rais fonde no le 'nglacia** · *Radici profonde non gelano*
+> *Rais fonde no le 'nglacia*
+> — Radici profonde non gelano —
 
-Frontend ufficiale dell'**Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce** (fondata 21 dicembre 2009, sede in Malè, Trentino).
+Piattaforma digitale dell'**Associazione Storico Culturale Linguistica El Brenz** delle Valli del Noce.
 
-Il progetto custodisce e divulga il patrimonio storico, linguistico e culturale delle Valli del Noce — Val di Non, Val di Sole, Val di Rabbi e Val di Pejo — con particolare attenzione al **ladino anaunico** (*noneso, solander, rabies, pegaes*) e alla storia tirolese del territorio.
+Sito pubblico editoriale + area soci PWA per la valorizzazione del patrimonio storico, linguistico e culturale ladino anaunico delle Valli del Noce (Val di Non, Val di Sole, Val di Rabbi, Val di Pejo).
 
 ---
 
-## Architettura
+## 🏔️ Il progetto
 
-- **Sito pubblico** (`/`, `/articoli/[slug]`, pilastri editoriali) — prerenderizzato statico per SEO eccellente
-- **Area soci** (`/app/*`) — PWA installabile con forum, archivio, chat, sala direttivo
-- **Andreas** (`/andreas`) — assistente AI sulla cultura anaunica, accessibile al pubblico e ai soci con livelli differenziati
+El Brenz è un'associazione di promozione sociale fondata il 21 dicembre 2009 a Malè (TN). Questa piattaforma nasce per dare alla lingua ladino-anaunica e al patrimonio culturale delle Valli del Noce una casa digitale permanente nel XXI secolo.
 
-## Stack tecnico
+### Obiettivi
 
-- [Astro 6](https://astro.build) — framework principale
-- [React 19](https://react.dev) — runtime delle islands interattive
-- [Tailwind 4](https://tailwindcss.com) — styling
-- TypeScript strict mode ovunque
-- [Supabase](https://supabase.com) — backend (auth, DB, storage, edge functions, realtime)
-- [Netlify](https://netlify.com) — hosting e deploy
-- [`@vite-pwa/astro`](https://vite-pwa-org.netlify.app) — service worker attivo solo sulle rotte `/app/*`
+- Pubblicare articoli longform di divulgazione storica, linguistica e culturale
+- Offrire un archivio digitale di documenti (con attenzione speciale alla Grande Guerra 1914-1918 e alle Insorgenze Tirolesi 1796-1810)
+- Custodire la lingua ladino-anaunica in tutti i contenuti identitari
+- Fornire ai soci un'area riservata per forum, discussioni, materiali
+- Supportare il percorso del DDL n. 1539 (Sen. Patton) per il riconoscimento del gruppo linguistico ladino-retico della Val di Non
 
-## Sviluppo locale
+---
 
-Prerequisiti: Node.js 20+ e npm 10+.
+## 🛠️ Stack tecnico
 
-```sh
-# Clona il repository
+| Livello | Tecnologia |
+|---|---|
+| Framework | Astro 6 |
+| Runtime islands | React 19 |
+| Styling | Tailwind CSS 4 (design tokens in CSS via \`@theme\`) |
+| UI components | shadcn/ui (solo dentro islands) |
+| Linguaggio | TypeScript strict |
+| Backend | Supabase (auth, database Postgres, storage, edge functions) |
+| Deploy | Netlify |
+| PWA | \`@vite-pwa/astro\` (attivo solo su \`/app/*\`) |
+| Bilinguismo | Astro i18n (IT + DE) |
+
+---
+
+## 🚀 Sviluppo locale
+
+Prerequisiti: **Node.js 22+**, **npm 10+**, **Git**.
+
+\`\`\`bash
+# Clona il repo
 git clone https://github.com/associazioneelbrenz-ai/noslab-elbrenz.git
 cd noslab-elbrenz
 
-# Installa le dipendenze
+# Installa dipendenze
 npm install
 
-# Avvia il dev server
+# Dev server (http://localhost:4321)
 npm run dev
-```
 
-Il sito sarà disponibile su [http://localhost:4321](http://localhost:4321).
+# Build produzione
+npm run build
 
-## Comandi disponibili
-
-| Comando | Azione |
-|---|---|
-| `npm run dev` | Avvia il dev server su `localhost:4321` |
-| `npm run build` | Costruisce il sito di produzione in `./dist/` |
-| `npm run preview` | Anteprima locale del build di produzione |
-| `npm run astro ...` | Esegue comandi della CLI Astro |
-
-## Struttura delle cartelle
-
-```text
-/
-├── public/              asset statici (immagini, favicon, font)
-├── src/
-│   ├── assets/          immagini importate nei componenti
-│   ├── layouts/         layout Astro riutilizzabili
-│   ├── pages/           rotte del sito (una pagina = un file)
-│   └── styles/          CSS globale
-├── astro.config.mjs     configurazione Astro
-├── tsconfig.json        configurazione TypeScript (strict)
-└── package.json
-```
-
-## Pilastri editoriali
-
-I contenuti del sito seguono sei pilastri tematici:
-
-1. **Storia delle Valli** — eventi, personaggi, feudi, Guerre Rustiche, Grande Guerra, Tirolo asburgico
-2. **Lingua e ladinità** — etimologie, proverbi, poesie, progetto *Os dal Nos*
-3. **Cultura materiale** — *stua*, mulini, fucine, architettura alpina
-4. **Rievocazioni ed eventi** — gite sociali, serate storiche, presentazioni
-5. **Identità e appartenenza** — ponti con catalani, occitani, ladini dolomitici; ricorrenze tirolesi
-6. **Vita associativa** — tesseramento, lunari, pubblicazioni
-
-## Contatti Associazione
-
-- Sito: [www.elbrenz.eu](https://www.elbrenz.eu)
-- Email: [info@elbrenz.eu](mailto:info@elbrenz.eu)
-- Facebook: [@ASSOCIAZIONELBRENZ](https://facebook.com/ASSOCIAZIONELBRENZ)
-- Instagram: [@elbrenzass](https://instagram.com/elbrenzass)
+# Preview build locale
+npm run preview
+\`\`\`
 
 ---
 
-## Credit tecnico
+## 🗂️ Struttura del progetto
 
-Piattaforma realizzata **pro-bono** da **[NosLab S.a.s.](https://noslab.it)** — società di progettazione digitale con sede in Trentino, co-fondata da Cristian Bresadola e Giorgia Ferro. NosLab presta gratuitamente know-how, progettazione e sviluppo all'Associazione El Brenz come contributo al patrimonio linguistico e culturale delle Valli del Noce.
+\`\`\`
+noslab-elbrenz/
+├── public/              # Asset statici (loghi, favicon, bandiera ladina SVG)
+├── src/
+│   ├── components/      # Componenti .astro e .tsx (islands)
+│   ├── layouts/         # Layout condivisi
+│   ├── pages/
+│   │   ├── index.astro           # Home pubblica
+│   │   ├── articoli/[slug].astro # Pagina articolo dinamica
+│   │   ├── andreas.astro         # Andreas Pubblico (con island)
+│   │   └── app/                  # Area soci (islands React)
+│   ├── lib/             # Client Supabase, utils, costanti
+│   └── styles/
+│       └── global.css   # Tailwind + design tokens
+├── astro.config.mjs
+├── tsconfig.json
+└── README.md
+\`\`\`
 
-El Brenz è il primo lavoro pro-bono di NosLab S.a.s. — funziona sia come riconoscimento dovuto all'Associazione, sia come dimostrazione pubblica della qualità tecnica della società.
+---
 
-## Licenza
+## 🎨 Identità visiva
 
-Codice: questo repository è pubblico a scopo di trasparenza. Contenuti editoriali, marchio, fotografie d'archivio e testi in ladino anaunico restano di proprietà dell'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce.
+- **Motto**: *Rais fonde no le 'nglacia* (sempre in ladino anaunico)
+- **Wordmark**: *El Brenz dle Val del Nos*
+- **Palette**: verde foresta \`#1E2E26\` · crema caldo \`#F8F1E4\` · oro ambra \`#C8923E\`
+- **Tipografia**: Playfair Display (display/titoli) · Source Serif (body) · Inter (UI)
+
+Design system completo e regole di brand in \`src/styles/global.css\` e nel database Supabase (tabella \`config_app\`, categoria \`branding\`).
+
+---
+
+## 🤝 Partner tecnico
+
+Piattaforma digitale realizzata **pro-bono** da **[NosLab S.a.s.](https://noslab.it)** — società di Cristian Bresadola e Giorgia Ferro, fondata il 23 aprile 2026. El Brenz è il primo progetto di NosLab.
+
+---
+
+## 📮 Contatti
+
+- **Associazione**: info@elbrenz.eu · +39 347 107 7636
+- **Sede**: Via Trento 40, II piano · 38027 Malè (TN) · C.F. 92019480224
+- **NosLab S.a.s.**: info@noslab.it · https://noslab.it
+
+---
+
+*Rais fonde no le 'nglacia.*
