@@ -1,0 +1,41 @@
+---
+/**
+ * Wordmark — Marchio istituzionale di El Brenz dle Val del Nos
+ *
+ * Componente riutilizzabile con 3 varianti di dimensione (sm, md, lg)
+ * e 2 varianti di tema (light, dark). Usa le classi CSS definite in
+ * src/styles/global.css: .wordmark, .tondo, .corsivo-oro, .wordmark--dark
+ *
+ * Regole di branding salvate in config_app.branding_visual_system:
+ * - "El" tondo nero (o crema su scuro)
+ * - "Brenz" corsivo dorato #C8923E — MAI altro colore, MAI tondo
+ * - "dle Val del Nos" tondo nero (o crema su scuro)
+ * - NON usare mai "El & Brenz" o altre forme scartate dal Direttivo
+ */
+
+interface Props {
+  theme?: 'light' | 'dark';
+  size?: 'sm' | 'md' | 'lg';
+  href?: string;
+  class?: string;
+}
+
+const {
+  theme = 'light',
+  size = 'md',
+  href = '/',
+  class: extraClass = '',
+} = Astro.props;
+
+const sizeMap = {
+  sm: 'text-xl',
+  md: 'text-4xl',
+  lg: 'text-6xl',
+};
+
+const sizeClass = sizeMap[size];
+const themeClass = theme === 'dark' ? 'wordmark--dark' : '';
+---
+<a href={href} class:list={['wordmark', themeClass, sizeClass, extraClass]} lang="lld-anau" title="Associazione El Brenz delle Valli del Noce" aria-label="El Brenz dle Val del Nos — home">
+  <span class="tondo">El</span><em class="corsivo-oro">Brenz</em><span class="tondo">dle Val del Nos</span>
+</a>

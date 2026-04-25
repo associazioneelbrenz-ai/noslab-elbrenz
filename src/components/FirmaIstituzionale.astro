@@ -1,0 +1,61 @@
+---
+/**
+ * FirmaIstituzionale — Firma identitaria completa di El Brenz
+ *
+ * Composta da:
+ *   1. Wordmark "El Brenz dle Val del Nos" (riga 1)
+ *   2. Motto "Rais fonde no le 'nglacia" (riga 2, italico, piu piccolo)
+ *
+ * Da config_app.branding_firma_istituzionale: entrambe le righe in
+ * ladino anaunico, mai tradotte nelle formule primarie.
+ *
+ * Variante "solenne" aggiunge separatore ornamentale tra le due righe.
+ */
+
+import Wordmark from './Wordmark.astro';
+
+interface Props {
+  /** Variante di tema: chiaro o scuro */
+  theme?: 'light' | 'dark';
+  /** Layout: verticale (default), solenne (con fregio) */
+  variant?: 'vertical' | 'solenne';
+  /** Dimensione: sm (footer), md (default), lg (splash/frontespizio) */
+  size?: 'sm' | 'md' | 'lg';
+  /** Classi CSS aggiuntive sul contenitore */
+  class?: string;
+}
+
+const {
+  theme = 'light',
+  variant = 'vertical',
+  size = 'md',
+  class: extraClass = '',
+} = Astro.props;
+
+const wordmarkSize = size === 'sm' ? 'sm' : size === 'lg' ? 'lg' : 'md';
+
+const mottoSizeClass = {
+  sm: 'text-sm',
+  md: 'text-base',
+  lg: 'text-xl',
+}[size];
+
+const mottoColor = theme === 'dark'
+  ? 'text-[#F5EEDD]/70'
+  : 'text-[#6B6B6B]';
+---
+<div class:list={['firma-istituzionale flex flex-col items-center text-center', extraClass]}>
+  <Wordmark theme={theme} size={wordmarkSize} />
+
+  {variant === 'solenne' && (
+    <span class="my-3 text-[#C8923E] tracking-widest" aria-hidden="true">⁕</span>
+  )}
+
+  <p
+    class:list={['firma-motto italic mt-2', mottoSizeClass, mottoColor]}
+    lang="lld-anau"
+    title="Radici profonde non gelano"
+  >
+    Rais fonde no le 'nglacia
+  </p>
+</div>

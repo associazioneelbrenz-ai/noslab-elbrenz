@@ -1,0 +1,63 @@
+---
+/**
+ * BandieraLadina — Simbolo identitario primario del popolo ladino anaunico
+ *
+ * Bandiera blu-bianco-verde usata dalle comunità ladine dolomitiche e
+ * rivendicata dal gruppo anaunico che El Brenz rappresenta.
+ *
+ * Significato colori (config_app.asset_bandiera_ladina_svg):
+ * - Blu #1E4FB4 = il cielo delle Dolomiti
+ * - Bianco #FFFFFF = la neve delle cime
+ * - Verde #1E9C48 = i prati e i boschi delle valli
+ *
+ * Regola ferrea integrità immagini: questa rappresentazione è geometrica
+ * pura (3 rettangoli uguali, proporzione 3:2) ed è una rappresentazione
+ * esatta, non una reinterpretazione. NON modificare colori, NON aggiungere
+ * stelle, NON stilizzare come tessuto, NON ruotare.
+ */
+
+interface Props {
+  /** Larghezza in px o unità CSS (default 48px) */
+  width?: string | number;
+  /** Altezza in px o unità CSS (default auto, mantiene proporzione 3:2) */
+  height?: string | number;
+  /** Aggiungi bordo sottile per contrasto su sfondi chiari */
+  withBorder?: boolean;
+  /** Classi CSS aggiuntive */
+  class?: string;
+}
+
+const {
+  width = 48,
+  height,
+  withBorder = false,
+  class: extraClass = '',
+} = Astro.props;
+
+const computedHeight = height ?? (typeof width === 'number' ? Math.round(width * 2 / 3) : 'auto');
+---
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 300 200"
+  width={width}
+  height={computedHeight}
+  role="img"
+  aria-label="Bandiera ladina"
+  class:list={[extraClass]}
+>
+  <title>Bandiera ladina</title>
+  <rect width="300" height="66.667" y="0" fill="#1E4FB4" />
+  <rect width="300" height="66.667" y="66.666" fill="#FFFFFF" />
+  <rect width="300" height="66.667" y="133.333" fill="#1E9C48" />
+  {withBorder && (
+    <rect
+      x="0.5"
+      y="0.5"
+      width="299"
+      height="199"
+      fill="none"
+      stroke="rgba(0,0,0,0.15)"
+      stroke-width="1"
+    />
+  )}
+</svg>

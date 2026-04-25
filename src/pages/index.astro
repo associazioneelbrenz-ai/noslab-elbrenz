@@ -1,17 +1,116 @@
 ---
+/**
+ * Home — El Brenz dle Val del Nos
+ *
+ * Hero identitario: titolo principale + motto in ladino + 2 CTA.
+ * Niente articoli dinamici (saranno in M2).
+ */
 
+import Layout from '../layouts/Layout.astro';
+import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 ---
+<Layout
+  title="El Brenz dle Val del Nos"
+  description="Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Custodiamo la lingua ladino-anaunica e la storia di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo."
+>
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+  <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
+
+    <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1200 400"
+        preserveAspectRatio="none"
+        class="absolute bottom-0 left-0 right-0 w-full h-2/3"
+      >
+        <path
+          d="M0,400 L0,260 L140,180 L260,230 L380,120 L520,200 L680,100 L820,220 L960,150 L1100,260 L1200,200 L1200,400 Z"
+          fill="#192821"
+          opacity="0.7"
+        />
+        <path
+          d="M0,400 L0,320 L200,260 L380,300 L560,220 L740,300 L920,240 L1100,320 L1200,280 L1200,400 Z"
+          fill="#0F1D18"
+          opacity="0.85"
+        />
+      </svg>
+    </div>
+
+    <div class="relative max-w-4xl mx-auto px-6 py-28 md:py-40 text-center">
+
+      <span
+        class="inline-block bg-[#C8923E]/15 border border-[#C8923E] text-[#C8923E] px-4 py-1.5 text-[11px] font-medium tracking-[0.2em] uppercase mb-10"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Associazione Storico Culturale Linguistica
+      </span>
+
+      <h1
+        class="text-5xl md:text-7xl font-medium leading-[1.05] tracking-tight mb-10"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Le radici del<br/>
+        <em class="text-[#C8923E] not-italic-fix" style="font-style: italic;">ladino anaunico</em>.
+      </h1>
+
+      <p
+        class="text-lg md:text-xl text-[#F5EEDD]/90 max-w-2xl mx-auto leading-relaxed mb-12"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Custodiamo, studiamo e divulghiamo la storia, la lingua e la cultura
+        delle Valli del Noce: Val di Non, Val di Sole, Val di Rabbi, Val di Pejo.
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4 mb-16" style="font-family: 'Inter', sans-serif;">
+        <a href="/storia" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Scopri El Brenz</a>
+        <a href="/diventa-socio" class="inline-block border border-[#F5EEDD]/40 text-[#F5EEDD] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:border-[#C8923E] hover:text-[#C8923E] transition-colors">Diventa socio</a>
+      </div>
+
+      <div class="pt-10 border-t border-[#F5EEDD]/15 max-w-md mx-auto">
+        <p
+          class="text-2xl md:text-3xl italic text-[#C8923E] mb-2"
+          style="font-family: 'Playfair Display', serif;"
+          lang="lld-anau"
+        >
+          Rais fonde no le 'nglacia
+        </p>
+        <p
+          class="text-xs tracking-[0.15em] uppercase text-[#F5EEDD]/55"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Radici profonde non gelano
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="bg-[#FDF9F0] py-24">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2
+        class="text-3xl md:text-5xl font-medium mb-8 leading-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Una comunità che custodisce la <em style="font-style: italic; color: #C8923E;">memoria</em>.
+      </h2>
+      <p
+        class="text-lg text-[#0F0F0F]/80 leading-relaxed mb-4"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Fondata il 21 dicembre 2009, l'Associazione El Brenz raccoglie ricercatori,
+        appassionati e abitanti delle Valli del Noce uniti dalla passione per la
+        propria storia tirolese, le proprie radici linguistiche ladine, e la
+        cultura materiale alpina.
+      </p>
+      <p
+        class="text-lg text-[#0F0F0F]/80 leading-relaxed"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Pubblichiamo articoli di divulgazione storica, custodiamo archivi, organizziamo
+        eventi culturali e sosteniamo il riconoscimento ufficiale del gruppo
+        linguistico ladino-retico anaunico.
+      </p>
+    </div>
+  </section>
+
+</Layout>
