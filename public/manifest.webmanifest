@@ -35,5 +35,21 @@
       "type": "image/png",
       "purpose": "maskable"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/pwa-screenshot-wide.png",
+      "sizes": "2560x1440",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Homepage El Brenz - vista desktop con navigazione e hero ladino anaunico"
+    },
+    {
+      "src": "/pwa-screenshot-narrow.png",
+      "sizes": "1170x2532",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Homepage El Brenz - vista mobile installata su iPhone"
+    }
   ]
 }
