@@ -1,0 +1,179 @@
+---
+/**
+ * ArticleLayout — Shell HTML per pagine articolo
+ *
+ * Layout stile reportage (National Geographic / Guardian long-read):
+ *   - Hero immagine fullwidth con overlay testo bianco
+ *   - Tag pilastro + titolo + sottotitolo + meta autore/data sopra l'immagine
+ *   - Corpo articolo prose centrato max-w-3xl su sfondo crema
+ *
+ * Pensato per essere riusato in M2 dalle pagine dinamiche [slug].astro
+ * generate da DB Supabase.
+ *
+ * Props:
+ *   - title (obbligatorio): titolo articolo
+ *   - subtitle: sottotitolo opzionale
+ *   - pillar: nome del pilastro editoriale (Storia, Lingua, Cultura materiale, ...)
+ *   - author: nome autore
+ *   - date: data pubblicazione formato esteso "26 aprile 2026"
+ *   - heroImage: path assoluto a /hero-...jpg in public/ (richiede hero-...mobile.jpg + .webp + .webp@mobile)
+ *   - heroAlt: testo alternativo accessibilità
+ *   - heroCaption: didascalia con fonte e collocazione archivistica
+ */
+
+import Layout from './Layout.astro';
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  pillar?: string;
+  author?: string;
+  date?: string;
+  heroImage: string;
+  heroImageMobile?: string;
+  heroAlt: string;
+  heroCaption?: string;
+  description?: string;
+}
+
+const {
+  title,
+  subtitle,
+  pillar,
+  author,
+  date,
+  heroImage,
+  heroImageMobile,
+  heroAlt,
+  heroCaption,
+  description,
+} = Astro.props;
+
+// Auto-deriva path WebP dalle estensioni jpg
+const heroImageWebp = heroImage.replace(/\.jpe?g$/i, '.webp');
+const heroImageMobileJpg = heroImageMobile || heroImage.replace(/(\.jpe?g)$/i, '-mobile$1');
+const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
+---
+<Layout title={title} description={description || subtitle || title}>
+
+  <article class="article">
+
+    <header class="article-hero relative w-full overflow-hidden" style="aspect-ratio: 16 / 9; max-height: 80vh; min-height: 420px;">
+
+      <picture class="absolute inset-0 w-full h-full">
+        <source media="(max-width: 768px)" type="image/webp" srcset={heroImageMobileWebp} />
+        <source media="(max-width: 768px)" type="image/jpeg" srcset={heroImageMobileJpg} />
+        <source type="image/webp" srcset={heroImageWebp} />
+        <img src={heroImage} alt={heroAlt} class="w-full h-full object-cover" loading="eager" fetchpriority="high" />
+      </picture>
+
+      <div class="absolute inset-0" style="background: linear-gradient(180deg, rgba(15,15,15,0.40) 0%, rgba(15,15,15,0.55) 50%, rgba(15,15,15,0.85) 100%);"></div>
+
+      <div class="absolute inset-0 flex flex-col justify-end px-6 pb-12 md:pb-16">
+        <div class="max-w-4xl mx-auto w-full text-[#F5EEDD]">
+          {pillar && (
+            <span class="inline-block text-[11px] tracking-[0.22em] uppercase font-medium text-[#D9A94E] border border-[#D9A94E] px-3 py-1.5 mb-6" style="font-family: 'Inter', sans-serif;">{pillar}</span>
+          )}
+          <h1 class="text-4xl md:text-6xl leading-[1.05] tracking-tight m-0 mb-5" style="font-family: 'Playfair Display', serif; font-weight: 500;">{title}</h1>
+          {subtitle && (
+            <p class="text-lg md:text-2xl leading-relaxed text-[#F5EEDD]/90 m-0 mb-7 max-w-3xl" style="font-family: 'Source Serif 4', serif; font-weight: 400; font-style: italic;">{subtitle}</p>
+          )}
+          {(author || date) && (
+            <p class="text-xs tracking-wider uppercase text-[#F5EEDD]/75 m-0" style="font-family: 'Inter', sans-serif;">
+              {author && <span>{author}</span>}
+              {author && date && <span class="mx-2">·</span>}
+              {date && <time>{date}</time>}
+            </p>
+          )}
+        </div>
+      </div>
+
+    </header>
+
+    {heroCaption && (
+      <div class="bg-[#FDF9F0] border-b border-[#E5DFCF]">
+        <div class="max-w-4xl mx-auto px-6 py-3">
+          <p class="text-xs text-[#6B6B6B] m-0 leading-relaxed" style="font-family: 'Inter', sans-serif;">{heroCaption}</p>
+        </div>
+      </div>
+    )}
+
+    <div class="article-body bg-[#FDF9F0] py-16 md:py-20">
+      <div class="max-w-3xl mx-auto px-6 article-prose">
+        <slot />
+      </div>
+    </div>
+
+  </article>
+
+</Layout>
+
+<style is:global>
+  .article-prose {
+    font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, serif;
+    font-size: 1.125rem;
+    line-height: 1.75;
+    color: #0F0F0F;
+  }
+  .article-prose > p { margin: 0 0 1.4em 0; }
+  .article-prose > p:first-of-type::first-letter {
+    font-family: 'Playfair Display', serif;
+    font-size: 4em;
+    line-height: 0.85;
+    float: left;
+    margin: 0.05em 0.12em 0 -0.05em;
+    color: #C8923E;
+    font-weight: 500;
+  }
+  .article-prose h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.875rem;
+    line-height: 1.25;
+    font-weight: 500;
+    color: #0F0F0F;
+    margin: 2.5em 0 0.6em 0;
+  }
+  .article-prose h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    line-height: 1.3;
+    font-weight: 500;
+    color: #0F0F0F;
+    margin: 2em 0 0.5em 0;
+  }
+  .article-prose blockquote {
+    border-left: 3px solid #C8923E;
+    margin: 2em 0;
+    padding: 0.2em 0 0.2em 1.4em;
+    font-style: italic;
+    color: #1E2E26;
+    font-size: 1.25rem;
+    line-height: 1.55;
+  }
+  .article-prose em { color: #C8923E; font-style: italic; }
+  .article-prose a {
+    color: #C8923E;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .article-prose a:hover { color: #1E2E26; }
+  .article-prose hr {
+    border: none;
+    border-top: 1px solid #C8923E;
+    width: 60px;
+    margin: 3em auto;
+    opacity: 0.5;
+  }
+  .article-prose ul, .article-prose ol { margin: 0 0 1.4em 0; padding-left: 1.5em; }
+  .article-prose li { margin-bottom: 0.4em; }
+  .article-prose figure { margin: 2em 0; }
+  .article-prose figcaption {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: #6B6B6B;
+    margin-top: 0.5em;
+    text-align: center;
+    font-style: italic;
+  }
+</style>
