@@ -124,5 +124,20 @@ const navItems = [
       </div>
     </footer>
 
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(
+            (registration) => {
+              console.log('ServiceWorker registrato:', registration.scope);
+            },
+            (error) => {
+              console.warn('ServiceWorker registrazione fallita:', error);
+            }
+          );
+        });
+      }
+    </script>
+
   </body>
 </html>
