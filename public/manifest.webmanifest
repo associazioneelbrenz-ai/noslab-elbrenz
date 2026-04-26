@@ -1,0 +1,39 @@
+{
+  "name": "El Brenz dle Val del Nos",
+  "short_name": "El Brenz",
+  "description": "Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Storia, lingua ladino-anaunica, cultura di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F8F1E4",
+  "theme_color": "#1E2E26",
+  "lang": "it",
+  "categories": ["education", "books", "lifestyle"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
