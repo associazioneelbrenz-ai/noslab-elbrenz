@@ -46,7 +46,15 @@ const navItems = [
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -58,7 +66,18 @@ const navItems = [
 
     <header class="border-b border-[#E5DFCF] bg-[#F8F1E4]">
       <div class="max-w-7xl mx-auto px-6 py-7 flex items-center justify-between gap-8 flex-wrap">
-        <Wordmark size="md" />
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <a href="/" class="flex-shrink-0 leading-none" aria-label="Torna alla home">
+            <img
+              src="/logo-eb-header.png"
+              srcset="/logo-eb-header.png 1x, /logo-eb-header@2x.png 2x"
+              alt="Timbro Associazione El Brenz"
+              width="44"
+              height="44"
+            />
+          </a>
+          <Wordmark size="md" />
+        </div>
         <nav aria-label="Navigazione principale">
           <ul class="flex items-center gap-7 list-none m-0 p-0 flex-wrap">
             {navItems.map((item) => (<li><a href={item.href} class="text-[#0F0F0F] no-underline text-[15px] font-medium pb-2 border-b-2 border-transparent hover:border-[#C8923E] hover:text-[#C8923E] transition-colors" style="font-family: 'Inter', sans-serif;">{item.label}</a></li>))}
@@ -74,9 +93,20 @@ const navItems = [
     <footer class="bg-[#1E2E26] text-[#F5EEDD] mt-20 pt-16 pb-7">
       <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-14">
 
-        <div>
-          <FirmaIstituzionale theme="dark" size="md" class="items-start text-left" />
-          <BandieraLadina width={48} class="mt-6" />
+        <div class="flex items-start gap-5">
+          <img
+            src="/logo-eb-footer.png"
+            srcset="/logo-eb-footer.png 1x, /logo-eb-footer@2x.png 2x"
+            alt="Timbro Associazione El Brenz"
+            width="80"
+            height="80"
+            class="flex-shrink-0 mt-1"
+            loading="lazy"
+          />
+          <div>
+            <FirmaIstituzionale theme="dark" size="md" class="items-start text-left" />
+            <BandieraLadina width={48} class="mt-6" />
+          </div>
         </div>
 
         <div style="font-family: 'Inter', sans-serif;">
