@@ -1,0 +1,205 @@
+---
+/**
+ * Header — Header del sito con navigazione responsive
+ *
+ * Comportamento:
+ *   - Desktop (>=768px): logo + wordmark a sinistra, nav 6 voci a destra
+ *   - Mobile (<768px): logo + wordmark a sinistra, bottone hamburger a destra
+ *     che apre un drawer laterale con slide-in da destra
+ *
+ * Drawer:
+ *   - Verde foresta 1E2E26 con voci crema F5EEDD
+ *   - Larghezza min(320px, 80vw)
+ *   - Slide-in 250ms cubic-bezier iOS-like
+ *   - Backdrop nero 50% con blur 4px
+ *   - Chiude su: bottone X, click backdrop, tasto Escape, click voce nav
+ *   - Body lock quando aperto
+ *   - Focus trap completo per accessibilità WCAG
+ *
+ * Accessibility:
+ *   - aria-expanded, aria-controls, aria-label sul bottone
+ *   - role=dialog, aria-modal=true sul drawer
+ *   - Focus management: primo link focused all'apertura, ridato al bottone alla chiusura
+ *   - Tasto Escape supportato
+ *   - Tab/Shift+Tab trap dentro il drawer
+ *
+ * Componente refattorizzato da Layout.astro durante M1.7 (BUG-2 hamburger).
+ * Layout.astro ora usa <Header /> invece dell'<header> inline.
+ */
+
+import Wordmark from '../components/Wordmark.astro';
+
+const navItems = [
+  { href: '/storia', label: 'Storia' },
+  { href: '/lingua', label: 'Lingua' },
+  { href: '/cultura-materiale', label: 'Cultura materiale' },
+  { href: '/rievocazioni', label: 'Rievocazioni' },
+  { href: '/archivio', label: 'Archivio' },
+  { href: '/eventi', label: 'Eventi' },
+];
+---
+
+<header class="border-b border-[#E5DFCF] bg-[#F8F1E4] relative z-30">
+  <div class="max-w-7xl mx-auto px-6 py-7 flex items-center justify-between gap-8">
+
+    <div class="flex items-center gap-3 flex-shrink-0">
+      <a href="/" class="flex-shrink-0 leading-none" aria-label="Torna alla home">
+        <img
+          src="/logo-eb-header.png"
+          srcset="/logo-eb-header.png 1x, /logo-eb-header@2x.png 2x"
+          alt="Timbro Associazione El Brenz"
+          width="44"
+          height="44"
+        />
+      </a>
+      <Wordmark size="md" />
+    </div>
+
+    <nav class="hidden md:block" aria-label="Navigazione principale">
+      <ul class="flex items-center gap-7 list-none m-0 p-0 flex-wrap">
+        {navItems.map((item) => (
+          <li><a href={item.href} class="text-[#0F0F0F] no-underline text-[15px] font-medium pb-2 border-b-2 border-transparent hover:border-[#C8923E] hover:text-[#C8923E] transition-colors" style="font-family: 'Inter', sans-serif;">{item.label}</a></li>
+        ))}
+      </ul>
+    </nav>
+
+    <button
+      id="menu-toggle"
+      type="button"
+      class="md:hidden flex items-center justify-center w-11 h-11 -mr-2 text-[#0F0F0F] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8923E] rounded"
+      aria-label="Apri menu di navigazione"
+      aria-expanded="false"
+      aria-controls="mobile-drawer"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <line x1="4" y1="7" x2="20" y2="7"></line>
+        <line x1="4" y1="13" x2="20" y2="13"></line>
+        <line x1="4" y1="19" x2="20" y2="19"></line>
+      </svg>
+    </button>
+
+  </div>
+</header>
+
+<div
+  id="mobile-backdrop"
+  class="md:hidden fixed inset-0 bg-black/50 z-40 opacity-0 pointer-events-none transition-opacity duration-300"
+  style="backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);"
+  aria-hidden="true"
+></div>
+
+<aside
+  id="mobile-drawer"
+  class="md:hidden fixed top-0 right-0 h-full w-[min(320px,80vw)] bg-[#1E2E26] text-[#F5EEDD] z-50 shadow-2xl"
+  style="transform: translateX(100%); transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1);"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Menu di navigazione"
+  aria-hidden="true"
+>
+  <div class="flex items-center justify-between px-6 py-7 border-b border-[#F5EEDD]/15">
+    <span class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium" style="font-family: 'Inter', sans-serif;">Menu</span>
+    <button
+      id="menu-close"
+      type="button"
+      class="flex items-center justify-center w-11 h-11 -mr-2 text-[#F5EEDD] hover:text-[#D9A94E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A94E] rounded transition-colors"
+      aria-label="Chiudi menu"
+    >
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+        <line x1="6" y1="18" x2="18" y2="6"></line>
+      </svg>
+    </button>
+  </div>
+
+  <nav class="px-6 py-8" aria-label="Navigazione principale mobile">
+    <ul class="list-none m-0 p-0 flex flex-col gap-1">
+      {navItems.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class="drawer-nav-link block py-3 text-2xl text-[#F5EEDD] no-underline border-b border-[#F5EEDD]/10 hover:text-[#D9A94E] hover:border-[#D9A94E] transition-colors"
+            style="font-family: 'Playfair Display', serif; font-weight: 500;"
+          >
+            {item.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <div class="px-6 py-6 mt-4 border-t border-[#F5EEDD]/15">
+    <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E]/80 font-medium m-0" style="font-family: 'Inter', sans-serif;">El Brenz dle Val del Nos</p>
+    <p class="text-xs text-[#F5EEDD]/55 m-0 mt-2" style="font-family: 'Inter', sans-serif; font-style: italic;">Rais fonde no le 'nglacia</p>
+  </div>
+</aside>
+
+<script is:inline>
+  (function() {
+    const toggle = document.getElementById('menu-toggle');
+    const close = document.getElementById('menu-close');
+    const drawer = document.getElementById('mobile-drawer');
+    const backdrop = document.getElementById('mobile-backdrop');
+    if (!toggle || !drawer || !backdrop || !close) return;
+
+    const navLinks = drawer.querySelectorAll('.drawer-nav-link');
+    let lastFocus = null;
+
+    function openMenu() {
+      lastFocus = document.activeElement;
+      drawer.style.transform = 'translateX(0)';
+      drawer.setAttribute('aria-hidden', 'false');
+      backdrop.style.opacity = '1';
+      backdrop.style.pointerEvents = 'auto';
+      toggle.setAttribute('aria-expanded', 'true');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => {
+        const firstLink = drawer.querySelector('a, button');
+        if (firstLink) firstLink.focus();
+      }, 100);
+    }
+
+    function closeMenu() {
+      drawer.style.transform = 'translateX(100%)';
+      drawer.setAttribute('aria-hidden', 'true');
+      backdrop.style.opacity = '0';
+      backdrop.style.pointerEvents = 'none';
+      toggle.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+      if (lastFocus && typeof lastFocus.focus === 'function') {
+        lastFocus.focus();
+      }
+    }
+
+    toggle.addEventListener('click', openMenu);
+    close.addEventListener('click', closeMenu);
+    backdrop.addEventListener('click', closeMenu);
+    navLinks.forEach((link) => link.addEventListener('click', closeMenu));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        closeMenu();
+      }
+      if (e.key === 'Tab' && toggle.getAttribute('aria-expanded') === 'true') {
+        const focusables = drawer.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])');
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
+
+    const mq = window.matchMedia('(min-width: 768px)');
+    mq.addEventListener('change', (e) => {
+      if (e.matches && toggle.getAttribute('aria-expanded') === 'true') {
+        closeMenu();
+      }
+    });
+  })();
+</script>

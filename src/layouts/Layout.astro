@@ -14,6 +14,7 @@ import '../styles/global.css';
 import Wordmark from '../components/Wordmark.astro';
 import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 import BandieraLadina from '../components/BandieraLadina.astro';
+import Header from '../components/Header.astro';
 
 interface Props {
   title?: string;
@@ -64,27 +65,7 @@ const navItems = [
   </head>
   <body class="bg-[#F8F1E4] text-[#0F0F0F] min-h-screen flex flex-col">
 
-    <header class="border-b border-[#E5DFCF] bg-[#F8F1E4]">
-      <div class="max-w-7xl mx-auto px-6 py-7 flex items-center justify-between gap-8 flex-wrap">
-        <div class="flex items-center gap-3 flex-shrink-0">
-          <a href="/" class="flex-shrink-0 leading-none" aria-label="Torna alla home">
-            <img
-              src="/logo-eb-header.png"
-              srcset="/logo-eb-header.png 1x, /logo-eb-header@2x.png 2x"
-              alt="Timbro Associazione El Brenz"
-              width="44"
-              height="44"
-            />
-          </a>
-          <Wordmark size="md" />
-        </div>
-        <nav aria-label="Navigazione principale">
-          <ul class="flex items-center gap-7 list-none m-0 p-0 flex-wrap">
-            {navItems.map((item) => (<li><a href={item.href} class="text-[#0F0F0F] no-underline text-[15px] font-medium pb-2 border-b-2 border-transparent hover:border-[#C8923E] hover:text-[#C8923E] transition-colors" style="font-family: 'Inter', sans-serif;">{item.label}</a></li>))}
-          </ul>
-        </nav>
-      </div>
-    </header>
+    <Header />
 
     <main class="flex-1">
       <slot />
