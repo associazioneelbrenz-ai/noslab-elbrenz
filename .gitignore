@@ -37,3 +37,6 @@ coverage/
 *.tmp
 *.swp
 *~
+
+# WXR export legacy (sensibile, rigenerabile da WP)
+docs/legacy/raw/
