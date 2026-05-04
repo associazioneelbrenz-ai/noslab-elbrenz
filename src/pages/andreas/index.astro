@@ -1,0 +1,35 @@
+---
+// =============================================================================
+// PAGINA /andreas — chat pubblica con assistente digitale Associazione El Brenz
+// =============================================================================
+// IMPORTA: il componente AndreasChat e il Layout già esistente del sito.
+// Se il path del Layout nel tuo repo è diverso, correggi l'import qui sotto.
+// =============================================================================
+
+import Layout from '../../layouts/Layout.astro';
+import AndreasChat from '../../components/andreas/AndreasChat.astro';
+
+const pageTitle = 'Andreas — Assistente digitale';
+const pageDescription = 'Chiedi ad Andreas della storia, della lingua e della cultura delle Valli del Noce. Storia tirolese, ladino anaunico, Guerre Rustiche, costumi solandri.';
+
+// Open Graph: usa il master Andreas come immagine social (1200×630 ideale, ma
+// qui passiamo il PNG quadrato che funziona comunque su Facebook/LinkedIn/WhatsApp)
+const ogImage = '/assets/branding/andreas/andreas-sorriso-master.png';
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  image={ogImage}
+>
+  <main class="andreas-page">
+    <AndreasChat />
+  </main>
+</Layout>
+
+<style>
+  .andreas-page {
+    min-height: calc(100vh - var(--site-header-height, 64px));
+    background: var(--eb-crema, #F8F1E4);
+  }
+</style>

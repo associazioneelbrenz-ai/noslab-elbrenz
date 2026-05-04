@@ -40,3 +40,7 @@ coverage/
 
 # WXR export legacy (sensibile, rigenerabile da WP)
 docs/legacy/raw/
+
+# Test results (rigenerabili)
+ma1_results/
+supabase/.temp/

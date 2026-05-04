@@ -1,0 +1,138 @@
+---
+// =============================================================================
+// COMPONENTE — AndreasChat.astro
+// =============================================================================
+// Chat pubblica con Andreas. Server-side: solo struttura HTML.
+// Tutto il comportamento è in andreas-chat.js (client-side, vanilla).
+// Asset reali in /public/assets/branding/andreas e /public/assets/branding/logo.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// CONFIG RUNTIME — leggi env vars Astro
+// -----------------------------------------------------------------------------
+// PUBLIC_SUPABASE_URL e PUBLIC_SUPABASE_ANON_KEY vengono lette da .env.local in
+// dev e dalle env vars di Netlify in produzione. Sono "PUBLIC_*" → sicure da
+// esporre al client (la anon/publishable key è pensata per essere pubblica).
+//
+// Comportamento:
+// - Se SUPABASE_URL è presente → MOCK_MODE = false (chiama edge function vera)
+// - Se manca                   → MOCK_MODE = true  (risposte simulate)
+//
+// NOTA: l'edge function andreas-chat v3 è pubblica (no-verify-jwt) e non
+// richiede la anon key in header. La leggiamo comunque dall'env per
+// compatibilità futura con altre edge functions del progetto.
+// -----------------------------------------------------------------------------
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+const mockMode = !supabaseUrl;
+---
+
+<section class="andreas-chat" aria-label="Chat con Andreas">
+
+  <!-- =========================================================================
+       HERO della pagina — header verde foresta + titolo Andreas
+       ========================================================================= -->
+  <header class="andreas-chat__hero">
+    <div class="andreas-chat__eyebrow">ASSISTENTE DIGITALE</div>
+    <h1 class="andreas-chat__title">Andreas</h1>
+    <p class="andreas-chat__subtitle">
+      Storia, lingua e cultura delle Valli del Noce. Chiedi quello che vuoi sapere.
+    </p>
+  </header>
+
+  <!-- =========================================================================
+       CHAT — area messaggi (popolata via JS)
+       ========================================================================= -->
+  <div
+    id="andreas-messages"
+    class="andreas-chat__messages"
+    role="log"
+    aria-live="polite"
+    aria-atomic="false"
+    aria-label="Conversazione con Andreas"
+  ></div>
+
+  <!-- =========================================================================
+       COMPOSER — area input
+       ========================================================================= -->
+  <form id="andreas-composer" class="andreas-chat__composer" autocomplete="off">
+    <div class="andreas-chat__composer-row">
+      <textarea
+        id="andreas-textarea"
+        class="andreas-chat__textarea"
+        placeholder="Scrivi la tua domanda…"
+        rows="1"
+        aria-label="Scrivi la tua domanda ad Andreas"
+        maxlength="500"
+      ></textarea>
+      <button
+        type="submit"
+        id="andreas-send"
+        class="andreas-chat__send"
+        aria-label="Invia domanda"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M13 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+    <div class="andreas-chat__meta">
+      <span class="andreas-chat__hint">
+        Premi <kbd>Invio</kbd> per inviare · <kbd>Shift+Invio</kbd> per andare a capo
+      </span>
+      <span id="andreas-counter" class="andreas-chat__counter">
+        <strong>3</strong> domande rimanenti oggi
+      </span>
+    </div>
+  </form>
+
+  <!-- =========================================================================
+       DISCLAIMER
+       ========================================================================= -->
+  <footer class="andreas-chat__disclaimer">
+    Andreas è un assistente AI. Le risposte si basano sull'archivio dell'Associazione,
+    ma possono contenere imprecisioni. Per informazioni ufficiali:
+    <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>
+  </footer>
+
+</section>
+
+<!-- =========================================================================
+     CSS dedicato (scope: questo componente)
+     ========================================================================= -->
+<style>
+  /* Foglio importato globalmente per leggibilità: vedi import sotto. */
+</style>
+
+<link rel="stylesheet" href="/styles/andreas-chat.css" />
+
+<!-- =========================================================================
+     CONFIG RUNTIME passata al client via window.ANDREAS_CONFIG.
+     Letta dallo script in fondo. is:inline per non essere processata da Astro.
+     ========================================================================= -->
+<script
+  is:inline
+  define:vars={{
+    supabaseUrl,
+    supabaseAnonKey,
+    mockMode,
+  }}
+>
+  window.ANDREAS_CONFIG = {
+    MOCK_MODE: mockMode,
+    SUPABASE_URL: supabaseUrl,
+    SUPABASE_ANON_KEY: supabaseAnonKey,
+  };
+  // Indicatore in console per debug rapido (visibile solo a chi apre DevTools)
+  console.info(
+    `[Andreas] Config runtime: MOCK_MODE=${mockMode}` +
+    (mockMode ? ' (le env vars PUBLIC_SUPABASE_* mancano, fallback a risposte simulate)' : ' (chiama edge function reale)')
+  );
+</script>
+
+<!-- =========================================================================
+     SCRIPT client-side (vanilla, type=module)
+     Carica DOPO il blocco config sopra. Legge window.ANDREAS_CONFIG.
+     ========================================================================= -->
+<script src="/scripts/andreas-chat.js" type="module" is:inline></script>
