@@ -1,0 +1,136 @@
+---
+/**
+ * Privacy — Informativa privacy ai sensi del GDPR (Reg. UE 2016/679)
+ *
+ * Pagina informativa minima conforme per APS che raccoglie dati anagrafici
+ * tramite form pubblico /tesseramento.
+ *
+ * M.A.2.5 — versione iniziale; da rivedere con consulente legale in M.A.3
+ * quando partirà il sistema di iscrizione formale.
+ */
+
+import Layout from '../layouts/Layout.astro';
+---
+<Layout
+  title="Informativa privacy"
+  description="Informativa sul trattamento dei dati personali ai sensi del Regolamento UE 2016/679 (GDPR) — Associazione El Brenz."
+>
+
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <span
+        class="inline-block bg-[#C8923E]/15 border border-[#C8923E] text-[#C8923E] px-4 py-1.5 text-[11px] font-medium tracking-[0.2em] uppercase mb-8"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        GDPR · Reg. UE 2016/679
+      </span>
+      <h1
+        class="text-4xl md:text-5xl font-medium leading-[1.1] tracking-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Informativa <em class="text-[#C8923E]" style="font-style: italic;">privacy</em>
+      </h1>
+    </div>
+  </section>
+
+  <section class="bg-[#F8F1E4] py-16">
+    <div class="max-w-3xl mx-auto px-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+
+      <p class="text-sm text-[#0F0F0F]/55 mb-12" style="font-family: 'Inter', sans-serif;">
+        Ultimo aggiornamento: 3 maggio 2026
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1. Titolare del trattamento</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-2">
+        <strong>Associazione Storico Culturale Linguistica "El Brenz" delle Valli del Noce</strong>
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-2">
+        Sede: Via Trento 40, II piano — 38027 Malè (TN)
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-2">
+        Codice fiscale: 92019480224
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Contatti: <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a> · <a href="tel:+393471077636" class="text-[#C8923E] no-underline hover:underline">+39 347 107 7636</a>
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">2. Tipi di dati raccolti</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        Tramite il form pubblico <a href="/tesseramento" class="text-[#C8923E] no-underline hover:underline">/tesseramento</a> raccogliamo:
+      </p>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
+        <li>Nome e cognome</li>
+        <li>Indirizzo email</li>
+        <li>Data di nascita</li>
+        <li>Comune (o stato) di nascita</li>
+        <li>Sesso</li>
+        <li>Messaggio di richiesta informazioni</li>
+        <li>Indirizzo IP del dispositivo (per sicurezza anti-abuso)</li>
+      </ul>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">3. Finalità del trattamento</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        I dati raccolti sono utilizzati esclusivamente per:
+      </p>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
+        <li>Rispondere alla richiesta di informazioni inviata dall'interessato.</li>
+        <li>Pre-compilare la futura domanda di iscrizione formale all'Associazione, qualora l'interessato decida di aderire.</li>
+        <li>Gestire la sicurezza del sistema (rate limiting, anti-abuso).</li>
+      </ul>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">4. Base giuridica</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        Il trattamento avviene sulla base del <strong>consenso esplicito</strong> dell'interessato (art. 6.1.a GDPR), prestato spuntando l'apposita casella nel form di contatto. Il consenso è revocabile in qualsiasi momento.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">5. Modalità e luogo di conservazione</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        I dati sono trasmessi via canale criptato (HTTPS/TLS) e archiviati nella casella email <code class="text-sm bg-[#FDF9F0] px-1.5 py-0.5">info@elbrenz.eu</code>. Non sono pubblicati né condivisi con soggetti esterni all'Associazione.
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Periodo di conservazione: fino a registrazione formale come socio (con sostituzione dell'archivio email da parte del registro soci) <strong>oppure</strong> fino a richiesta di cancellazione da parte dell'interessato. In assenza di entrambe, i dati sono cancellati dopo 24 mesi.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">6. Soggetti che trattano i dati</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        I dati sono accessibili al solo direttivo dell'Associazione. I servizi tecnici esterni utilizzati per la trasmissione e archiviazione (hosting, email transazionale) operano in qualità di responsabili del trattamento ai sensi dell'art. 28 GDPR e sono:
+      </p>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
+        <li><strong>Supabase</strong> (hosting backend, gestione richieste form)</li>
+        <li><strong>Resend</strong> (invio email transazionale)</li>
+        <li><strong>Netlify</strong> (hosting sito web)</li>
+      </ul>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">7. Diritti dell'interessato</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        Ai sensi degli articoli 15-22 del GDPR, l'interessato ha diritto di:
+      </p>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
+        <li>Accedere ai propri dati personali</li>
+        <li>Rettificare dati inesatti</li>
+        <li>Cancellare i dati ("diritto all'oblio")</li>
+        <li>Limitare il trattamento</li>
+        <li>Ricevere una copia dei propri dati (portabilità)</li>
+        <li>Opporsi al trattamento</li>
+        <li>Revocare il consenso in qualsiasi momento</li>
+        <li>Proporre reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">garanteprivacy.it</a>)</li>
+      </ul>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Per esercitare i propri diritti scrivere a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">8. Cookies</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Il sito utilizza esclusivamente cookies tecnici necessari al funzionamento (es. registrazione del Service Worker per la modalità offline). Non utilizza cookies di profilazione o tracking di terze parti.
+      </p>
+
+      <div class="border-t border-[#E5DFCF] mt-16 pt-8">
+        <p class="text-sm text-[#0F0F0F]/55 leading-relaxed" style="font-family: 'Inter', sans-serif;">
+          Per qualsiasi domanda relativa a questa informativa o al trattamento dei dati personali, contatta l'Associazione all'indirizzo <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+</Layout>

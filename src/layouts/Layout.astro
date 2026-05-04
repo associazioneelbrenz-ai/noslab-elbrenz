@@ -5,9 +5,13 @@
  * Usato da tutte le pagine pubbliche del sito.
  * Include:
  *   - <head> con meta SEO base e import di global.css
- *   - <header> con wordmark + navigazione 6 pilastri
+ *   - <BannerAndreas /> banda CTA oro sopra header
+ *   - <Header /> con wordmark + navigazione
  *   - <slot /> per il contenuto della pagina
  *   - <footer> con firma istituzionale + bandiera ladina + credit NosLab
+ *   - <FabAndreas /> bottone galleggiante (nascosto su /andreas)
+ *
+ * M.A.2.5: aggiunti BannerAndreas e FabAndreas come entry point globali ad Andreas.
  */
 
 import '../styles/global.css';
@@ -15,6 +19,8 @@ import Wordmark from '../components/Wordmark.astro';
 import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 import BandieraLadina from '../components/BandieraLadina.astro';
 import Header from '../components/Header.astro';
+import BannerAndreas from '../components/BannerAndreas.astro';
+import FabAndreas from '../components/FabAndreas.astro';
 
 interface Props {
   title?: string;
@@ -38,6 +44,8 @@ const navItems = [
   { href: '/archivio', label: 'Archivio' },
   { href: '/eventi', label: 'Eventi' },
 ];
+
+const currentPath = Astro.url.pathname;
 ---
 <!DOCTYPE html>
 <html lang="it">
@@ -70,6 +78,7 @@ const navItems = [
   </head>
   <body class="bg-[#F8F1E4] text-[#0F0F0F] min-h-screen flex flex-col">
 
+    <BannerAndreas />
     <Header />
 
     <main class="flex-1">
@@ -107,7 +116,7 @@ const navItems = [
           <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-4">Sostienici</h2>
           <p class="text-sm text-[#F5EEDD]/85 mb-2">Cassa Rurale Val di Sole<br/>filiale Mezzana</p>
           <p class="text-xs font-mono text-[#F5EEDD]/75 tracking-wider mb-3">IT84U0816335010000190116255</p>
-          <a href="/diventa-socio" class="text-sm text-[#D9A94E] no-underline hover:underline">Diventa socio →</a>
+          <a href="/tesseramento" class="text-sm text-[#D9A94E] no-underline hover:underline">Diventa socio →</a>
         </div>
 
       </div>
@@ -123,6 +132,8 @@ const navItems = [
         </p>
       </div>
     </footer>
+
+    <FabAndreas pathname={currentPath} />
 
     <script is:inline>
       if ('serviceWorker' in navigator) {

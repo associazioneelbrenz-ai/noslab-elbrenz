@@ -3,7 +3,7 @@
  * Header — Header del sito con navigazione responsive
  *
  * Comportamento:
- *   - Desktop (>=768px): logo + wordmark a sinistra, nav 6 voci a destra
+ *   - Desktop (>=768px): logo + wordmark a sinistra, nav 7 voci a destra
  *   - Mobile (<768px): logo + wordmark a sinistra, bottone hamburger a destra
  *     che apre un drawer laterale con slide-in da destra
  *
@@ -25,6 +25,8 @@
  *
  * Componente refattorizzato da Layout.astro durante M1.7 (BUG-2 hamburger).
  * Layout.astro ora usa <Header /> invece dell'<header> inline.
+ *
+ * M.A.2.5: aggiunta voce "Andreas" con flag highlight (oro permanente).
  */
 
 import Wordmark from '../components/Wordmark.astro';
@@ -36,6 +38,7 @@ const navItems = [
   { href: '/rievocazioni', label: 'Rievocazioni' },
   { href: '/archivio', label: 'Archivio' },
   { href: '/eventi', label: 'Eventi' },
+  { href: '/andreas', label: 'Andreas', highlight: true },
 ];
 ---
 
@@ -58,7 +61,15 @@ const navItems = [
     <nav class="hidden md:block" aria-label="Navigazione principale">
       <ul class="flex items-center gap-7 list-none m-0 p-0 flex-wrap">
         {navItems.map((item) => (
-          <li><a href={item.href} class="text-[#0F0F0F] no-underline text-[15px] font-medium pb-2 border-b-2 border-transparent hover:border-[#C8923E] hover:text-[#C8923E] transition-colors" style="font-family: 'Inter', sans-serif;">{item.label}</a></li>
+          <li>
+            <a
+              href={item.href}
+              class={`no-underline text-[15px] font-medium pb-2 border-b-2 border-transparent transition-colors ${item.highlight ? 'text-[#C8923E] hover:text-[#D9A94E] hover:border-[#D9A94E]' : 'text-[#0F0F0F] hover:border-[#C8923E] hover:text-[#C8923E]'}`}
+              style="font-family: 'Inter', sans-serif;"
+            >
+              {item.label}
+            </a>
+          </li>
         ))}
       </ul>
     </nav>
@@ -118,7 +129,7 @@ const navItems = [
         <li>
           <a
             href={item.href}
-            class="drawer-nav-link block py-3 text-2xl text-[#F5EEDD] no-underline border-b border-[#F5EEDD]/10 hover:text-[#D9A94E] hover:border-[#D9A94E] transition-colors"
+            class={`drawer-nav-link block py-3 text-2xl no-underline border-b border-[#F5EEDD]/10 transition-colors ${item.highlight ? 'text-[#D9A94E] hover:text-[#C8923E] hover:border-[#D9A94E]' : 'text-[#F5EEDD] hover:text-[#D9A94E] hover:border-[#D9A94E]'}`}
             style="font-family: 'Playfair Display', serif; font-weight: 500;"
           >
             {item.label}

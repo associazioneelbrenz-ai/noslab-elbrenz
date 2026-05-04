@@ -1,0 +1,63 @@
+---
+/**
+ * FabAndreas — Bottone galleggiante "Chiedi ad Andreas"
+ *
+ * Sempre presente nell'angolo bottom-right di tutte le pagine
+ * tranne /andreas (sarebbe ridondante).
+ *
+ * Comportamento:
+ *   - Position fixed bottom-right
+ *   - Avatar Andreas circolare con ring oro
+ *   - Tooltip "Chiedi ad Andreas" appare su hover/focus (desktop only)
+ *   - z-30: sotto drawer mobile (z-50) e backdrop (z-40), sopra contenuto
+ *   - Hover: scale 1.05 + tooltip
+ *   - Click: redirect a /andreas
+ *
+ * Accessibility:
+ *   - aria-label esplicito (no testo visibile a riposo)
+ *   - focus-visible ring oro
+ *   - Tooltip è decorativa (pointer-events-none, hidden mobile)
+ *
+ * Riceve pathname dalla pagina chiamante (Astro non ha context globale).
+ *
+ * M.A.2.5 — entry point Andreas
+ * M.A.2.5 fix BUG-003: normalizzo pathname rimuovendo trailing slash
+ *   perché Astro in production restituisce '/andreas/' invece di '/andreas'
+ */
+
+interface Props {
+  pathname: string;
+}
+
+const { pathname } = Astro.props;
+
+// Normalizza: rimuove trailing slash e confronta case-insensitive.
+// Gestisce '/andreas', '/andreas/', '/Andreas' tutti come stessa pagina.
+const normalized = pathname.replace(/\/$/, '').toLowerCase();
+const isHidden = normalized === '/andreas';
+---
+{!isHidden && (
+  <a
+    href="/andreas"
+    class="group fixed bottom-5 right-5 md:bottom-6 md:right-6 z-30 flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8923E] focus-visible:ring-offset-2 rounded-full"
+    aria-label="Chiedi ad Andreas, l'assistente digitale dell'Associazione"
+  >
+    <span
+      class="hidden md:block bg-[#1E2E26] text-[#F5EEDD] text-sm px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-200 shadow-lg whitespace-nowrap pointer-events-none"
+      style="font-family: 'Inter', sans-serif;"
+      aria-hidden="true"
+    >
+      Chiedi ad Andreas
+    </span>
+    <span class="block w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden bg-[#F8F1E4] shadow-xl ring-2 ring-[#C8923E] hover:scale-105 transition-transform duration-200">
+      <img
+        src="/assets/branding/andreas/andreas-sorriso-fab.png"
+        alt=""
+        class="w-full h-full object-cover"
+        loading="lazy"
+        width="64"
+        height="64"
+      />
+    </span>
+  </a>
+)}

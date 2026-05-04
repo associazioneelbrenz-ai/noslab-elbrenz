@@ -1,0 +1,424 @@
+---
+/**
+ * Tesseramento — Pagina pubblica per diventare socio
+ *
+ * Struttura:
+ *   - Hero identitario
+ *   - Sezione "Cosa offre la nosa Sociazion al socio"
+ *   - Sezione bonifico bancario (IBAN evidenziato)
+ *   - Form contatto (passa per /functions/v1/contact-form)
+ *
+ * Form anti-abuse:
+ *   - Honeypot field nascosto via CSS
+ *   - _ts timestamp di apertura (server respinge se < 3s)
+ *   - Validazione client + server
+ *   - Feedback inline
+ *
+ * M.A.2.5
+ */
+
+import Layout from '../layouts/Layout.astro';
+
+// URL edge function — letta da env per dev/prod
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
+---
+<Layout
+  title="Diventa socio"
+  description="Diventa socio dell'Associazione El Brenz. Quota annuale 10€. Sostieni la salvaguardia della lingua ladino-anaunica e della storia delle Valli del Noce."
+>
+
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20 md:py-28">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <span
+        class="inline-block bg-[#C8923E]/15 border border-[#C8923E] text-[#C8923E] px-4 py-1.5 text-[11px] font-medium tracking-[0.2em] uppercase mb-8"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Tesseramento
+      </span>
+      <h1
+        class="text-4xl md:text-6xl font-medium leading-[1.1] tracking-tight mb-8"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Diventa socio della <em class="text-[#C8923E]" style="font-style: italic;">nosa Sociazion</em>.
+      </h1>
+      <p
+        class="text-lg md:text-xl text-[#F5EEDD]/90 max-w-2xl mx-auto leading-relaxed"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Sostieni la custodia della lingua ladino-anaunica, della storia tirolese
+        delle Valli del Noce e della cultura materiale alpina.
+      </p>
+    </div>
+  </section>
+
+  <section class="bg-[#FDF9F0] py-20">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2
+        class="text-3xl md:text-4xl font-medium mb-12 leading-tight text-center"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Cosa significa essere <em style="font-style: italic; color: #C8923E;">socio</em>.
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+        <div>
+          <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Ricerca e divulgazione</h3>
+          <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Sostieni gli articoli, gli archivi digitali e gli studi sulla parlata
+            <em>noneso</em>, <em>solander</em>, <em>rabies</em> e <em>pegaes</em>.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Eventi e rievocazioni</h3>
+          <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Partecipi alle gite sociali, alle serate storiche, ai concorsi
+            culturali e alle commemorazioni delle ricorrenze tirolesi.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Lunari e pubblicazioni</h3>
+          <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Ricevi i lunari annuali, le pubblicazioni dell'Associazione e
+            l'invito agli eventi riservati ai soci.
+          </p>
+        </div>
+
+        <div>
+          <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Una comunità</h3>
+          <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Diventi parte di una rete di ricercatori, appassionati e abitanti
+            delle Valli uniti dalla cura per <em>la nosa storia</em>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-[#F8F1E4] py-20">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2
+        class="text-3xl md:text-4xl font-medium mb-3 leading-tight text-center"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Come associarsi
+      </h2>
+      <p
+        class="text-base text-[#0F0F0F]/70 text-center mb-12"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Quota associativa: <strong class="text-[#1E2E26]">10€ all'anno</strong>
+      </p>
+
+      <div class="bg-white border border-[#E5DFCF] p-8 md:p-10 mb-10">
+        <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium mb-6" style="font-family: 'Inter', sans-serif;">Bonifico bancario</h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" style="font-family: 'Inter', sans-serif;">
+          <div>
+            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Banca</p>
+            <p class="text-sm text-[#1E2E26] m-0 leading-snug">Cassa Rurale Val di Sole<br/>filiale Mezzana</p>
+          </div>
+          <div>
+            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Intestatario</p>
+            <p class="text-sm text-[#1E2E26] m-0 leading-snug">Associazione El Brenz<br/>C.F. 92019480224</p>
+          </div>
+          <div>
+            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Quota</p>
+            <p class="text-sm text-[#1E2E26] m-0 leading-snug"><strong>10€</strong><br/>annua</p>
+          </div>
+        </div>
+
+        <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-6">
+          <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">IBAN</p>
+          <p class="font-mono text-sm md:text-base text-[#1E2E26] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
+        </div>
+
+        <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5">
+          <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">Causale</p>
+          <p class="text-sm text-[#1E2E26] m-0" style="font-family: 'Inter', sans-serif;">
+            <em>Tesseramento 2026 — [Nome Cognome]</em>
+          </p>
+        </div>
+      </div>
+
+      <div class="text-center">
+        <p class="text-sm text-[#0F0F0F]/70" style="font-family: 'Inter', sans-serif;">
+          Una volta effettuato il bonifico, scrivici a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a> per ricevere la tessera.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20">
+    <div class="max-w-2xl mx-auto px-6">
+      <h2
+        class="text-3xl md:text-4xl font-medium mb-3 leading-tight text-center"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Richiedi <em class="text-[#C8923E]" style="font-style: italic;">informazioni.</em>
+      </h2>
+      <p
+        class="text-base text-[#F5EEDD]/75 text-center mb-12"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Per dubbi sull'associazione o sul tesseramento. Ti rispondiamo direttamente da <strong>info@elbrenz.eu</strong>.
+      </p>
+
+      <form
+        id="contact-form"
+        class="bg-[#0F1D18] p-8 md:p-10"
+        novalidate
+        data-endpoint={CONTACT_FORM_URL}
+      >
+        <div class="mb-6">
+          <label for="cf-nome" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Nome e cognome</label>
+          <input
+            type="text"
+            id="cf-nome"
+            name="nome"
+            required
+            minlength="2"
+            maxlength="100"
+            autocomplete="name"
+            class="w-full bg-[#1E2E26] border border-[#F5EEDD]/20 text-[#F5EEDD] px-4 py-3 text-base focus:outline-none focus:border-[#C8923E] transition-colors"
+            style="font-family: 'Inter', sans-serif;"
+          />
+        </div>
+
+        <div class="mb-6">
+          <label for="cf-email" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Email</label>
+          <input
+            type="email"
+            id="cf-email"
+            name="email"
+            required
+            maxlength="200"
+            autocomplete="email"
+            class="w-full bg-[#1E2E26] border border-[#F5EEDD]/20 text-[#F5EEDD] px-4 py-3 text-base focus:outline-none focus:border-[#C8923E] transition-colors"
+            style="font-family: 'Inter', sans-serif;"
+          />
+        </div>
+
+        <div class="mb-6">
+          <label for="cf-messaggio" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Messaggio</label>
+          <textarea
+            id="cf-messaggio"
+            name="messaggio"
+            required
+            minlength="10"
+            maxlength="2000"
+            rows="5"
+            class="w-full bg-[#1E2E26] border border-[#F5EEDD]/20 text-[#F5EEDD] px-4 py-3 text-base focus:outline-none focus:border-[#C8923E] transition-colors resize-y"
+            style="font-family: 'Inter', sans-serif;"
+          ></textarea>
+        </div>
+
+        <!-- Sezione Dati Anagrafici (utili per pre-compilare la futura iscrizione formale) -->
+        <div class="border-t border-[#F5EEDD]/15 mt-8 pt-8 mb-2">
+          <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Dati anagrafici</h3>
+          <p class="text-xs text-[#F5EEDD]/60 mb-6 leading-relaxed" style="font-family: 'Inter', sans-serif;">
+            Ci aiutano a pre-compilare la tua futura iscrizione formale.
+          </p>
+        </div>
+
+        <div class="mb-6">
+          <label for="cf-data-nascita" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Data di nascita</label>
+          <input
+            type="date"
+            id="cf-data-nascita"
+            name="data_nascita"
+            required
+            min="1900-01-01"
+            class="w-full bg-[#1E2E26] border border-[#F5EEDD]/20 text-[#F5EEDD] px-4 py-3 text-base focus:outline-none focus:border-[#C8923E] transition-colors"
+            style="font-family: 'Inter', sans-serif; color-scheme: dark;"
+          />
+        </div>
+
+        <div class="mb-6">
+          <label for="cf-comune-nascita" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Comune di nascita</label>
+          <input
+            type="text"
+            id="cf-comune-nascita"
+            name="comune_nascita"
+            required
+            minlength="2"
+            maxlength="100"
+            placeholder="Es. Cles, Malé, Pejo"
+            class="w-full bg-[#1E2E26] border border-[#F5EEDD]/20 text-[#F5EEDD] px-4 py-3 text-base focus:outline-none focus:border-[#C8923E] transition-colors placeholder:text-[#F5EEDD]/30"
+            style="font-family: 'Inter', sans-serif;"
+          />
+          <p class="text-xs text-[#F5EEDD]/45 mt-2" style="font-family: 'Inter', sans-serif;">Se nato all'estero, scrivi nome dello stato</p>
+        </div>
+
+        <div class="mb-8">
+          <span class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Sesso</span>
+          <div class="flex gap-6" style="font-family: 'Inter', sans-serif;">
+            <label class="flex items-center gap-2 cursor-pointer text-[#F5EEDD]">
+              <input type="radio" name="sesso" value="M" required class="w-4 h-4 accent-[#C8923E]" />
+              <span class="text-sm">Maschile</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-[#F5EEDD]">
+              <input type="radio" name="sesso" value="F" required class="w-4 h-4 accent-[#C8923E]" />
+              <span class="text-sm">Femminile</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- GDPR: informativa inline + checkbox consenso -->
+        <div class="bg-[#0F1D18] border border-[#F5EEDD]/10 p-5 mb-6">
+          <p class="text-xs text-[#F5EEDD]/70 leading-relaxed mb-4 m-0" style="font-family: 'Inter', sans-serif;">
+            I dati raccolti (nome, email, data e luogo di nascita, sesso, messaggio) saranno trattati dall'Associazione El Brenz al solo scopo di rispondere alla tua richiesta e pre-compilare la tua futura iscrizione formale. Conserviamo i dati su email criptata fino a registrazione formale o cancellazione su richiesta. Per cancellare i dati scrivi a <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a>. <a href="/privacy" target="_blank" rel="noopener" class="text-[#D9A94E] no-underline hover:underline">Informativa privacy completa →</a>
+          </p>
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" id="cf-gdpr" name="gdpr" required class="mt-0.5 w-4 h-4 accent-[#C8923E] flex-shrink-0" />
+            <span class="text-sm text-[#F5EEDD] leading-relaxed" style="font-family: 'Inter', sans-serif;">
+              Ho letto e accetto l'informativa privacy
+            </span>
+          </label>
+        </div>
+
+        <!-- Honeypot: nascosto via CSS, deve restare vuoto -->
+        <div aria-hidden="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
+          <label for="cf-website">Website (lascia vuoto)</label>
+          <input type="text" id="cf-website" name="_honeypot" tabindex="-1" autocomplete="off" />
+        </div>
+
+        <button
+          type="submit"
+          id="cf-submit"
+          class="w-full bg-[#C8923E] text-[#1E2E26] px-6 py-3.5 text-sm font-medium tracking-wider uppercase hover:bg-[#D9A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Invia richiesta info
+        </button>
+
+        <div
+          id="cf-feedback"
+          class="hidden mt-6 p-4 text-sm"
+          role="status"
+          aria-live="polite"
+          style="font-family: 'Inter', sans-serif;"
+        ></div>
+      </form>
+    </div>
+  </section>
+
+</Layout>
+
+<script>
+  // Form contatto: gestione submit con feedback inline.
+  // M.A.2.5 — protezione client + server (honeypot, time-trap, validazione)
+
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const submit = document.getElementById('cf-submit') as HTMLButtonElement | null;
+  const feedback = document.getElementById('cf-feedback') as HTMLDivElement | null;
+
+  if (form && submit && feedback) {
+    const endpoint = form.dataset.endpoint;
+    if (!endpoint) {
+      console.error('[contact-form] endpoint non configurato');
+    }
+
+    // Timestamp apertura form: serve come time-trap server-side
+    const formOpenedAt = Date.now();
+
+    function showFeedback(message: string, type: 'success' | 'error') {
+      if (!feedback) return;
+      feedback.classList.remove('hidden');
+      feedback.style.background = type === 'success' ? '#1d4d3a' : '#5a1f1f';
+      feedback.style.color = '#F5EEDD';
+      feedback.style.borderLeft = `3px solid ${type === 'success' ? '#C8923E' : '#d97a7a'}`;
+      feedback.style.padding = '14px 18px';
+      feedback.textContent = message;
+    }
+
+    function hideFeedback() {
+      if (!feedback) return;
+      feedback.classList.add('hidden');
+      feedback.textContent = '';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideFeedback();
+
+      if (!endpoint) {
+        showFeedback('Configurazione mancante. Scrivi a info@elbrenz.eu.', 'error');
+        return;
+      }
+
+      const formData = new FormData(form);
+      const payload = {
+        nome: (formData.get('nome') as string || '').trim(),
+        email: (formData.get('email') as string || '').trim(),
+        messaggio: (formData.get('messaggio') as string || '').trim(),
+        data_nascita: (formData.get('data_nascita') as string || '').trim(),
+        comune_nascita: (formData.get('comune_nascita') as string || '').trim(),
+        sesso: (formData.get('sesso') as string || '').trim(),
+        gdpr: formData.get('gdpr') === 'on',
+        _honeypot: (formData.get('_honeypot') as string || ''),
+        _ts: formOpenedAt,
+      };
+
+      // Validazione client minima (server è autoritativo)
+      if (payload.nome.length < 2) {
+        showFeedback('Inserisci il tuo nome.', 'error');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+        showFeedback('Indirizzo email non valido.', 'error');
+        return;
+      }
+      if (payload.messaggio.length < 10) {
+        showFeedback('Il messaggio è troppo breve (minimo 10 caratteri).', 'error');
+        return;
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(payload.data_nascita)) {
+        showFeedback('Inserisci una data di nascita valida.', 'error');
+        return;
+      }
+      if (payload.comune_nascita.length < 2) {
+        showFeedback('Inserisci il comune di nascita.', 'error');
+        return;
+      }
+      if (payload.sesso !== 'M' && payload.sesso !== 'F') {
+        showFeedback('Seleziona il sesso.', 'error');
+        return;
+      }
+      if (!payload.gdpr) {
+        showFeedback('Devi accettare l\'informativa privacy per procedere.', 'error');
+        return;
+      }
+
+      submit.disabled = true;
+      submit.textContent = 'Invio in corso…';
+
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await resp.json().catch(() => ({}));
+
+        if (resp.ok && data.success) {
+          showFeedback('Richiesta inviata. Ti risponderemo presto da info@elbrenz.eu.', 'success');
+          form.reset();
+        } else if (resp.status === 429) {
+          showFeedback(data.error || 'Hai inviato troppe richieste. Riprova più tardi.', 'error');
+        } else {
+          showFeedback(data.error || 'Si è verificato un errore. Riprova o scrivi direttamente a info@elbrenz.eu.', 'error');
+        }
+      } catch (err) {
+        console.error('[contact-form] network error:', err);
+        showFeedback('Errore di connessione. Riprova o scrivi direttamente a info@elbrenz.eu.', 'error');
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Invia richiesta info';
+      }
+    });
+  }
+</script>

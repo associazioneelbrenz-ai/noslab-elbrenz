@@ -1,0 +1,28 @@
+---
+/**
+ * BannerAndreas — Striscia CTA sopra header
+ *
+ * Banda oro orizzontale che porta a /andreas.
+ * Discreta ma sempre presente in cima a ogni pagina.
+ *
+ * Comportamento:
+ *   - Non sticky: scorre via con la pagina (lascia premium space al contenuto)
+ *   - Tutto cliccabile (anchor avvolge l'intera barra)
+ *   - Mobile: testo abbreviato per evitare wrap
+ *   - Hover: scurisce leggermente per feedback
+ *
+ * M.A.2.5 — entry point Andreas
+ */
+---
+<a
+  href="/andreas"
+  class="block bg-[#C8923E] text-[#1E2E26] hover:bg-[#D9A94E] transition-colors no-underline"
+  style="font-family: 'Inter', sans-serif;"
+  aria-label="Vai alla pagina di Andreas, l'assistente digitale dell'Associazione"
+>
+  <div class="max-w-7xl mx-auto px-6 py-2.5 flex items-center justify-center gap-2 text-[13px] md:text-sm font-medium">
+    <span class="hidden md:inline">✨ Prova <strong>Andreas</strong>, il nostro assistente digitale che racconta la storia delle Valli</span>
+    <span class="md:hidden">✨ Chiedi ad <strong>Andreas</strong></span>
+    <span aria-hidden="true">→</span>
+  </div>
+</a>
