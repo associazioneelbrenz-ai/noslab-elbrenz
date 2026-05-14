@@ -1,0 +1,255 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Registrati — El Brenz">
+  <section class="bg-gradient-to-b from-amber-50 to-white py-16 px-6">
+    <div class="max-w-2xl mx-auto text-center">
+      <p class="text-amber-700 uppercase tracking-widest text-sm mb-4">Area Soci</p>
+      <h1 class="font-serif text-4xl md:text-5xl text-stone-900 mb-6">Registrati</h1>
+      <p class="text-lg text-stone-700">
+        Crea il tuo accesso all'area riservata dei soci. Ti invieremo un codice
+        a 6 cifre via email per confermare la tua identità.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-12 px-6">
+    <div class="max-w-md mx-auto">
+
+      <!-- Box errore (condiviso tra step) -->
+      <div id="error-box" class="hidden bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 mb-4 text-sm"></div>
+
+      <!-- STEP 1: Dati anagrafici -->
+      <form id="form-step-1" class="bg-white rounded-2xl border border-amber-200 shadow-sm p-6 md:p-8 space-y-4" novalidate>
+        <h2 class="font-serif text-2xl text-stone-900 mb-2">I tuoi dati</h2>
+        <p class="text-sm text-stone-500 mb-4">Tutti i campi sono obbligatori.</p>
+
+        <div>
+          <label for="nome" class="block text-sm font-medium text-stone-700 mb-1">Nome</label>
+          <input id="nome" name="nome" type="text" required autocomplete="given-name" maxlength="80"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
+        </div>
+
+        <div>
+          <label for="cognome" class="block text-sm font-medium text-stone-700 mb-1">Cognome</label>
+          <input id="cognome" name="cognome" type="text" required autocomplete="family-name" maxlength="80"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-stone-700 mb-1">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email" maxlength="254"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
+        </div>
+
+        <button id="submit-1" type="submit"
+                class="w-full bg-amber-500 text-white font-medium px-6 py-3 rounded-lg hover:bg-amber-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Invia codice di verifica
+        </button>
+
+        <p class="text-xs text-stone-500 text-center pt-2">
+          Procedendo accetti l'<a href="/privacy" class="underline hover:text-stone-700">informativa sulla privacy</a>.
+        </p>
+      </form>
+
+      <!-- STEP 2: Verifica codice -->
+      <form id="form-step-2" class="hidden bg-white rounded-2xl border border-amber-200 shadow-sm p-6 md:p-8 space-y-4" novalidate>
+        <h2 class="font-serif text-2xl text-stone-900 mb-2">Inserisci il codice</h2>
+        <p class="text-sm text-stone-600 mb-4">
+          Ti abbiamo inviato un codice di 6 cifre a <strong id="email-conferma" class="text-stone-900"></strong>.
+          Controlla la posta (anche lo spam) e inseriscilo qui sotto.
+        </p>
+
+        <div>
+          <label for="codice" class="block text-sm font-medium text-stone-700 mb-1">Codice</label>
+          <input id="codice" name="codice" type="text" inputmode="numeric" maxlength="6" required autocomplete="one-time-code"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-3 text-center text-2xl tracking-[0.5em] font-mono focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
+          <p class="text-xs text-stone-500 mt-1">Il codice è valido per 10 minuti.</p>
+        </div>
+
+        <button id="submit-2" type="submit"
+                class="w-full bg-amber-500 text-white font-medium px-6 py-3 rounded-lg hover:bg-amber-600 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          Verifica e accedi
+        </button>
+
+        <button type="button" id="back-to-step-1"
+                class="w-full text-sm text-stone-600 hover:text-stone-900 underline">
+          ← Torna ai tuoi dati
+        </button>
+      </form>
+
+    </div>
+  </section>
+
+  <section class="py-10 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <p class="font-serif italic text-stone-500 text-lg">«Radici profonde non gelano.»</p>
+      <p class="text-stone-400 text-sm mt-1"><em>Rais fonde no le 'nglacia.</em></p>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+  const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const $i = (id: string) => document.getElementById(id) as HTMLInputElement;
+
+  const step1 = $('form-step-1');
+  const step2 = $('form-step-2');
+  const errorBox = $('error-box');
+
+  let savedEmail = '';
+  let savedNome = '';
+  let savedCognome = '';
+
+  function showError(msg: string) {
+    errorBox.textContent = msg;
+    errorBox.classList.remove('hidden');
+    errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function hideError() {
+    errorBox.classList.add('hidden');
+  }
+
+  async function callEdgeFunction(name: string, body: object): Promise<{ ok: boolean; data: any }> {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, data };
+    } catch {
+      return { ok: false, data: { error: 'network_error' } };
+    }
+  }
+
+  async function submitStep1(e: Event) {
+    e.preventDefault();
+    hideError();
+
+    const email = $i('email').value.trim().toLowerCase();
+    const nome = $i('nome').value.trim();
+    const cognome = $i('cognome').value.trim();
+
+    if (!email || !nome || !cognome) {
+      showError('Compila tutti i campi.');
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showError('Inserisci un indirizzo email valido.');
+      return;
+    }
+
+    const btn = $('submit-1') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Invio in corso...';
+
+    const { ok, data } = await callEdgeFunction('otp-request', { email, scope: 'signup' });
+
+    btn.disabled = false;
+    btn.textContent = 'Invia codice di verifica';
+
+    if (!ok || !data?.ok) {
+      const code = data?.error;
+      if (code === 'invalid_email') showError('Indirizzo email non valido.');
+      else if (code === 'missing_resend_key') showError('Servizio email non configurato. Contatta l\'Associazione.');
+      else if (code === 'email_send_failed') showError('Impossibile inviare l\'email in questo momento. Riprova tra qualche minuto.');
+      else if (code === 'network_error') showError('Errore di connessione. Verifica la rete e riprova.');
+      else showError('Errore durante la richiesta. Riprova.');
+      return;
+    }
+
+    savedEmail = email;
+    savedNome = nome;
+    savedCognome = cognome;
+
+    step1.classList.add('hidden');
+    step2.classList.remove('hidden');
+    $('email-conferma').textContent = email;
+    setTimeout(() => $i('codice').focus(), 100);
+  }
+
+  async function submitStep2(e: Event) {
+    e.preventDefault();
+    hideError();
+
+    // Sanitize: tieni solo le cifre
+    const raw = $i('codice').value.trim();
+    const codice = raw.replace(/\D/g, '');
+
+    if (!/^\d{6}$/.test(codice)) {
+      showError('Il codice deve essere di 6 cifre.');
+      return;
+    }
+
+    const btn = $('submit-2') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Verifica in corso...';
+
+    const { ok, data } = await callEdgeFunction('otp-verify', {
+      email: savedEmail,
+      codice,
+      scope: 'signup',
+      nome: savedNome,
+      cognome: savedCognome,
+    });
+
+    if (!ok || !data?.ok) {
+      btn.disabled = false;
+      btn.textContent = 'Verifica e accedi';
+
+      const motivo = data?.motivo;
+      if (motivo === 'codice_errato') showError('Codice errato. Controlla l\'email e riprova.');
+      else if (motivo === 'scaduto') showError('Codice scaduto. Torna indietro per richiederne uno nuovo.');
+      else if (motivo === 'tentativi_esauriti') showError('Hai esaurito i tentativi. Torna indietro per richiedere un nuovo codice.');
+      else if (motivo === 'gia_usato') showError('Questo codice è già stato usato. Torna indietro per richiederne uno nuovo.');
+      else if (data?.error === 'network_error') showError('Errore di connessione. Verifica la rete e riprova.');
+      else showError('Verifica non riuscita. Riprova.');
+      return;
+    }
+
+    const { error: sessionErr } = await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+
+    if (sessionErr) {
+      btn.disabled = false;
+      btn.textContent = 'Verifica e accedi';
+      showError('Errore nel completamento dell\'accesso. Riprova.');
+      return;
+    }
+
+    // Tutto ok: redirect alla home, l'utente è loggato
+    window.location.href = '/';
+  }
+
+  // Ripulisce il campo codice mentre l'utente digita (rimuove non-cifre)
+  $i('codice')?.addEventListener('input', (e) => {
+    const t = e.target as HTMLInputElement;
+    const cleaned = t.value.replace(/\D/g, '').slice(0, 6);
+    if (cleaned !== t.value) t.value = cleaned;
+  });
+
+  document.getElementById('form-step-1')?.addEventListener('submit', submitStep1);
+  document.getElementById('form-step-2')?.addEventListener('submit', submitStep2);
+
+  document.getElementById('back-to-step-1')?.addEventListener('click', () => {
+    hideError();
+    step2.classList.add('hidden');
+    step1.classList.remove('hidden');
+    $i('codice').value = '';
+  });
+</script>

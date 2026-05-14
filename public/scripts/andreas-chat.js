@@ -2,6 +2,13 @@
    andreas-chat.js
    Logica della chat /andreas. Vanilla ES6, niente framework.
    Caricato dal componente AndreasChat.astro come <script type="module">.
+
+   v4 patch M.A.2.6 fase 4 (8 maggio 2026):
+   - Aggiunta getAuthToken(): legge sessione Supabase da localStorage
+   - realFetchAnswer(): passa Authorization: Bearer <jwt> se utente loggato
+   - Backend riconosce il JWT e applica il limite per ruolo (ospite=5,
+     socio=50, collaboratore=100, admin=-1). Se non loggato, comportamento
+     invariato: niente header, backend modalità pubblica = 3/giorno.
    ============================================================================= */
 
 (() => {
@@ -528,20 +535,26 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
   }
 
   // ---------------------------------------------------------------------------
-  // FETCH REALE — chiama l'edge function andreas-chat v3
+  // FETCH REALE — chiama l'edge function andreas-chat v4
   // ---------------------------------------------------------------------------
 
   async function realFetchAnswer(question) {
     const url = `${CONFIG.SUPABASE_URL}/functions/v1/andreas-chat`;
-    // Nota: NON inviamo Authorization né apikey header.
-    // L'edge function andreas-chat v3 è pubblica (no-verify-jwt) e li
-    // rifiuta con HTTP 400. Validato dal bash elbrenz_ma1_test_andreas.sh
-    // che ha passato 15/15 query senza alcun header di auth.
+
+    // [v4 patch M.A.2.6 fase 4] Auth opzionale ruolo-aware.
+    // Se l'utente è loggato (sessione persistita da /registrati nella chiave
+    // localStorage 'elbrenz-auth'), passiamo Authorization: Bearer <user_jwt>.
+    // Il backend riconosce il JWT, recupera il ruolo da utente_ruolo e applica
+    // il limite configurato in ai_config_ruolo (ospite=5, socio=50, ecc.).
+    // Se NON loggato, niente header Authorization → backend va in modalità
+    // pubblica come prima (limite 3/giorno per IP). Backward compatible 100%.
+    const headers = { 'Content-Type': 'application/json' };
+    const token = getAuthToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       // Contratto edge function andreas-chat v3 (validato M.A.1 15/15):
       // body field = "query", non "message".
       body: JSON.stringify({ query: question }),
@@ -664,6 +677,24 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
     const div = document.createElement('div');
     div.textContent = String(str);
     return div.innerHTML;
+  }
+
+  // [v4 patch M.A.2.6 fase 4] Lettura sessione Supabase persistita.
+  // Se l'utente è loggato (è passato per /registrati e ha completato OTP),
+  // la session persiste in localStorage 'elbrenz-auth' (chiave configurata
+  // in src/lib/supabase.ts). Restituisce l'access_token o null.
+  // - Token mancante / corrotto → null (utente trattato come anonimo)
+  // - Token scaduto → null (più sicuro che ricevere 401 "invalid_jwt")
+  function getAuthToken() {
+    try {
+      const raw = localStorage.getItem('elbrenz-auth');
+      if (!raw) return null;
+      const session = JSON.parse(raw);
+      if (session && session.expires_at && session.expires_at * 1000 < Date.now()) return null;
+      return (session && session.access_token) ? session.access_token : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ---------------------------------------------------------------------------
