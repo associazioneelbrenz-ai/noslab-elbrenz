@@ -1,0 +1,77 @@
+---
+/*
+ * src/components/CookieConsent.astro
+ *
+ * Banner GDPR su elbrenz.eu — vanilla-cookieconsent v3 (orestbida)
+ * v2 — bottom left per coesistere con FabAndreas (z-30 bottom right)
+ * DEBT-014 (Sprint 2)
+ */
+---
+
+<script>
+  import * as CookieConsent from 'vanilla-cookieconsent';
+  import 'vanilla-cookieconsent/dist/cookieconsent.css';
+
+  CookieConsent.run({
+    guiOptions: {
+      consentModal: { layout: 'box', position: 'bottom left', equalWeightButtons: true, flipButtons: false },
+      preferencesModal: { layout: 'box', position: 'right', equalWeightButtons: true, flipButtons: false }
+    },
+    categories: {
+      necessary: { readOnly: true, enabled: true },
+      analytics: { autoClear: { cookies: [{ name: /^_ga/ }, { name: '_gid' }] } }
+    },
+    language: {
+      default: 'it',
+      translations: {
+        it: {
+          consentModal: {
+            title: 'Cookie e privacy',
+            description: 'Questo sito usa solo cookie tecnici necessari al funzionamento (login soci, OTP via email, sessione). Se in futuro attiveremo strumenti di analisi, ti chiederemo prima di abilitarli. <br><br><a href="/privacy">Privacy policy</a> · <a href="/cookie-policy">Cookie policy</a>',
+            acceptAllBtn: 'Accetta tutto',
+            acceptNecessaryBtn: 'Solo necessari',
+            showPreferencesBtn: 'Personalizza'
+          },
+          preferencesModal: {
+            title: 'Preferenze cookie',
+            acceptAllBtn: 'Accetta tutto',
+            acceptNecessaryBtn: 'Solo necessari',
+            savePreferencesBtn: 'Salva preferenze',
+            closeIconLabel: 'Chiudi',
+            sections: [
+              { title: 'Uso dei cookie su elbrenz.eu', description: 'Raccogliamo il minimo indispensabile per farti accedere all\'area soci e per i servizi essenziali. Niente tracciamento pubblicitario, niente cookie di terze parti per profilazione.' },
+              { title: 'Cookie strettamente necessari', description: 'Sempre attivi. Garantiscono login soci, validazione OTP via email, sessioni Supabase. Senza, alcune parti del sito non funzionano.', linkedCategory: 'necessary' },
+              { title: 'Cookie analitici (non ancora attivi)', description: 'Categoria pronta per Google Analytics 4, che potremmo attivare in futuro per capire quali contenuti delle Valli del Noce interessano di più. Per ora questa categoria è vuota e nessun cookie analitico viene installato.', linkedCategory: 'analytics' },
+              { title: 'Domande?', description: 'Scrivi a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a> per qualsiasi domanda su privacy o cookie.' }
+            ]
+          }
+        }
+      }
+    }
+  });
+</script>
+
+<style is:global>
+  #cc-main {
+    --cc-z-index: 50;
+    --cc-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --cc-bg: #F5EEDD;
+    --cc-primary-color: #1E2E26;
+    --cc-secondary-color: #3A4A40;
+    --cc-link-color: #C8923E;
+    --cc-btn-primary-bg: #1E2E26;
+    --cc-btn-primary-color: #F5EEDD;
+    --cc-btn-primary-hover-bg: #C8923E;
+    --cc-btn-primary-hover-color: #1E2E26;
+    --cc-btn-secondary-bg: transparent;
+    --cc-btn-secondary-color: #1E2E26;
+    --cc-btn-secondary-border-color: #1E2E26;
+    --cc-btn-secondary-hover-bg: #1E2E26;
+    --cc-btn-secondary-hover-color: #F5EEDD;
+    --cc-toggle-on-bg: #1E2E26;
+    --cc-toggle-on-knob-bg: #C8923E;
+    --cc-toggle-off-bg: #C8C8C8;
+    --cc-toggle-off-knob-bg: #F5EEDD;
+    --cc-overlay-bg: rgba(30, 46, 38, 0.65);
+  }
+</style>

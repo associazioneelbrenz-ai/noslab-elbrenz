@@ -21,6 +21,7 @@ import BandieraLadina from '../components/BandieraLadina.astro';
 import Header from '../components/Header.astro';
 import BannerAndreas from '../components/BannerAndreas.astro';
 import FabAndreas from '../components/FabAndreas.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 
 interface Props {
   title?: string;
@@ -135,6 +136,8 @@ const currentPath = Astro.url.pathname;
     </footer>
 
     <FabAndreas pathname={currentPath} />
+
+    <CookieConsent />
 
     <script is:inline>
       if ('serviceWorker' in navigator) {
