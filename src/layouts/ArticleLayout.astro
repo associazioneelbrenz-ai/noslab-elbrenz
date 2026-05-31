@@ -54,7 +54,7 @@ const heroImageWebp = heroImage.replace(/\.jpe?g$/i, '.webp');
 const heroImageMobileJpg = heroImageMobile || heroImage.replace(/(\.jpe?g)$/i, '-mobile$1');
 const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
 ---
-<Layout title={title} description={description || subtitle || title}>
+<Layout title={title} description={description || subtitle || title} ogType="article" ogImage={heroImage}>
 
   <article class="article">
 

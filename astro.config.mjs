@@ -11,7 +11,7 @@ export default defineConfig({
   // URL canonico del sito in produzione.
   // Usato da @astrojs/sitemap per generare URL assolute
   // e da Astro per i meta tag Open Graph.
-  site: 'https://www.elbrenz.eu',
+  site: 'https://elbrenz.eu',
 
   // Output statico: tutte le pagine sono prerenderizzate in HTML.
   // Perfetto per SEO sui 142+ articoli longform di El Brenz.
