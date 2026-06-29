@@ -1,0 +1,158 @@
+---
+/**
+ * Layout — Shell HTML principale di El Brenz
+ *
+ * Usato da tutte le pagine pubbliche del sito.
+ * Include:
+ *   - <head> con meta SEO base e import di global.css
+ *   - <BannerAndreas /> banda CTA oro sopra header
+ *   - <Header /> con wordmark + navigazione
+ *   - <slot /> per il contenuto della pagina
+ *   - <footer> con firma istituzionale + bandiera ladina + credit NosLab
+ *   - <FabAndreas /> bottone galleggiante (nascosto su /andreas)
+ *
+ * M.A.2.5: aggiunti BannerAndreas e FabAndreas come entry point globali ad Andreas.
+ */
+
+import '../styles/global.css';
+import Wordmark from '../components/Wordmark.astro';
+import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
+import BandieraLadina from '../components/BandieraLadina.astro';
+import Header from '../components/Header.astro';
+import BannerAndreas from '../components/BannerAndreas.astro';
+import FabAndreas from '../components/FabAndreas.astro';
+import CookieConsent from '../components/CookieConsent.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'El Brenz dle Val del Nos',
+  description = 'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Storia, lingua ladino-anaunica, cultura di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo.',
+} = Astro.props;
+
+const fullTitle = title === 'El Brenz dle Val del Nos'
+  ? `${title} — Associazione Storico Culturale Linguistica`
+  : `${title} — El Brenz dle Val del Nos`;
+
+const navItems = [
+  { href: '/storia', label: 'Storia' },
+  { href: '/lingua', label: 'Lingua' },
+  { href: '/cultura-materiale', label: 'Cultura materiale' },
+  { href: '/rievocazioni', label: 'Rievocazioni' },
+  { href: '/archivio', label: 'Archivio' },
+  { href: '/eventi', label: 'Eventi' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#1E2E26" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="El Brenz" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Inter:wght@400;500;600&family=Source+Serif+4:ital,wght@0,400;0,500;1,400&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-[#F8F1E4] text-[#0F0F0F] min-h-screen flex flex-col">
+
+    <BannerAndreas />
+    <Header />
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="bg-[#1E2E26] text-[#F5EEDD] mt-20 pt-16 pb-7">
+      <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-14">
+
+        <div class="flex items-start gap-5">
+          <img
+            src="/logo-eb-footer.png"
+            srcset="/logo-eb-footer.png 1x, /logo-eb-footer@2x.png 2x"
+            alt="Timbro Associazione El Brenz"
+            width="80"
+            height="80"
+            class="flex-shrink-0 mt-1"
+            loading="lazy"
+          />
+          <div>
+            <FirmaIstituzionale theme="dark" size="md" class="items-start text-left" />
+            <BandieraLadina width={48} class="mt-6" />
+          </div>
+        </div>
+
+        <div style="font-family: 'Inter', sans-serif;">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-4">Associazione</h2>
+          <p class="text-sm text-[#F5EEDD]/85 leading-relaxed mb-2">Via Trento 40, II piano<br/>38027 Malè (TN)</p>
+          <p class="text-sm text-[#F5EEDD]/85 mb-2">C.F. 92019480224</p>
+          <a href="mailto:info@elbrenz.eu" class="text-sm text-[#F5EEDD]/85 no-underline hover:text-[#D9A94E] block mb-1">info@elbrenz.eu</a>
+          <a href="tel:+393471077636" class="text-sm text-[#F5EEDD]/85 no-underline hover:text-[#D9A94E] block">+39 347 107 7636</a>
+        </div>
+
+        <div style="font-family: 'Inter', sans-serif;">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-4">Sostienici</h2>
+          <p class="text-sm text-[#F5EEDD]/85 mb-2">Cassa Rurale Val di Sole<br/>filiale Mezzana</p>
+          <p class="text-xs font-mono text-[#F5EEDD]/75 tracking-wider mb-3">IT84U0816335010000190116255</p>
+          <a href="/tesseramento" class="text-sm text-[#D9A94E] no-underline hover:underline">Diventa socio →</a>
+        </div>
+
+      </div>
+
+      <div class="max-w-7xl mx-auto px-6 mt-14 pt-6 border-t border-[#F5EEDD]/15 flex flex-wrap items-center justify-between gap-4" style="font-family: 'Inter', sans-serif;">
+        <p class="text-xs text-[#F5EEDD]/55 m-0">
+          © 2026 Associazione Storico Culturale Linguistica El Brenz · Tutti i diritti riservati
+        </p>
+        <p class="text-xs text-[#F5EEDD]/55 m-0">
+          Piattaforma realizzata pro-bono da
+          <a href="https://noslab.it" target="_blank" rel="noopener" class="text-[#D9A94E] no-underline hover:underline">NosLab S.a.s.</a>
+          · noslab.it
+        </p>
+      </div>
+    </footer>
+
+    <FabAndreas pathname={currentPath} />
+
+    <CookieConsent />
+
+    <script is:inline>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(
+            (registration) => {
+              console.log('ServiceWorker registrato:', registration.scope);
+            },
+            (error) => {
+              console.warn('ServiceWorker registrazione fallita:', error);
+            }
+          );
+        });
+      }
+    </script>
+
+  </body>
+</html>

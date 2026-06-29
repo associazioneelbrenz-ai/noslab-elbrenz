@@ -1,0 +1,48 @@
+---
+/**
+ * /articoli/[...slug] — pagina di dettaglio di un singolo articolo (M2.2).
+ *
+ * Sorgente: Content Collection `articoli` (glob loader su src/content/articoli/*.md).
+ * Lo slug di rotta è l'id dell'entry (= nome file .md senza estensione).
+ *
+ * Visibilità: getStaticPaths genera SOLO gli articoli con `draft: false`.
+ * Sono leggibili sia gli articoli in produzione sia quelli in archivio storico
+ * (entrambi !draft); le bozze (draft: true) non producono pagina.
+ *
+ * Render del corpo Markdown via render(entry) → <Content />.
+ * I campi legacy vengono mappati su ArticleLayout (hero ora opzionale: nessun
+ * articolo legacy ha hero_image, quindi si usa l'header sobrio testuale).
+ */
+
+import { getCollection, render } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { nomePilastro, formatDataIT } from '../../lib/articoli';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths = (async () => {
+  // Solo articoli pubblicabili: !draft. Archivio e produzione sono entrambi leggibili.
+  const articoli = await getCollection('articoli', ({ data }) => !data.draft);
+  return articoli.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+
+const pillar = nomePilastro(data.pilastro);
+const dataEstesa = formatDataIT(data.data_pubblicazione);
+---
+<ArticleLayout
+  title={data.title}
+  pillar={pillar || undefined}
+  author={data.autore}
+  date={dataEstesa}
+  description={data.excerpt}
+  heroImage={data.hero_image}
+  heroAlt={data.hero_alt}
+>
+  <Content />
+</ArticleLayout>

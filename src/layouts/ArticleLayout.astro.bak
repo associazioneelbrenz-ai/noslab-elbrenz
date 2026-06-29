@@ -19,11 +19,6 @@
  *   - heroImage: path assoluto a /hero-...jpg in public/ (richiede hero-...mobile.jpg + .webp + .webp@mobile)
  *   - heroAlt: testo alternativo accessibilità
  *   - heroCaption: didascalia con fonte e collocazione archivistica
- *
- * M2.2 — heroImage/heroAlt resi OPZIONALI: gli articoli legacy importati dal
- * vecchio WordPress non hanno hero. Se heroImage è assente si rende un header
- * sobrio testuale (sfondo verde brand, niente immagine, niente alt inventato).
- * L'uso esistente con hero (es. /storia) resta identico: retrocompatibile.
  */
 
 import Layout from './Layout.astro';
@@ -34,9 +29,9 @@ interface Props {
   pillar?: string;
   author?: string;
   date?: string;
-  heroImage?: string;
+  heroImage: string;
   heroImageMobile?: string;
-  heroAlt?: string;
+  heroAlt: string;
   heroCaption?: string;
   description?: string;
 }
@@ -54,18 +49,15 @@ const {
   description,
 } = Astro.props;
 
-// Auto-deriva path WebP dalle estensioni jpg — solo quando c'è un hero.
-const heroImageWebp = heroImage ? heroImage.replace(/\.jpe?g$/i, '.webp') : '';
-const heroImageMobileJpg = heroImage
-  ? heroImageMobile || heroImage.replace(/(\.jpe?g)$/i, '-mobile$1')
-  : '';
+// Auto-deriva path WebP dalle estensioni jpg
+const heroImageWebp = heroImage.replace(/\.jpe?g$/i, '.webp');
+const heroImageMobileJpg = heroImageMobile || heroImage.replace(/(\.jpe?g)$/i, '-mobile$1');
 const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
 ---
 <Layout title={title} description={description || subtitle || title} ogType="article" ogImage={heroImage}>
 
   <article class="article">
 
-    {heroImage ? (
     <header class="article-hero relative w-full overflow-hidden" style="aspect-ratio: 16 / 9; max-height: 80vh; min-height: 420px;">
 
       <picture class="absolute inset-0 w-full h-full">
@@ -97,26 +89,6 @@ const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
       </div>
 
     </header>
-    ) : (
-    <header class="article-hero-text bg-[#1E2E26] text-[#F5EEDD]">
-      <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
-        {pillar && (
-          <span class="inline-block text-[11px] tracking-[0.22em] uppercase font-medium text-[#D9A94E] border border-[#D9A94E] px-3 py-1.5 mb-6" style="font-family: 'Inter', sans-serif;">{pillar}</span>
-        )}
-        <h1 class="text-4xl md:text-6xl leading-[1.08] tracking-tight m-0 mb-5" style="font-family: 'Playfair Display', serif; font-weight: 500;">{title}</h1>
-        {subtitle && (
-          <p class="text-lg md:text-2xl leading-relaxed text-[#F5EEDD]/90 m-0 mb-7 max-w-3xl" style="font-family: 'Source Serif 4', serif; font-weight: 400; font-style: italic;">{subtitle}</p>
-        )}
-        {(author || date) && (
-          <p class="text-xs tracking-wider uppercase text-[#F5EEDD]/70 m-0" style="font-family: 'Inter', sans-serif;">
-            {author && <span>{author}</span>}
-            {author && date && <span class="mx-2">·</span>}
-            {date && <time>{date}</time>}
-          </p>
-        )}
-      </div>
-    </header>
-    )}
 
     {heroCaption && (
       <div class="bg-[#FDF9F0] border-b border-[#E5DFCF]">
