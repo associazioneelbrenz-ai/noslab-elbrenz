@@ -1,0 +1,169 @@
+---
+/**
+ * PaginaPilastro — pagina-indice di un pilastro editoriale (M2.2).
+ *
+ * Resa riusabile dalle 6 pagine-pilastro (/storia, /lingua, /cultura-materiale,
+ * /rievocazioni, /identita, /vita-associativa). Filtra gli articoli del pilastro
+ * passato e li mostra come lista per anno (recente in alto) via
+ * ElencoArticoliPerAnno.
+ *
+ * Filtro produzione: pilastro === props.pilastro && !draft && !archivio.
+ * Gli articoli con archivio:true confluiscono invece in /archivio-storico, e le
+ * bozze (draft:true) non compaiono da nessuna parte: la visibilità è codificata
+ * nei flag del frontmatter, qui ci limitiamo a filtrare (vedi src/lib/articoli.ts).
+ *
+ * Stato vuoto: i pilastri ancora senza articoli in produzione (oggi Cultura
+ * materiale e Rievocazioni) NON diventano un vicolo cieco — si mostra un blocco
+ * sobrio "in costruzione" con le anticipazioni e un rimando esplicito
+ * all'archivio storico, così la pagina resta utile e navigabile.
+ *
+ * Palette brand: verde #1E2E26, oro #C8923E / #D9A94E, avorio #F5EEDD,
+ * crema #FDF9F0 — coerente con ArticleLayout e il resto del display layer.
+ */
+
+import { getCollection } from 'astro:content';
+import Layout from '../layouts/Layout.astro';
+import ElencoArticoliPerAnno from './ElencoArticoliPerAnno.astro';
+import { nomePilastro } from '../lib/articoli';
+
+interface Props {
+  /** Chiave enum del pilastro nel frontmatter, es. "1_storia_valli". */
+  pilastro: string;
+  /** Occhiello sopra il titolo. Default: "Pilastro · {nome leggibile}". */
+  occhiello?: string;
+  /** Titolo H1 della pagina-pilastro. */
+  titolo: string;
+  /** Paragrafo introduttivo sotto il titolo. */
+  intro: string;
+  /** <title> e meta description della pagina (SEO). */
+  metaTitle?: string;
+  metaDescription?: string;
+  /** Stato vuoto: titolo del blocco "in costruzione". */
+  vuotoTitolo?: string;
+  /** Stato vuoto: testo del blocco "in costruzione". */
+  vuotoTesto?: string;
+  /** Stato vuoto: elenco "cosa troverai qui". */
+  anticipazioni?: string[];
+}
+
+const {
+  pilastro,
+  occhiello,
+  titolo,
+  intro,
+  metaTitle,
+  metaDescription,
+  vuotoTitolo = 'Questa sezione sta prendendo forma',
+  vuotoTesto = 'Stiamo riordinando e digitalizzando i materiali di questo pilastro: i contenuti arriveranno gradualmente. Nel frattempo molto di ciò che riguarda questo tema è già consultabile nell’archivio storico.',
+  anticipazioni = [],
+} = Astro.props;
+
+// Filtro produzione: solo articoli del pilastro, pubblicati e non in archivio.
+const articoli = await getCollection(
+  'articoli',
+  ({ data }) => data.pilastro === pilastro && !data.draft && !data.archivio,
+);
+const hasArticoli = articoli.length > 0;
+
+const nome = nomePilastro(pilastro);
+const occhielloFinal = occhiello ?? `Pilastro · ${nome}`;
+---
+<Layout
+  title={metaTitle ?? `${titolo} — El Brenz`}
+  description={metaDescription ?? intro}
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+      <p
+        class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        {occhielloFinal}
+      </p>
+      <h1
+        class="text-4xl md:text-6xl leading-[1.08] tracking-tight m-0 mb-6"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;"
+      >
+        {titolo}
+      </h1>
+      <p
+        class="text-lg md:text-xl leading-relaxed text-[#F5EEDD]/85 m-0 max-w-2xl"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        {intro}
+      </p>
+    </div>
+  </header>
+
+  {hasArticoli ? (
+    <section class="bg-[#FDF9F0]">
+      <div class="max-w-4xl mx-auto px-6 py-16 md:py-20">
+        <ElencoArticoliPerAnno articoli={articoli} />
+      </div>
+    </section>
+  ) : (
+    <section class="bg-[#FDF9F0]">
+      <div class="max-w-3xl mx-auto px-6 py-16 md:py-20">
+        <div class="bg-white border border-[#E5DFCF] p-8 md:p-12">
+          <span
+            class="inline-block text-[11px] tracking-[0.18em] uppercase text-[#C8923E] border border-[#C8923E] px-3 py-1.5 mb-6"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Sezione in lavorazione
+          </span>
+          <h2
+            class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-4"
+            style="font-family: 'Playfair Display', serif;"
+          >
+            {vuotoTitolo}
+          </h2>
+          <p
+            class="text-[#0F0F0F]/75 leading-relaxed m-0"
+            style="font-family: 'Source Serif 4', Georgia, serif;"
+          >
+            {vuotoTesto}
+          </p>
+
+          {anticipazioni.length > 0 && (
+            <div class="border-t border-[#E5DFCF] mt-8 pt-8">
+              <p
+                class="text-[11px] tracking-[0.18em] uppercase text-[#1E2E26]/50 font-medium m-0 mb-4"
+                style="font-family: 'Inter', sans-serif;"
+              >
+                Cosa troverai qui
+              </p>
+              <ul class="list-none m-0 p-0 space-y-2">
+                {anticipazioni.map((voce) => (
+                  <li
+                    class="text-[#0F0F0F]/75 leading-relaxed pl-5 relative"
+                    style="font-family: 'Source Serif 4', Georgia, serif;"
+                  >
+                    <span class="absolute left-0 text-[#C8923E]">·</span>
+                    <Fragment set:html={voce} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <div class="mt-10 flex flex-wrap gap-4">
+          <a
+            href="/archivio-storico"
+            class="inline-block bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 no-underline hover:bg-[#2A3F34] transition-colors"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Sfoglia l’archivio storico →
+          </a>
+          <a
+            href="/andreas"
+            class="inline-block border border-[#C8923E] text-[#C8923E] px-6 py-3 no-underline hover:bg-[#C8923E] hover:text-white transition-colors"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Chiedi ad Andreas
+          </a>
+        </div>
+      </div>
+    </section>
+  )}
+</Layout>

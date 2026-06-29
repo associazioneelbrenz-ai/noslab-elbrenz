@@ -78,6 +78,20 @@ const articoli = defineCollection({
     draft: z.boolean().default(true),
 
     /**
+     * Flag archivio (M2.3). true = articolo storico/legacy, leggibile ma
+     * fuori dalle liste-pilastro di produzione: confluisce nella pagina
+     * /archivio-storico (raggruppato per anno, stile in sordina).
+     *   archivio: false → compare nella lista del proprio pilastro
+     *   archivio: true  → compare solo in /archivio-storico
+     * Entrambi gli stati restano !draft ⇒ pagina /articoli/{slug} generata.
+     * Default: false → un articolo è "in produzione" salvo decisione esplicita.
+     * NB: il campo è presente nel frontmatter di tutti i 113 legacy (M2.3);
+     * qui lo dichiariamo nello schema così `entry.data.archivio` è tipato
+     * e non viene scartato da Zod.
+     */
+    archivio: z.boolean().default(false),
+
+    /**
      * Autore. 95.6% degli articoli legacy WP (108/113) hanno
      * Cristian Bresadola come autore: lo mettiamo a default.
      * Le 5 eccezioni vanno indicate esplicitamente nel frontmatter
