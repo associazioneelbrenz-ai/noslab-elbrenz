@@ -1,0 +1,50 @@
+---
+/**
+ * /photogallery — pagina "Photogallery" (M2.6) — per ora in lavorazione.
+ *
+ * La pagina WP omonima (wp_id 18) conteneva solo lo shortcode delle gallerie
+ * NextGEN: le foto sono già state scaricate in locale via FTP (backup
+ * completo di gallery/ e uploads/) ma NON ancora integrate nel sito — è il
+ * punto "Photogallery" della coda dell'HANDOFF. Questa pagina tiene il posto
+ * con lo stile del sito, senza link rotti, finché le gallerie non vengono
+ * ricostruite.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+---
+<PaginaIstituzionale
+  occhiello="Archivio"
+  titolo="Photogallery"
+  intro="Le immagini delle nostre attività: gite sociali, serate storiche, rievocazioni e momenti di vita associativa."
+  metaDescription="La photogallery dell'Associazione El Brenz: fotografie di gite sociali, serate storiche, rievocazioni ed eventi delle Valli del Noce."
+>
+  <div class="bg-white border border-[#E5DFCF] p-8 md:p-12">
+    <span
+      class="inline-block text-[11px] tracking-[0.18em] uppercase text-[#C8923E] border border-[#C8923E] px-3 py-1.5 mb-6"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Sezione in lavorazione
+    </span>
+    <h2
+      class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-4"
+      style="font-family: 'Playfair Display', serif;"
+    >
+      Stiamo riportando le foto a casa
+    </h2>
+    <p
+      class="text-[#0F0F0F]/75 leading-relaxed m-0 mb-4"
+      style="font-family: 'Source Serif 4', Georgia, serif;"
+    >
+      L'archivio fotografico delle nostre attività — quindici anni di gite,
+      serate, concorsi e rievocazioni — è stato messo al sicuro e sarà
+      ripubblicato qui, galleria per galleria, con didascalie e date.
+    </p>
+    <p
+      class="text-[#0F0F0F]/75 leading-relaxed m-0"
+      style="font-family: 'Source Serif 4', Georgia, serif;"
+    >
+      Nel frattempo molte immagini accompagnano già gli articoli
+      dell'<a href="/archivio-storico" class="text-[#C8923E] no-underline hover:underline">archivio storico</a>.
+    </p>
+  </div>
+</PaginaIstituzionale>

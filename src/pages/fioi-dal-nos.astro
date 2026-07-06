@@ -1,0 +1,100 @@
+---
+/**
+ * /fioi-dal-nos — pagina progetto "Fiöi dal Nos" (M2.6).
+ *
+ * Contenuto: pagina WP "Fiöi dal Nos - Ladinità nonesa e solandra" (wp_id
+ * 195, publish, ~6200 parole) da docs/pagine_wp_contenuti/pages_md/
+ * documentario-ladinita-nonesa-e-solandra-cultura-e-lingua.md.
+ * Scelte di adattamento (documentate anche in HANDOFF):
+ *   - il video YouTube è LINKATO e non embeddato in iframe: l'embed
+ *     imposterebbe cookie di terze parti senza consenso (GDPR, il banner
+ *     attuale non gestisce il blocco preventivo degli iframe);
+ *   - la ricerca storica integrale (~6000 parole: Reti, Romani, retoromanzo,
+ *     testimonianze, cartine, grammatica) NON è riprodotta qui: è materiale
+ *     da pubblicare come articoli del pilastro Lingua/Storia — qui c'è
+ *     l'indice dei capitoli e la presentazione del progetto;
+ *   - dati direttivo 2015 presenti nella pagina WP omessi (stantii).
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+
+const capitoliRicerca = [
+  'I Reti e la cultura di Fritzens-Sanzeno',
+  'Scrittura e lingua: gli alfabeti retici',
+  'I musei retici (Val di Non e Coira)',
+  'I Romani e la romanizzazione delle valli',
+  'Dal retico al retoromanzo attraverso il latino volgare',
+  'I Ladini e la coscienza ladina',
+  'Testimonianze di studiosi sulla relazione tra parlate anauniche e ladino',
+  'Cartine storiche della ladinità delle Valli del Noce',
+  'Ricerche grammaticali sulle parlate delle valli',
+];
+---
+<PaginaIstituzionale
+  occhiello="Progetti"
+  titolo="Fiöi dal Nos"
+  intro="«Ladinità nonesa e solandra. Cultura e lingua»: il documentario di El Brenz sulla riscoperta delle antiche radici storiche, culturali e linguistiche delle Valli del Noce."
+  metaDescription="Fiöi dal Nos — Ladinità nonesa e solandra: il documentario dell'Associazione El Brenz sulle radici storiche e linguistiche delle Valli del Noce, disponibile su YouTube."
+>
+  <div class="prosa-istituzionale">
+    <h2>Il progetto</h2>
+    <p>
+      <strong>Fiöi dal Nos</strong> (i <em>figli del Noce</em>) è il
+      documentario video realizzato dall'associazione dopo oltre due anni di
+      ricerca sul campo: un viaggio nella storia e nell'identità delle genti
+      anauniche, dalla civiltà dei Reti alle parlate retoromanze di oggi, tra
+      Val di Non, Val di Sole, Val di Rabbi e Val di Pejo.
+    </p>
+    <p>
+      La motivazione che ci ha guidato è semplice e ambiziosa: la
+      <strong>riscoperta delle antiche radici storiche, culturali e
+      linguistiche delle Valli del Noce</strong>, per restituirle alle nostre
+      comunità e alle nuove generazioni.
+    </p>
+  </div>
+
+  <div class="bg-[#1E2E26] text-[#F5EEDD] p-8 md:p-10 my-10 text-center">
+    <p
+      class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Guarda il documentario
+    </p>
+    <p
+      class="text-lg leading-relaxed m-0 mb-6"
+      style="font-family: 'Source Serif 4', Georgia, serif;"
+    >
+      Il documentario è pubblicato integralmente sul nostro canale YouTube,
+      accessibile a tutti gratuitamente.
+    </p>
+    <a
+      href="https://youtu.be/IDmC7WiPNwo"
+      target="_blank"
+      rel="noopener"
+      class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3.5 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Fiöi dal Nos su YouTube →
+    </a>
+  </div>
+
+  <div class="prosa-istituzionale">
+    <h2>La ricerca dietro il documentario</h2>
+    <p>
+      Il film si fonda su un'ampia ricerca storica e linguistica — "L'importanza
+      della storia" — che attraversa più di duemila anni delle nostre valli.
+      Questi i capitoli su cui è costruita:
+    </p>
+    <ul>
+      {capitoliRicerca.map((c) => (
+        <li>{c}</li>
+      ))}
+    </ul>
+    <p>
+      Stiamo riportando la ricerca integrale sul nuovo sito, capitolo per
+      capitolo, tra gli articoli dei pilastri <a href="/storia">Storia</a> e
+      <a href="/lingua">Lingua</a>: molto materiale è già consultabile lì e
+      nell'<a href="/archivio-storico">archivio storico</a>.
+    </p>
+  </div>
+</PaginaIstituzionale>
