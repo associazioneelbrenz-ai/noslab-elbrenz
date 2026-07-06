@@ -146,4 +146,48 @@ const articoli = defineCollection({
   ),
 });
 
-export const collections = { articoli };
+// Collezione eventi (M2.4) — calendario dei prossimi appuntamenti, mostrato
+// nel blocco "Prossimi eventi" della home (data >= oggi, max 3).
+// Un file markdown per evento in src/content/eventi/, nome convenzionale
+// YYYY-MM-DD-slug-breve.md; il body è la descrizione estesa (non ancora
+// renderizzata: servirà per future pagine evento).
+//
+// Nomi campi in italiano, coerenti col dominio (il brief M2.4 li fissa così).
+// NB discrepanza consapevole con la collection articoli, che usa nomi misti
+// inglesi (title, draft) per ragioni storiche di import WP: qui draft si
+// chiama `bozza` e la data `data`.
+const eventi = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/eventi" }),
+
+  schema: z.object({
+    /** Titolo dell'evento. */
+    titolo: z.string().min(1).max(200),
+
+    /** Data dell'evento (giorno). Coerce come data_pubblicazione degli articoli. */
+    data: z.coerce.date(),
+
+    /** Ora di inizio, testo libero breve, es. "20:30". */
+    oraInizio: z.string().optional(),
+
+    /** Luogo, es. "Malè, Sala civica". */
+    luogo: z.string().optional(),
+
+    /** Descrizione breve per la card in home. */
+    descrizioneBreve: z.string().optional(),
+
+    /** Eventuale link a pagina esterna/locandina. */
+    link: z.string().url().optional(),
+
+    /** Eventuale immagine (path in /public/ o URL). */
+    immagine: z.string().optional(),
+
+    /** true = evento annullato: non compare in home. */
+    annullato: z.boolean().default(false),
+
+    /** true = bozza: mai mostrato. Default false a differenza degli articoli:
+     *  un evento si crea di norma per pubblicarlo subito. */
+    bozza: z.boolean().default(false),
+  }),
+});
+
+export const collections = { articoli, eventi };
