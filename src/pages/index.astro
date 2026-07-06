@@ -320,4 +320,41 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
     </div>
   </section>
 
+  {/* AGGIUNTA M2.4 — card "Community": blocco statico con CTA tesseramento.
+      Nessun link alla futura app soci (non esiste ancora): solo menzione
+      testuale dell'area soci in arrivo — mai link rotti o placeholder #. */}
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-24">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2
+        class="text-3xl md:text-5xl font-medium mb-8 leading-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        La nostra <em style="font-style: italic; color: #C8923E;">comunità</em>.
+      </h2>
+      <p
+        class="text-lg text-[#F5EEDD]/90 leading-relaxed mb-4"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        El Brenz riunisce chi ama la storia, la lingua e la cultura delle
+        nostre valli: ricercatori, appassionati e famiglie delle Valli del
+        Noce, uniti dalle stesse radici.
+      </p>
+      <p
+        class="text-lg text-[#F5EEDD]/90 leading-relaxed mb-10"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Diventando socio sostieni ricerche, pubblicazioni ed eventi che
+        tengono viva la memoria dei nostri paesi. E presto arriverà anche
+        un'area riservata ai soci, per ritrovarsi e partecipare online.
+      </p>
+      <a
+        href="/tesseramento"
+        class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3.5 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Diventa socio
+      </a>
+    </div>
+  </section>
+
 </Layout>
