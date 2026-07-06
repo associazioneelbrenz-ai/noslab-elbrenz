@@ -3,7 +3,7 @@
  * Header — Header del sito con navigazione responsive
  *
  * Comportamento:
- *   - Desktop (>=768px): logo + wordmark a sinistra, nav 7 voci a destra
+ *   - Desktop (>=768px): logo + wordmark a sinistra, nav a 4 tendine tematiche a destra
  *   - Mobile (<768px): logo + wordmark a sinistra, bottone hamburger a destra
  *     che apre un drawer laterale con slide-in da destra
  *
@@ -32,26 +32,63 @@
  * menu "Archivio" a tendina (Archivio storico / Archivio digitale) + Eventi
  * + Andreas. Le voci con `children` rendono un dropdown su desktop e un
  * sotto-gruppo indentato nel drawer mobile.
+ *
+ * M2.4 (nav a tendine tematiche): le 9 voci piatte diventano 4 tendine
+ * (L'Associazione / Temi / Progetti / Archivio). "Rievocazioni" ed "Eventi"
+ * consolidate sulla sola rotta-pilastro /rievocazioni ("Rievocazioni ed
+ * eventi"); "Andreas" esce dal menu (resta banner in alto + FAB avatar).
+ * Le voci figlie SENZA `href` sono pagine istituzionali non ancora create:
+ * rese come placeholder disabilitato (grigio, non cliccabile, badge
+ * "in arrivo") — mai link rotti. Nel drawer mobile le tendine diventano
+ * sezioni espandibili (accordion) con aria-expanded.
  */
 
 import Wordmark from '../components/Wordmark.astro';
 
-const navItems = [
-  { href: '/storia', label: 'Storia' },
-  { href: '/lingua', label: 'Lingua' },
-  { href: '/cultura-materiale', label: 'Cultura materiale' },
-  { href: '/rievocazioni', label: 'Rievocazioni' },
-  { href: '/identita', label: 'Identità' },
-  { href: '/vita-associativa', label: 'Vita associativa' },
+// Tipi espliciti: href/highlight opzionali così il ramo di rendering per
+// eventuali voci dirette (senza children) resta valido anche ora che tutte
+// le voci di primo livello sono tendine. Child senza href = placeholder.
+type NavChild = { href?: string; label: string };
+type NavItem = { label: string; href?: string; highlight?: boolean; children?: NavChild[] };
+
+const navItems: NavItem[] = [
+  {
+    label: "L'Associazione",
+    children: [
+      { label: 'Chi siamo' },
+      { label: 'Il Direttivo' },
+      { label: 'Lo Statuto' },
+      { label: 'Contatti' },
+    ],
+  },
+  {
+    label: 'Temi',
+    children: [
+      { href: '/storia', label: 'Storia' },
+      { href: '/lingua', label: 'Lingua' },
+      { href: '/cultura-materiale', label: 'Cultura materiale' },
+      { href: '/rievocazioni', label: 'Rievocazioni ed eventi' },
+      { href: '/identita', label: 'Identità' },
+      { href: '/vita-associativa', label: 'Vita associativa' },
+    ],
+  },
+  {
+    label: 'Progetti',
+    children: [
+      { label: 'Fiöi dal Nos' },
+      { label: 'Os dal Nos' },
+      { label: 'Lunari dal Nos' },
+      { label: 'Portale Memoria' },
+    ],
+  },
   {
     label: 'Archivio',
     children: [
       { href: '/archivio-storico', label: 'Archivio storico' },
       { href: '/archivio', label: 'Archivio digitale' },
+      { label: 'Photogallery' },
     ],
   },
-  { href: '/eventi', label: 'Eventi' },
-  { href: '/andreas', label: 'Andreas', highlight: true },
 ];
 ---
 
@@ -73,7 +110,7 @@ const navItems = [
 
     <nav class="hidden md:block" aria-label="Navigazione principale">
       <ul class="flex items-center gap-x-6 gap-y-2 list-none m-0 p-0 flex-wrap">
-        {navItems.map((item) => (
+        {navItems.map((item, index) => (
           item.children ? (
             <li class="relative group" data-dropdown>
               <button
@@ -89,17 +126,29 @@ const navItems = [
                 </svg>
               </button>
               <ul
-                class="nav-dropdown-menu absolute right-0 top-full z-50 min-w-[210px] bg-[#F8F1E4] border border-[#E5DFCF] shadow-lg list-none m-0 p-0 invisible opacity-0 translate-y-1 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:translate-y-0"
+                class={`nav-dropdown-menu absolute ${index === navItems.length - 1 ? 'right-0' : 'left-0'} top-full z-50 min-w-[210px] bg-[#F8F1E4] border border-[#E5DFCF] shadow-lg list-none m-0 p-0 invisible opacity-0 translate-y-1 transition-all duration-150 group-hover:visible group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:visible group-focus-within:opacity-100 group-focus-within:translate-y-0`}
               >
                 {item.children.map((child) => (
                   <li>
-                    <a
-                      href={child.href}
-                      class="block px-5 py-3 no-underline text-[14px] text-[#0F0F0F] hover:bg-[#1E2E26] hover:text-[#F5EEDD] transition-colors"
-                      style="font-family: 'Inter', sans-serif;"
-                    >
-                      {child.label}
-                    </a>
+                    {child.href ? (
+                      <a
+                        href={child.href}
+                        class="block px-5 py-3 no-underline text-[14px] text-[#0F0F0F] hover:bg-[#1E2E26] hover:text-[#F5EEDD] transition-colors"
+                        style="font-family: 'Inter', sans-serif;"
+                      >
+                        {child.label}
+                      </a>
+                    ) : (
+                      <span
+                        class="flex items-baseline justify-between gap-3 px-5 py-3 text-[14px] text-[#0F0F0F]/40 cursor-default select-none"
+                        style="font-family: 'Inter', sans-serif;"
+                        aria-disabled="true"
+                        title="Pagina in arrivo"
+                      >
+                        {child.label}
+                        <span class="text-[10px] uppercase tracking-wider text-[#C8923E]/70 whitespace-nowrap">in arrivo</span>
+                      </span>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -172,23 +221,40 @@ const navItems = [
     <ul class="list-none m-0 p-0 flex flex-col gap-1">
       {navItems.map((item) => (
         item.children ? (
-          <li class="py-2 border-b border-[#F5EEDD]/10">
-            <span
-              class="block py-1 text-2xl text-[#F5EEDD]/90"
+          <li class="border-b border-[#F5EEDD]/10" data-drawer-section>
+            <button
+              type="button"
+              class="drawer-section-toggle w-full flex items-center justify-between gap-3 py-3 bg-transparent border-0 cursor-pointer text-left text-2xl text-[#F5EEDD] hover:text-[#D9A94E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A94E] rounded transition-colors"
               style="font-family: 'Playfair Display', serif; font-weight: 500;"
+              aria-expanded="false"
             >
               {item.label}
-            </span>
-            <ul class="list-none m-0 p-0 pl-4 mt-1 flex flex-col">
+              <svg class="drawer-section-chevron w-4 h-4 flex-shrink-0 transition-transform duration-150" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2.5 4.5 L6 8 L9.5 4.5" />
+              </svg>
+            </button>
+            <ul class="drawer-section-list list-none m-0 p-0 pl-4 pb-3 hidden flex-col">
               {item.children.map((child) => (
                 <li>
-                  <a
-                    href={child.href}
-                    class="drawer-nav-link block py-2.5 text-lg no-underline text-[#F5EEDD]/80 hover:text-[#D9A94E] transition-colors"
-                    style="font-family: 'Inter', sans-serif;"
-                  >
-                    {child.label}
-                  </a>
+                  {child.href ? (
+                    <a
+                      href={child.href}
+                      class="drawer-nav-link block py-2.5 text-lg no-underline text-[#F5EEDD]/80 hover:text-[#D9A94E] transition-colors"
+                      style="font-family: 'Inter', sans-serif;"
+                    >
+                      {child.label}
+                    </a>
+                  ) : (
+                    <span
+                      class="flex items-baseline justify-between gap-3 py-2.5 text-lg text-[#F5EEDD]/35 cursor-default select-none"
+                      style="font-family: 'Inter', sans-serif;"
+                      aria-disabled="true"
+                      title="Pagina in arrivo"
+                    >
+                      {child.label}
+                      <span class="text-[10px] uppercase tracking-wider text-[#D9A94E]/60 whitespace-nowrap">in arrivo</span>
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -261,7 +327,11 @@ const navItems = [
         closeMenu();
       }
       if (e.key === 'Tab' && toggle.getAttribute('aria-expanded') === 'true') {
-        const focusables = drawer.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])');
+        // Solo elementi visibili: i link nelle sezioni accordion chiuse
+        // (display:none) non sono focusabili e romperebbero il wrap del trap.
+        const focusables = Array.from(
+          drawer.querySelectorAll('a, button, [tabindex]:not([tabindex="-1"])')
+        ).filter((el) => el.offsetParent !== null);
         if (focusables.length === 0) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
@@ -312,8 +382,31 @@ const navItems = [
   })();
 </script>
 
+<script is:inline>
+  // Accordion drawer mobile (M2.4): ogni tendina tematica diventa una sezione
+  // espandibile. Toggle su click con aria-expanded sincronizzato; la sublist
+  // usa hidden/flex. Escape chiude il drawer intero (gestito sopra).
+  (function () {
+    const sections = document.querySelectorAll('[data-drawer-section]');
+    sections.forEach((section) => {
+      const toggle = section.querySelector('.drawer-section-toggle');
+      const list = section.querySelector('.drawer-section-list');
+      if (!toggle || !list) return;
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+        list.classList.toggle('hidden', open);
+        list.classList.toggle('flex', !open);
+      });
+    });
+  })();
+</script>
+
 <style>
   .nav-dropdown-trigger[aria-expanded="true"] .nav-dropdown-chevron {
+    transform: rotate(180deg);
+  }
+  .drawer-section-toggle[aria-expanded="true"] .drawer-section-chevron {
     transform: rotate(180deg);
   }
 </style>
