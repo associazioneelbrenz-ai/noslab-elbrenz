@@ -16,6 +16,26 @@ import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 
   <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
 
+    {/* AGGIUNTA hero foto (M2.5): lago alpino come sfondo, sotto un overlay
+        verde brand a gradiente (più chiaro in alto, più scuro verso il basso)
+        per leggibilità del testo avorio e degli accenti oro. Il bg-[#1E2E26]
+        della section resta come fallback durante il caricamento. */}
+    <img
+      src="/hero-lago.jpg"
+      alt=""
+      aria-hidden="true"
+      class="absolute inset-0 w-full h-full object-cover pointer-events-none"
+      width="2048"
+      height="1536"
+      loading="eager"
+      fetchpriority="high"
+      decoding="async"
+    />
+    <div
+      class="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#1E2E26]/65 via-[#1E2E26]/75 to-[#1E2E26]/90"
+      aria-hidden="true"
+    ></div>
+
     <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
       <svg
         xmlns="http://www.w3.org/2000/svg"
