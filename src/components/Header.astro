@@ -41,6 +41,11 @@
  * rese come placeholder disabilitato (grigio, non cliccabile, badge
  * "in arrivo") — mai link rotti. Nel drawer mobile le tendine diventano
  * sezioni espandibili (accordion) con aria-expanded.
+ *
+ * M2.6: create le 9 pagine istituzionali (chi-siamo, direttivo, statuto,
+ * contatti, fioi-dal-nos, os-dal-nos, lunari-dal-nos, portale-memoria,
+ * photogallery) dai contenuti WP estratti: tutte le voci hanno ora href.
+ * Il rendering placeholder resta per eventuali voci future senza pagina.
  */
 
 import Wordmark from '../components/Wordmark.astro';
@@ -55,10 +60,10 @@ const navItems: NavItem[] = [
   {
     label: "L'Associazione",
     children: [
-      { label: 'Chi siamo' },
-      { label: 'Il Direttivo' },
-      { label: 'Lo Statuto' },
-      { label: 'Contatti' },
+      { href: '/chi-siamo', label: 'Chi siamo' },
+      { href: '/direttivo', label: 'Il Direttivo' },
+      { href: '/statuto', label: 'Lo Statuto' },
+      { href: '/contatti', label: 'Contatti' },
     ],
   },
   {
@@ -75,10 +80,10 @@ const navItems: NavItem[] = [
   {
     label: 'Progetti',
     children: [
-      { label: 'Fiöi dal Nos' },
-      { label: 'Os dal Nos' },
-      { label: 'Lunari dal Nos' },
-      { label: 'Portale Memoria' },
+      { href: '/fioi-dal-nos', label: 'Fiöi dal Nos' },
+      { href: '/os-dal-nos', label: 'Os dal Nos' },
+      { href: '/lunari-dal-nos', label: 'Lunari dal Nos' },
+      { href: '/portale-memoria', label: 'Portale Memoria' },
     ],
   },
   {
@@ -86,7 +91,7 @@ const navItems: NavItem[] = [
     children: [
       { href: '/archivio-storico', label: 'Archivio storico' },
       { href: '/archivio', label: 'Archivio digitale' },
-      { label: 'Photogallery' },
+      { href: '/photogallery', label: 'Photogallery' },
     ],
   },
 ];
