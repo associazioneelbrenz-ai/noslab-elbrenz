@@ -8,6 +8,29 @@
 
 import Layout from '../layouts/Layout.astro';
 import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
+
+// AGGIUNTA M2.4 (home ricca): blocco "Ultimi articoli".
+// Riusa gli helper di lib/articoli e lo stesso filtro produzione di
+// PaginaPilastro (!draft && !archivio). Ordinamento data desc, primi 4.
+import { getCollection } from 'astro:content';
+import { formatDataIT, nomePilastro } from '../lib/articoli';
+
+const articoliProduzione = await getCollection(
+  'articoli',
+  ({ data }) => !data.draft && !data.archivio,
+);
+const ultimiArticoli = articoliProduzione
+  .slice()
+  .sort(
+    (a, b) =>
+      b.data.data_pubblicazione.getTime() - a.data.data_pubblicazione.getTime(),
+  )
+  .slice(0, 4);
+
+/** Tronca l'excerpt a ~160 caratteri per la card, con ellissi. */
+function troncaExcerpt(testo: string): string {
+  return testo.length > 160 ? `${testo.slice(0, 157).trimEnd()}…` : testo;
+}
 ---
 <Layout
   title="El Brenz dle Val del Nos"
@@ -136,6 +159,56 @@ import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
         eventi culturali e sosteniamo il riconoscimento ufficiale del gruppo
         linguistico ladino-retico anaunico.
       </p>
+    </div>
+  </section>
+
+  {/* AGGIUNTA M2.4 — blocco "Ultimi articoli": i 4 più recenti di produzione.
+      Card sul pattern di ElencoArticoliPerAnno (bianche, bordo E5DFCF, hover
+      oro) su sfondo avorio brand. Nessun link "tutti gli articoli": non esiste
+      (ancora) una rotta indice unica — mai link rotti. */}
+  <section class="bg-[#F5EEDD] py-24">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2
+        class="text-3xl md:text-5xl font-medium text-[#1E2E26] mb-12 text-center leading-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Ultimi articoli
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {ultimiArticoli.map((a) => (
+          <a
+            href={`/articoli/${a.id}`}
+            class="group flex flex-col bg-white border border-[#E5DFCF] hover:border-[#C8923E] transition-colors p-6 no-underline"
+          >
+            <p
+              class="text-[11px] tracking-[0.18em] uppercase text-[#C8923E] m-0 mb-2"
+              style="font-family: 'Inter', sans-serif;"
+            >
+              <time datetime={a.data.data_pubblicazione.toISOString()}>
+                {formatDataIT(a.data.data_pubblicazione)}
+              </time>
+              {nomePilastro(a.data.pilastro) && (
+                <span class="text-[#1E2E26]/45"> · {nomePilastro(a.data.pilastro)}</span>
+              )}
+            </p>
+            <h3
+              class="text-xl text-[#1E2E26] font-medium leading-tight m-0 group-hover:text-[#C8923E] transition-colors"
+              style="font-family: 'Playfair Display', serif;"
+            >
+              {a.data.title}
+            </h3>
+            {a.data.excerpt && (
+              <p
+                class="text-sm text-[#0F0F0F]/70 leading-relaxed m-0 mt-3"
+                style="font-family: 'Source Serif 4', Georgia, serif;"
+              >
+                {troncaExcerpt(a.data.excerpt)}
+              </p>
+            )}
+          </a>
+        ))}
+      </div>
     </div>
   </section>
 
