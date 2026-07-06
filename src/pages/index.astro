@@ -20,17 +20,23 @@ import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
         verde brand a gradiente (più chiaro in alto, più scuro verso il basso)
         per leggibilità del testo avorio e degli accenti oro. Il bg-[#1E2E26]
         della section resta come fallback durante il caricamento. */}
-    <img
-      src="/hero-lago.jpg"
-      alt=""
-      aria-hidden="true"
-      class="absolute inset-0 w-full h-full object-cover pointer-events-none"
-      width="2048"
-      height="1536"
-      loading="eager"
-      fetchpriority="high"
-      decoding="async"
-    />
+    {/* WebP ottimizzate (mobile 828w ~137K, desktop 1600w ~387K) con
+        fallback JPEG originale per i browser senza supporto WebP. */}
+    <picture>
+      <source media="(max-width: 767px)" srcset="/hero-lago-mobile.webp" type="image/webp" />
+      <source srcset="/hero-lago.webp" type="image/webp" />
+      <img
+        src="/hero-lago.jpg"
+        alt=""
+        aria-hidden="true"
+        class="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        width="2048"
+        height="1536"
+        loading="eager"
+        fetchpriority="high"
+        decoding="async"
+      />
+    </picture>
     <div
       class="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#1E2E26]/65 via-[#1E2E26]/75 to-[#1E2E26]/90"
       aria-hidden="true"
