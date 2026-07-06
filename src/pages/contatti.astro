@@ -1,0 +1,110 @@
+---
+/**
+ * /contatti — pagina istituzionale "Contatti" (M2.6).
+ *
+ * Dati di contatto ASSOCIATIVI, coerenti col footer del sito (Layout.astro).
+ * La pagina WP "Contatti" (wp_id 21) riportava anche recapiti personali di
+ * presidente e vicepresidente (cellulari e email private): NON riportati qui
+ * per privacy e perché in contraddizione con fonti WP più recenti — scelta
+ * concordata (opzione "dati veri già in footer"). Se Cristian vuole
+ * pubblicare referenti con recapiti, si aggiungono su sua conferma.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+---
+<PaginaIstituzionale
+  occhiello="L'Associazione"
+  titolo="Contatti"
+  intro="Scriveteci per informazioni, suggerimenti, proposte e richieste: ogni messaggio è un'occasione per far crescere le nostre valli."
+  metaDescription="Contatti dell'Associazione El Brenz: sede a Malè in Val di Sole, email, telefono e canali social. Scrivici per informazioni e proposte."
+>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+    <div class="bg-white border border-[#E5DFCF] p-8">
+      <h2
+        class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        La sede
+      </h2>
+      <p
+        class="text-lg text-[#1E2E26] leading-relaxed m-0"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Via Trento 40, II piano<br />
+        38027 Malè (TN)<br />
+        Val di Sole
+      </p>
+      <p
+        class="text-sm text-[#0F0F0F]/60 m-0 mt-4"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        C.F. 92019480224
+      </p>
+    </div>
+
+    <div class="bg-white border border-[#E5DFCF] p-8">
+      <h2
+        class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Scrivici o chiamaci
+      </h2>
+      <p class="m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+        <a href="mailto:info@elbrenz.eu" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">info@elbrenz.eu</a>
+      </p>
+      <p class="m-0" style="font-family: 'Inter', sans-serif;">
+        <a href="tel:+393471077636" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">+39 347 107 7636</a>
+      </p>
+    </div>
+
+    <div class="bg-white border border-[#E5DFCF] p-8">
+      <h2
+        class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Seguici
+      </h2>
+      <p class="m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+        <a href="https://facebook.com/ASSOCIAZIONELBRENZ" target="_blank" rel="noopener" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">Facebook →</a>
+      </p>
+      <p class="m-0" style="font-family: 'Inter', sans-serif;">
+        <a href="https://www.instagram.com/elbrenzass" target="_blank" rel="noopener" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">Instagram →</a>
+      </p>
+    </div>
+
+    <div class="bg-white border border-[#E5DFCF] p-8">
+      <h2
+        class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Sostienici
+      </h2>
+      <p
+        class="text-sm text-[#0F0F0F]/75 leading-relaxed m-0 mb-2"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Cassa Rurale Val di Sole, filiale Mezzana
+      </p>
+      <p class="text-xs font-mono text-[#0F0F0F]/70 tracking-wider m-0" style="word-break: break-all;">
+        IT84U0816335010000190116255
+      </p>
+    </div>
+  </div>
+
+  <div class="bg-[#1E2E26] text-[#F5EEDD] p-8 md:p-10 text-center">
+    <p
+      class="text-lg leading-relaxed m-0 mb-6"
+      style="font-family: 'Source Serif 4', Georgia, serif;"
+    >
+      Il modo più bello per restare in contatto? Entrare a far parte della
+      nostra comunità.
+    </p>
+    <a
+      href="/tesseramento"
+      class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3.5 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Diventa socio
+    </a>
+  </div>
+</PaginaIstituzionale>

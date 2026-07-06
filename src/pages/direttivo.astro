@@ -1,0 +1,67 @@
+---
+/**
+ * /direttivo — pagina istituzionale "Il Direttivo" (M2.6).
+ *
+ * ATTENZIONE: la pagina WP corrispondente (il-direttivo, wp_id 169) era in
+ * stato "pending" e apriva con "IN AGGIORNAMENTO": i contenuti risalgono al
+ * 2013-2014 e contraddicono altre fonti WP più recenti (es. Milena Comini
+ * "Segretaria" lì, "Vice Presidente" nella pagina Contatti). Per non
+ * pubblicare nomi e cariche stantii, qui mostriamo solo la struttura degli
+ * organi sociali come da Statuto (art. 8 e 13) + badge "in aggiornamento".
+ * I nomi attuali vanno confermati da Cristian, poi si completa la pagina.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+---
+<PaginaIstituzionale
+  occhiello="L'Associazione"
+  titolo="Il Direttivo"
+  intro="Le persone che guidano El Brenz, elette dall'Assemblea dei soci."
+  metaDescription="Il Consiglio Direttivo dell'Associazione El Brenz: presidente, vicepresidenti, segretario e consiglieri eletti dall'Assemblea dei soci."
+>
+  <div class="bg-white border border-[#E5DFCF] p-8 md:p-12 mb-10">
+    <span
+      class="inline-block text-[11px] tracking-[0.18em] uppercase text-[#C8923E] border border-[#C8923E] px-3 py-1.5 mb-6"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Sezione in aggiornamento
+    </span>
+    <h2
+      class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-4"
+      style="font-family: 'Playfair Display', serif;"
+    >
+      Stiamo aggiornando le presentazioni
+    </h2>
+    <p
+      class="text-[#0F0F0F]/75 leading-relaxed m-0"
+      style="font-family: 'Source Serif 4', Georgia, serif;"
+    >
+      Le presentazioni dei componenti del Direttivo sono in fase di
+      aggiornamento e arriveranno presto, con volti e storie delle persone che
+      portano avanti l'associazione. Nel frattempo, ecco come è organizzato El
+      Brenz secondo il nostro <a href="/statuto" class="text-[#C8923E] no-underline hover:underline">Statuto</a>.
+    </p>
+  </div>
+
+  <div class="prosa-istituzionale">
+    <h2>Gli organi dell'Associazione</h2>
+    <p>
+      Come previsto dallo Statuto (art. 8), gli organi dell'Associazione sono
+      l'<strong>Assemblea dei soci</strong> — l'organo sovrano — il
+      <strong>Consiglio Direttivo</strong>, il <strong>Presidente</strong> e
+      due <strong>Revisori dei Conti</strong>.
+    </p>
+    <p>
+      Il Consiglio Direttivo (art. 13) è composto da un minimo di quattro
+      consiglieri, ai quali si aggiungono il Presidente, due Vicepresidenti —
+      in rappresentanza delle diverse valli — e il Segretario/Tesoriere,
+      eletti dall'Assemblea ordinaria. Resta in carica tre anni ed è
+      rieleggibile.
+    </p>
+    <p>
+      Il Direttivo è coadiuvato dal <strong>Gruppo Giovani</strong> (i
+      <em>Joveni</em>), composto da tutti i soci con meno di trent'anni, che
+      elegge al proprio interno un referente.
+    </p>
+  </div>
+</PaginaIstituzionale>

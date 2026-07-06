@@ -1,0 +1,118 @@
+---
+/**
+ * /chi-siamo — pagina istituzionale "Chi siamo" (M2.6).
+ *
+ * Contenuto: pagina WP "Chi siamo" (lassociazione-2, wp_id 132, publish)
+ * da docs/pagine_wp_contenuti/pages_md/lassociazione-2.md, adattata:
+ *   - immagini hotlinkate dal vecchio WP omesse (si romperebbero al cutover);
+ *   - link Google Forms sostituito dalla pagina /tesseramento del sito;
+ *   - la sotto-pagina WP "Iniziò così....." (wp_id 133) era in stato pending
+ *     su WP: non pubblicata qui, in attesa di decisione editoriale.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+---
+<PaginaIstituzionale
+  occhiello="L'Associazione"
+  titolo="Chi siamo"
+  intro="Un'epica avventura nel cuore delle Valli del Noce: dal 2009 custodiamo la storia, la lingua e le tradizioni delle nostre valli."
+  metaDescription="L'Associazione Storico Culturale Linguistica El Brenz, fondata il 21 dicembre 2009: progetti, collaborazioni e iniziative per la storia e la lingua delle Valli del Noce."
+>
+  <div class="prosa-istituzionale">
+    <p>
+      Benvenuti! Non siete qui per caso, ma siete stati attirati dal richiamo di
+      un'associazione che da oltre un decennio lavora instancabilmente per
+      preservare un patrimonio culturale inestimabile. L'Associazione Storico
+      Culturale Linguistica <strong>"El Brenz"</strong>, fondata il 21 dicembre
+      2009, non è solo una realtà del territorio, ma un vero e proprio motore di
+      iniziative, progetti e collaborazioni che hanno segnato la vita delle
+      Valli del Noce. Il nostro impegno si traduce in azioni concrete, capaci di
+      dare nuova vita alla storia, alla lingua e alle tradizioni locali.
+    </p>
+
+    <h2>L'impegno per la cultura e la lingua: progetti che lasciano il segno</h2>
+    <ul>
+      <li>
+        <strong>Le voci del passato, la poesia del presente.</strong> Abbiamo
+        dato voce alle parlate retoromanze con il concorso poetico e musicale
+        <a href="/os-dal-nos">"Os dal Nos"</a>. Fin dalla sua prima edizione nel
+        2014, ha stimolato artisti e poeti a creare componimenti in
+        <em>ladino anaunico</em>, unendo le diverse varianti linguistiche di
+        Non, Sole, Rabbi e Pejo. Un vero e proprio inno alla bellezza e
+        all'identità delle nostre parole.
+      </li>
+      <li>
+        <strong>Il calendario che racconta la storia.</strong> Con il progetto
+        <a href="/lunari-dal-nos">"Lunari dal Nos"</a> abbiamo trasformato un
+        semplice calendario in un prezioso strumento di divulgazione. Ogni
+        edizione, come quella del 2023 dedicata a "La nosa storia" e realizzata
+        in collaborazione con un fumettista basco, esplora un tema specifico,
+        rendendo la storia e la cultura locale accessibili e intriganti per le
+        nuove generazioni, tanto da essere distribuito gratuitamente nelle
+        scuole.
+      </li>
+      <li>
+        <strong>Il documentario che ti fa emozionare.</strong> Dopo oltre due
+        anni di ricerca, abbiamo dato vita al documentario
+        <a href="/fioi-dal-nos">"Fiöi dal Nos" — Ladinità nonesa e solandra</a>,
+        un viaggio profondo nella storia e nell'identità delle genti anauniche.
+        Questo lavoro non è solo un film, ma un'eredità che abbiamo voluto
+        rendere accessibile a tutti, pubblicandolo sul nostro canale YouTube
+        per raggiungere chiunque voglia riscoprire le proprie radici.
+      </li>
+    </ul>
+
+    <h2>Una rete di collaborazioni e riconoscimenti</h2>
+    <p>
+      La nostra visione non si ferma alle valli. Abbiamo intessuto una fitta
+      rete di collaborazioni che ci ha permesso di ottenere riconoscimenti e
+      risalto anche a livello mediatico.
+    </p>
+    <ul>
+      <li>
+        <strong>Oltre i confini, un ponte tra culture.</strong> Abbiamo creato
+        un ponte con altre minoranze linguistiche europee, come i
+        <strong>Catalani</strong> e gli <strong>Occitani</strong>, per
+        scambiare esperienze e rafforzare l'idea che la difesa della propria
+        identità è un valore che unisce, non divide. A livello locale
+        collaboriamo attivamente con altre associazioni ed enti, come il
+        <strong>Circolo "Al Filò" di Denno</strong> e l'<strong>Associazione
+        "Rezia"</strong>, per iniziative congiunte come serate storiche e
+        presentazioni di libri, dimostrando che l'unione fa la forza.
+      </li>
+      <li>
+        <strong>Risonanza sulla stampa.</strong> Il nostro impegno non è
+        passato inosservato. Articoli su testate come il
+        <strong>"Giornale Trentino"</strong> hanno parlato ampiamente delle
+        nostre iniziative, tra cui la pubblicazione del documentario "Fiöi dal
+        Nos" su YouTube per renderlo accessibile a tutti, sottolineando
+        l'importanza del nostro lavoro di ricerca. Anche la rivista
+        <strong>"UnserTirol24"</strong> ha dato spazio a nostre traduzioni e
+        contributi letterari, come nel caso della poesia "L'incanto del bosch",
+        evidenziando la nostra attività di divulgazione linguistica.
+      </li>
+      <li>
+        <strong>Eventi per la comunità.</strong> Dalle cene a tema
+        storico-linguistico alle serate di commemorazione, ogni nostro evento è
+        un'occasione per incontrarsi, imparare e condividere, rafforzando i
+        legami comunitari e celebrando insieme la ricchezza del nostro passato.
+      </li>
+    </ul>
+
+    <p>
+      Entra a far parte della nostra storia. Sostienici con il
+      <a href="/tesseramento">tesseramento</a> o una donazione per permetterci
+      di continuare questo straordinario viaggio.
+    </p>
+
+    <p>
+      Associazione Storico Culturale Linguistica "El Brenz".
+      <strong><em>Radici profonde non gelano.</em></strong>
+    </p>
+  </div>
+
+  <div class="mt-12 pt-8 border-t border-[#E5DFCF] flex flex-wrap gap-4" style="font-family: 'Inter', sans-serif;">
+    <a href="/tesseramento" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Diventa socio</a>
+    <a href="/statuto" class="inline-block border border-[#1E2E26]/30 text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:border-[#C8923E] hover:text-[#C8923E] transition-colors">Leggi lo Statuto</a>
+  </div>
+</PaginaIstituzionale>
