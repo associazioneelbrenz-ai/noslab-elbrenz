@@ -25,7 +25,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
 ---
 <Layout
   title="Diventa socio"
-  description="Diventa socio dell'Associazione El Brenz. Quota annuale 10€. Sostieni la salvaguardia della lingua ladino-anaunica e della storia delle Valli del Noce."
+  description="Diventa socio dell'Associazione El Brenz. Quota sociale annuale 20€. Sostieni la salvaguardia della lingua ladino-anaunica e della storia delle Valli del Noce."
 >
 
   <section class="bg-[#1E2E26] text-[#F5EEDD] py-20 md:py-28">
@@ -97,73 +97,126 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
     </div>
   </section>
 
+  {/* M2.R (redesign chiarezza, eccezione autorizzata da Cristian): quota
+      20€ ben evidente + percorso in 3 passi numerati. Solo copy/struttura/
+      layout: la logica di invio del modulo è INVARIATA. */}
   <section class="bg-[#F8F1E4] py-20">
     <div class="max-w-3xl mx-auto px-6">
       <h2
-        class="text-3xl md:text-4xl font-medium mb-3 leading-tight text-center"
+        class="text-3xl md:text-4xl font-medium mb-10 leading-tight text-center"
         style="font-family: 'Playfair Display', serif;"
       >
-        Come associarsi
+        Come diventare socio
       </h2>
-      <p
-        class="text-base text-[#0F0F0F]/70 text-center mb-12"
-        style="font-family: 'Inter', sans-serif;"
-      >
-        Quota associativa: <strong class="text-[#1E2E26]">10€ all'anno</strong>
-      </p>
 
-      <div class="bg-white border border-[#E5DFCF] p-8 md:p-10 mb-10">
-        <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium mb-6" style="font-family: 'Inter', sans-serif;">Bonifico bancario</h3>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" style="font-family: 'Inter', sans-serif;">
-          <div>
-            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Banca</p>
-            <p class="text-sm text-[#1E2E26] m-0 leading-snug">Cassa Rurale Val di Sole<br/>filiale Mezzana</p>
-          </div>
-          <div>
-            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Intestatario</p>
-            <p class="text-sm text-[#1E2E26] m-0 leading-snug">Associazione El Brenz<br/>C.F. 92019480224</p>
-          </div>
-          <div>
-            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Quota</p>
-            <p class="text-sm text-[#1E2E26] m-0 leading-snug"><strong>10€</strong><br/>annua</p>
-          </div>
-        </div>
-
-        <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-6">
-          <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">IBAN</p>
-          <p class="font-mono text-sm md:text-base text-[#1E2E26] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
-        </div>
-
-        <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5">
-          <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">Causale</p>
-          <p class="text-sm text-[#1E2E26] m-0" style="font-family: 'Inter', sans-serif;">
-            <em>Tesseramento 2026 — [Nome Cognome]</em>
-          </p>
-        </div>
-      </div>
-
-      <div class="text-center">
-        <p class="text-sm text-[#0F0F0F]/70" style="font-family: 'Inter', sans-serif;">
-          Una volta effettuato il bonifico, scrivici a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a> per ricevere la tessera.
+      <div class="bg-[#1E2E26] text-center px-8 py-10 mb-14">
+        <p class="text-[12px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+          Quota sociale annuale
+        </p>
+        <p class="text-5xl md:text-6xl text-[#F5EEDD] font-medium m-0" style="font-family: 'Playfair Display', serif;">
+          20 <span class="text-[#C8923E]">€</span>
+        </p>
+        <p class="text-sm text-[#F5EEDD]/70 m-0 mt-3" style="font-family: 'Inter', sans-serif;">
+          Vale per tutto l'anno solare. Bastano tre minuti in tutto.
         </p>
       </div>
+
+      <ol class="list-none m-0 p-0 space-y-8">
+
+        <li class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+          <div class="flex items-start gap-5">
+            <span class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-[#C8923E] text-[#1E2E26] text-2xl font-semibold rounded-full" style="font-family: 'Playfair Display', serif;" aria-hidden="true">1</span>
+            <div>
+              <h3 class="text-xl md:text-2xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">
+                Compila il modulo qui sotto
+              </h3>
+              <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+                Ti chiediamo solo i dati che servono per la domanda di
+                iscrizione: nome, email e pochi dati anagrafici. Due minuti,
+                niente di complicato.
+              </p>
+              <a href="#modulo" class="inline-block text-sm font-medium text-[#C8923E] no-underline hover:underline" style="font-family: 'Inter', sans-serif;">
+                Vai al modulo ↓
+              </a>
+            </div>
+          </div>
+        </li>
+
+        <li class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+          <div class="flex items-start gap-5">
+            <span class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-[#C8923E] text-[#1E2E26] text-2xl font-semibold rounded-full" style="font-family: 'Playfair Display', serif;" aria-hidden="true">2</span>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-xl md:text-2xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">
+                Versa la quota di 20 €
+              </h3>
+              <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+                Con un bonifico bancario dal tuo home banking o allo sportello:
+              </p>
+
+              <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-4" style="font-family: 'Inter', sans-serif;">
+                <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2">IBAN</p>
+                <p class="font-mono text-sm md:text-base text-[#1E2E26] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
+                <p class="text-sm text-[#1E2E26]/80 m-0 mt-3 leading-relaxed">
+                  Cassa Rurale Val di Sole, filiale Mezzana<br/>
+                  intestato ad <strong>Associazione El Brenz</strong>
+                </p>
+              </div>
+
+              <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-6" style="font-family: 'Inter', sans-serif;">
+                <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2">Causale (scrivila così)</p>
+                <p class="text-sm md:text-base text-[#1E2E26] m-0"><em>Quota sociale 2026 – Nome Cognome</em></p>
+              </div>
+
+              <p class="text-sm text-[#0F0F0F]/60 leading-relaxed m-0" style="font-family: 'Inter', sans-serif;">
+                Presto potrai pagare qui anche con <strong>PayPal o carta di
+                credito/debito</strong> (senza bisogno di un conto PayPal):
+                stiamo attivando il servizio.
+              </p>
+            </div>
+          </div>
+        </li>
+
+        <li class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+          <div class="flex items-start gap-5">
+            <span class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-[#C8923E] text-[#1E2E26] text-2xl font-semibold rounded-full" style="font-family: 'Playfair Display', serif;" aria-hidden="true">3</span>
+            <div>
+              <h3 class="text-xl md:text-2xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">
+                Cosa succede dopo
+              </h3>
+              <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+                La tua domanda viene esaminata dal Consiglio Direttivo, come
+                previsto dallo <a href="/statuto" class="text-[#C8923E] no-underline hover:underline">Statuto</a>.
+                Riceverai la conferma via email da
+                <strong>info@elbrenz.eu</strong> — non devi fare altro.
+              </p>
+            </div>
+          </div>
+        </li>
+
+      </ol>
     </div>
   </section>
 
-  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20">
+  <section id="modulo" class="bg-[#1E2E26] text-[#F5EEDD] py-20">
     <div class="max-w-2xl mx-auto px-6">
       <h2
         class="text-3xl md:text-4xl font-medium mb-3 leading-tight text-center"
         style="font-family: 'Playfair Display', serif;"
       >
-        Richiedi <em class="text-[#C8923E]" style="font-style: italic;">informazioni.</em>
+        Il modulo di <em class="text-[#C8923E]" style="font-style: italic;">iscrizione.</em>
       </h2>
       <p
-        class="text-base text-[#F5EEDD]/75 text-center mb-12"
+        class="text-base text-[#F5EEDD]/75 text-center mb-3"
         style="font-family: 'Inter', sans-serif;"
       >
-        Per dubbi sull'associazione o sul tesseramento. Ti rispondiamo direttamente da <strong>info@elbrenz.eu</strong>.
+        È il <strong>passo 1</strong>: compila e invia. Ti rispondiamo da <strong>info@elbrenz.eu</strong>.
+      </p>
+      <p
+        class="text-sm text-[#F5EEDD]/60 text-center mb-12"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Tutti i campi sono obbligatori. Se qualcosa non è chiaro, in fondo
+        alla pagina trovi come contattarci.
       </p>
 
       <form
@@ -202,7 +255,11 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         </div>
 
         <div class="mb-6">
-          <label for="cf-messaggio" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Messaggio</label>
+          <label for="cf-messaggio" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Il tuo messaggio</label>
+          <p class="text-xs text-[#F5EEDD]/60 mb-2 mt-0" style="font-family: 'Inter', sans-serif;">
+            Ad esempio: "Vorrei diventare socio per il 2026". Va bene anche una
+            domanda o due righe su di te.
+          </p>
           <textarea
             id="cf-messaggio"
             name="messaggio"
@@ -224,7 +281,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         </div>
 
         <div class="mb-6">
-          <label for="cf-data-nascita" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Data di nascita</label>
+          <label for="cf-data-nascita" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Data di nascita (giorno/mese/anno)</label>
           <input
             type="date"
             id="cf-data-nascita"
@@ -291,7 +348,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
           class="w-full bg-[#C8923E] text-[#1E2E26] px-6 py-3.5 text-sm font-medium tracking-wider uppercase hover:bg-[#D9A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style="font-family: 'Inter', sans-serif;"
         >
-          Invia richiesta info
+          Invia la domanda — passo 1 di 3
         </button>
 
         <div
@@ -302,6 +359,30 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
           style="font-family: 'Inter', sans-serif;"
         ></div>
       </form>
+    </div>
+  </section>
+
+  {/* M2.R: contatti per chi ha difficoltà col modulo o col pagamento */}
+  <section class="bg-[#FDF9F0] py-14">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <h2
+        class="text-2xl md:text-3xl text-[#1E2E26] font-medium m-0 mb-4 leading-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Hai bisogno di una mano?
+      </h2>
+      <p
+        class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-6"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Se il modulo o il bonifico ti mettono in difficoltà, nessun problema:
+        scrivici o chiamaci e facciamo tutto insieme.
+      </p>
+      <p class="text-lg m-0" style="font-family: 'Inter', sans-serif;">
+        <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline font-medium">info@elbrenz.eu</a>
+        <span class="text-[#0F0F0F]/40 mx-3">·</span>
+        <a href="tel:+393471077636" class="text-[#C8923E] no-underline hover:underline font-medium">+39 347 107 7636</a>
+      </p>
     </div>
   </section>
 
@@ -405,7 +486,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         const data = await resp.json().catch(() => ({}));
 
         if (resp.ok && data.success) {
-          showFeedback('Richiesta inviata. Ti risponderemo presto da info@elbrenz.eu.', 'success');
+          showFeedback('Domanda inviata, grazie! ORA IL PASSO 2: versa la quota di 20 € con bonifico all\'IBAN IT84U0816335010000190116255 (Cassa Rurale Val di Sole), causale "Quota sociale 2026 – Nome Cognome". Poi il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.', 'success');
           form.reset();
         } else if (resp.status === 429) {
           showFeedback(data.error || 'Hai inviato troppe richieste. Riprova più tardi.', 'error');
@@ -417,7 +498,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         showFeedback('Errore di connessione. Riprova o scrivi direttamente a info@elbrenz.eu.', 'error');
       } finally {
         submit.disabled = false;
-        submit.textContent = 'Invia richiesta info';
+        submit.textContent = 'Invia la domanda — passo 1 di 3';
       }
     });
   }

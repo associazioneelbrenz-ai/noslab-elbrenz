@@ -131,7 +131,7 @@
   function renderWelcome() {
     const welcomeContent = `<span class="ac-bondi">Bondì.</span> Sono <strong>Andreas</strong>, l'assistente digitale dell'Associazione El Brenz. Posso accompagnarti nella storia, nella lingua e nella cultura delle nostre valli — Non, Sole, Rabbi, Pejo: dai Principati Vescovili alla Contea Principesca del Tirolo, dalle Guerre Rustiche al ladino anaunico, dalle stue ai mulini.
 
-Hai <strong>3 domande gratuite oggi</strong>. Per andare oltre, <a href="${CONFIG.URL_REGISTRATI}">registrati gratis come ospite</a> o <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (10€/anno).
+Hai <strong>3 domande gratuite oggi</strong>. Per andare oltre, <a href="${CONFIG.URL_REGISTRATI}">registrati gratis come ospite</a> o <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (20€/anno).
 
 Da dove vuoi partire?`;
 
@@ -619,7 +619,7 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
       <p class="andreas-limit-cta__text">
         <a href="${CONFIG.URL_REGISTRATI}">Registrati gratis come ospite</a>
         per continuare domani con più libertà, oppure
-        <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (10€/anno)
+        <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (20€/anno)
         per Andreas senza limiti e per sostenere <em>la nosa Sociazion</em>.
       </p>
       <div class="andreas-limit-cta__buttons">
