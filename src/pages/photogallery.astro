@@ -1,50 +1,144 @@
 ---
 /**
- * /photogallery — pagina "Photogallery" (M2.6) — per ora in lavorazione.
+ * /photogallery — galleria fotografica per album (M2.5).
  *
- * La pagina WP omonima (wp_id 18) conteneva solo lo shortcode delle gallerie
- * NextGEN: le foto sono già state scaricate in locale via FTP (backup
- * completo di gallery/ e uploads/) ma NON ancora integrate nel sito — è il
- * punto "Photogallery" della coda dell'HANDOFF. Questa pagina tiene il posto
- * con lo stile del sito, senza link rotti, finché le gallerie non vengono
- * ricostruite.
+ * Sostituisce lo stato "in lavorazione". Fonte: gallerie NextGEN del vecchio
+ * WordPress scaricate via FileZilla (~/www.elbrenz.eu/wp-content/gallery/),
+ * già pubbliche sul vecchio sito. Curatela documentata nell'HANDOFF:
+ * selezione visiva su fogli-provino (55 foto su 250), scartati scatti
+ * deboli/duplicati e primi piani prudenziali. Immagini ottimizzate WebP
+ * (grande max 1600px + thumb 400px) generate con sharp in scratchpad
+ * temporaneo (pattern hero, commit 99f91d8) — nessuna dipendenza npm.
+ * Dimensioni per width/height da src/lib/gallery-manifest.json.
+ *
+ * Lightbox: <dialog> nativo + JS vanilla inline, zero dipendenze; senza JS
+ * il click apre comunque il file grande (progressive enhancement).
  */
 
 import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+import manifest from '../lib/gallery-manifest.json';
+
+const albums = [
+  {
+    slug: 'nossa-storia-2013',
+    titolo: "La nossa storia 'n Piaza",
+    contesto:
+      'Malè, 21 luglio 2013 — la rievocazione in piazza: costumi storici, Schützen, la statua lignea scolpita da Serafino Panizza. Foto: archivio El Brenz.',
+    altBase: "Rievocazione La nossa storia 'n Piaza, Malè 2013",
+  },
+  {
+    slug: 'beato-carlo-2012',
+    titolo: "Commemorazione del Beato Carlo d'Asburgo",
+    contesto:
+      'Malè, 9 settembre 2012 — la commemorazione con le Schützenkompanien delle valli. Foto: Silvano Dalla Serra.',
+    altBase: "Commemorazione del Beato Carlo d'Asburgo, Malè 2012",
+  },
+  {
+    slug: 'presepio-2012',
+    titolo: 'Presepio "El Brenz"',
+    contesto:
+      'Malè, Natale 2012 — il presepio allestito dall\'associazione. Foto: Silvano Dalla Serra.',
+    altBase: 'Presepio El Brenz, Natale 2012 a Malè',
+  },
+] as const;
+
+type Foto = { id: string; w: number; h: number; tw: number; th: number };
+const fotoDi = (slug: string): Foto[] =>
+  (manifest as Record<string, Foto[]>)[slug] ?? [];
 ---
 <PaginaIstituzionale
   occhiello="Archivio"
   titolo="Photogallery"
-  intro="Le immagini delle nostre attività: gite sociali, serate storiche, rievocazioni e momenti di vita associativa."
-  metaDescription="La photogallery dell'Associazione El Brenz: fotografie di gite sociali, serate storiche, rievocazioni ed eventi delle Valli del Noce."
+  intro="Le immagini delle nostre attività: rievocazioni, commemorazioni e momenti di vita associativa, dalle gallerie del nostro archivio."
+  metaDescription="La photogallery dell'Associazione El Brenz: fotografie di rievocazioni, commemorazioni ed eventi delle Valli del Noce."
 >
-  <div class="bg-white border border-[#E5DFCF] p-8 md:p-12">
-    <span
-      class="inline-block text-[11px] tracking-[0.18em] uppercase text-[#C8923E] border border-[#C8923E] px-3 py-1.5 mb-6"
-      style="font-family: 'Inter', sans-serif;"
-    >
-      Sezione in lavorazione
-    </span>
-    <h2
-      class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-4"
-      style="font-family: 'Playfair Display', serif;"
-    >
-      Stiamo riportando le foto a casa
-    </h2>
-    <p
-      class="text-[#0F0F0F]/75 leading-relaxed m-0 mb-4"
-      style="font-family: 'Source Serif 4', Georgia, serif;"
-    >
-      L'archivio fotografico delle nostre attività — quindici anni di gite,
-      serate, concorsi e rievocazioni — è stato messo al sicuro e sarà
-      ripubblicato qui, galleria per galleria, con didascalie e date.
-    </p>
-    <p
-      class="text-[#0F0F0F]/75 leading-relaxed m-0"
-      style="font-family: 'Source Serif 4', Georgia, serif;"
-    >
-      Nel frattempo molte immagini accompagnano già gli articoli
-      dell'<a href="/archivio-storico" class="text-[#C8923E] no-underline hover:underline">archivio storico</a>.
-    </p>
+  <div class="space-y-16">
+    {albums.map((album) => {
+      const foto = fotoDi(album.slug);
+      return (
+        <section>
+          <h2
+            class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-2"
+            style="font-family: 'Playfair Display', serif;"
+          >
+            {album.titolo}
+          </h2>
+          <p
+            class="text-sm text-[#0F0F0F]/60 m-0 mb-6"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            {album.contesto}
+          </p>
+          <ul class="list-none m-0 p-0 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {foto.map((f, i) => (
+              <li class="m-0">
+                <a
+                  href={`/gallery/${album.slug}/${f.id}.webp`}
+                  class="gallery-item block border border-[#E5DFCF] hover:border-[#C8923E] transition-colors"
+                  data-full={`/gallery/${album.slug}/${f.id}.webp`}
+                  data-alt={`${album.altBase} — fotografia ${i + 1} di ${foto.length}`}
+                >
+                  <img
+                    src={`/gallery/${album.slug}/${f.id}-thumb.webp`}
+                    alt={`${album.altBase} — fotografia ${i + 1} di ${foto.length}`}
+                    width={f.tw}
+                    height={f.th}
+                    loading="lazy"
+                    decoding="async"
+                    class="block w-full h-auto"
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      );
+    })}
   </div>
+
+  <p
+    class="text-sm text-[#0F0F0F]/60 leading-relaxed mt-14 pt-6 border-t border-[#E5DFCF]"
+    style="font-family: 'Source Serif 4', Georgia, serif;"
+  >
+    Altre gallerie del nostro archivio sono in corso di digitalizzazione e
+    arriveranno qui, album per album. Molte immagini accompagnano già gli
+    articoli dell'<a href="/archivio-storico" class="text-[#C8923E] no-underline hover:underline">archivio storico</a>.
+  </p>
 </PaginaIstituzionale>
+
+<dialog
+  id="lightbox"
+  class="p-0 border-0 bg-transparent max-w-[92vw] max-h-[92vh] backdrop:bg-black/85"
+>
+  <img id="lightbox-img" src="" alt="" class="block max-w-[92vw] max-h-[88vh] w-auto h-auto" />
+  <p
+    id="lightbox-caption"
+    class="text-center text-sm text-[#F5EEDD]/90 mt-2 mb-0"
+    style="font-family: 'Inter', sans-serif;"
+  ></p>
+</dialog>
+
+<script is:inline>
+  // Lightbox minimale (M2.5): <dialog> nativo, JS vanilla, zero dipendenze.
+  // Progressive enhancement: senza JS l'anchor apre il file grande.
+  (function () {
+    const dialog = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    const caption = document.getElementById('lightbox-caption');
+    if (!dialog || !img || !dialog.showModal) return;
+    document.querySelectorAll('.gallery-item').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        img.src = a.dataset.full;
+        img.alt = a.dataset.alt || '';
+        if (caption) caption.textContent = a.dataset.alt || '';
+        dialog.showModal();
+      });
+    });
+    // click fuori dall'immagine = chiudi (Escape è nativo di <dialog>)
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('close', () => { img.src = ''; });
+  })();
+</script>
