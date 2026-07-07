@@ -421,11 +421,18 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
         esito.textContent = msg;
       }
 
+      // Il ramo PayPal è VOLUTAMENTE isolato: qualunque errore dell'SDK non
+      // deve mai impedire il feedback del modulo né le istruzioni bonifico
+      // (che stanno fuori da questo script). try/catch difensivo (M2.6 fix).
       const sdk = document.createElement('script');
       sdk.src = 'https://www.paypal.com/sdk/js?client-id=' +
         encodeURIComponent(box.dataset.paypalClientId) +
         '&currency=EUR&intent=capture&components=buttons&enable-funding=card&locale=it_IT';
+      sdk.onerror = () => {
+        mostraEsito('Il pagamento con carta non è al momento disponibile: usa il bonifico qui sopra.', false);
+      };
       sdk.onload = () => {
+        try {
         if (!window.paypal) return;
         window.paypal.Buttons({
           createOrder: async () => {
@@ -465,6 +472,10 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
             mostraEsito('Si è verificato un errore col pagamento. Riprova, oppure usa il bonifico qui sopra.', false);
           },
         }).render('#paypal-quota-buttons');
+        } catch (err) {
+          console.error('[paypal-quota] SDK render fallito:', err);
+          mostraEsito('Il pagamento con carta non è al momento disponibile: usa il bonifico qui sopra.', false);
+        }
       };
       document.head.appendChild(sdk);
     })();
@@ -521,6 +532,9 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
       feedback.style.borderLeft = `3px solid ${type === 'success' ? '#C8923E' : '#d97a7a'}`;
       feedback.style.padding = '14px 18px';
       feedback.textContent = message;
+      // Il riquadro deve essere SEMPRE visibile dopo l'invio (M2.6 fix):
+      // porta il feedback in vista, qualunque sia la posizione di scroll.
+      feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function hideFeedback() {

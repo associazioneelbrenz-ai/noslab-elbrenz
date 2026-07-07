@@ -15,8 +15,8 @@
  * sync. Quelli verranno in M3+ quando avremo notifiche soci.
  */
 
-const CACHE_NAME = 'el-brenz-v1';
-const RUNTIME_CACHE = 'el-brenz-runtime-v1';
+const CACHE_NAME = 'el-brenz-v2';
+const RUNTIME_CACHE = 'el-brenz-runtime-v2';
 
 // Asset minimi da pre-cachare durante install
 const PRECACHE_ASSETS = [
