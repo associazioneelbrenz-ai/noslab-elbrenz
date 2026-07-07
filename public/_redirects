@@ -1,0 +1,449 @@
+# _redirects — 301 dal vecchio WordPress (M-cutover, 7 luglio 2026)
+# Generato da Claude Code: articoli via legacy_wp_id + pattern /YYYY/MM/slug/,
+# pagine WP dalle old_url estratte (docs/pagine_wp_contenuti, locale).
+# Netlify: prima regola che matcha vince; i file reali hanno precedenza.
+
+# ---- Pagine WP → nuove rotte ----
+/lassociazione-2/  /chi-siamo  301
+/lassociazione-2  /chi-siamo  301
+/lassociazione-2/contatti/  /contatti  301
+/lassociazione-2/contatti  /contatti  301
+/lassociazione-2/lo-statuto/  /statuto  301
+/lassociazione-2/lo-statuto  /statuto  301
+/progetti/  /chi-siamo  301
+/progetti  /chi-siamo  301
+/progetti/documentario-ladinita-nonesa-e-solandra-cultura-e-lingua/  /fioi-dal-nos  301
+/progetti/documentario-ladinita-nonesa-e-solandra-cultura-e-lingua  /fioi-dal-nos  301
+/progetti/portale-memoria/  /portale-memoria  301
+/progetti/portale-memoria  /portale-memoria  301
+/progetti/lunari-dal-nos/  /lunari-dal-nos  301
+/progetti/lunari-dal-nos  /lunari-dal-nos  301
+/concorso-os-dal-nos/  /os-dal-nos  301
+/concorso-os-dal-nos  /os-dal-nos  301
+/concorso-musicale-e-poetico-os-dal-nos/  /os-dal-nos  301
+/concorso-musicale-e-poetico-os-dal-nos  /os-dal-nos  301
+/le-vignette-in-italiano/  /lunari-dal-nos  301
+/le-vignette-in-italiano  /lunari-dal-nos  301
+/sostenitori/  /tesseramento  301
+/sostenitori  /tesseramento  301
+/glossary/  /lingua  301
+/glossary  /lingua  301
+/photogallery/anno-2010/  /photogallery  301
+/photogallery/anno-2010  /photogallery  301
+/photogallery/anno-2011/  /photogallery  301
+/photogallery/anno-2011  /photogallery  301
+/photogallery/anno-2012/  /photogallery  301
+/photogallery/anno-2012  /photogallery  301
+/photogallery/anno-2013/  /photogallery  301
+/photogallery/anno-2013  /photogallery  301
+/photogallery/anno-2014/  /photogallery  301
+/photogallery/anno-2014  /photogallery  301
+/photogallery/anno-2012/commemorazione-del-beato-carlo-dasburgo-9-settembre-male/  /photogallery  301
+/photogallery/anno-2012/commemorazione-del-beato-carlo-dasburgo-9-settembre-male  /photogallery  301
+/photogallery/anno-2013/la-nossa-storia-n-piaza-21-luglio-male/  /photogallery  301
+/photogallery/anno-2013/la-nossa-storia-n-piaza-21-luglio-male  /photogallery  301
+/photogallery/anno-2012/presepio-el-brenz-natale-2012-male/  /photogallery  301
+/photogallery/anno-2012/presepio-el-brenz-natale-2012-male  /photogallery  301
+/os-dal-nos-1-edizione-2014/  /os-dal-nos  301
+/os-dal-nos-1-edizione-2014  /os-dal-nos  301
+/os-dal-nos-2-edizione-2015/  /os-dal-nos  301
+/os-dal-nos-2-edizione-2015  /os-dal-nos  301
+/os-dal-nos-3-edizione-2016/  /os-dal-nos  301
+/os-dal-nos-3-edizione-2016  /os-dal-nos  301
+/os-dal-nos-4-edizione-2017/  /os-dal-nos  301
+/os-dal-nos-4-edizione-2017  /os-dal-nos  301
+/os-dal-nos-5-edizione-2018/  /os-dal-nos  301
+/os-dal-nos-5-edizione-2018  /os-dal-nos  301
+/os-dal-nos-6-edizione-2019/  /os-dal-nos  301
+/os-dal-nos-6-edizione-2019  /os-dal-nos  301
+
+# Pagine WP raggiungibili solo per id (?page_id=N)
+/  page_id=169  /direttivo  301!
+/  page_id=133  /chi-siamo  301!
+/  page_id=132  /chi-siamo  301!
+
+# ---- Articoli legacy: /YYYY/MM/slug/ e /?p=ID → /articoli/slug ----
+/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/  /articoli/1-concorso-os-dal-nos-risultato-strepitoso  301
+/2014/08/1-concorso-os-dal-nos-risultato-strepitoso  /articoli/1-concorso-os-dal-nos-risultato-strepitoso  301
+/  p=2977  /articoli/1-concorso-os-dal-nos-risultato-strepitoso  301!
+/2014/07/1-concorso-poetico-musicale-os-dal-nos/  /articoli/1-concorso-poetico-musicale-os-dal-nos  301
+/2014/07/1-concorso-poetico-musicale-os-dal-nos  /articoli/1-concorso-poetico-musicale-os-dal-nos  301
+/  p=2870  /articoli/1-concorso-poetico-musicale-os-dal-nos  301!
+/2013/09/1774-il-regolamento-scolastico-generale-maria-teresa-daustria/  /articoli/1774-il-regolamento-scolastico-generale-maria-teresa-daustria  301
+/2013/09/1774-il-regolamento-scolastico-generale-maria-teresa-daustria  /articoli/1774-il-regolamento-scolastico-generale-maria-teresa-daustria  301
+/  p=1294  /articoli/1774-il-regolamento-scolastico-generale-maria-teresa-daustria  301!
+/2015/06/2-edizione-del-concorso-musicale-e-poetico-os-dal-nos/  /articoli/2-edizione-del-concorso-musicale-e-poetico-os-dal-nos  301
+/2015/06/2-edizione-del-concorso-musicale-e-poetico-os-dal-nos  /articoli/2-edizione-del-concorso-musicale-e-poetico-os-dal-nos  301
+/  p=3059  /articoli/2-edizione-del-concorso-musicale-e-poetico-os-dal-nos  301!
+/2013/05/24-maggio-1915-il-baule-della-memoria/  /articoli/24-maggio-1915-il-baule-della-memoria  301
+/2013/05/24-maggio-1915-il-baule-della-memoria  /articoli/24-maggio-1915-il-baule-della-memoria  301
+/  p=687  /articoli/24-maggio-1915-il-baule-della-memoria  301!
+/2016/06/3-edizione-del-concorso-poetico-musicale-os-dal-nos/  /articoli/3-edizione-del-concorso-poetico-musicale-os-dal-nos  301
+/2016/06/3-edizione-del-concorso-poetico-musicale-os-dal-nos  /articoli/3-edizione-del-concorso-poetico-musicale-os-dal-nos  301
+/  p=3176  /articoli/3-edizione-del-concorso-poetico-musicale-os-dal-nos  301!
+/2013/05/303/  /articoli/303  301
+/2013/05/303  /articoli/303  301
+/  p=303  /articoli/303  301!
+/2017/04/4-edizione-del-concorso-poetico-musicale-os-dal-nos/  /articoli/4-edizione-del-concorso-poetico-musicale-os-dal-nos  301
+/2017/04/4-edizione-del-concorso-poetico-musicale-os-dal-nos  /articoli/4-edizione-del-concorso-poetico-musicale-os-dal-nos  301
+/  p=3196  /articoli/4-edizione-del-concorso-poetico-musicale-os-dal-nos  301!
+/2013/05/535/  /articoli/535  301
+/2013/05/535  /articoli/535  301
+/  p=535  /articoli/535  301!
+/2013/09/aeroplani-nemici-trento-la-mostra-torre-vanga/  /articoli/aeroplani-nemici-trento-la-mostra-torre-vanga  301
+/2013/09/aeroplani-nemici-trento-la-mostra-torre-vanga  /articoli/aeroplani-nemici-trento-la-mostra-torre-vanga  301
+/  p=1064  /articoli/aeroplani-nemici-trento-la-mostra-torre-vanga  301!
+/2018/09/after-movie-os-dal-nos-2018/  /articoli/after-movie-os-dal-nos-2018  301
+/2018/09/after-movie-os-dal-nos-2018  /articoli/after-movie-os-dal-nos-2018  301
+/  p=3337  /articoli/after-movie-os-dal-nos-2018  301!
+/2013/06/arcadia-musica-e-sapori-22-e-23-giugno-2013/  /articoli/arcadia-musica-e-sapori-22-e-23-giugno-2013  301
+/2013/06/arcadia-musica-e-sapori-22-e-23-giugno-2013  /articoli/arcadia-musica-e-sapori-22-e-23-giugno-2013  301
+/  p=754  /articoli/arcadia-musica-e-sapori-22-e-23-giugno-2013  301!
+/2017/04/archeologia-numismatica-val-sole-nuova-pubblicazione-del-centro-studi-la-val-sole/  /articoli/archeologia-numismatica-val-sole-nuova-pubblicazione-del-centro-studi-la-val-sole  301
+/2017/04/archeologia-numismatica-val-sole-nuova-pubblicazione-del-centro-studi-la-val-sole  /articoli/archeologia-numismatica-val-sole-nuova-pubblicazione-del-centro-studi-la-val-sole  301
+/  p=3229  /articoli/archeologia-numismatica-val-sole-nuova-pubblicazione-del-centro-studi-la-val-sole  301!
+/2014/01/assemblea-annuale-el-brenz/  /articoli/assemblea-annuale-el-brenz  301
+/2014/01/assemblea-annuale-el-brenz  /articoli/assemblea-annuale-el-brenz  301
+/  p=1402  /articoli/assemblea-annuale-el-brenz  301!
+/2013/04/avanti-tutta/  /articoli/avanti-tutta  301
+/2013/04/avanti-tutta  /articoli/avanti-tutta  301
+/  p=226  /articoli/avanti-tutta  301!
+/2013/09/beato-carlo-dasburgo/  /articoli/beato-carlo-dasburgo  301
+/2013/09/beato-carlo-dasburgo  /articoli/beato-carlo-dasburgo  301
+/  p=1099  /articoli/beato-carlo-dasburgo  301!
+/2013/08/bentornati/  /articoli/bentornati  301
+/2013/08/bentornati  /articoli/bentornati  301
+/  p=999  /articoli/bentornati  301!
+/2025/01/breve-introduzione-alla-storia-e-alla-cultura-tirolesi/  /  301
+/2025/01/breve-introduzione-alla-storia-e-alla-cultura-tirolesi  /  301
+/  p=3757  /  301!
+/2017/04/buon-compleanno-maria-teresa-revo-casa-campia-12-maggio-2017/  /articoli/buon-compleanno-maria-teresa-revo-casa-campia-12-maggio-2017  301
+/2017/04/buon-compleanno-maria-teresa-revo-casa-campia-12-maggio-2017  /articoli/buon-compleanno-maria-teresa-revo-casa-campia-12-maggio-2017  301
+/  p=3235  /articoli/buon-compleanno-maria-teresa-revo-casa-campia-12-maggio-2017  301!
+/2014/11/buon-viaggio-amico/  /articoli/buon-viaggio-amico  301
+/2014/11/buon-viaggio-amico  /articoli/buon-viaggio-amico  301
+/  p=3038  /articoli/buon-viaggio-amico  301!
+/2019/11/calendario-2020/  /articoli/calendario-2020  301
+/2019/11/calendario-2020  /articoli/calendario-2020  301
+/  p=3424  /articoli/calendario-2020  301!
+/2013/06/castel-tirolo-luogo-del-mese/  /articoli/castel-tirolo-luogo-del-mese  301
+/2013/06/castel-tirolo-luogo-del-mese  /articoli/castel-tirolo-luogo-del-mese  301
+/  p=747  /articoli/castel-tirolo-luogo-del-mese  301!
+/2013/06/cavalcata-oswald-von-wolkenstein-ritt-2013/  /articoli/cavalcata-oswald-von-wolkenstein-ritt-2013  301
+/2013/06/cavalcata-oswald-von-wolkenstein-ritt-2013  /articoli/cavalcata-oswald-von-wolkenstein-ritt-2013  301
+/  p=811  /articoli/cavalcata-oswald-von-wolkenstein-ritt-2013  301!
+/2013/06/concorso-di-poesia-nuove-parole-comune-di-vermiglio/  /articoli/concorso-di-poesia-nuove-parole-comune-di-vermiglio  301
+/2013/06/concorso-di-poesia-nuove-parole-comune-di-vermiglio  /articoli/concorso-di-poesia-nuove-parole-comune-di-vermiglio  301
+/  p=830  /articoli/concorso-di-poesia-nuove-parole-comune-di-vermiglio  301!
+/2013/05/concorso-fotografico-e-stage-il-bosco-luomo-la-biodiversita-convivenze-e-conoscenze-tras-parenti/  /articoli/concorso-fotografico-e-stage-il-bosco-luomo-la-biodiversita-convivenze-e-conoscenze-tras-parenti  301
+/2013/05/concorso-fotografico-e-stage-il-bosco-luomo-la-biodiversita-convivenze-e-conoscenze-tras-parenti  /articoli/concorso-fotografico-e-stage-il-bosco-luomo-la-biodiversita-convivenze-e-conoscenze-tras-parenti  301
+/  p=621  /articoli/concorso-fotografico-e-stage-il-bosco-luomo-la-biodiversita-convivenze-e-conoscenze-tras-parenti  301!
+/2013/09/concorso-nazionale-poesia-le-lingue-minoritarie/  /articoli/concorso-nazionale-poesia-le-lingue-minoritarie  301
+/2013/09/concorso-nazionale-poesia-le-lingue-minoritarie  /articoli/concorso-nazionale-poesia-le-lingue-minoritarie  301
+/  p=1238  /articoli/concorso-nazionale-poesia-le-lingue-minoritarie  301!
+/2021/12/conferenza-in-diretta-el-brenz-rezia-e-union-ladin-nonesa-insieme-per-il-censimento/  /articoli/conferenza-in-diretta-el-brenz-rezia-e-union-ladin-nonesa-insieme-per-il-censimento  301
+/2021/12/conferenza-in-diretta-el-brenz-rezia-e-union-ladin-nonesa-insieme-per-il-censimento  /articoli/conferenza-in-diretta-el-brenz-rezia-e-union-ladin-nonesa-insieme-per-il-censimento  301
+/  p=3580  /articoli/conferenza-in-diretta-el-brenz-rezia-e-union-ladin-nonesa-insieme-per-il-censimento  301!
+/2025/09/conferenza-linsurrezione-tirolese-del-1809-lamministrazione-bavarese-e-le-figure-locali/  /  301
+/2025/09/conferenza-linsurrezione-tirolese-del-1809-lamministrazione-bavarese-e-le-figure-locali  /  301
+/  p=3828  /  301!
+/2024/12/conosci-il-tuo-territorio-mettiti-alla-prova/  /articoli/conosci-il-tuo-territorio-mettiti-alla-prova  301
+/2024/12/conosci-il-tuo-territorio-mettiti-alla-prova  /articoli/conosci-il-tuo-territorio-mettiti-alla-prova  301
+/  p=3741  /articoli/conosci-il-tuo-territorio-mettiti-alla-prova  301!
+/2021/12/el-brenz-e-union-ladin-nonesa-insieme-per-le-valli-del-noce/  /articoli/el-brenz-e-union-ladin-nonesa-insieme-per-le-valli-del-noce  301
+/2021/12/el-brenz-e-union-ladin-nonesa-insieme-per-le-valli-del-noce  /articoli/el-brenz-e-union-ladin-nonesa-insieme-per-le-valli-del-noce  301
+/  p=3573  /articoli/el-brenz-e-union-ladin-nonesa-insieme-per-le-valli-del-noce  301!
+/2017/04/el-brenz-etno-festival-delletnografia-del-trentino-v-edizione/  /articoli/el-brenz-etno-festival-delletnografia-del-trentino-v-edizione  301
+/2017/04/el-brenz-etno-festival-delletnografia-del-trentino-v-edizione  /articoli/el-brenz-etno-festival-delletnografia-del-trentino-v-edizione  301
+/  p=3204  /articoli/el-brenz-etno-festival-delletnografia-del-trentino-v-edizione  301!
+/2013/05/esn-euregio-meeting-dal-16-al-19-maggio-2013/  /articoli/esn-euregio-meeting-dal-16-al-19-maggio-2013  301
+/2013/05/esn-euregio-meeting-dal-16-al-19-maggio-2013  /articoli/esn-euregio-meeting-dal-16-al-19-maggio-2013  301
+/  p=473  /articoli/esn-euregio-meeting-dal-16-al-19-maggio-2013  301!
+/2013/09/esperienza-scambio-docenti-trentino-tirolo-s-201314/  /articoli/esperienza-scambio-docenti-trentino-tirolo-s-201314  301
+/2013/09/esperienza-scambio-docenti-trentino-tirolo-s-201314  /articoli/esperienza-scambio-docenti-trentino-tirolo-s-201314  301
+/  p=1165  /articoli/esperienza-scambio-docenti-trentino-tirolo-s-201314  301!
+/2013/05/euregio-economia-agricoltura-e-turismo/  /articoli/euregio-economia-agricoltura-e-turismo  301
+/2013/05/euregio-economia-agricoltura-e-turismo  /articoli/euregio-economia-agricoltura-e-turismo  301
+/  p=633  /articoli/euregio-economia-agricoltura-e-turismo  301!
+/2013/05/euregio-energia-ambiente-e-risorse-naturali/  /articoli/euregio-energia-ambiente-e-risorse-naturali  301
+/2013/05/euregio-energia-ambiente-e-risorse-naturali  /articoli/euregio-energia-ambiente-e-risorse-naturali  301
+/  p=642  /articoli/euregio-energia-ambiente-e-risorse-naturali  301!
+/2013/09/euregio-luogo-del-mese/  /articoli/euregio-luogo-del-mese  301
+/2013/09/euregio-luogo-del-mese  /articoli/euregio-luogo-del-mese  301
+/  p=1086  /articoli/euregio-luogo-del-mese  301!
+/2013/05/euregio-news-dalleuropa/  /articoli/euregio-news-dalleuropa  301
+/2013/05/euregio-news-dalleuropa  /articoli/euregio-news-dalleuropa  301
+/  p=649  /articoli/euregio-news-dalleuropa  301!
+/2013/06/euregio-news/  /articoli/euregio-news  301
+/2013/06/euregio-news  /articoli/euregio-news  301
+/  p=743  /articoli/euregio-news  301!
+/2013/06/euregio-primo-festival-giovanile-di-tutte-le-cinque-vallate-ladine/  /articoli/euregio-primo-festival-giovanile-di-tutte-le-cinque-vallate-ladine  301
+/2013/06/euregio-primo-festival-giovanile-di-tutte-le-cinque-vallate-ladine  /articoli/euregio-primo-festival-giovanile-di-tutte-le-cinque-vallate-ladine  301
+/  p=852  /articoli/euregio-primo-festival-giovanile-di-tutte-le-cinque-vallate-ladine  301!
+/2013/09/euregio-prosegue-lexport-talenti-musicali-uploadsounds/  /articoli/euregio-prosegue-lexport-talenti-musicali-uploadsounds  301
+/2013/09/euregio-prosegue-lexport-talenti-musicali-uploadsounds  /articoli/euregio-prosegue-lexport-talenti-musicali-uploadsounds  301
+/  p=1131  /articoli/euregio-prosegue-lexport-talenti-musicali-uploadsounds  301!
+/2013/05/euregio-summer-camp-2013/  /articoli/euregio-summer-camp-2013  301
+/2013/05/euregio-summer-camp-2013  /articoli/euregio-summer-camp-2013  301
+/  p=290  /articoli/euregio-summer-camp-2013  301!
+/2013/05/europa/  /articoli/europa  301
+/2013/05/europa  /articoli/europa  301
+/  p=625  /articoli/europa  301!
+/2013/09/european-cooperation-day-2013/  /articoli/european-cooperation-day-2013  301
+/2013/09/european-cooperation-day-2013  /articoli/european-cooperation-day-2013  301
+/  p=1161  /articoli/european-cooperation-day-2013  301!
+/2013/09/expolingua-berlin/  /articoli/expolingua-berlin  301
+/2013/09/expolingua-berlin  /articoli/expolingua-berlin  301
+/  p=1290  /articoli/expolingua-berlin  301!
+/2013/09/festaval-sole-2013/  /articoli/festaval-sole-2013  301
+/2013/09/festaval-sole-2013  /articoli/festaval-sole-2013  301
+/  p=1246  /articoli/festaval-sole-2013  301!
+/2014/03/festival-gioventu-2014/  /articoli/festival-gioventu-2014  301
+/2014/03/festival-gioventu-2014  /articoli/festival-gioventu-2014  301
+/  p=2846  /articoli/festival-gioventu-2014  301!
+/2018/03/fioi-dal-nos-denno-val-non/  /articoli/fioi-dal-nos-denno-val-non  301
+/2018/03/fioi-dal-nos-denno-val-non  /articoli/fioi-dal-nos-denno-val-non  301
+/  p=3297  /articoli/fioi-dal-nos-denno-val-non  301!
+/2019/01/fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua-on-line/  /articoli/fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua-on-line  301
+/2019/01/fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua-on-line  /articoli/fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua-on-line  301
+/  p=3355  /articoli/fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua-on-line  301!
+/2013/09/giornata-dellautonomia-il-5-settembre/  /articoli/giornata-dellautonomia-il-5-settembre  301
+/2013/09/giornata-dellautonomia-il-5-settembre  /articoli/giornata-dellautonomia-il-5-settembre  301
+/  p=1031  /articoli/giornata-dellautonomia-il-5-settembre  301!
+/2013/09/giornata-europea-delle-lingue-2013/  /articoli/giornata-europea-delle-lingue-2013  301
+/2013/09/giornata-europea-delle-lingue-2013  /articoli/giornata-europea-delle-lingue-2013  301
+/  p=1052  /articoli/giornata-europea-delle-lingue-2013  301!
+/2013/05/giovani-ricercatori-cercansi-lanciata-nuova-edizione-del-concorso/  /articoli/giovani-ricercatori-cercansi-lanciata-nuova-edizione-del-concorso  301
+/2013/05/giovani-ricercatori-cercansi-lanciata-nuova-edizione-del-concorso  /articoli/giovani-ricercatori-cercansi-lanciata-nuova-edizione-del-concorso  301
+/  p=369  /articoli/giovani-ricercatori-cercansi-lanciata-nuova-edizione-del-concorso  301!
+/2013/05/gita-a-innsbruck/  /articoli/gita-a-innsbruck  301
+/2013/05/gita-a-innsbruck  /articoli/gita-a-innsbruck  301
+/  p=378  /articoli/gita-a-innsbruck  301!
+/2013/05/grande-esempio-di-collaborazione-ed-amicizia/  /articoli/grande-esempio-di-collaborazione-ed-amicizia  301
+/2013/05/grande-esempio-di-collaborazione-ed-amicizia  /articoli/grande-esempio-di-collaborazione-ed-amicizia  301
+/  p=311  /articoli/grande-esempio-di-collaborazione-ed-amicizia  301!
+/2013/06/i-fuochi-del-sacro-cuore-una-tradizione-secolare/  /articoli/i-fuochi-del-sacro-cuore-una-tradizione-secolare  301
+/2013/06/i-fuochi-del-sacro-cuore-una-tradizione-secolare  /articoli/i-fuochi-del-sacro-cuore-una-tradizione-secolare  301
+/  p=792  /articoli/i-fuochi-del-sacro-cuore-una-tradizione-secolare  301!
+/2013/05/i-raduno-multiepocale-gruppi-storici-in-trentino/  /articoli/i-raduno-multiepocale-gruppi-storici-in-trentino  301
+/2013/05/i-raduno-multiepocale-gruppi-storici-in-trentino  /articoli/i-raduno-multiepocale-gruppi-storici-in-trentino  301
+/  p=515  /articoli/i-raduno-multiepocale-gruppi-storici-in-trentino  301!
+/2013/05/i-suoni-delle-dolomiti-in-cammino-verso-la-musica-sulle-montagne-del-trentino/  /articoli/i-suoni-delle-dolomiti-in-cammino-verso-la-musica-sulle-montagne-del-trentino  301
+/2013/05/i-suoni-delle-dolomiti-in-cammino-verso-la-musica-sulle-montagne-del-trentino  /articoli/i-suoni-delle-dolomiti-in-cammino-verso-la-musica-sulle-montagne-del-trentino  301
+/  p=736  /articoli/i-suoni-delle-dolomiti-in-cammino-verso-la-musica-sulle-montagne-del-trentino  301!
+/2026/01/il-caso-unico-del-reggimento-iv-28-i-figli-di-praga-in-val-di-sole/  /articoli/il-caso-unico-del-reggimento-iv-28-i-figli-di-praga-in-val-di-sole  301
+/2026/01/il-caso-unico-del-reggimento-iv-28-i-figli-di-praga-in-val-di-sole  /articoli/il-caso-unico-del-reggimento-iv-28-i-figli-di-praga-in-val-di-sole  301
+/  p=3849  /articoli/il-caso-unico-del-reggimento-iv-28-i-figli-di-praga-in-val-di-sole  301!
+/2013/10/il-torggelen-nella-val-disarco/  /articoli/il-torggelen-nella-val-disarco  301
+/2013/10/il-torggelen-nella-val-disarco  /articoli/il-torggelen-nella-val-disarco  301
+/  p=1355  /articoli/il-torggelen-nella-val-disarco  301!
+/2019/12/in-distribuzione-il-lunari-dal-nos-2020-copie-disponibili-in-esaurimento-affrett/  /  301
+/2019/12/in-distribuzione-il-lunari-dal-nos-2020-copie-disponibili-in-esaurimento-affrett  /  301
+/  p=3440  /  301!
+/2013/05/incontro-dibattito-e-cena-dellalleanza-dei-cuochi/  /articoli/incontro-dibattito-e-cena-dellalleanza-dei-cuochi  301
+/2013/05/incontro-dibattito-e-cena-dellalleanza-dei-cuochi  /articoli/incontro-dibattito-e-cena-dellalleanza-dei-cuochi  301
+/  p=653  /articoli/incontro-dibattito-e-cena-dellalleanza-dei-cuochi  301!
+/2025/10/innsbruck-ci-chiama-un-viaggio-tra-storia-tirolese-e-grandi-emozioni/  /articoli/innsbruck-ci-chiama-un-viaggio-tra-storia-tirolese-e-grandi-emozioni  301
+/2025/10/innsbruck-ci-chiama-un-viaggio-tra-storia-tirolese-e-grandi-emozioni  /articoli/innsbruck-ci-chiama-un-viaggio-tra-storia-tirolese-e-grandi-emozioni  301
+/  p=3831  /articoli/innsbruck-ci-chiama-un-viaggio-tra-storia-tirolese-e-grandi-emozioni  301!
+/2014/03/la-carta-geografica-delleuregio-si-affianca-allatlas-tyrolensis/  /articoli/la-carta-geografica-delleuregio-si-affianca-allatlas-tyrolensis  301
+/2014/03/la-carta-geografica-delleuregio-si-affianca-allatlas-tyrolensis  /articoli/la-carta-geografica-delleuregio-si-affianca-allatlas-tyrolensis  301
+/  p=1417  /articoli/la-carta-geografica-delleuregio-si-affianca-allatlas-tyrolensis  301!
+/2025/12/la-certezza-del-confine-genesi-del-catasto-e-del-sistema-tavolare-nelle-valli-del-noce/  /articoli/la-certezza-del-confine-genesi-del-catasto-e-del-sistema-tavolare-nelle-valli-del-noce  301
+/2025/12/la-certezza-del-confine-genesi-del-catasto-e-del-sistema-tavolare-nelle-valli-del-noce  /articoli/la-certezza-del-confine-genesi-del-catasto-e-del-sistema-tavolare-nelle-valli-del-noce  301
+/  p=3844  /articoli/la-certezza-del-confine-genesi-del-catasto-e-del-sistema-tavolare-nelle-valli-del-noce  301!
+/2013/07/la-nosa-storia-n-piaza/  /articoli/la-nosa-storia-n-piaza  301
+/2013/07/la-nosa-storia-n-piaza  /articoli/la-nosa-storia-n-piaza  301
+/  p=984  /articoli/la-nosa-storia-n-piaza  301!
+/2013/06/la-regione-di-pilsen-si-presenta-al-castello-del-buonconsiglio/  /articoli/la-regione-di-pilsen-si-presenta-al-castello-del-buonconsiglio  301
+/2013/06/la-regione-di-pilsen-si-presenta-al-castello-del-buonconsiglio  /articoli/la-regione-di-pilsen-si-presenta-al-castello-del-buonconsiglio  301
+/  p=769  /articoli/la-regione-di-pilsen-si-presenta-al-castello-del-buonconsiglio  301!
+/2025/08/la-rivolta-contadina-nelle-valli-del-noce-1525-guerra-rustica-contesto-dinamiche-e-repressione/  /articoli/la-rivolta-contadina-nelle-valli-del-noce-1525-guerra-rustica-contesto-dinamiche-e-repressione  301
+/2025/08/la-rivolta-contadina-nelle-valli-del-noce-1525-guerra-rustica-contesto-dinamiche-e-repressione  /articoli/la-rivolta-contadina-nelle-valli-del-noce-1525-guerra-rustica-contesto-dinamiche-e-repressione  301
+/  p=3805  /articoli/la-rivolta-contadina-nelle-valli-del-noce-1525-guerra-rustica-contesto-dinamiche-e-repressione  301!
+/2013/09/lanzerotti-la-rete-ferroviaria-il-trentino-le-alpi-orientali/  /articoli/lanzerotti-la-rete-ferroviaria-il-trentino-le-alpi-orientali  301
+/2013/09/lanzerotti-la-rete-ferroviaria-il-trentino-le-alpi-orientali  /articoli/lanzerotti-la-rete-ferroviaria-il-trentino-le-alpi-orientali  301
+/  p=1231  /articoli/lanzerotti-la-rete-ferroviaria-il-trentino-le-alpi-orientali  301!
+/2013/09/le-donne-internate-italia-la-grande-guerra-esperienze-scritture-memorie/  /articoli/le-donne-internate-italia-la-grande-guerra-esperienze-scritture-memorie  301
+/2013/09/le-donne-internate-italia-la-grande-guerra-esperienze-scritture-memorie  /articoli/le-donne-internate-italia-la-grande-guerra-esperienze-scritture-memorie  301
+/  p=1272  /articoli/le-donne-internate-italia-la-grande-guerra-esperienze-scritture-memorie  301!
+/2013/06/le-lacrime-delle-dolomiti-di-sesto/  /articoli/le-lacrime-delle-dolomiti-di-sesto  301
+/2013/06/le-lacrime-delle-dolomiti-di-sesto  /articoli/le-lacrime-delle-dolomiti-di-sesto  301
+/  p=766  /articoli/le-lacrime-delle-dolomiti-di-sesto  301!
+/2013/06/le-reliquie-di-san-romedio-saranno-esposte-al-pubblico/  /articoli/le-reliquie-di-san-romedio-saranno-esposte-al-pubblico  301
+/2013/06/le-reliquie-di-san-romedio-saranno-esposte-al-pubblico  /articoli/le-reliquie-di-san-romedio-saranno-esposte-al-pubblico  301
+/  p=935  /articoli/le-reliquie-di-san-romedio-saranno-esposte-al-pubblico  301!
+/2013/09/leconomia-delle-province-autonome-trento-bolzano/  /articoli/leconomia-delle-province-autonome-trento-bolzano  301
+/2013/09/leconomia-delle-province-autonome-trento-bolzano  /articoli/leconomia-delle-province-autonome-trento-bolzano  301
+/  p=1027  /articoli/leconomia-delle-province-autonome-trento-bolzano  301!
+/2013/05/libera-circolazione-dei-lavoratori/  /articoli/libera-circolazione-dei-lavoratori  301
+/2013/05/libera-circolazione-dei-lavoratori  /articoli/libera-circolazione-dei-lavoratori  301
+/  p=714  /articoli/libera-circolazione-dei-lavoratori  301!
+/2018/11/lunari-dal-nos-2019-imminente-uscita/  /articoli/lunari-dal-nos-2019-imminente-uscita  301
+/2018/11/lunari-dal-nos-2019-imminente-uscita  /articoli/lunari-dal-nos-2019-imminente-uscita  301
+/  p=3343  /articoli/lunari-dal-nos-2019-imminente-uscita  301!
+/2022/11/lunari-dal-nos-2023-la-nosa-storia/  /articoli/lunari-dal-nos-2023-la-nosa-storia  301
+/2022/11/lunari-dal-nos-2023-la-nosa-storia  /articoli/lunari-dal-nos-2023-la-nosa-storia  301
+/  p=3585  /articoli/lunari-dal-nos-2023-la-nosa-storia  301!
+/2013/06/luogo-del-mese-abbazia-di-stams/  /articoli/luogo-del-mese-abbazia-di-stams  301
+/2013/06/luogo-del-mese-abbazia-di-stams  /articoli/luogo-del-mese-abbazia-di-stams  301
+/  p=820  /articoli/luogo-del-mese-abbazia-di-stams  301!
+/2021/12/mattioli/  /  301
+/2021/12/mattioli  /  301
+/  p=3578  /  301!
+/2013/09/mostra-conoscere-vicino-realta-vecchia-piu-secolo/  /articoli/mostra-conoscere-vicino-realta-vecchia-piu-secolo  301
+/2013/09/mostra-conoscere-vicino-realta-vecchia-piu-secolo  /articoli/mostra-conoscere-vicino-realta-vecchia-piu-secolo  301
+/  p=1150  /articoli/mostra-conoscere-vicino-realta-vecchia-piu-secolo  301!
+/2013/10/museo-regionale-tirolese-ferdinandeum/  /articoli/museo-regionale-tirolese-ferdinandeum  301
+/2013/10/museo-regionale-tirolese-ferdinandeum  /articoli/museo-regionale-tirolese-ferdinandeum  301
+/  p=1368  /articoli/museo-regionale-tirolese-ferdinandeum  301!
+/2013/12/natale-2013-buone-feste-tutti/  /articoli/natale-2013-buone-feste-tutti  301
+/2013/12/natale-2013-buone-feste-tutti  /articoli/natale-2013-buone-feste-tutti  301
+/  p=1385  /articoli/natale-2013-buone-feste-tutti  301!
+/2014/07/naturalmente-tutta-natura-avete-in-mente-11-12-13-luglio-terzolas/  /  301
+/2014/07/naturalmente-tutta-natura-avete-in-mente-11-12-13-luglio-terzolas  /  301
+/  p=2866  /  301!
+/2025/02/non-e-sole-sono-due-valli-ladine-il-silenzio-della-pat/  /articoli/non-e-sole-sono-due-valli-ladine-il-silenzio-della-pat  301
+/2025/02/non-e-sole-sono-due-valli-ladine-il-silenzio-della-pat  /articoli/non-e-sole-sono-due-valli-ladine-il-silenzio-della-pat  301
+/  p=3762  /articoli/non-e-sole-sono-due-valli-ladine-il-silenzio-della-pat  301!
+/2017/11/os-dal-brenz-riviviamo-lemozione/  /articoli/os-dal-brenz-riviviamo-lemozione  301
+/2017/11/os-dal-brenz-riviviamo-lemozione  /articoli/os-dal-brenz-riviviamo-lemozione  301
+/  p=3291  /articoli/os-dal-brenz-riviviamo-lemozione  301!
+/2017/08/os-dal-nos-2017-edizione-epica/  /articoli/os-dal-nos-2017-edizione-epica  301
+/2017/08/os-dal-nos-2017-edizione-epica  /articoli/os-dal-nos-2017-edizione-epica  301
+/  p=3252  /articoli/os-dal-nos-2017-edizione-epica  301!
+/2017/08/os-dal-nos-2017-scaletta-esibizioni/  /articoli/os-dal-nos-2017-scaletta-esibizioni  301
+/2017/08/os-dal-nos-2017-scaletta-esibizioni  /articoli/os-dal-nos-2017-scaletta-esibizioni  301
+/  p=3247  /articoli/os-dal-nos-2017-scaletta-esibizioni  301!
+/2018/06/os-dal-nos-2018-5-edizione/  /articoli/os-dal-nos-2018-5-edizione  301
+/2018/06/os-dal-nos-2018-5-edizione  /articoli/os-dal-nos-2018-5-edizione  301
+/  p=3307  /articoli/os-dal-nos-2018-5-edizione  301!
+/2018/08/os-dal-nos-2018-pura-magia/  /articoli/os-dal-nos-2018-pura-magia  301
+/2018/08/os-dal-nos-2018-pura-magia  /articoli/os-dal-nos-2018-pura-magia  301
+/  p=3324  /articoli/os-dal-nos-2018-pura-magia  301!
+/2019/05/os-dal-nos-2019-iscrizioni-aperte/  /articoli/os-dal-nos-2019-iscrizioni-aperte  301
+/2019/05/os-dal-nos-2019-iscrizioni-aperte  /articoli/os-dal-nos-2019-iscrizioni-aperte  301
+/  p=3369  /articoli/os-dal-nos-2019-iscrizioni-aperte  301!
+/2015/08/os-dal-nos-scaletta-esibizioni/  /articoli/os-dal-nos-scaletta-esibizioni  301
+/2015/08/os-dal-nos-scaletta-esibizioni  /articoli/os-dal-nos-scaletta-esibizioni  301
+/  p=3106  /articoli/os-dal-nos-scaletta-esibizioni  301!
+/2013/06/passeggiata-tra-i-sapori-dalta-quota-val-di-rabbi/  /articoli/passeggiata-tra-i-sapori-dalta-quota-val-di-rabbi  301
+/2013/06/passeggiata-tra-i-sapori-dalta-quota-val-di-rabbi  /articoli/passeggiata-tra-i-sapori-dalta-quota-val-di-rabbi  301
+/  p=930  /articoli/passeggiata-tra-i-sapori-dalta-quota-val-di-rabbi  301!
+/2013/05/plurilingue-e-transfrontaliero-workshop-euregio-su-capitale-della-cultura-2019/  /articoli/plurilingue-e-transfrontaliero-workshop-euregio-su-capitale-della-cultura-2019  301
+/2013/05/plurilingue-e-transfrontaliero-workshop-euregio-su-capitale-della-cultura-2019  /articoli/plurilingue-e-transfrontaliero-workshop-euregio-su-capitale-della-cultura-2019  301
+/  p=362  /articoli/plurilingue-e-transfrontaliero-workshop-euregio-su-capitale-della-cultura-2019  301!
+/2025/08/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non/  /articoli/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non  301
+/2025/08/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non  /articoli/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non  301
+/  p=3783  /articoli/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non  301!
+/2013/06/presentazione-del-dizionari-rabies-talian/  /articoli/presentazione-del-dizionari-rabies-talian  301
+/2013/06/presentazione-del-dizionari-rabies-talian  /articoli/presentazione-del-dizionari-rabies-talian  301
+/  p=843  /articoli/presentazione-del-dizionari-rabies-talian  301!
+/2025/08/presentazione-del-libro-hande-auf-tirol-le-mani-sul-tirolo-di-giuseppe-matuella/  /articoli/presentazione-del-libro-hande-auf-tirol-le-mani-sul-tirolo-di-giuseppe-matuella  301
+/2025/08/presentazione-del-libro-hande-auf-tirol-le-mani-sul-tirolo-di-giuseppe-matuella  /articoli/presentazione-del-libro-hande-auf-tirol-le-mani-sul-tirolo-di-giuseppe-matuella  301
+/  p=3768  /articoli/presentazione-del-libro-hande-auf-tirol-le-mani-sul-tirolo-di-giuseppe-matuella  301!
+/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua/  /articoli/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua  301
+/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua  /articoli/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua  301
+/  p=3128  /articoli/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua  301!
+/2013/05/progetti-culturali-euregio/  /articoli/progetti-culturali-euregio  301
+/2013/05/progetti-culturali-euregio  /articoli/progetti-culturali-euregio  301
+/  p=568  /articoli/progetti-culturali-euregio  301!
+/2013/05/pubblicato-il-dizionario-rabies-talian/  /articoli/pubblicato-il-dizionario-rabies-talian  301
+/2013/05/pubblicato-il-dizionario-rabies-talian  /articoli/pubblicato-il-dizionario-rabies-talian  301
+/  p=670  /articoli/pubblicato-il-dizionario-rabies-talian  301!
+/2013/06/question-de-cuer-apertif-ladin-a-bulsan/  /articoli/question-de-cuer-apertif-ladin-a-bulsan  301
+/2013/06/question-de-cuer-apertif-ladin-a-bulsan  /articoli/question-de-cuer-apertif-ladin-a-bulsan  301
+/  p=806  /articoli/question-de-cuer-apertif-ladin-a-bulsan  301!
+/2013/05/ritorno-al-padre-presentazione-del-libro-di-loretta-zanella/  /articoli/ritorno-al-padre-presentazione-del-libro-di-loretta-zanella  301
+/2013/05/ritorno-al-padre-presentazione-del-libro-di-loretta-zanella  /articoli/ritorno-al-padre-presentazione-del-libro-di-loretta-zanella  301
+/  p=724  /articoli/ritorno-al-padre-presentazione-del-libro-di-loretta-zanella  301!
+/2021/11/serate-di-presentazione-sul-tema-della-ladinita-solandra-rabiese-e-pegaese/  /articoli/serate-di-presentazione-sul-tema-della-ladinita-solandra-rabiese-e-pegaese  301
+/2021/11/serate-di-presentazione-sul-tema-della-ladinita-solandra-rabiese-e-pegaese  /articoli/serate-di-presentazione-sul-tema-della-ladinita-solandra-rabiese-e-pegaese  301
+/  p=3529  /articoli/serate-di-presentazione-sul-tema-della-ladinita-solandra-rabiese-e-pegaese  301!
+/2015/02/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno/  /articoli/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno  301
+/2015/02/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno  /articoli/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno  301
+/  p=3049  /articoli/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno  301!
+/2018/07/siete-pronti-meno-7-giorni-al-grande-evento-os-dal-nos-2018/  /articoli/siete-pronti-meno-7-giorni-al-grande-evento-os-dal-nos-2018  301
+/2018/07/siete-pronti-meno-7-giorni-al-grande-evento-os-dal-nos-2018  /articoli/siete-pronti-meno-7-giorni-al-grande-evento-os-dal-nos-2018  301
+/  p=3316  /articoli/siete-pronti-meno-7-giorni-al-grande-evento-os-dal-nos-2018  301!
+/2013/09/sistema-catastale-tavolare/  /articoli/sistema-catastale-tavolare  301
+/2013/09/sistema-catastale-tavolare  /articoli/sistema-catastale-tavolare  301
+/  p=1255  /articoli/sistema-catastale-tavolare  301!
+/2021/12/speciale-censimento-linguistico-2021/  /articoli/speciale-censimento-linguistico-2021  301
+/2021/12/speciale-censimento-linguistico-2021  /articoli/speciale-censimento-linguistico-2021  301
+/  p=3564  /articoli/speciale-censimento-linguistico-2021  301!
+/2014/03/storie-emigrati-guerrieri-dalla-val-rabbi/  /articoli/storie-emigrati-guerrieri-dalla-val-rabbi  301
+/2014/03/storie-emigrati-guerrieri-dalla-val-rabbi  /articoli/storie-emigrati-guerrieri-dalla-val-rabbi  301
+/  p=2834  /articoli/storie-emigrati-guerrieri-dalla-val-rabbi  301!
+/2013/05/sui-fronti-di-galizia-centenario-della-grande-guerra/  /articoli/sui-fronti-di-galizia-centenario-della-grande-guerra  301
+/2013/05/sui-fronti-di-galizia-centenario-della-grande-guerra  /articoli/sui-fronti-di-galizia-centenario-della-grande-guerra  301
+/  p=333  /articoli/sui-fronti-di-galizia-centenario-della-grande-guerra  301!
+/2013/10/suns-2013-2/  /articoli/suns-2013-2  301
+/2013/10/suns-2013-2  /articoli/suns-2013-2  301
+/  p=1361  /articoli/suns-2013-2  301!
+/2013/09/suns-2013/  /articoli/suns-2013  301
+/2013/09/suns-2013  /articoli/suns-2013  301
+/  p=1155  /articoli/suns-2013  301!
+/2013/06/termine-delle-iscrizioni-al-premio-giovani-ricercatori-delleuregio-2013-esteso-fino-al-15-giugno-2013/  /articoli/termine-delle-iscrizioni-al-premio-giovani-ricercatori-delleuregio-2013-esteso-fino-al-15-giugno-2013  301
+/2013/06/termine-delle-iscrizioni-al-premio-giovani-ricercatori-delleuregio-2013-esteso-fino-al-15-giugno-2013  /articoli/termine-delle-iscrizioni-al-premio-giovani-ricercatori-delleuregio-2013-esteso-fino-al-15-giugno-2013  301
+/  p=782  /articoli/termine-delle-iscrizioni-al-premio-giovani-ricercatori-delleuregio-2013-esteso-fino-al-15-giugno-2013  301!
+/2013/10/tiroler-landlibell-1511-bozza/  /  301
+/2013/10/tiroler-landlibell-1511-bozza  /  301
+/  p=1341  /  301!
+/2015/08/trailer-documentario-fioi-dal-nos/  /articoli/trailer-documentario-fioi-dal-nos  301
+/2015/08/trailer-documentario-fioi-dal-nos  /articoli/trailer-documentario-fioi-dal-nos  301
+/  p=3099  /articoli/trailer-documentario-fioi-dal-nos  301!
+/2025/12/un-regalo-speciale-per-il-nostro-compleanno-nasce-la-nuova-community-online-di-el-brenz/  /articoli/un-regalo-speciale-per-il-nostro-compleanno-nasce-la-nuova-community-online-di-el-brenz  301
+/2025/12/un-regalo-speciale-per-il-nostro-compleanno-nasce-la-nuova-community-online-di-el-brenz  /articoli/un-regalo-speciale-per-il-nostro-compleanno-nasce-la-nuova-community-online-di-el-brenz  301
+/  p=3839  /articoli/un-regalo-speciale-per-il-nostro-compleanno-nasce-la-nuova-community-online-di-el-brenz  301!
+/2013/05/uploadsounds-2013-musica-senza-confini/  /articoli/uploadsounds-2013-musica-senza-confini  301
+/2013/05/uploadsounds-2013-musica-senza-confini  /articoli/uploadsounds-2013-musica-senza-confini  301
+/  p=319  /articoli/uploadsounds-2013-musica-senza-confini  301!
+/2013/06/viviamo-lacqua/  /articoli/viviamo-lacqua  301
+/2013/06/viviamo-lacqua  /articoli/viviamo-lacqua  301
+/  p=861  /articoli/viviamo-lacqua  301!
+
+# ---- Archivi WP generici (categorie, tag, autori, date, feed) ----
+/category/*  /archivio-storico  301
+/tag/*  /archivio-storico  301
+/author/*  /  301
+/feed  /  301
+/feed/*  /  301
+/wp-admin/*  /  301
+/wp-login.php  /  301
+/2009  /archivio-storico  301
+/2009/*  /archivio-storico  301
+/2010  /archivio-storico  301
+/2010/*  /archivio-storico  301
+/2011  /archivio-storico  301
+/2011/*  /archivio-storico  301
+/2012  /archivio-storico  301
+/2012/*  /archivio-storico  301
+/2013  /archivio-storico  301
+/2013/*  /archivio-storico  301
+/2014  /archivio-storico  301
+/2014/*  /archivio-storico  301
+/2015  /archivio-storico  301
+/2015/*  /archivio-storico  301
+/2016  /archivio-storico  301
+/2016/*  /archivio-storico  301
+/2017  /archivio-storico  301
+/2017/*  /archivio-storico  301
+/2018  /archivio-storico  301
+/2018/*  /archivio-storico  301
+/2019  /archivio-storico  301
+/2019/*  /archivio-storico  301
+/2020  /archivio-storico  301
+/2020/*  /archivio-storico  301
+/2021  /archivio-storico  301
+/2021/*  /archivio-storico  301
+/2022  /archivio-storico  301
+/2022/*  /archivio-storico  301
+/2023  /archivio-storico  301
+/2023/*  /archivio-storico  301
+/2024  /archivio-storico  301
+/2024/*  /archivio-storico  301
+/2025  /archivio-storico  301
+/2025/*  /archivio-storico  301
+/2026  /archivio-storico  301
+/2026/*  /archivio-storico  301
