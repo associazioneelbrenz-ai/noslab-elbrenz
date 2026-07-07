@@ -110,7 +110,7 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
     ></div>
   </div>
 
-  <div class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+  <div id="bonifico" class="bg-white border border-[#E5DFCF] p-8 md:p-10">
     <h2
       class="text-2xl text-[#1E2E26] font-medium leading-tight m-0 mb-4"
       style="font-family: 'Playfair Display', serif;"
@@ -125,11 +125,44 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
         <strong>Associazione El Brenz</strong>
       </p>
     </div>
-    <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5" style="font-family: 'Inter', sans-serif;">
+    <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-6" style="font-family: 'Inter', sans-serif;">
       <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2">Causale</p>
       <p class="text-sm md:text-base text-[#1E2E26] m-0"><em>Erogazione liberale</em></p>
     </div>
+
+    {/* M2.6-bis: upload ricevuta (facoltativo) → ricevuta-ocr, in_verifica */}
+    <div style="font-family: 'Inter', sans-serif;" data-ricevuta-url={`${SUPABASE_URL}/functions/v1/ricevuta-ocr`} id="dona-ricevuta-box">
+      <p class="text-sm text-[#0F0F0F]/80 m-0 mb-2">
+        <strong>Hai già fatto il bonifico?</strong> Se vuoi, carica la
+        ricevuta (JPG, PNG o PDF, max 10 MB): così la verifica è più veloce.
+        È facoltativo.
+      </p>
+      <p class="text-xs text-[#0F0F0F]/55 m-0 mb-4">
+        La ricevuta è conservata in un archivio privato al solo scopo di
+        verificare il pagamento e viene cancellata dopo la conferma, o al
+        massimo entro 12 mesi. Cancellazione anticipata su richiesta a
+        info@elbrenz.eu.
+      </p>
+      <input
+        type="file"
+        id="dona-ricevuta-file"
+        accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+        class="block w-full text-sm text-[#1E2E26] mb-4 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#C8923E] file:text-[#1E2E26] file:text-sm file:font-medium file:cursor-pointer"
+      />
+      <button
+        type="button"
+        id="dona-ricevuta-invia"
+        class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase cursor-pointer hover:bg-[#D9A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        Carica la ricevuta
+      </button>
+      <div id="dona-ricevuta-esito" class="hidden mt-4 p-4 text-sm border-l-4" role="status" aria-live="polite"></div>
+    </div>
   </div>
+
+  <p class="text-xs text-[#0F0F0F]/45 mt-6 mb-0 text-center" style="font-family: 'Inter', sans-serif;">
+    Presto anche Satispay.
+  </p>
 
   <p
     class="text-sm text-[#0F0F0F]/60 leading-relaxed mt-10 pt-6 border-t border-[#E5DFCF]"
@@ -247,5 +280,53 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
       }).render('#paypal-dona-buttons');
     };
     document.head.appendChild(sdk);
+  })();
+</script>
+
+<script is:inline>
+  // Upload ricevuta bonifico donazione (M2.6-bis) — script isolato.
+  (function () {
+    const box = document.getElementById('dona-ricevuta-box');
+    const fileInput = document.getElementById('dona-ricevuta-file');
+    const invia = document.getElementById('dona-ricevuta-invia');
+    const esito = document.getElementById('dona-ricevuta-esito');
+    if (!box || !fileInput || !invia || !esito) return;
+    function mostra(msg, ok) {
+      esito.classList.remove('hidden');
+      esito.style.background = ok ? '#eaf3ee' : '#fbecec';
+      esito.style.borderLeftColor = ok ? '#1d4d3a' : '#a33';
+      esito.style.color = '#1E2E26';
+      esito.textContent = msg;
+      esito.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    invia.addEventListener('click', async () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) { mostra('Scegli prima il file della ricevuta.', false); return; }
+      if (file.size > 10 * 1024 * 1024) { mostra('Il file supera i 10 MB.', false); return; }
+      invia.disabled = true;
+      invia.textContent = 'Caricamento…';
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('tipo', 'donazione');
+        const anonimo = document.getElementById('dona-anonimo');
+        if (!anonimo || !anonimo.checked) {
+          fd.append('nome', document.getElementById('dona-nome')?.value || '');
+          fd.append('email', document.getElementById('dona-email')?.value || '');
+        }
+        const resp = await fetch(box.dataset.ricevutaUrl, { method: 'POST', body: fd });
+        const out = await resp.json().catch(() => ({}));
+        if (resp.ok && out.success) {
+          mostra('Ricevuta caricata, grazie! La verificheremo al più presto.', true);
+        } else {
+          mostra(out.error || 'Caricamento non riuscito. Riprova, o scrivi a info@elbrenz.eu.', false);
+        }
+      } catch {
+        mostra('Errore di connessione. Riprova, o scrivi a info@elbrenz.eu.', false);
+      } finally {
+        invia.disabled = false;
+        invia.textContent = 'Carica la ricevuta';
+      }
+    });
   })();
 </script>

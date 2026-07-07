@@ -9,6 +9,10 @@
 import Layout from '../layouts/Layout.astro';
 import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 
+// M2.6-bis: box "Sostieni El Brenz" — esiste in pagina SOLO col flag
+// go-live pagamenti attivo (build time, vedi src/lib/pagamenti.ts).
+import { PAGAMENTI_LIVE } from '../lib/pagamenti';
+
 // AGGIUNTA M2.4 (home ricca): blocco "Ultimi articoli".
 // Riusa gli helper di lib/articoli e lo stesso filtro produzione di
 // PaginaPilastro (!draft && !archivio). Ordinamento data desc, primi 4.
@@ -319,6 +323,44 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
       )}
     </div>
   </section>
+
+  {/* M2.6-bis — box "Sostieni El Brenz" (donazioni): render SOLO a flag
+      pagamenti attivo. Bottone stile PayPal (pill gialla, wordmark testuale,
+      NESSUN widget hosted) che porta al NOSTRO flusso /dona, tracciato a DB. */}
+  {PAGAMENTI_LIVE && (
+    <section class="bg-[#F5EEDD] py-16">
+      <div class="max-w-3xl mx-auto px-6">
+        <div class="border-2 border-[#C8923E] bg-[#F5EEDD] px-8 py-10 text-center">
+          <h2
+            class="text-3xl md:text-4xl font-medium text-[#1E2E26] m-0 mb-4 leading-tight"
+            style="font-family: 'Playfair Display', serif;"
+          >
+            Sostieni <em style="font-style: italic; color: #C8923E;">El Brenz</em>
+          </h2>
+          <p
+            class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-8 max-w-xl mx-auto"
+            style="font-family: 'Source Serif 4', Georgia, serif;"
+          >
+            Ogni donazione sostiene le ricerche, le pubblicazioni e la
+            digitalizzazione della memoria delle nostre valli.
+          </p>
+          <a
+            href="/dona"
+            class="inline-flex items-center gap-2 bg-[#FFC439] hover:bg-[#f2b636] transition-colors rounded-full px-8 py-3.5 no-underline"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            <span class="text-base font-bold italic" aria-hidden="true">
+              <span style="color: #003087;">Pay</span><span style="color: #009cde;">Pal</span>
+            </span>
+            <span class="text-sm font-medium text-[#1E2E26]">Dona con PayPal o carta</span>
+          </a>
+          <p class="m-0 mt-4" style="font-family: 'Inter', sans-serif;">
+            <a href="/dona#bonifico" class="text-sm text-[#1E2E26]/70 underline hover:text-[#C8923E]">oppure con bonifico</a>
+          </p>
+        </div>
+      </div>
+    </section>
+  )}
 
   {/* AGGIUNTA M2.4 — card "Community": blocco statico con CTA tesseramento.
       Nessun link alla futura app soci (non esiste ancora): solo menzione

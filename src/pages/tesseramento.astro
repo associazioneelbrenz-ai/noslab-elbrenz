@@ -18,6 +18,7 @@
  */
 
 import Layout from '../layouts/Layout.astro';
+import { PAGAMENTI_LIVE } from '../lib/pagamenti';
 
 // URL edge function — letta da env per dev/prod
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
@@ -30,6 +31,9 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
 const PAYPAL_CREATE_URL = `${SUPABASE_URL}/functions/v1/paypal-create-order`;
 const PAYPAL_CAPTURE_URL = `${SUPABASE_URL}/functions/v1/paypal-capture-order`;
 const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJc1GPwUL2wgh64lSCKfaEkKZlaC';
+
+// M2.6-bis: URL edge fn ricevute (upload + OCR, stato in_verifica).
+const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
 ---
 <Layout
   title="Diventa socio"
@@ -184,13 +188,14 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
               {/* M2.6: pagamento quota con PayPal/carta. Nascosto finché
                   Cristian non completa il test reale: si attiva SOLO con
                   ?paypal=1 nell'URL (vedi script in fondo). Al go-live basta
-                  mettere PAYPAL_QUOTA_LIVE a true qui sotto nello script. */}
+                  mettere PAGAMENTI_LIVE a true in src/lib/pagamenti.ts. */}
               <div
                 id="paypal-quota-box"
                 class="hidden border-t border-[#E5DFCF] mt-6 pt-6"
                 data-create-url={PAYPAL_CREATE_URL}
                 data-capture-url={PAYPAL_CAPTURE_URL}
                 data-paypal-client-id={PAYPAL_CLIENT_ID}
+                data-live={PAGAMENTI_LIVE ? '1' : '0'}
               >
                 <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">
                   Oppure paga subito qui i 20 € con <strong>PayPal o carta di
@@ -359,7 +364,7 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
         <!-- GDPR: informativa inline + checkbox consenso -->
         <div class="bg-[#0F1D18] border border-[#F5EEDD]/10 p-5 mb-6">
           <p class="text-xs text-[#F5EEDD]/70 leading-relaxed mb-4 m-0" style="font-family: 'Inter', sans-serif;">
-            I dati raccolti (nome, email, data e luogo di nascita, sesso, messaggio) saranno trattati dall'Associazione El Brenz al solo scopo di rispondere alla tua richiesta e pre-compilare la tua futura iscrizione formale. Conserviamo i dati su email criptata fino a registrazione formale o cancellazione su richiesta. Per cancellare i dati scrivi a <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a>. <a href="/privacy" target="_blank" rel="noopener" class="text-[#D9A94E] no-underline hover:underline">Informativa privacy completa →</a>
+            I dati raccolti (nome, email, data e luogo di nascita, sesso, messaggio) saranno trattati dall'Associazione El Brenz al solo scopo di rispondere alla tua richiesta e pre-compilare la tua futura iscrizione formale. Conserviamo i dati su email criptata fino a registrazione formale o cancellazione su richiesta. Se scegli il bonifico e carichi la ricevuta, il documento (che può riportare dati bancari) è conservato in un archivio privato al solo scopo di verificare il pagamento, fino alla conferma e comunque non oltre 12 mesi; cancellazione anticipata su richiesta. Per cancellare i dati scrivi a <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a>. <a href="/privacy" target="_blank" rel="noopener" class="text-[#D9A94E] no-underline hover:underline">Informativa privacy completa →</a>
           </p>
           <label class="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" id="cf-gdpr" name="gdpr" required class="mt-0.5 w-4 h-4 accent-[#C8923E] flex-shrink-0" />
@@ -392,19 +397,106 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
           style="font-family: 'Inter', sans-serif;"
         ></div>
       </form>
+
+
+      {/* M2.6-bis: selettore metodo di pagamento — compare dopo l'invio
+          riuscito del modulo (PASSO 2 come scelta guidata). Il bonifico è
+          SEMPRE attivo e indipendente dal ramo PayPal; PayPal si attiva col
+          flag go-live (o ?paypal=1 per i test); Satispay è un placeholder
+          disattivato (fase 2, dipende dall'account Business). */}
+      <div id="scelta-pagamento" class="hidden mt-10" data-ricevuta-url={RICEVUTA_URL}>
+        <h3
+          class="text-2xl text-[#F5EEDD] font-medium leading-tight m-0 mb-2 text-center"
+          style="font-family: 'Playfair Display', serif;"
+        >
+          Passo 2 — versa la quota di 20 €
+        </h3>
+        <p class="text-sm text-[#F5EEDD]/70 text-center m-0 mb-6" style="font-family: 'Inter', sans-serif;">
+          Scegli come preferisci pagare:
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6" style="font-family: 'Inter', sans-serif;">
+          <button
+            type="button"
+            id="sp-paypal"
+            class="border-2 border-[#F5EEDD]/25 bg-[#1E2E26] text-[#F5EEDD] px-4 py-4 text-sm font-medium cursor-pointer hover:border-[#C8923E] transition-colors"
+            aria-pressed="false"
+          >
+            PayPal o carta
+            <span id="sp-paypal-nota" class="block text-[11px] font-normal text-[#F5EEDD]/50 mt-1">senza conto PayPal</span>
+          </button>
+          <button
+            type="button"
+            id="sp-bonifico"
+            class="border-2 border-[#F5EEDD]/25 bg-[#1E2E26] text-[#F5EEDD] px-4 py-4 text-sm font-medium cursor-pointer hover:border-[#C8923E] transition-colors"
+            aria-pressed="false"
+          >
+            Bonifico bancario
+            <span class="block text-[11px] font-normal text-[#F5EEDD]/50 mt-1">dal tuo home banking</span>
+          </button>
+          <button
+            type="button"
+            disabled
+            class="border-2 border-[#F5EEDD]/10 bg-[#1E2E26] text-[#F5EEDD]/35 px-4 py-4 text-sm font-medium cursor-not-allowed"
+            title="In arrivo"
+          >
+            Satispay
+            <span class="block text-[11px] font-normal text-[#F5EEDD]/30 mt-1">in arrivo</span>
+          </button>
+        </div>
+
+        <div id="sp-pannello-bonifico" class="hidden bg-[#0F1D18] border border-[#F5EEDD]/10 p-6" style="font-family: 'Inter', sans-serif;">
+          <div class="bg-[#1E2E26] border-l-4 border-[#C8923E] p-4 mb-3">
+            <p class="text-[11px] tracking-[0.15em] uppercase text-[#D9A94E] m-0 mb-1.5">IBAN</p>
+            <p class="font-mono text-sm text-[#F5EEDD] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
+            <p class="text-xs text-[#F5EEDD]/70 m-0 mt-2">Cassa Rurale Val di Sole — intestato ad Associazione El Brenz</p>
+          </div>
+          <div class="bg-[#1E2E26] border-l-4 border-[#C8923E] p-4 mb-5">
+            <p class="text-[11px] tracking-[0.15em] uppercase text-[#D9A94E] m-0 mb-1.5">Causale (scrivila così)</p>
+            <p class="text-sm text-[#F5EEDD] m-0"><em>Quota sociale 2026 – Nome Cognome</em></p>
+          </div>
+
+          <p class="text-sm text-[#F5EEDD]/85 m-0 mb-2">
+            <strong>Hai già fatto il bonifico?</strong> Se vuoi, carica qui la
+            ricevuta (JPG, PNG o PDF, max 10 MB): così la verifica è più
+            veloce. È facoltativo: puoi anche solo fare il bonifico e basta.
+          </p>
+          <p class="text-xs text-[#F5EEDD]/55 m-0 mb-4">
+            La ricevuta è conservata in un archivio privato al solo scopo di
+            verificare il pagamento e viene cancellata dopo la conferma, o al
+            massimo entro 12 mesi. Cancellazione anticipata su richiesta a
+            info@elbrenz.eu.
+          </p>
+          <input
+            type="file"
+            id="ricevuta-file"
+            accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+            class="block w-full text-sm text-[#F5EEDD]/85 mb-4 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#C8923E] file:text-[#1E2E26] file:text-sm file:font-medium file:cursor-pointer"
+          />
+          <button
+            type="button"
+            id="ricevuta-invia"
+            class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase cursor-pointer hover:bg-[#D9A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Carica la ricevuta
+          </button>
+          <div id="ricevuta-esito" class="hidden mt-4 p-4 text-sm border-l-4" role="status" aria-live="polite"></div>
+        </div>
+      </div>
     </div>
   </section>
 
   {/* M2.6: script pagamento quota PayPal — gate di attivazione.
-      PAYPAL_QUOTA_LIVE=false finché Cristian non completa il test reale:
+      PAGAMENTI_LIVE (src/lib/pagamenti.ts) spento finché Cristian non completa il test reale:
       il blocco compare SOLO con ?paypal=1 nell'URL. Al go-live: true. */}
   <script is:inline>
     (function () {
-      const PAYPAL_QUOTA_LIVE = false; // ← flip a true dopo il test di Cristian
       const box = document.getElementById('paypal-quota-box');
       const presto = document.getElementById('paypal-quota-presto');
       if (!box) return;
-      const gate = PAYPAL_QUOTA_LIVE ||
+      // Flag condiviso (src/lib/pagamenti.ts, build time) via data attribute;
+      // ?paypal=1 resta come gate di test pre go-live.
+      const gate = box.dataset.live === '1' ||
         new URLSearchParams(window.location.search).get('paypal') === '1';
       if (!gate) return;
 
@@ -478,6 +570,97 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
         }
       };
       document.head.appendChild(sdk);
+    })();
+  </script>
+
+  <script is:inline>
+    (function () {
+      const scelta = document.getElementById('scelta-pagamento');
+      if (!scelta) return;
+      const btnPaypal = document.getElementById('sp-paypal');
+      const btnBonifico = document.getElementById('sp-bonifico');
+      const pannelloBonifico = document.getElementById('sp-pannello-bonifico');
+      const boxPaypal = document.getElementById('paypal-quota-box');
+      const notaPaypal = document.getElementById('sp-paypal-nota');
+
+      function setAttivo(btn, attivo) {
+        btn.classList.toggle('border-[#C8923E]', attivo);
+        btn.classList.toggle('border-[#F5EEDD]/25', !attivo);
+        btn.setAttribute('aria-pressed', attivo ? 'true' : 'false');
+      }
+
+      if (btnBonifico && pannelloBonifico) {
+        btnBonifico.addEventListener('click', () => {
+          pannelloBonifico.classList.remove('hidden');
+          setAttivo(btnBonifico, true);
+          if (btnPaypal) setAttivo(btnPaypal, false);
+          pannelloBonifico.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      }
+
+      if (btnPaypal) {
+        btnPaypal.addEventListener('click', () => {
+          const gate = (boxPaypal && boxPaypal.dataset.live === '1') ||
+            new URLSearchParams(window.location.search).get('paypal') === '1';
+          if (gate && boxPaypal) {
+            // I bottoni PayPal vivono nel PASSO 2 in alto: mostralo e vacci.
+            boxPaypal.classList.remove('hidden');
+            setAttivo(btnPaypal, true);
+            if (btnBonifico) setAttivo(btnBonifico, false);
+            boxPaypal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else if (notaPaypal) {
+            notaPaypal.textContent = 'in attivazione — intanto usa il bonifico';
+          }
+        });
+      }
+
+      // Upload ricevuta → edge fn ricevuta-ocr (verifica sempre manuale).
+      const fileInput = document.getElementById('ricevuta-file');
+      const invia = document.getElementById('ricevuta-invia');
+      const esito = document.getElementById('ricevuta-esito');
+      function mostraRicevutaEsito(msg, ok) {
+        if (!esito) return;
+        esito.classList.remove('hidden');
+        esito.style.background = ok ? '#1d4d3a' : '#5a1f1f';
+        esito.style.borderLeftColor = ok ? '#C8923E' : '#d97a7a';
+        esito.style.color = '#F5EEDD';
+        esito.textContent = msg;
+        esito.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      if (invia && fileInput) {
+        invia.addEventListener('click', async () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) {
+            mostraRicevutaEsito('Scegli prima il file della ricevuta.', false);
+            return;
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            mostraRicevutaEsito('Il file supera i 10 MB: riprova con una foto o un PDF più leggero.', false);
+            return;
+          }
+          invia.disabled = true;
+          invia.textContent = 'Caricamento…';
+          try {
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('tipo', 'quota');
+            fd.append('nome', scelta.dataset.nome || '');
+            fd.append('email', scelta.dataset.email || '');
+            const resp = await fetch(scelta.dataset.ricevutaUrl, { method: 'POST', body: fd });
+            const out = await resp.json().catch(() => ({}));
+            if (resp.ok && out.success) {
+              mostraRicevutaEsito('Ricevuta caricata! La verificheremo e riceverai conferma via email.', true);
+            } else {
+              mostraRicevutaEsito(out.error || 'Caricamento non riuscito. Riprova, o invia la ricevuta a info@elbrenz.eu.', false);
+            }
+          } catch {
+            mostraRicevutaEsito('Errore di connessione. Riprova, o invia la ricevuta a info@elbrenz.eu.', false);
+          } finally {
+            invia.disabled = false;
+            invia.textContent = 'Carica la ricevuta';
+          }
+        });
+      }
     })();
   </script>
 
@@ -608,7 +791,16 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
         const data = await resp.json().catch(() => ({}));
 
         if (resp.ok && data.success) {
-          showFeedback('Domanda inviata, grazie! ORA IL PASSO 2: versa la quota di 20 € con bonifico all\'IBAN IT84U0816335010000190116255 (Cassa Rurale Val di Sole), causale "Quota sociale 2026 – Nome Cognome". Poi il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.', 'success');
+          showFeedback('Domanda inviata, grazie! Ora scegli qui sotto come versare la quota di 20 € (passo 2). Il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.', 'success');
+          // M2.6-bis: il riquadro di conferma "diventa" il selettore del
+          // passo 2 — reveal + memorizza nome/email per la ricevuta
+          // (il form sta per essere resettato).
+          const scelta = document.getElementById('scelta-pagamento');
+          if (scelta) {
+            scelta.dataset.nome = payload.nome;
+            scelta.dataset.email = payload.email;
+            scelta.classList.remove('hidden');
+          }
           form.reset();
         } else if (resp.status === 429) {
           showFeedback(data.error || 'Hai inviato troppe richieste. Riprova più tardi.', 'error');
