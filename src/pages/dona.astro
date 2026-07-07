@@ -1,0 +1,251 @@
+---
+/**
+ * /dona — donazioni libere "Sostieni El Brenz" (M2.6 addendum).
+ *
+ * PayPal Checkout (JS SDK, client-id PUBBLICO per design) + bonifico come
+ * alternativa. Importi suggeriti 10/25/50 € + importo libero; checkbox
+ * anonimato con copy trasparente. L'importo è comunque validato LATO SERVER
+ * (1,00–500,00 €) dalla edge function paypal-create-order: il client non è
+ * mai fidato.
+ *
+ * NB: pagina volutamente NON linkata da nav/tesseramento/home finché
+ * Cristian non completa il test reale (delibera 7 luglio). Dopo il test:
+ * collegarla da /tesseramento e dalla card Community in home.
+ *
+ * Unica eccezione ammessa alla regola "no fetch client-side": l'SDK PayPal
+ * e le chiamate createOrder/onApprove, limitate a questa pagina (+ blocco
+ * quota su /tesseramento).
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const CREATE_ORDER_URL = `${SUPABASE_URL}/functions/v1/paypal-create-order`;
+const CAPTURE_ORDER_URL = `${SUPABASE_URL}/functions/v1/paypal-capture-order`;
+// Client ID pubblico dell'app REST "El Brenz Tesseramento" (verificato
+// contro l'SDK PayPal il 7/7/2026 — la variante con I maiuscola è errata).
+const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJc1GPwUL2wgh64lSCKfaEkKZlaC';
+---
+<PaginaIstituzionale
+  occhiello="Sostieni El Brenz"
+  titolo="Fai una donazione"
+  intro="Ogni contributo, piccolo o grande, sostiene le ricerche, le pubblicazioni e gli eventi che tengono viva la memoria delle nostre valli."
+  metaDescription="Sostieni l'Associazione El Brenz con una donazione libera: con PayPal, carta o bonifico. Ogni contributo aiuta la storia e la lingua delle Valli del Noce."
+>
+  <div
+    class="bg-white border border-[#E5DFCF] p-8 md:p-10 mb-10"
+    data-create-url={CREATE_ORDER_URL}
+    data-capture-url={CAPTURE_ORDER_URL}
+    data-paypal-client-id={PAYPAL_CLIENT_ID}
+    id="dona-box"
+  >
+    <h2
+      class="text-2xl text-[#1E2E26] font-medium leading-tight m-0 mb-6"
+      style="font-family: 'Playfair Display', serif;"
+    >
+      Quanto vuoi donare?
+    </h2>
+
+    <div class="flex flex-wrap gap-3 mb-4" style="font-family: 'Inter', sans-serif;">
+      <button type="button" class="dona-importo border-2 border-[#E5DFCF] bg-white text-[#1E2E26] px-7 py-3 text-lg font-medium cursor-pointer hover:border-[#C8923E] transition-colors" data-importo="10">10 €</button>
+      <button type="button" class="dona-importo border-2 border-[#C8923E] bg-[#C8923E]/10 text-[#1E2E26] px-7 py-3 text-lg font-medium cursor-pointer hover:border-[#C8923E] transition-colors" data-importo="25" aria-pressed="true">25 €</button>
+      <button type="button" class="dona-importo border-2 border-[#E5DFCF] bg-white text-[#1E2E26] px-7 py-3 text-lg font-medium cursor-pointer hover:border-[#C8923E] transition-colors" data-importo="50">50 €</button>
+    </div>
+
+    <div class="mb-6">
+      <label for="dona-altro" class="block text-sm text-[#0F0F0F]/70 mb-2" style="font-family: 'Inter', sans-serif;">
+        Oppure scrivi un altro importo (da 1 a 500 euro):
+      </label>
+      <div class="flex items-center gap-2">
+        <input
+          type="number"
+          id="dona-altro"
+          min="1"
+          max="500"
+          step="0.01"
+          inputmode="decimal"
+          placeholder="Es. 15"
+          class="w-40 border-2 border-[#E5DFCF] px-4 py-3 text-lg text-[#1E2E26] focus:outline-none focus:border-[#C8923E]"
+          style="font-family: 'Inter', sans-serif;"
+        />
+        <span class="text-lg text-[#1E2E26]" style="font-family: 'Inter', sans-serif;">€</span>
+      </div>
+    </div>
+
+    <div class="border-t border-[#E5DFCF] pt-6 mb-6">
+      <label class="flex items-start gap-3 cursor-pointer" style="font-family: 'Inter', sans-serif;">
+        <input type="checkbox" id="dona-anonimo" class="mt-1 w-4 h-4 accent-[#C8923E] flex-shrink-0" />
+        <span class="text-sm text-[#1E2E26]">Desidero restare anonimo</span>
+      </label>
+      <p class="text-xs text-[#0F0F0F]/60 leading-relaxed mt-2 mb-0 pl-7" style="font-family: 'Inter', sans-serif;">
+        Se scegli l'anonimato non registriamo né pubblichiamo il tuo nome. La
+        transazione resta visibile solo su PayPal e nella contabilità
+        dell'associazione come erogazione liberale. Senza nominativo non
+        possiamo emettere ricevuta ai fini fiscali.
+      </p>
+    </div>
+
+    <div id="dona-dati" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8" style="font-family: 'Inter', sans-serif;">
+      <div>
+        <label for="dona-nome" class="block text-sm text-[#0F0F0F]/70 mb-2">Nome e cognome (per la ricevuta)</label>
+        <input type="text" id="dona-nome" maxlength="100" autocomplete="name" class="w-full border-2 border-[#E5DFCF] px-4 py-3 text-base text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+      </div>
+      <div>
+        <label for="dona-email" class="block text-sm text-[#0F0F0F]/70 mb-2">Email (per la ricevuta)</label>
+        <input type="email" id="dona-email" maxlength="200" autocomplete="email" class="w-full border-2 border-[#E5DFCF] px-4 py-3 text-base text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+      </div>
+    </div>
+
+    <p class="text-sm text-[#0F0F0F]/70 mb-4" style="font-family: 'Inter', sans-serif;">
+      Paga con PayPal <strong>o con carta di credito/debito</strong> — non
+      serve avere un conto PayPal.
+    </p>
+    <div id="paypal-dona-buttons"></div>
+    <div
+      id="dona-esito"
+      class="hidden mt-6 p-4 text-sm border-l-4"
+      role="status"
+      aria-live="polite"
+      style="font-family: 'Inter', sans-serif;"
+    ></div>
+  </div>
+
+  <div class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+    <h2
+      class="text-2xl text-[#1E2E26] font-medium leading-tight m-0 mb-4"
+      style="font-family: 'Playfair Display', serif;"
+    >
+      Preferisci il bonifico?
+    </h2>
+    <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-4" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2">IBAN</p>
+      <p class="font-mono text-sm md:text-base text-[#1E2E26] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
+      <p class="text-sm text-[#1E2E26]/80 m-0 mt-3 leading-relaxed">
+        Cassa Rurale Val di Sole, filiale Mezzana — intestato ad
+        <strong>Associazione El Brenz</strong>
+      </p>
+    </div>
+    <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2">Causale</p>
+      <p class="text-sm md:text-base text-[#1E2E26] m-0"><em>Erogazione liberale</em></p>
+    </div>
+  </div>
+
+  <p
+    class="text-sm text-[#0F0F0F]/60 leading-relaxed mt-10 pt-6 border-t border-[#E5DFCF]"
+    style="font-family: 'Source Serif 4', Georgia, serif;"
+  >
+    Vuoi fare di più? <a href="/tesseramento" class="text-[#C8923E] no-underline hover:underline">Diventa socio</a>:
+    la quota annuale è di 20 €. Per qualsiasi dubbio scrivici a
+    <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
+  </p>
+</PaginaIstituzionale>
+
+<script is:inline>
+  // Donazioni PayPal (M2.6 addendum). L'importo scelto qui è solo una
+  // preferenza: la edge function lo rivalida (1,00-500,00 €) e per la
+  // quota sociale l'importo è comunque fissato lato server.
+  (function () {
+    const box = document.getElementById('dona-box');
+    if (!box) return;
+    const createUrl = box.dataset.createUrl;
+    const captureUrl = box.dataset.captureUrl;
+    const clientId = box.dataset.paypalClientId;
+    const esito = document.getElementById('dona-esito');
+    const altro = document.getElementById('dona-altro');
+    const anonimoCheck = document.getElementById('dona-anonimo');
+    const datiBox = document.getElementById('dona-dati');
+    let importoScelto = '25';
+
+    document.querySelectorAll('.dona-importo').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        importoScelto = btn.dataset.importo;
+        if (altro) altro.value = '';
+        document.querySelectorAll('.dona-importo').forEach((b) => {
+          const attivo = b === btn;
+          b.classList.toggle('border-[#C8923E]', attivo);
+          b.classList.toggle('bg-[#C8923E]/10', attivo);
+          b.classList.toggle('border-[#E5DFCF]', !attivo);
+          b.classList.toggle('bg-white', !attivo);
+          b.setAttribute('aria-pressed', attivo ? 'true' : 'false');
+        });
+      });
+    });
+    if (altro) {
+      altro.addEventListener('input', () => {
+        if (altro.value) {
+          document.querySelectorAll('.dona-importo').forEach((b) => {
+            b.classList.remove('border-[#C8923E]', 'bg-[#C8923E]/10');
+            b.classList.add('border-[#E5DFCF]', 'bg-white');
+            b.setAttribute('aria-pressed', 'false');
+          });
+        }
+      });
+    }
+    if (anonimoCheck && datiBox) {
+      anonimoCheck.addEventListener('change', () => {
+        datiBox.style.display = anonimoCheck.checked ? 'none' : '';
+      });
+    }
+
+    function importoCorrente() {
+      const libero = altro && altro.value ? parseFloat(altro.value) : NaN;
+      return Number.isFinite(libero) && libero > 0 ? libero : parseFloat(importoScelto);
+    }
+
+    function mostraEsito(msg, ok) {
+      if (!esito) return;
+      esito.classList.remove('hidden');
+      esito.style.background = ok ? '#eaf3ee' : '#fbecec';
+      esito.style.borderLeftColor = ok ? '#1d4d3a' : '#a33';
+      esito.style.color = '#1E2E26';
+      esito.textContent = msg;
+    }
+
+    const sdk = document.createElement('script');
+    sdk.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId) +
+      '&currency=EUR&intent=capture&components=buttons&enable-funding=card&locale=it_IT';
+    sdk.onload = () => {
+      if (!window.paypal) return;
+      window.paypal.Buttons({
+        createOrder: async () => {
+          const imp = importoCorrente();
+          const resp = await fetch(createUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tipo: 'donazione',
+              importo: imp,
+              anonimo: !!(anonimoCheck && anonimoCheck.checked),
+              nome: anonimoCheck && anonimoCheck.checked ? '' : (document.getElementById('dona-nome')?.value || ''),
+              email: anonimoCheck && anonimoCheck.checked ? '' : (document.getElementById('dona-email')?.value || ''),
+            }),
+          });
+          const data = await resp.json();
+          if (!resp.ok || !data.id) {
+            mostraEsito(data.error || 'Errore nella preparazione del pagamento.', false);
+            throw new Error(data.error || 'createOrder failed');
+          }
+          return data.id;
+        },
+        onApprove: async (data) => {
+          const resp = await fetch(captureUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderID: data.orderID }),
+          });
+          const out = await resp.json();
+          if (resp.ok && out.success) {
+            mostraEsito('Donazione ricevuta, grazie di cuore! Il tuo contributo sostiene la memoria delle nostre valli.', true);
+          } else {
+            mostraEsito(out.error || 'Il pagamento non risulta completato. Scrivici a info@elbrenz.eu.', false);
+          }
+        },
+        onError: () => {
+          mostraEsito('Si è verificato un errore col pagamento. Riprova, oppure usa il bonifico qui sotto.', false);
+        },
+      }).render('#paypal-dona-buttons');
+    };
+    document.head.appendChild(sdk);
+  })();
+</script>

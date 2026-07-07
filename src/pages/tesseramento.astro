@@ -22,6 +22,14 @@ import Layout from '../layouts/Layout.astro';
 // URL edge function — letta da env per dev/prod
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
 const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
+
+// M2.6 — pagamento quota con PayPal (SDK caricato SOLO su questa pagina).
+// Client ID pubblico per design (app REST "El Brenz Tesseramento",
+// verificato contro l'SDK il 7/7/2026). L'importo della quota è fissato
+// LATO SERVER dalla edge function: il client non decide mai la cifra.
+const PAYPAL_CREATE_URL = `${SUPABASE_URL}/functions/v1/paypal-create-order`;
+const PAYPAL_CAPTURE_URL = `${SUPABASE_URL}/functions/v1/paypal-capture-order`;
+const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJc1GPwUL2wgh64lSCKfaEkKZlaC';
 ---
 <Layout
   title="Diventa socio"
@@ -167,11 +175,36 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
                 <p class="text-sm md:text-base text-[#1E2E26] m-0"><em>Quota sociale 2026 – Nome Cognome</em></p>
               </div>
 
-              <p class="text-sm text-[#0F0F0F]/60 leading-relaxed m-0" style="font-family: 'Inter', sans-serif;">
+              <p id="paypal-quota-presto" class="text-sm text-[#0F0F0F]/60 leading-relaxed m-0" style="font-family: 'Inter', sans-serif;">
                 Presto potrai pagare qui anche con <strong>PayPal o carta di
                 credito/debito</strong> (senza bisogno di un conto PayPal):
                 stiamo attivando il servizio.
               </p>
+
+              {/* M2.6: pagamento quota con PayPal/carta. Nascosto finché
+                  Cristian non completa il test reale: si attiva SOLO con
+                  ?paypal=1 nell'URL (vedi script in fondo). Al go-live basta
+                  mettere PAYPAL_QUOTA_LIVE a true qui sotto nello script. */}
+              <div
+                id="paypal-quota-box"
+                class="hidden border-t border-[#E5DFCF] mt-6 pt-6"
+                data-create-url={PAYPAL_CREATE_URL}
+                data-capture-url={PAYPAL_CAPTURE_URL}
+                data-paypal-client-id={PAYPAL_CLIENT_ID}
+              >
+                <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+                  Oppure paga subito qui i 20 € con <strong>PayPal o carta di
+                  credito/debito</strong> — non serve avere un conto PayPal:
+                </p>
+                <div id="paypal-quota-buttons"></div>
+                <div
+                  id="paypal-quota-esito"
+                  class="hidden mt-4 p-4 text-sm border-l-4"
+                  role="status"
+                  aria-live="polite"
+                  style="font-family: 'Inter', sans-serif;"
+                ></div>
+              </div>
             </div>
           </div>
         </li>
@@ -361,6 +394,81 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
       </form>
     </div>
   </section>
+
+  {/* M2.6: script pagamento quota PayPal — gate di attivazione.
+      PAYPAL_QUOTA_LIVE=false finché Cristian non completa il test reale:
+      il blocco compare SOLO con ?paypal=1 nell'URL. Al go-live: true. */}
+  <script is:inline>
+    (function () {
+      const PAYPAL_QUOTA_LIVE = false; // ← flip a true dopo il test di Cristian
+      const box = document.getElementById('paypal-quota-box');
+      const presto = document.getElementById('paypal-quota-presto');
+      if (!box) return;
+      const gate = PAYPAL_QUOTA_LIVE ||
+        new URLSearchParams(window.location.search).get('paypal') === '1';
+      if (!gate) return;
+
+      box.classList.remove('hidden');
+      if (presto) presto.style.display = 'none';
+
+      const esito = document.getElementById('paypal-quota-esito');
+      function mostraEsito(msg, ok) {
+        if (!esito) return;
+        esito.classList.remove('hidden');
+        esito.style.background = ok ? '#eaf3ee' : '#fbecec';
+        esito.style.borderLeftColor = ok ? '#1d4d3a' : '#a33';
+        esito.style.color = '#1E2E26';
+        esito.textContent = msg;
+      }
+
+      const sdk = document.createElement('script');
+      sdk.src = 'https://www.paypal.com/sdk/js?client-id=' +
+        encodeURIComponent(box.dataset.paypalClientId) +
+        '&currency=EUR&intent=capture&components=buttons&enable-funding=card&locale=it_IT';
+      sdk.onload = () => {
+        if (!window.paypal) return;
+        window.paypal.Buttons({
+          createOrder: async () => {
+            // tipo 'quota': l'importo (20.00 EUR) lo fissa il server.
+            const nomeCampo = document.getElementById('cf-nome');
+            const emailCampo = document.getElementById('cf-email');
+            const resp = await fetch(box.dataset.createUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tipo: 'quota',
+                nome: nomeCampo ? nomeCampo.value : '',
+                email: emailCampo ? emailCampo.value : '',
+              }),
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.id) {
+              mostraEsito(data.error || 'Errore nella preparazione del pagamento.', false);
+              throw new Error(data.error || 'createOrder failed');
+            }
+            return data.id;
+          },
+          onApprove: async (data) => {
+            const resp = await fetch(box.dataset.captureUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderID: data.orderID }),
+            });
+            const out = await resp.json();
+            if (resp.ok && out.success) {
+              mostraEsito('Quota ricevuta, grazie! Riceverai conferma dal Direttivo via email. Ricorda anche il passo 1: se non l\'hai già fatto, compila il modulo qui sotto.', true);
+            } else {
+              mostraEsito(out.error || 'Il pagamento non risulta completato. Scrivici a info@elbrenz.eu.', false);
+            }
+          },
+          onError: () => {
+            mostraEsito('Si è verificato un errore col pagamento. Riprova, oppure usa il bonifico qui sopra.', false);
+          },
+        }).render('#paypal-quota-buttons');
+      };
+      document.head.appendChild(sdk);
+    })();
+  </script>
 
   {/* M2.R: contatti per chi ha difficoltà col modulo o col pagamento */}
   <section class="bg-[#FDF9F0] py-14">
