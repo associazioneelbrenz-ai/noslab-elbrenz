@@ -408,4 +408,103 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
     </div>
   </section>
 
+
+  {/* M2.7 — sezione "Seguici": card Migole de Storia (Instagram) + Facebook.
+      NESSUN embed/iframe/SDK Meta (cookie di terze parti senza consenso,
+      stessa regola del video YouTube): thumbnail self-hosted e wordmark
+      ricreati inline. Le 3 migole in public/social/migole/ sono PLACEHOLDER
+      brandizzati: sostituirle con le immagini reali fornite da Cristian
+      (stessi nomi file, quadrate ~400px). */}
+  <section class="bg-[#FDF9F0] py-24">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2
+        class="text-3xl md:text-5xl font-medium text-[#1E2E26] mb-4 text-center leading-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Seguici, <em style="font-style: italic; color: #C8923E;">restiamo vicini</em>.
+      </h2>
+      <p
+        class="text-base text-[#0F0F0F]/70 text-center m-0 mb-12 max-w-xl mx-auto"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Ogni settimana la storia delle nostre valli passa anche dai social:
+        piccole scoperte, foto d'archivio e appuntamenti.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <div class="bg-white border border-[#E5DFCF] p-8 flex flex-col">
+          <h3
+            class="text-2xl text-[#1E2E26] font-medium leading-tight m-0 mb-2"
+            style="font-family: 'Playfair Display', serif;"
+          >
+            Migole de Storia
+          </h3>
+          <p
+            class="text-sm text-[#0F0F0F]/70 leading-relaxed m-0 mb-5"
+            style="font-family: 'Source Serif 4', Georgia, serif;"
+          >
+            Briciole di storia delle nostre valli, ogni settimana su Instagram.
+          </p>
+          <div class="grid grid-cols-3 gap-2 mb-5">
+            <img src="/social/migole/migola-01.webp" alt="Migola de Storia: la storia delle valli" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
+            <img src="/social/migole/migola-02.webp" alt="Migola de Storia: le parlate ladine" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
+            <img src="/social/migole/migola-03.webp" alt="Migola de Storia: memoria e radici" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
+          </div>
+          <p class="text-[12px] tracking-[0.14em] uppercase text-[#C8923E] m-0 mb-5" style="font-family: 'Inter', sans-serif;">
+            #migoledestoria
+          </p>
+          <a
+            href="https://www.instagram.com/elbrenzass"
+            target="_blank"
+            rel="noopener"
+            class="mt-auto inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Seguici su Instagram
+          </a>
+        </div>
+
+        <div class="bg-white border border-[#E5DFCF] p-8 flex flex-col">
+          <div class="flex items-center gap-3 mb-2">
+            <span
+              class="inline-flex items-center justify-center w-9 h-9 rounded-full text-white font-bold"
+              style="background: #1877F2; font-family: Georgia, serif; font-size: 22px;"
+              aria-hidden="true"
+            >f</span>
+            <h3
+              class="text-2xl text-[#1E2E26] font-medium leading-tight m-0"
+              style="font-family: 'Playfair Display', serif;"
+            >
+              La comunità su Facebook
+            </h3>
+          </div>
+          <p
+            class="text-sm text-[#0F0F0F]/70 leading-relaxed m-0 mb-5"
+            style="font-family: 'Source Serif 4', Georgia, serif;"
+          >
+            Eventi, foto d'archivio e discussioni con chi ama la storia delle
+            nostre valli: la piazza digitale della nosa Sociazion.
+          </p>
+          <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-4 mb-5">
+            <p class="text-sm text-[#1E2E26]/85 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+              «Rais fonde no le 'nglacia» — e nemmeno le amicizie: ci trovi
+              tutti i giorni, dalle valli e da lontano.
+            </p>
+          </div>
+          <a
+            href="https://www.facebook.com/ASSOCIAZIONELBRENZ"
+            target="_blank"
+            rel="noopener"
+            class="mt-auto inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Segui la pagina
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
 </Layout>
