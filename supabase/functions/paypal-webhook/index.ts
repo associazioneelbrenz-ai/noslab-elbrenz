@@ -24,6 +24,89 @@ const STATI: Record<string, string> = {
   'PAYMENT.CAPTURE.DENIED': 'negato',
 };
 
+// M2.6-ter (B4): mini-mail al Direttivo quando un pagamento diventa
+// 'completato'. Idempotente via colonna `notificato` (i replay dello stesso
+// evento non spediscono due volte). Match domanda per email (solo quota);
+// quota senza domanda agganciabile → "pagamento orfano, verificare".
+// L'email si marca notificato SOLO a invio riuscito (retry al prossimo
+// evento in caso di errore transitorio).
+async function notificaCompletato(
+  supabase: ReturnType<typeof createClient>,
+  captureId: string | null,
+  orderId: string | null,
+): Promise<void> {
+  let q = supabase.from('pagamenti_tesseramento')
+    .select('id, tipo, anonimo, nome, email, importo, metodo, notificato, domanda_id');
+  if (captureId) q = q.eq('capture_id', captureId);
+  else if (orderId) q = q.eq('order_id', orderId);
+  else return;
+  const { data: riga } = await q.maybeSingle();
+  if (!riga || riga.notificato) return;
+
+  // aggancio domanda (solo quota, serve una email sul pagamento)
+  let domandaId: string | null = riga.domanda_id ?? null;
+  if (riga.tipo === 'quota' && !domandaId && riga.email) {
+    const { data: dom } = await supabase.from('domande_tesseramento')
+      .select('id')
+      .ilike('email', riga.email)
+      .eq('stato', 'in_attesa')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (dom) {
+      domandaId = dom.id;
+      await supabase.from('pagamenti_tesseramento')
+        .update({ domanda_id: dom.id, updated_at: new Date().toISOString() })
+        .eq('id', riga.id);
+    }
+  }
+
+  const sharedSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
+  if (!sharedSecret) {
+    console.error('[paypal-webhook] SEND_EMAIL_SHARED_SECRET mancante: notifica saltata');
+    return;
+  }
+  const metodoLabel = riga.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico';
+  const chi = riga.anonimo ? 'Donatore anonimo' : (riga.nome || riga.email || 'sconosciuto');
+  const cosa = riga.tipo === 'quota' ? 'Quota sociale 2026' : 'Donazione';
+  const aggancio = riga.tipo === 'quota'
+    ? (domandaId
+      ? `<p style="color:#2d8659;">✓ Agganciato alla domanda <strong>#${domandaId.slice(0, 8)}</strong>.</p>`
+      : `<p style="color:#a33;"><strong>⚠ Pagamento orfano:</strong> nessuna domanda in attesa con questa email — verificare manualmente.</p>`)
+    : '';
+  const html = `<!DOCTYPE html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;">
+  <div style="background:#fff;padding:28px;border-radius:8px;border-top:4px solid #2d8659;">
+    <h1 style="color:#1E2E26;font-size:20px;margin:0 0 16px;">Pagamento ricevuto ✓</h1>
+    <p style="color:#1E2E26;font-size:15px;margin:0 0 6px;"><strong>${cosa}</strong> — ${riga.importo} € via ${metodoLabel}</p>
+    <p style="color:#1E2E26;font-size:15px;margin:0 0 12px;">Da: <strong>${chi}</strong></p>
+    ${aggancio}
+    <p style="color:#999;font-size:11px;margin-top:20px;">Notifica automatica dal webhook PayPal · El Brenz</p>
+  </div></body></html>`;
+
+  try {
+    const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },
+      body: JSON.stringify({
+        to: 'info@elbrenz.eu',
+        subject: `Pagamento ricevuto — ${cosa} ${riga.importo} € (${chi})`,
+        html,
+        tags: [{ name: 'source', value: 'paypal-webhook' }],
+      }),
+    });
+    if (resp.ok) {
+      await supabase.from('pagamenti_tesseramento')
+        .update({ notificato: true, updated_at: new Date().toISOString() })
+        .eq('id', riga.id);
+      console.log('[paypal-webhook] notifica inviata per', riga.id);
+    } else {
+      console.error('[paypal-webhook] send-email fallita:', resp.status);
+    }
+  } catch (err) {
+    console.error('[paypal-webhook] notifica fallita:', err);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Metodo non consentito' }), {
@@ -131,6 +214,7 @@ Deno.serve(async (req: Request) => {
         .eq('capture_id', captureId)
         .select('id');
       if (byCapture && byCapture.length > 0) {
+        if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId);
         return ok(eventType, nuovoStato);
       }
     }
@@ -145,6 +229,7 @@ Deno.serve(async (req: Request) => {
         .eq('order_id', orderId)
         .select('id');
       if (byOrder && byOrder.length > 0) {
+        if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId);
         return ok(eventType, nuovoStato);
       }
     }
@@ -161,6 +246,7 @@ Deno.serve(async (req: Request) => {
         { onConflict: 'capture_id' },
       );
     }
+    if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId);
     return ok(eventType, nuovoStato);
   } catch (err) {
     console.error('[paypal-webhook] errore riconciliazione:', err);

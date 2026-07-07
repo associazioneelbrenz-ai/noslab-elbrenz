@@ -529,15 +529,19 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         window.paypal.Buttons({
           createOrder: async () => {
             // tipo 'quota': l'importo (20.00 EUR) lo fissa il server.
+            // Nome/email: dai campi se compilati, altrimenti dal dataset del
+            // selettore (il form si resetta dopo l'invio) — servono per
+            // agganciare il pagamento alla domanda (M2.6-ter).
             const nomeCampo = document.getElementById('cf-nome');
             const emailCampo = document.getElementById('cf-email');
+            const scelta = document.getElementById('scelta-pagamento');
             const resp = await fetch(box.dataset.createUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 tipo: 'quota',
-                nome: nomeCampo ? nomeCampo.value : '',
-                email: emailCampo ? emailCampo.value : '',
+                nome: (nomeCampo && nomeCampo.value) || (scelta && scelta.dataset.nome) || '',
+                email: (emailCampo && emailCampo.value) || (scelta && scelta.dataset.email) || '',
               }),
             });
             const data = await resp.json();

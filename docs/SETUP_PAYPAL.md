@@ -84,3 +84,57 @@ Chiedi a Claude Code di:
 - L'importo della quota è hardcoded nella edge function: il client non può
   manipolarlo. Le donazioni sono validate server-side (1–500 €).
 - Eventi webhook con firma non verificata: 400, nessuna scrittura a DB.
+
+---
+
+# M2.6-ter — Workflow approvazione tessere (7 luglio, sera)
+
+## Secrets (stato)
+
+| Secret | Stato | Note |
+|---|---|---|
+| `ADMIN_ACTION_SECRET` | ✅ impostato da Claude Code (generato con `openssl rand -hex 32`, MAI transitato in chat) | Per ruotarlo: `supabase secrets set ADMIN_ACTION_SECRET=$(openssl rand -hex 32) --project-ref wacknihvdjxltiqvxtqr` — i vecchi link scheda smettono di funzionare, i nuovi arrivano con le prossime mail. |
+| `TESSERA_SEED` | ✅ = 20 | Libro Soci: tessere 1-19 storiche a DB (inserite da Cristian). Il contatore usa max(seed, max esistente + 1). |
+| `TESSERE_LIVE` | ⛔ NON impostato = spento | Attivare SOLO dopo Resend autenticato + ok esplicito di Cristian: `supabase secrets set TESSERE_LIVE=true --project-ref ...`. Finché spento: l'approvazione assegna numero e stato ma NON invia l'email tessera. |
+
+## Flusso operativo (per il segretario)
+
+1. Il socio invia il modulo → mail al Direttivo con sezione PAGAMENTO (stato
+   live) e bottone **"Apri scheda domanda"** (link firmato, valido 30 giorni).
+2. Quando il pagamento arriva (PayPal o webhook) → mini-mail "Pagamento
+   ricevuto", agganciato alla domanda (o "pagamento orfano, verificare").
+3. Dalla scheda: **"Approva e invia tessera"** (un click: numero automatico
+   dal Libro Soci, log per il verbale CD, email tessera al socio se
+   TESSERE_LIVE) oppure **"Segna respinta"**. Doppio click = nessun doppio
+   invio, nessun numero bruciato (testato).
+4. Tessere storiche 1-19: righe già a DB, `tessera_inviata=false`. NON
+   riceveranno mai invii automatici (il flusso agisce solo su domande
+   in_attesa). Invio manuale post-Resend, previa sistemazione delle email
+   condivise di 2 soci.
+5. Solleciti rinnovo: NON implementati. Regola concordata: mai prima del
+   31/12 dell'anno di validità (campo `scadenza` già predisposto).
+
+Tessera digitale = email HTML brandizzata (logo + bandiera ladina). PDF
+formato carta di credito = fase 2 (scelta dichiarata).
+
+## Resend — autenticazione dominio elbrenz.eu su Aruba (da fare, punto 4 coda)
+
+⚠️ REGOLA FERREA: su Aruba si toccano SOLO i record che Resend chiede
+(TXT/CNAME/MX su sottodomini dedicati di Resend). MAI modificare gli MX
+esistenti del dominio né SPF/DKIM di altri servizi.
+
+1. resend.com → Domains → Add Domain → `elbrenz.eu` (region EU).
+2. Resend mostra 3-4 record da creare. Tipicamente:
+   - TXT `resend._domainkey.elbrenz.eu` → (valore DKIM lungo, copia esatta)
+   - TXT per SPF su un sottodominio `send.elbrenz.eu` tipo
+     `v=spf1 include:amazonses.com ~all` (il valore esatto lo dà Resend)
+   - MX su `send.elbrenz.eu` (sottodominio di invio, NON elbrenz.eu!)
+3. Aruba → Pannello DNS → aggiungi ESATTAMENTE i record mostrati da Resend
+   (nome, tipo, valore, TTL default). Attenzione agli apici e ai punti finali.
+4. Attendi la verifica su Resend (minuti-ore). Stato "Verified" = fatto.
+5. DMARC (consigliato, dopo che DKIM è verde): TXT `_dmarc.elbrenz.eu` →
+   `v=DMARC1; p=none; rua=mailto:info@elbrenz.eu` (p=none = solo report,
+   nessun impatto sulla posta esistente).
+6. Aggiorna `RESEND_FROM` nei secrets con il mittente del dominio verificato
+   (es. `El Brenz <info@elbrenz.eu>`), poi test di invio.
+7. Solo a questo punto: `TESSERE_LIVE=true` previo ok di Cristian.

@@ -143,6 +143,15 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
       <div class="flex flex-wrap items-center justify-center gap-4 mb-16" style="font-family: 'Inter', sans-serif;">
         <a href="/storia" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Scopri El Brenz</a>
         <a href="/tesseramento" class="inline-block border border-[#F5EEDD]/40 text-[#F5EEDD] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:border-[#C8923E] hover:text-[#C8923E] transition-colors">Diventa socio</a>
+        {PAGAMENTI_LIVE && (
+          <a
+            href="/dona"
+            class="inline-flex items-center gap-2 px-7 py-3 text-sm font-semibold tracking-wider uppercase no-underline text-[#1E2E26] rounded-full transition-all duration-150 hover:-translate-y-0.5 hover:shadow-xl"
+            style="background: linear-gradient(135deg, #D9A94E 0%, #C8923E 55%, #b07f2f 100%); box-shadow: 0 4px 16px rgba(200, 146, 62, 0.4);"
+          >
+            <span aria-hidden="true" style="font-size: 15px;">♥</span> Sostienici
+          </a>
+        )}
       </div>
 
       <div class="pt-10 border-t border-[#F5EEDD]/15 max-w-md mx-auto">

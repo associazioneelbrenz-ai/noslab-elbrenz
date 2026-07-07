@@ -21,6 +21,8 @@
 //   (che con la nuova gestione chiavi Supabase non è più un JWT valido).
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
+import { createClient } from "jsr:@supabase/supabase-js@2"
+import { firmaToken, TOKEN_TTL_MS } from "../_shared/admin.ts"
 
 // =============================================================================
 // CONFIG
@@ -157,6 +159,8 @@ function buildEmailHtml(
   comuneNascita: string,
   sesso: string,
   ip: string,
+  pagamentoHtml = '',   // M2.6-ter: sezione PAGAMENTO (stato live)
+  schedaHtml = '',      // M2.6-ter: link firmato alla scheda domanda
 ): string {
   const nomeEsc = escapeHtml(nome)
   const emailEsc = escapeHtml(email)
@@ -207,6 +211,9 @@ function buildEmailHtml(
 
     <h2 style="color: #1E2E26; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #C8923E;">Messaggio</h2>
     <div style="background: #FDF9F0; padding: 16px; border-left: 3px solid #C8923E; color: #1E2E26; font-size: 15px; line-height: 1.6;">${messaggioEsc}</div>
+
+    ${pagamentoHtml}
+    ${schedaHtml}
 
     <div style="margin-top: 24px; padding: 12px 16px; background: #f0f7f1; border-left: 3px solid #2d8659; color: #1E2E26; font-size: 12px;">
       ✓ Consenso GDPR ricevuto · Data invio: ${dataFormatted}
@@ -364,8 +371,67 @@ serve(async (req) => {
     return jsonResponse({ error: 'Sesso non valido.' }, 400, cors)
   }
 
+  // 8d. M2.6-ter: persistenza domanda + stato pagamento live + link scheda.
+  // Best-effort: un problema qui NON deve mai bloccare l'invio della mail
+  // (il flusso storico resta il paracadute).
+  let pagamentoHtml = ''
+  let schedaHtml = ''
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+    const { data: domanda, error: insErr } = await supabase
+      .from('domande_tesseramento')
+      .insert({
+        nome, email, messaggio,
+        data_nascita: dataNascita,
+        comune_nascita: comuneNascita,
+        sesso,
+      })
+      .select('id')
+      .single()
+    if (insErr) console.error('[contact-form] insert domanda fallita:', insErr)
+
+    // Stato pagamento quota al momento dell'invio (match per email)
+    const { data: pag } = await supabase
+      .from('pagamenti_tesseramento')
+      .select('stato, metodo, importo, created_at')
+      .ilike('email', email)
+      .eq('tipo', 'quota')
+      .in('stato', ['completato', 'in_verifica'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const pagTesto = pag
+      ? (pag.stato === 'completato'
+        ? `✓ RICEVUTO — ${pag.importo} € via ${pag.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico'}`
+        : `⏳ IN VERIFICA — ricevuta bonifico caricata (${pag.importo ?? '?'} €)`)
+      : 'non ancora ricevuto'
+    pagamentoHtml = `
+    <h2 style="color: #1E2E26; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin: 24px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid #C8923E;">Pagamento</h2>
+    <div style="background: ${pag && pag.stato === 'completato' ? '#f0f7f1' : '#FDF9F0'}; padding: 16px; border-left: 3px solid ${pag && pag.stato === 'completato' ? '#2d8659' : '#C8923E'}; color: #1E2E26; font-size: 15px;">Quota sociale 2026: <strong>${pagTesto}</strong><br/><span style="font-size:12px;color:#666;">Stato al momento dell'invio della domanda; il pagamento può arrivare dopo (riceverai una mail dedicata).</span></div>`
+
+    // Link firmato alla scheda domanda (se il secret è configurato)
+    const adminSecret = Deno.env.get('ADMIN_ACTION_SECRET')
+    if (domanda && adminSecret) {
+      const exp = Date.now() + TOKEN_TTL_MS
+      const t = await firmaToken(adminSecret, 'vista', domanda.id, exp)
+      const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda?d=${domanda.id}&exp=${exp}&t=${t}`
+      schedaHtml = `
+    <div style="margin-top: 20px; text-align: center;">
+      <a href="${url}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 28px;text-decoration:none;font-weight:600;font-size:14px;border-radius:4px;">Apri scheda domanda →</a>
+      <p style="color:#999;font-size:11px;margin-top:8px;">Link riservato al Direttivo, valido 30 giorni. Da lì si approva e si invia la tessera.</p>
+    </div>`
+    } else if (domanda && !adminSecret) {
+      schedaHtml = `<p style="color:#999;font-size:11px;margin-top:16px;">Scheda domanda non disponibile: configurare ADMIN_ACTION_SECRET (vedi docs/SETUP_PAYPAL.md).</p>`
+    }
+  } catch (err) {
+    console.error('[contact-form] blocco domanda/pagamento fallito:', err)
+  }
+
   // 9. Compose & send
-  const html = buildEmailHtml(nome, email, messaggio, dataNascita, comuneNascita, sesso, ip)
+  const html = buildEmailHtml(nome, email, messaggio, dataNascita, comuneNascita, sesso, ip, pagamentoHtml, schedaHtml)
 
   // Auth verso send-email tramite shared secret (pattern function-to-function).
   // SEND_EMAIL_SHARED_SECRET deve essere configurata come env var su entrambe
