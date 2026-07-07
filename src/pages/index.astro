@@ -12,6 +12,16 @@ import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 // M2.6-bis: box "Sostieni El Brenz" — esiste in pagina SOLO col flag
 // go-live pagamenti attivo (build time, vedi src/lib/pagamenti.ts).
 import { PAGAMENTI_LIVE } from '../lib/pagamenti';
+import EmbedConsenso from '../components/EmbedConsenso.astro';
+
+// M2.9 (deroga 8/7/2026): quando Cristian fornisce gli URL dei 3 post
+// Instagram delle migole, inserirli qui: le celle diventano embed
+// click-to-load (un click carica tutte e tre — il consenso vale per il
+// provider). Finché è null restano le thumbnail statiche self-hosted.
+function migoleUrls(): [string, string, string] | null {
+  return null; // ← sostituire con i 3 URL dei post quando arrivano
+}
+const MIGOLE_POST_URLS = migoleUrls();
 
 // AGGIUNTA M2.4 (home ricca): blocco "Ultimi articoli".
 // Riusa gli helper di lib/articoli e lo stesso filtro produzione di
@@ -446,11 +456,24 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
           >
             Briciole di storia delle nostre valli, ogni settimana su Instagram.
           </p>
-          <div class="grid grid-cols-3 gap-2 mb-5">
-            <img src="/social/migole/migola-01.webp" alt="Migola de Storia: la storia delle valli" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
-            <img src="/social/migole/migola-02.webp" alt="Migola de Storia: le parlate ladine" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
-            <img src="/social/migole/migola-03.webp" alt="Migola de Storia: memoria e radici" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
-          </div>
+          {MIGOLE_POST_URLS ? (
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
+              {MIGOLE_POST_URLS.map((postUrl, i) => (
+                <EmbedConsenso
+                  provider="instagram"
+                  url={postUrl}
+                  titolo={`Migola de Storia n. ${i + 1}`}
+                  thumb={`/social/migole/migola-0${i + 1}.webp`}
+                />
+              ))}
+            </div>
+          ) : (
+            <div class="grid grid-cols-3 gap-2 mb-5">
+              <img src="/social/migole/migola-01.webp" alt="Migola de Storia: la storia delle valli" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
+              <img src="/social/migole/migola-02.webp" alt="Migola de Storia: le parlate ladine" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
+              <img src="/social/migole/migola-03.webp" alt="Migola de Storia: memoria e radici" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
+            </div>
+          )}
           <p class="text-[12px] tracking-[0.14em] uppercase text-[#C8923E] m-0 mb-5" style="font-family: 'Inter', sans-serif;">
             #migoledestoria
           </p>

@@ -19,7 +19,11 @@
     },
     categories: {
       necessary: { readOnly: true, enabled: true },
-      analytics: { autoClear: { cookies: [{ name: /^_ga/ }, { name: '_gid' }] } }
+      analytics: { autoClear: { cookies: [{ name: /^_ga/ }, { name: '_gid' }] } },
+      // M2.9 (deroga 8/7/2026): contenuti incorporati (Instagram/YouTube).
+      // Anche senza questa categoria, ogni embed resta caricabile col
+      // click-to-load contestuale (vedi EmbedConsenso.astro).
+      embed: { autoClear: { cookies: [{ name: /^eb_embed_/ }] } }
     },
     language: {
       default: 'it',
@@ -27,7 +31,7 @@
         it: {
           consentModal: {
             title: 'Cookie e privacy',
-            description: 'Questo sito usa solo cookie tecnici necessari al funzionamento (login soci, OTP via email, sessione). Se in futuro attiveremo strumenti di analisi, ti chiederemo prima di abilitarli. <br><br><a href="/privacy">Privacy policy</a> · <a href="/cookie-policy">Cookie policy</a>',
+            description: 'Questo sito usa solo cookie tecnici necessari al funzionamento (login soci, OTP via email, sessione). I contenuti incorporati da Instagram e YouTube si caricano solo su tua richiesta, con un click. Se in futuro attiveremo strumenti di analisi, ti chiederemo prima di abilitarli. <br><br><a href="/privacy">Privacy policy</a> · <a href="/cookie-policy">Cookie policy</a>',
             acceptAllBtn: 'Accetta tutto',
             acceptNecessaryBtn: 'Solo necessari',
             showPreferencesBtn: 'Personalizza'
@@ -42,6 +46,7 @@
               { title: 'Uso dei cookie su elbrenz.eu', description: 'Raccogliamo il minimo indispensabile per farti accedere all\'area soci e per i servizi essenziali. Niente tracciamento pubblicitario, niente cookie di terze parti per profilazione.' },
               { title: 'Cookie strettamente necessari', description: 'Sempre attivi. Garantiscono login soci, validazione OTP via email, sessioni Supabase. Senza, alcune parti del sito non funzionano.', linkedCategory: 'necessary' },
               { title: 'Cookie analitici (non ancora attivi)', description: 'Categoria pronta per Google Analytics 4, che potremmo attivare in futuro per capire quali contenuti delle Valli del Noce interessano di più. Per ora questa categoria è vuota e nessun cookie analitico viene installato.', linkedCategory: 'analytics' },
+              { title: 'Contenuti esterni (Instagram, YouTube)', description: 'Se attivi questa categoria, i contenuti incorporati da Instagram (Meta) e YouTube (Google) si caricano automaticamente. Se resta spenta, ogni contenuto mostra un avviso e si carica solo quando premi \'Carica\' (il click vale per quel servizio, per la sessione in corso). Prima del caricamento nessun dato viene trasmesso a terzi.', linkedCategory: 'embed' },
               { title: 'Domande?', description: 'Scrivi a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a> per qualsiasi domanda su privacy o cookie.' }
             ]
           }

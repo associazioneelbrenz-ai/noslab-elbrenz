@@ -1,0 +1,182 @@
+---
+/**
+ * EmbedConsenso — embed di terze parti con CLICK-TO-LOAD (M2.9).
+ *
+ * Deroga autorizzata da Cristian (8 luglio 2026): la regola "niente cookie
+ * di terze parti" evolve in "niente cookie di terze parti SENZA azione
+ * esplicita dell'utente". Questo componente è l'UNICO modo consentito per
+ * incorporare contenuti esterni.
+ *
+ * Come funziona:
+ *   - Al page load: ZERO richieste a domini terzi. Solo un placeholder
+ *     brandizzato con avviso cookie, link all'informativa, bottone "Carica"
+ *     e link diretto al contenuto come fallback.
+ *   - Al click su "Carica": inject runtime dell'embed. YouTube usa il
+ *     dominio youtube-nocookie.com (privacy-enhanced). Instagram carica
+ *     embed.js di Meta una sola volta per pagina.
+ *   - La scelta vale per il provider ed è ricordata PER LA SESSIONE con un
+ *     cookie tecnico first-party (`eb_embed_<provider>`, senza scadenza =
+ *     muore con la sessione del browser; niente localStorage per policy).
+ *     Un click carica tutti gli embed dello stesso provider nella pagina
+ *     (UX documentata: il consenso è verso il provider, non verso il
+ *     singolo contenuto).
+ *   - Se la categoria "embed" del banner cookie è accettata, gli embed si
+ *     caricano senza click (consenso globale già espresso).
+ *   - Dimensioni riservate via aspect-ratio: nessun layout shift al load.
+ *
+ * Props: provider ('youtube'|'instagram'), url (URL pubblico del video o
+ * del post), titolo (per aria-label e fallback), rapporto (aspect-ratio
+ * CSS opzionale), thumb (immagine self-hosted opzionale come sfondo).
+ */
+
+interface Props {
+  provider: 'youtube' | 'instagram';
+  url: string;
+  titolo: string;
+  rapporto?: string;
+  thumb?: string;
+}
+
+const { provider, url, titolo, rapporto, thumb } = Astro.props;
+
+// YouTube: estrai l'ID per costruire l'embed privacy-enhanced.
+let embedSrc = '';
+if (provider === 'youtube') {
+  const m = url.match(/(?:youtu\.be\/|[?&]v=|\/embed\/)([A-Za-z0-9_-]{6,})/);
+  embedSrc = m ? `https://www.youtube-nocookie.com/embed/${m[1]}` : '';
+}
+
+const ratio = rapporto ?? (provider === 'youtube' ? '16 / 9' : '4 / 5');
+const providerLabel = provider === 'youtube' ? 'YouTube' : 'Instagram';
+const titolare = provider === 'youtube' ? 'Google' : 'Meta';
+---
+<div
+  class="embed-consenso relative overflow-hidden bg-[#1E2E26] border border-[#C8923E]/50"
+  style={`aspect-ratio: ${ratio};`}
+  data-provider={provider}
+  data-url={url}
+  data-embed-src={embedSrc}
+  data-titolo={titolo}
+>
+  {thumb && (
+    <img
+      src={thumb}
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      class="absolute inset-0 w-full h-full object-cover opacity-35"
+    />
+  )}
+  <div class="ec-placeholder absolute inset-0 flex flex-col items-center justify-center text-center px-5 py-4 gap-2">
+    <p class="text-[10px] tracking-[0.18em] uppercase text-[#D9A94E] m-0" style="font-family: 'Inter', sans-serif;">
+      Contenuto da {providerLabel}
+    </p>
+    <p class="text-xs text-[#F5EEDD]/80 leading-snug m-0 max-w-[36ch]" style="font-family: 'Inter', sans-serif;">
+      Caricandolo verranno impostati cookie di terze parti ({titolare}) —
+      <a href="/cookie-policy" class="text-[#C8923E] underline hover:text-[#D9A94E]">informativa</a>
+    </p>
+    <button
+      type="button"
+      class="ec-carica bg-[#C8923E] text-[#1E2E26] px-5 py-2 text-xs font-semibold tracking-wider uppercase cursor-pointer hover:bg-[#D9A94E] transition-colors mt-1"
+      style="font-family: 'Inter', sans-serif;"
+      aria-label={`Carica ${titolo} da ${providerLabel}`}
+    >
+      Carica
+    </button>
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener"
+      class="text-[11px] text-[#F5EEDD]/60 underline hover:text-[#C8923E] m-0"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      oppure apri su {providerLabel} →
+    </a>
+  </div>
+</div>
+
+<script is:inline>
+  // Init unico per pagina (il componente può comparire più volte).
+  if (!window.__embedConsensoInit) {
+    window.__embedConsensoInit = true;
+
+    (function () {
+      function cookieSessione(provider) {
+        return document.cookie.split('; ').some(function (c) {
+          return c === 'eb_embed_' + provider + '=1';
+        });
+      }
+      function categoriaBannerAccettata() {
+        // vanilla-cookieconsent v3: cc_cookie contiene le categorie accettate.
+        try {
+          var raw = document.cookie.split('; ').find(function (c) { return c.indexOf('cc_cookie=') === 0; });
+          if (!raw) return false;
+          var dati = JSON.parse(decodeURIComponent(raw.slice('cc_cookie='.length)));
+          return Array.isArray(dati.categories) && dati.categories.indexOf('embed') !== -1;
+        } catch { return false; }
+      }
+
+      var igScriptCaricato = false;
+      function carica(box) {
+        var provider = box.dataset.provider;
+        if (box.dataset.caricato === '1') return;
+        box.dataset.caricato = '1';
+        var ph = box.querySelector('.ec-placeholder');
+        if (ph) ph.remove();
+
+        if (provider === 'youtube' && box.dataset.embedSrc) {
+          var f = document.createElement('iframe');
+          f.src = box.dataset.embedSrc;
+          f.title = box.dataset.titolo || 'Video';
+          f.allow = 'accelerometer; encrypted-media; picture-in-picture; web-share';
+          f.allowFullscreen = true;
+          f.referrerPolicy = 'strict-origin-when-cross-origin';
+          f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+          box.appendChild(f);
+        } else if (provider === 'instagram') {
+          var bq = document.createElement('blockquote');
+          bq.className = 'instagram-media';
+          bq.setAttribute('data-instgrm-permalink', box.dataset.url);
+          bq.setAttribute('data-instgrm-version', '14');
+          bq.style.cssText = 'position:absolute;inset:0;width:100%;margin:0;overflow:auto;background:#fff;';
+          box.appendChild(bq);
+          if (!igScriptCaricato) {
+            igScriptCaricato = true;
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.instagram.com/embed.js';
+            document.body.appendChild(s);
+          } else if (window.instgrm && window.instgrm.Embeds) {
+            window.instgrm.Embeds.process();
+          }
+        }
+      }
+
+      function caricaProvider(provider) {
+        document.querySelectorAll('.embed-consenso[data-provider="' + provider + '"]').forEach(carica);
+        if (provider === 'instagram' && window.instgrm && window.instgrm.Embeds) {
+          window.instgrm.Embeds.process();
+        }
+      }
+
+      document.addEventListener('click', function (e) {
+        var btn = e.target && e.target.closest ? e.target.closest('.ec-carica') : null;
+        if (!btn) return;
+        var box = btn.closest('.embed-consenso');
+        if (!box) return;
+        var provider = box.dataset.provider;
+        // Cookie tecnico first-party, SOLO di sessione (nessuna scadenza).
+        document.cookie = 'eb_embed_' + provider + '=1; path=/; SameSite=Lax';
+        caricaProvider(provider);
+      });
+
+      // Consenso già espresso (sessione o categoria banner) → carica subito.
+      ['youtube', 'instagram'].forEach(function (provider) {
+        if (cookieSessione(provider) || categoriaBannerAccettata()) {
+          caricaProvider(provider);
+        }
+      });
+    })();
+  }
+</script>
