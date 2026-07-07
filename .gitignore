@@ -41,6 +41,10 @@ coverage/
 # WXR export legacy (sensibile, rigenerabile da WP)
 docs/legacy/raw/
 
+# Contenuti pagine WP estratti (contengono recapiti personali nei sorgenti
+# Contatti/Direttivo — restano in locale; rigenerabili dallo zip di Cristian)
+docs/pagine_wp_contenuti/
+
 # Test results (rigenerabili)
 ma1_results/
 supabase/.temp/

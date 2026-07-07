@@ -1,0 +1,160 @@
+---
+/**
+ * /lunari-dal-nos — pagina progetto "Lunari dal Nos" (M2.6).
+ *
+ * Contenuto: pagina WP "Lunari dal Nos" (wp_id 3223, publish) da
+ * docs/pagine_wp_contenuti/pages_md/lunari-dal-nos.md, testo integrale.
+ * L'immagine di copertina hotlinkata dal vecchio WP è omessa (si romperebbe
+ * al cutover); integrato il riferimento all'edizione 2023 già citato nella
+ * pagina WP "Chi siamo".
+ *
+ * M2.5: sezione "Le tavole dei lunari" con le 12 tavole a fumetti del
+ * Lunari 2023 "La nosa storia" e le didascalie in italiano, migrate dalla
+ * pagina WP "LE VIGNETTE IN ITALIANO" (wp_id 3593, publish) — quella URL va
+ * in 301 verso questa pagina (inventario redirect nell'HANDOFF). Immagini
+ * WebP ottimizzate (originali di stampa 10-19MB → ~150-250KB, testo nei
+ * pannelli quindi qualità 76); dimensioni dal manifest condiviso.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+import manifest from '../lib/gallery-manifest.json';
+
+type Foto = { id: string; w: number; h: number; tw: number; th: number };
+const tavole = (manifest as Record<string, Foto[]>)['tavole-2023'] ?? [];
+
+const mesi = [
+  { mese: 'Gennaio', testo: "Un fiume per due valli: è il Noce, impetuoso corso d'acqua che nasce a oltre 3300 metri di quota dal Corno dei Tre Signori e che dopo 105 km si getta nell'Adige." },
+  { mese: 'Febbraio', testo: "Ampie praterie tra Pellizzano e Mezzana, le rapide che sono diventate un paradiso per canoe e rafting fino a Dimaro. Ancora la prateria tra Monclassico e Malé, l'importante biotopo di Croviana, culla della biodiversità; infine il corso più basso, che dopo aver ricevuto il contributo del Rabbiés, torrente della Val di Rabbi, prosegue la propria corsa incavandosi sempre più, fino ad arrivare alla profondissima forra di Mostizzolo, punto che segna il passaggio nella contigua Val di Non." },
+  { mese: 'Marzo', testo: "Il bacino artificiale di Santa Giustina: l'imponente diga, costruita a scopo idroelettrico, venne ultimata nel 1951 cambiando radicalmente un millenario paesaggio, ora caratterizzato dalla melicoltura intensiva, che occupa larghi tratti dell'ampio anfiteatro anaune, straordinariamente punteggiato di castelli su entrambi i fertili versanti." },
+  { mese: 'Aprile', testo: "In Val di Non le più antiche testimonianze di una presenza umana risalgono alla fase finale del Paleolitico, circa 10.000 anni prima di Cristo; in Val di Sole dobbiamo aspettare l'Età del Bronzo per avere tracce di presenze umane, come sul sito d'altura di San Rocco, in Val di Pejo." },
+  { mese: 'Maggio', testo: "Età del Bronzo definita di Luco-Meluno e quindi nell'età del Ferro con la civiltà di Fritzens-Sanzeno, più nota come retica. I Reti erano maestri nella lavorazione dei metalli, soprattutto del ferro abbondante in Val di Rabbi e in Val di Pejo." },
+  { mese: 'Giugno', testo: "Dal II-I secolo a.C. il contatto con il mondo romano condusse ad un lento processo di fusione, tale da portare alla nascita delle lingue reto-romanze, scaturite dalla sovrapposizione del latino all'antica lingua retica. La romanizzazione è testimoniata da quello straordinario reperto che è la \"Tavola clesiana\", editto dell'imperatore Claudio dell'anno 46 in cui agli Anauni, ai Sinduni e ai Tulliassi, già da tempo impiegati nell'amministrazione e nell'esercito, veniva conferita la cittadinanza romana." },
+  { mese: 'Luglio', testo: 'Non mancarono tuttavia momenti di scontro, come quelli che al confine del Tonale, verso la Valcamonica, vide contrapporsi le legioni romane e schiere di Reti, nel 16-15 a.C.' },
+  { mese: 'Agosto', testo: "Alla fine del IV secolo, precisamente nel 397, abbiamo l'evento che segna una tappa fondamentale dell'evangelizzazione della Val di Non, con il martirio dei tre missionari cappadoci Sisinio, Martirio e Alessandro, inviati dal vescovo di Trento Vigilio tra le popolazioni rurali anauni, devote al culto romano di Saturno." },
+  { mese: 'Settembre', testo: "Le successive migrazioni barbariche e la fine dell'impero rimescolarono le popolazioni e le culture, dando avvio ad un lungo medioevo." },
+  { mese: 'Ottobre', testo: "Politicamente inserite nel contesto del Principato vescovile di Trento, fondato nel 1004 e componente del Sacro Romano Impero della nazione germanica fino al 1803, le valli si trovarono al centro dell'età dei castelli, delle famiglie nobili e di una società in cui furono le Carte di Regola a definire negli aspetti quotidiani la vita delle comunità rurali." },
+  { mese: 'Novembre', testo: "Nel corso del XIX secolo si assiste ad una rinascita di una identità ladina. Il fenomeno riguardò soprattutto l'area dolomitica e le valli ladine del massiccio del Sella, che intrapresero un lungo cammino che le avrebbe viste, con la nascita dell'Autonomia, tutelate in quanto minoranza linguistica. Un analogo cammino è stato avviato negli ultimi anni del XX secolo anche nelle valli di Non e di Sole, riscoprendo e valorizzando un patrimonio culturale tuttora vivo." },
+  { mese: 'Dicembre', testo: "Son qui a sta sortiva, tra i crozi de dolomia e corn de chjaura, 'n torn a mi pradi verdi grandi come fazöi e boschj incontaminadi de laresi e peci. Sta acqua forta che la ven da Pej e che plan plan la schjava e la solchja traversando le naunechje val da semper le l'centro de noi anauni, che qui tanti ani fa aven metù rais e che da qui slonghjan l sguardi vers l mond 'n torn!", ladino: true },
+];
+---
+<PaginaIstituzionale
+  occhiello="Progetti"
+  titolo="Lunari dal Nos"
+  intro="Il calendario dell'associazione che valorizza le parlate retoromanze delle Valli del Noce, un mese alla volta."
+  metaDescription="Lunari dal Nos: il calendario dell'Associazione El Brenz con poesie nelle quattro parlate delle Valli del Noce — pegaes, solander, rabies e nones."
+>
+  <div class="prosa-istituzionale">
+    <p>
+      Il <strong>"Lunari dal Nos"</strong> nasce dall'idea di proporre un nuovo
+      strumento che, oltre a valorizzare le parlate retoromanze delle Valli del
+      Noce, possa essere un ulteriore ponte di collegamento tra le popolazioni
+      anauniche. Il calendario è infatti strutturato utilizzando i quattro
+      ceppi linguistici principali, partendo con il <em>pegaes</em> e a seguire
+      il <em>solander</em>, il <em>rabies</em> e il <em>nones</em>. Le poesie
+      sono tutti componimenti che hanno partecipato alle edizioni del concorso
+      <a href="/os-dal-nos">"Os dal Nos"</a>.
+    </p>
+    <p>
+      Il progetto va avanti nel corso degli anni con sempre maggiori novità:
+      l'edizione 2023, dedicata a "La nosa storia" e realizzata in
+      collaborazione con un fumettista basco, è stata distribuita gratuitamente
+      nelle scuole delle valli.
+    </p>
+    <p>
+      Un ringraziamento a tutti coloro che sostengono e sosterranno le nostre
+      iniziative.
+    </p>
+    <p>
+      <em>Il Direttivo e il Gruppo Giovani dell'Associazione Storico Culturale
+      Linguistica "El Brenz"</em>
+    </p>
+  </div>
+
+  <section class="mt-14 pt-10 border-t border-[#E5DFCF]">
+    <h2
+      class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-2"
+      style="font-family: 'Playfair Display', serif;"
+    >
+      Le tavole dei lunari
+    </h2>
+    <p
+      class="text-sm text-[#0F0F0F]/60 m-0 mb-8"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Lunari dal Nos 2023 · "La nosa storia" — le dodici tavole a fumetti con
+      la traduzione italiana. Clicca una tavola per ingrandirla.
+    </p>
+
+    <ul class="list-none m-0 p-0 grid grid-cols-1 md:grid-cols-2 gap-8">
+      {tavole.map((t, i) => (
+        <li class="m-0">
+          <figure class="m-0 bg-white border border-[#E5DFCF] p-4">
+            <a
+              href={`/lunari/${t.id}.webp`}
+              class="gallery-item block"
+              data-full={`/lunari/${t.id}.webp`}
+              data-alt={`Tavola di ${mesi[i].mese.toLowerCase()} del Lunari dal Nos 2023`}
+            >
+              <img
+                src={`/lunari/${t.id}-thumb.webp`}
+                alt={`Tavola di ${mesi[i].mese.toLowerCase()} del Lunari dal Nos 2023, "La nosa storia"`}
+                width={t.tw}
+                height={t.th}
+                loading="lazy"
+                decoding="async"
+                class="block w-full h-auto"
+              />
+            </a>
+            <figcaption class="mt-4">
+              <p
+                class="text-[11px] tracking-[0.18em] uppercase text-[#C8923E] m-0 mb-2"
+                style="font-family: 'Inter', sans-serif;"
+              >
+                {mesi[i].mese}
+              </p>
+              <p
+                class={`text-sm text-[#0F0F0F]/75 leading-relaxed m-0 ${mesi[i].ladino ? 'italic' : ''}`}
+                style="font-family: 'Source Serif 4', Georgia, serif;"
+                lang={mesi[i].ladino ? 'lld-anau' : 'it'}
+              >
+                {mesi[i].testo}
+              </p>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <div class="mt-12 pt-8 border-t border-[#E5DFCF]" style="font-family: 'Inter', sans-serif;">
+    <a href="/tesseramento" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Sostieni i nostri progetti</a>
+  </div>
+</PaginaIstituzionale>
+
+<dialog
+  id="lightbox"
+  class="p-0 border-0 bg-transparent max-w-[92vw] max-h-[92vh] backdrop:bg-black/85"
+>
+  <img id="lightbox-img" src="" alt="" class="block max-w-[92vw] max-h-[88vh] w-auto h-auto" />
+</dialog>
+
+<script is:inline>
+  // Lightbox minimale come in /photogallery: <dialog> nativo, zero dipendenze.
+  (function () {
+    const dialog = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    if (!dialog || !img || !dialog.showModal) return;
+    document.querySelectorAll('.gallery-item').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        img.src = a.dataset.full;
+        img.alt = a.dataset.alt || '';
+        dialog.showModal();
+      });
+    });
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('close', () => { img.src = ''; });
+  })();
+</script>

@@ -1,0 +1,106 @@
+---
+/**
+ * PaginaIstituzionale — shell condivisa per le pagine istituzionali (M2.6).
+ *
+ * Header verde brand (occhiello oro + titolo Playfair + intro serif) con lo
+ * stesso pattern visivo di PaginaPilastro, seguito da uno <slot /> su fondo
+ * crema per il contenuto specifico della pagina.
+ *
+ * Usato da: /chi-siamo, /direttivo, /statuto, /contatti, /fioi-dal-nos,
+ * /os-dal-nos, /lunari-dal-nos, /portale-memoria, /photogallery.
+ *
+ * I contenuti provengono dalle pagine WordPress estratte
+ * (docs/pagine_wp_contenuti/), adattati: niente immagini hotlinkate dal
+ * vecchio WP (si romperebbero al cutover DNS).
+ */
+
+import Layout from '../layouts/Layout.astro';
+
+interface Props {
+  /** Occhiello sopra il titolo, es. "L'Associazione" o "Progetti". */
+  occhiello: string;
+  titolo: string;
+  intro?: string;
+  metaDescription?: string;
+}
+
+const { occhiello, titolo, intro, metaDescription } = Astro.props;
+---
+<Layout title={`${titolo} — El Brenz`} description={metaDescription ?? intro}>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+      <p
+        class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        {occhiello}
+      </p>
+      <h1
+        class="text-4xl md:text-6xl leading-[1.08] tracking-tight m-0 mb-6"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;"
+      >
+        {titolo}
+      </h1>
+      {intro && (
+        <p
+          class="text-lg md:text-xl leading-relaxed text-[#F5EEDD]/85 m-0 max-w-2xl"
+          style="font-family: 'Source Serif 4', Georgia, serif;"
+        >
+          {intro}
+        </p>
+      )}
+    </div>
+  </header>
+
+  <section class="bg-[#FDF9F0]">
+    <div class="max-w-3xl mx-auto px-6 py-16 md:py-20">
+      <slot />
+    </div>
+  </section>
+</Layout>
+
+<style is:global>
+  /* Prosa istituzionale: stili base per il contenuto nello slot, così le
+     pagine restano leggere. Scope: solo dentro .prosa-istituzionale. */
+  .prosa-istituzionale {
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: rgba(15, 15, 15, 0.82);
+    line-height: 1.75;
+  }
+  .prosa-istituzionale h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    color: #1e2e26;
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin: 2.5rem 0 1rem;
+  }
+  .prosa-istituzionale h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    color: #1e2e26;
+    font-size: 1.25rem;
+    line-height: 1.3;
+    margin: 2rem 0 0.75rem;
+  }
+  .prosa-istituzionale p {
+    margin: 0 0 1rem;
+  }
+  .prosa-istituzionale ul {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+  }
+  .prosa-istituzionale li {
+    margin-bottom: 0.5rem;
+  }
+  .prosa-istituzionale a {
+    color: #c8923e;
+    text-decoration: none;
+  }
+  .prosa-istituzionale a:hover {
+    text-decoration: underline;
+  }
+  .prosa-istituzionale em {
+    font-style: italic;
+  }
+</style>

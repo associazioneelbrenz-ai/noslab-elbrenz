@@ -1,0 +1,89 @@
+---
+/**
+ * /direttivo — pagina istituzionale "Il Direttivo" (M2.6).
+ *
+ * La pagina WP corrispondente (il-direttivo, wp_id 169) era in stato
+ * "pending" con contenuti 2013-2014 stantii: non è stata migrata.
+ * Nomi e cariche attuali: comunicazione diretta di Cristian, 7 luglio 2026.
+ * Solo nome e carica, NIENTE recapiti/foto/bio (privacy, coerente con la
+ * decisione presa su /contatti); le presentazioni arriveranno in seguito.
+ * Lo Statuto (art. 13) prevede due Vicepresidenti: entrambi allo stesso
+ * livello gerarchico. Ordine: Presidente → Vice → Segretario-Tesoriere →
+ * Consiglieri.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+
+const direttivo = [
+  { nome: 'Diego Magnoni', carica: 'Presidente' },
+  { nome: 'Simone Pangrazzi', carica: 'Vice Presidente' },
+  { nome: 'Milena Comini', carica: 'Vice Presidente' },
+  { nome: 'Cristian Bresadola', carica: 'Segretario-Tesoriere' },
+  { nome: 'Monica Valentinotti', carica: 'Consigliere' },
+  { nome: 'Michele Gentilini', carica: 'Consigliere' },
+  { nome: 'Andrea Daprà', carica: 'Consigliere' },
+  { nome: 'Michele Corradini', carica: 'Consigliere' },
+];
+---
+<PaginaIstituzionale
+  occhiello="L'Associazione"
+  titolo="Il Direttivo"
+  intro="Le persone che guidano El Brenz, elette dall'Assemblea dei soci."
+  metaDescription="Il Consiglio Direttivo dell'Associazione El Brenz: presidente, vicepresidenti, segretario e consiglieri eletti dall'Assemblea dei soci."
+>
+  <h2
+    class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-8"
+    style="font-family: 'Playfair Display', serif;"
+  >
+    Il Consiglio Direttivo in carica
+  </h2>
+
+  <ul class="list-none m-0 mb-6 p-0 grid grid-cols-1 sm:grid-cols-2 gap-4">
+    {direttivo.map((m) => (
+      <li class="bg-white border border-[#E5DFCF] px-6 py-5">
+        <p
+          class="text-[11px] tracking-[0.18em] uppercase text-[#C8923E] m-0 mb-1.5"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          {m.carica}
+        </p>
+        <p
+          class="text-xl text-[#1E2E26] font-medium leading-tight m-0"
+          style="font-family: 'Playfair Display', serif;"
+        >
+          {m.nome}
+        </p>
+      </li>
+    ))}
+  </ul>
+
+  <p
+    class="text-sm text-[#0F0F0F]/60 leading-relaxed m-0 mb-12"
+    style="font-family: 'Source Serif 4', Georgia, serif;"
+  >
+    Le presentazioni dei componenti — volti e storie delle persone che portano
+    avanti l'associazione — arriveranno presto.
+  </p>
+
+  <div class="prosa-istituzionale">
+    <h2>Gli organi dell'Associazione</h2>
+    <p>
+      Come previsto dallo Statuto (art. 8), gli organi dell'Associazione sono
+      l'<strong>Assemblea dei soci</strong> — l'organo sovrano — il
+      <strong>Consiglio Direttivo</strong>, il <strong>Presidente</strong> e
+      due <strong>Revisori dei Conti</strong>.
+    </p>
+    <p>
+      Il Consiglio Direttivo (art. 13) è composto da un minimo di quattro
+      consiglieri, ai quali si aggiungono il Presidente, due Vicepresidenti —
+      in rappresentanza delle diverse valli — e il Segretario/Tesoriere,
+      eletti dall'Assemblea ordinaria. Resta in carica tre anni ed è
+      rieleggibile.
+    </p>
+    <p>
+      Il Direttivo è coadiuvato dal <strong>Gruppo Giovani</strong> (i
+      <em>Joveni</em>), composto da tutti i soci con meno di trent'anni, che
+      elegge al proprio interno un referente.
+    </p>
+  </div>
+</PaginaIstituzionale>

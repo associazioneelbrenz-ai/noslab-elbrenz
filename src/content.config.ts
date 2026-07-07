@@ -78,6 +78,20 @@ const articoli = defineCollection({
     draft: z.boolean().default(true),
 
     /**
+     * Flag archivio (M2.3). true = articolo storico/legacy, leggibile ma
+     * fuori dalle liste-pilastro di produzione: confluisce nella pagina
+     * /archivio-storico (raggruppato per anno, stile in sordina).
+     *   archivio: false → compare nella lista del proprio pilastro
+     *   archivio: true  → compare solo in /archivio-storico
+     * Entrambi gli stati restano !draft ⇒ pagina /articoli/{slug} generata.
+     * Default: false → un articolo è "in produzione" salvo decisione esplicita.
+     * NB: il campo è presente nel frontmatter di tutti i 113 legacy (M2.3);
+     * qui lo dichiariamo nello schema così `entry.data.archivio` è tipato
+     * e non viene scartato da Zod.
+     */
+    archivio: z.boolean().default(false),
+
+    /**
      * Autore. 95.6% degli articoli legacy WP (108/113) hanno
      * Cristian Bresadola come autore: lo mettiamo a default.
      * Le 5 eccezioni vanno indicate esplicitamente nel frontmatter
@@ -132,4 +146,48 @@ const articoli = defineCollection({
   ),
 });
 
-export const collections = { articoli };
+// Collezione eventi (M2.4) — calendario dei prossimi appuntamenti, mostrato
+// nel blocco "Prossimi eventi" della home (data >= oggi, max 3).
+// Un file markdown per evento in src/content/eventi/, nome convenzionale
+// YYYY-MM-DD-slug-breve.md; il body è la descrizione estesa (non ancora
+// renderizzata: servirà per future pagine evento).
+//
+// Nomi campi in italiano, coerenti col dominio (il brief M2.4 li fissa così).
+// NB discrepanza consapevole con la collection articoli, che usa nomi misti
+// inglesi (title, draft) per ragioni storiche di import WP: qui draft si
+// chiama `bozza` e la data `data`.
+const eventi = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/eventi" }),
+
+  schema: z.object({
+    /** Titolo dell'evento. */
+    titolo: z.string().min(1).max(200),
+
+    /** Data dell'evento (giorno). Coerce come data_pubblicazione degli articoli. */
+    data: z.coerce.date(),
+
+    /** Ora di inizio, testo libero breve, es. "20:30". */
+    oraInizio: z.string().optional(),
+
+    /** Luogo, es. "Malè, Sala civica". */
+    luogo: z.string().optional(),
+
+    /** Descrizione breve per la card in home. */
+    descrizioneBreve: z.string().optional(),
+
+    /** Eventuale link a pagina esterna/locandina. */
+    link: z.string().url().optional(),
+
+    /** Eventuale immagine (path in /public/ o URL). */
+    immagine: z.string().optional(),
+
+    /** true = evento annullato: non compare in home. */
+    annullato: z.boolean().default(false),
+
+    /** true = bozza: mai mostrato. Default false a differenza degli articoli:
+     *  un evento si crea di norma per pubblicarlo subito. */
+    bozza: z.boolean().default(false),
+  }),
+});
+
+export const collections = { articoli, eventi };

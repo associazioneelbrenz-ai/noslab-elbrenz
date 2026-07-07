@@ -209,6 +209,16 @@ Per il cutover, le edge function devono accettare sia `elbrenz.eu` sia `elbrenz-
 
 ---
 
+### Trappola 11 — Commento sopra un import a metà frontmatter Astro
+Un commento `//` immediatamente sopra un `import` collocato DOPO altre
+istruzioni nel frontmatter di un file `.astro` rompe l'hoisting del
+compilatore Astro: build fallita con `Unexpected "."` di esbuild e
+posizione dell'errore FASULLA (indica una riga innocua). `astro check`
+passa lo stesso, quindi il sintomo inganna. Regola: gli import dei file
+`.astro` vanno tutti in testa al frontmatter, senza righe di commento
+attaccate sopra se l'import non è in prima posizione. (Scoperta 7/7/2026,
+bisezione su tesseramento.astro.)
+
 ## Cose da NON fare mai
 
 - ❌ Modificare il codice direttamente in produzione (anche se il sito è giù)

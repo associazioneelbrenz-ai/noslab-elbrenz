@@ -18,14 +18,26 @@
  */
 
 import Layout from '../layouts/Layout.astro';
+import { PAGAMENTI_LIVE } from '../lib/pagamenti';
 
 // URL edge function — letta da env per dev/prod
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
 const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
+
+// M2.6 — pagamento quota con PayPal (SDK caricato SOLO su questa pagina).
+// Client ID pubblico per design (app REST "El Brenz Tesseramento",
+// verificato contro l'SDK il 7/7/2026). L'importo della quota è fissato
+// LATO SERVER dalla edge function: il client non decide mai la cifra.
+const PAYPAL_CREATE_URL = `${SUPABASE_URL}/functions/v1/paypal-create-order`;
+const PAYPAL_CAPTURE_URL = `${SUPABASE_URL}/functions/v1/paypal-capture-order`;
+const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJc1GPwUL2wgh64lSCKfaEkKZlaC';
+
+// M2.6-bis: URL edge fn ricevute (upload + OCR, stato in_verifica).
+const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
 ---
 <Layout
   title="Diventa socio"
-  description="Diventa socio dell'Associazione El Brenz. Quota annuale 10€. Sostieni la salvaguardia della lingua ladino-anaunica e della storia delle Valli del Noce."
+  description="Diventa socio dell'Associazione El Brenz. Quota sociale annuale 20€. Sostieni la salvaguardia della lingua ladino-anaunica e della storia delle Valli del Noce."
 >
 
   <section class="bg-[#1E2E26] text-[#F5EEDD] py-20 md:py-28">
@@ -97,73 +109,152 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
     </div>
   </section>
 
+  {/* M2.R (redesign chiarezza, eccezione autorizzata da Cristian): quota
+      20€ ben evidente + percorso in 3 passi numerati. Solo copy/struttura/
+      layout: la logica di invio del modulo è INVARIATA. */}
   <section class="bg-[#F8F1E4] py-20">
     <div class="max-w-3xl mx-auto px-6">
       <h2
-        class="text-3xl md:text-4xl font-medium mb-3 leading-tight text-center"
+        class="text-3xl md:text-4xl font-medium mb-10 leading-tight text-center"
         style="font-family: 'Playfair Display', serif;"
       >
-        Come associarsi
+        Come diventare socio
       </h2>
-      <p
-        class="text-base text-[#0F0F0F]/70 text-center mb-12"
-        style="font-family: 'Inter', sans-serif;"
-      >
-        Quota associativa: <strong class="text-[#1E2E26]">10€ all'anno</strong>
-      </p>
 
-      <div class="bg-white border border-[#E5DFCF] p-8 md:p-10 mb-10">
-        <h3 class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium mb-6" style="font-family: 'Inter', sans-serif;">Bonifico bancario</h3>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" style="font-family: 'Inter', sans-serif;">
-          <div>
-            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Banca</p>
-            <p class="text-sm text-[#1E2E26] m-0 leading-snug">Cassa Rurale Val di Sole<br/>filiale Mezzana</p>
-          </div>
-          <div>
-            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Intestatario</p>
-            <p class="text-sm text-[#1E2E26] m-0 leading-snug">Associazione El Brenz<br/>C.F. 92019480224</p>
-          </div>
-          <div>
-            <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-1">Quota</p>
-            <p class="text-sm text-[#1E2E26] m-0 leading-snug"><strong>10€</strong><br/>annua</p>
-          </div>
-        </div>
-
-        <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-6">
-          <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">IBAN</p>
-          <p class="font-mono text-sm md:text-base text-[#1E2E26] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
-        </div>
-
-        <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5">
-          <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">Causale</p>
-          <p class="text-sm text-[#1E2E26] m-0" style="font-family: 'Inter', sans-serif;">
-            <em>Tesseramento 2026 — [Nome Cognome]</em>
-          </p>
-        </div>
-      </div>
-
-      <div class="text-center">
-        <p class="text-sm text-[#0F0F0F]/70" style="font-family: 'Inter', sans-serif;">
-          Una volta effettuato il bonifico, scrivici a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a> per ricevere la tessera.
+      <div class="bg-[#1E2E26] text-center px-8 py-10 mb-14">
+        <p class="text-[12px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+          Quota sociale annuale
+        </p>
+        <p class="text-5xl md:text-6xl text-[#F5EEDD] font-medium m-0" style="font-family: 'Playfair Display', serif;">
+          20 <span class="text-[#C8923E]">€</span>
+        </p>
+        <p class="text-sm text-[#F5EEDD]/70 m-0 mt-3" style="font-family: 'Inter', sans-serif;">
+          Vale per tutto l'anno solare. Bastano tre minuti in tutto.
         </p>
       </div>
+
+      <ol class="list-none m-0 p-0 space-y-8">
+
+        <li class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+          <div class="flex items-start gap-5">
+            <span class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-[#C8923E] text-[#1E2E26] text-2xl font-semibold rounded-full" style="font-family: 'Playfair Display', serif;" aria-hidden="true">1</span>
+            <div>
+              <h3 class="text-xl md:text-2xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">
+                Compila il modulo qui sotto
+              </h3>
+              <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+                Ti chiediamo solo i dati che servono per la domanda di
+                iscrizione: nome, email e pochi dati anagrafici. Due minuti,
+                niente di complicato.
+              </p>
+              <a href="#modulo" class="inline-block text-sm font-medium text-[#C8923E] no-underline hover:underline" style="font-family: 'Inter', sans-serif;">
+                Vai al modulo ↓
+              </a>
+            </div>
+          </div>
+        </li>
+
+        <li class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+          <div class="flex items-start gap-5">
+            <span class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-[#C8923E] text-[#1E2E26] text-2xl font-semibold rounded-full" style="font-family: 'Playfair Display', serif;" aria-hidden="true">2</span>
+            <div class="min-w-0 flex-1">
+              <h3 class="text-xl md:text-2xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">
+                Versa la quota di 20 €
+              </h3>
+              <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+                Con un bonifico bancario dal tuo home banking o allo sportello:
+              </p>
+
+              <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-4" style="font-family: 'Inter', sans-serif;">
+                <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2">IBAN</p>
+                <p class="font-mono text-sm md:text-base text-[#1E2E26] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
+                <p class="text-sm text-[#1E2E26]/80 m-0 mt-3 leading-relaxed">
+                  Cassa Rurale Val di Sole, filiale Mezzana<br/>
+                  intestato ad <strong>Associazione El Brenz</strong>
+                </p>
+              </div>
+
+              <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-5 mb-6" style="font-family: 'Inter', sans-serif;">
+                <p class="text-[11px] tracking-[0.15em] uppercase text-[#0F0F0F]/55 font-medium m-0 mb-2">Causale (scrivila così)</p>
+                <p class="text-sm md:text-base text-[#1E2E26] m-0"><em>Quota sociale 2026 – Nome Cognome</em></p>
+              </div>
+
+              <p id="paypal-quota-presto" class="text-sm text-[#0F0F0F]/60 leading-relaxed m-0" style="font-family: 'Inter', sans-serif;">
+                Presto potrai pagare qui anche con <strong>PayPal o carta di
+                credito/debito</strong> (senza bisogno di un conto PayPal):
+                stiamo attivando il servizio.
+              </p>
+
+              {/* M2.6: pagamento quota con PayPal/carta. Nascosto finché
+                  Cristian non completa il test reale: si attiva SOLO con
+                  ?paypal=1 nell'URL (vedi script in fondo). Al go-live basta
+                  mettere PAGAMENTI_LIVE a true in src/lib/pagamenti.ts. */}
+              <div
+                id="paypal-quota-box"
+                class="hidden border-t border-[#E5DFCF] mt-6 pt-6"
+                data-create-url={PAYPAL_CREATE_URL}
+                data-capture-url={PAYPAL_CAPTURE_URL}
+                data-paypal-client-id={PAYPAL_CLIENT_ID}
+                data-live={PAGAMENTI_LIVE ? '1' : '0'}
+              >
+                <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+                  Oppure paga subito qui i 20 € con <strong>PayPal o carta di
+                  credito/debito</strong> — non serve avere un conto PayPal:
+                </p>
+                <div id="paypal-quota-buttons"></div>
+                <div
+                  id="paypal-quota-esito"
+                  class="hidden mt-4 p-4 text-sm border-l-4"
+                  role="status"
+                  aria-live="polite"
+                  style="font-family: 'Inter', sans-serif;"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </li>
+
+        <li class="bg-white border border-[#E5DFCF] p-8 md:p-10">
+          <div class="flex items-start gap-5">
+            <span class="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-[#C8923E] text-[#1E2E26] text-2xl font-semibold rounded-full" style="font-family: 'Playfair Display', serif;" aria-hidden="true">3</span>
+            <div>
+              <h3 class="text-xl md:text-2xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">
+                Cosa succede dopo
+              </h3>
+              <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+                La tua domanda viene esaminata dal Consiglio Direttivo, come
+                previsto dallo <a href="/statuto" class="text-[#C8923E] no-underline hover:underline">Statuto</a>.
+                Riceverai la conferma via email da
+                <strong>info@elbrenz.eu</strong> — non devi fare altro.
+              </p>
+            </div>
+          </div>
+        </li>
+
+      </ol>
     </div>
   </section>
 
-  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20">
+  <section id="modulo" class="bg-[#1E2E26] text-[#F5EEDD] py-20">
     <div class="max-w-2xl mx-auto px-6">
       <h2
         class="text-3xl md:text-4xl font-medium mb-3 leading-tight text-center"
         style="font-family: 'Playfair Display', serif;"
       >
-        Richiedi <em class="text-[#C8923E]" style="font-style: italic;">informazioni.</em>
+        Il modulo di <em class="text-[#C8923E]" style="font-style: italic;">iscrizione.</em>
       </h2>
       <p
-        class="text-base text-[#F5EEDD]/75 text-center mb-12"
+        class="text-base text-[#F5EEDD]/75 text-center mb-3"
         style="font-family: 'Inter', sans-serif;"
       >
-        Per dubbi sull'associazione o sul tesseramento. Ti rispondiamo direttamente da <strong>info@elbrenz.eu</strong>.
+        È il <strong>passo 1</strong>: compila e invia. Ti rispondiamo da <strong>info@elbrenz.eu</strong>.
+      </p>
+      <p
+        class="text-sm text-[#F5EEDD]/60 text-center mb-12"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Tutti i campi sono obbligatori. Se qualcosa non è chiaro, in fondo
+        alla pagina trovi come contattarci.
       </p>
 
       <form
@@ -202,7 +293,11 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         </div>
 
         <div class="mb-6">
-          <label for="cf-messaggio" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Messaggio</label>
+          <label for="cf-messaggio" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Il tuo messaggio</label>
+          <p class="text-xs text-[#F5EEDD]/60 mb-2 mt-0" style="font-family: 'Inter', sans-serif;">
+            Ad esempio: "Vorrei diventare socio per il 2026". Va bene anche una
+            domanda o due righe su di te.
+          </p>
           <textarea
             id="cf-messaggio"
             name="messaggio"
@@ -224,7 +319,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         </div>
 
         <div class="mb-6">
-          <label for="cf-data-nascita" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Data di nascita</label>
+          <label for="cf-data-nascita" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Data di nascita (giorno/mese/anno)</label>
           <input
             type="date"
             id="cf-data-nascita"
@@ -269,7 +364,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         <!-- GDPR: informativa inline + checkbox consenso -->
         <div class="bg-[#0F1D18] border border-[#F5EEDD]/10 p-5 mb-6">
           <p class="text-xs text-[#F5EEDD]/70 leading-relaxed mb-4 m-0" style="font-family: 'Inter', sans-serif;">
-            I dati raccolti (nome, email, data e luogo di nascita, sesso, messaggio) saranno trattati dall'Associazione El Brenz al solo scopo di rispondere alla tua richiesta e pre-compilare la tua futura iscrizione formale. Conserviamo i dati su email criptata fino a registrazione formale o cancellazione su richiesta. Per cancellare i dati scrivi a <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a>. <a href="/privacy" target="_blank" rel="noopener" class="text-[#D9A94E] no-underline hover:underline">Informativa privacy completa →</a>
+            I dati raccolti (nome, email, data e luogo di nascita, sesso, messaggio) saranno trattati dall'Associazione El Brenz al solo scopo di rispondere alla tua richiesta e pre-compilare la tua futura iscrizione formale. Conserviamo i dati su email criptata fino a registrazione formale o cancellazione su richiesta. Se scegli il bonifico e carichi la ricevuta, il documento (che può riportare dati bancari) è conservato in un archivio privato al solo scopo di verificare il pagamento, fino alla conferma e comunque non oltre 12 mesi; cancellazione anticipata su richiesta. Per cancellare i dati scrivi a <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a>. <a href="/privacy" target="_blank" rel="noopener" class="text-[#D9A94E] no-underline hover:underline">Informativa privacy completa →</a>
           </p>
           <label class="flex items-start gap-3 cursor-pointer">
             <input type="checkbox" id="cf-gdpr" name="gdpr" required class="mt-0.5 w-4 h-4 accent-[#C8923E] flex-shrink-0" />
@@ -291,7 +386,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
           class="w-full bg-[#C8923E] text-[#1E2E26] px-6 py-3.5 text-sm font-medium tracking-wider uppercase hover:bg-[#D9A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style="font-family: 'Inter', sans-serif;"
         >
-          Invia richiesta info
+          Invia la domanda — passo 1 di 3
         </button>
 
         <div
@@ -302,6 +397,298 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
           style="font-family: 'Inter', sans-serif;"
         ></div>
       </form>
+
+
+      {/* M2.6-bis: selettore metodo di pagamento — compare dopo l'invio
+          riuscito del modulo (PASSO 2 come scelta guidata). Il bonifico è
+          SEMPRE attivo e indipendente dal ramo PayPal; PayPal si attiva col
+          flag go-live (o ?paypal=1 per i test); Satispay è un placeholder
+          disattivato (fase 2, dipende dall'account Business). */}
+      <div id="scelta-pagamento" class="hidden mt-10" data-ricevuta-url={RICEVUTA_URL}>
+        <h3
+          class="text-2xl text-[#F5EEDD] font-medium leading-tight m-0 mb-2 text-center"
+          style="font-family: 'Playfair Display', serif;"
+        >
+          Passo 2 — versa la quota di 20 €
+        </h3>
+        <p class="text-sm text-[#F5EEDD]/70 text-center m-0 mb-6" style="font-family: 'Inter', sans-serif;">
+          Scegli come preferisci pagare:
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6" style="font-family: 'Inter', sans-serif;">
+          <button
+            type="button"
+            id="sp-paypal"
+            class="border-2 border-[#F5EEDD]/25 bg-[#1E2E26] text-[#F5EEDD] px-4 py-4 text-sm font-medium cursor-pointer hover:border-[#C8923E] transition-colors"
+            aria-pressed="false"
+          >
+            PayPal o carta
+            <span id="sp-paypal-nota" class="block text-[11px] font-normal text-[#F5EEDD]/50 mt-1">senza conto PayPal</span>
+          </button>
+          <button
+            type="button"
+            id="sp-bonifico"
+            class="border-2 border-[#F5EEDD]/25 bg-[#1E2E26] text-[#F5EEDD] px-4 py-4 text-sm font-medium cursor-pointer hover:border-[#C8923E] transition-colors"
+            aria-pressed="false"
+          >
+            Bonifico bancario
+            <span class="block text-[11px] font-normal text-[#F5EEDD]/50 mt-1">dal tuo home banking</span>
+          </button>
+          <button
+            type="button"
+            disabled
+            class="border-2 border-[#F5EEDD]/10 bg-[#1E2E26] text-[#F5EEDD]/35 px-4 py-4 text-sm font-medium cursor-not-allowed"
+            title="In arrivo"
+          >
+            Satispay
+            <span class="block text-[11px] font-normal text-[#F5EEDD]/30 mt-1">in arrivo</span>
+          </button>
+        </div>
+
+        <div id="sp-pannello-bonifico" class="hidden bg-[#0F1D18] border border-[#F5EEDD]/10 p-6" style="font-family: 'Inter', sans-serif;">
+          <div class="bg-[#1E2E26] border-l-4 border-[#C8923E] p-4 mb-3">
+            <p class="text-[11px] tracking-[0.15em] uppercase text-[#D9A94E] m-0 mb-1.5">IBAN</p>
+            <p class="font-mono text-sm text-[#F5EEDD] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
+            <p class="text-xs text-[#F5EEDD]/70 m-0 mt-2">Cassa Rurale Val di Sole — intestato ad Associazione El Brenz</p>
+          </div>
+          <div class="bg-[#1E2E26] border-l-4 border-[#C8923E] p-4 mb-5">
+            <p class="text-[11px] tracking-[0.15em] uppercase text-[#D9A94E] m-0 mb-1.5">Causale (scrivila così)</p>
+            <p class="text-sm text-[#F5EEDD] m-0"><em>Quota sociale 2026 – Nome Cognome</em></p>
+          </div>
+
+          <p class="text-sm text-[#F5EEDD]/85 m-0 mb-2">
+            <strong>Hai già fatto il bonifico?</strong> Se vuoi, carica qui la
+            ricevuta (JPG, PNG o PDF, max 10 MB): così la verifica è più
+            veloce. È facoltativo: puoi anche solo fare il bonifico e basta.
+          </p>
+          <p class="text-xs text-[#F5EEDD]/55 m-0 mb-4">
+            La ricevuta è conservata in un archivio privato al solo scopo di
+            verificare il pagamento e viene cancellata dopo la conferma, o al
+            massimo entro 12 mesi. Cancellazione anticipata su richiesta a
+            info@elbrenz.eu.
+          </p>
+          <input
+            type="file"
+            id="ricevuta-file"
+            accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+            class="block w-full text-sm text-[#F5EEDD]/85 mb-4 file:mr-4 file:py-2 file:px-4 file:border-0 file:bg-[#C8923E] file:text-[#1E2E26] file:text-sm file:font-medium file:cursor-pointer"
+          />
+          <button
+            type="button"
+            id="ricevuta-invia"
+            class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase cursor-pointer hover:bg-[#D9A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Carica la ricevuta
+          </button>
+          <div id="ricevuta-esito" class="hidden mt-4 p-4 text-sm border-l-4" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* M2.6: script pagamento quota PayPal — gate di attivazione.
+      PAGAMENTI_LIVE (src/lib/pagamenti.ts) spento finché Cristian non completa il test reale:
+      il blocco compare SOLO con ?paypal=1 nell'URL. Al go-live: true. */}
+  <script is:inline>
+    (function () {
+      const box = document.getElementById('paypal-quota-box');
+      const presto = document.getElementById('paypal-quota-presto');
+      if (!box) return;
+      // Flag condiviso (src/lib/pagamenti.ts, build time) via data attribute;
+      // ?paypal=1 resta come gate di test pre go-live.
+      const gate = box.dataset.live === '1' ||
+        new URLSearchParams(window.location.search).get('paypal') === '1';
+      if (!gate) return;
+
+      box.classList.remove('hidden');
+      if (presto) presto.style.display = 'none';
+
+      const esito = document.getElementById('paypal-quota-esito');
+      function mostraEsito(msg, ok) {
+        if (!esito) return;
+        esito.classList.remove('hidden');
+        esito.style.background = ok ? '#eaf3ee' : '#fbecec';
+        esito.style.borderLeftColor = ok ? '#1d4d3a' : '#a33';
+        esito.style.color = '#1E2E26';
+        esito.textContent = msg;
+      }
+
+      // Il ramo PayPal è VOLUTAMENTE isolato: qualunque errore dell'SDK non
+      // deve mai impedire il feedback del modulo né le istruzioni bonifico
+      // (che stanno fuori da questo script). try/catch difensivo (M2.6 fix).
+      const sdk = document.createElement('script');
+      sdk.src = 'https://www.paypal.com/sdk/js?client-id=' +
+        encodeURIComponent(box.dataset.paypalClientId) +
+        '&currency=EUR&intent=capture&components=buttons&enable-funding=card&locale=it_IT';
+      sdk.onerror = () => {
+        mostraEsito('Il pagamento con carta non è al momento disponibile: usa il bonifico qui sopra.', false);
+      };
+      sdk.onload = () => {
+        try {
+        if (!window.paypal) return;
+        window.paypal.Buttons({
+          createOrder: async () => {
+            // tipo 'quota': l'importo (20.00 EUR) lo fissa il server.
+            // Nome/email: dai campi se compilati, altrimenti dal dataset del
+            // selettore (il form si resetta dopo l'invio) — servono per
+            // agganciare il pagamento alla domanda (M2.6-ter).
+            const nomeCampo = document.getElementById('cf-nome');
+            const emailCampo = document.getElementById('cf-email');
+            const scelta = document.getElementById('scelta-pagamento');
+            const resp = await fetch(box.dataset.createUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                tipo: 'quota',
+                nome: (nomeCampo && nomeCampo.value) || (scelta && scelta.dataset.nome) || '',
+                email: (emailCampo && emailCampo.value) || (scelta && scelta.dataset.email) || '',
+              }),
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.id) {
+              mostraEsito(data.error || 'Errore nella preparazione del pagamento.', false);
+              throw new Error(data.error || 'createOrder failed');
+            }
+            return data.id;
+          },
+          onApprove: async (data) => {
+            const resp = await fetch(box.dataset.captureUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderID: data.orderID }),
+            });
+            const out = await resp.json();
+            if (resp.ok && out.success) {
+              mostraEsito('Quota ricevuta, grazie! Riceverai conferma dal Direttivo via email. Ricorda anche il passo 1: se non l\'hai già fatto, compila il modulo qui sotto.', true);
+            } else {
+              mostraEsito(out.error || 'Il pagamento non risulta completato. Scrivici a info@elbrenz.eu.', false);
+            }
+          },
+          onError: () => {
+            mostraEsito('Si è verificato un errore col pagamento. Riprova, oppure usa il bonifico qui sopra.', false);
+          },
+        }).render('#paypal-quota-buttons');
+        } catch (err) {
+          console.error('[paypal-quota] SDK render fallito:', err);
+          mostraEsito('Il pagamento con carta non è al momento disponibile: usa il bonifico qui sopra.', false);
+        }
+      };
+      document.head.appendChild(sdk);
+    })();
+  </script>
+
+  <script is:inline>
+    (function () {
+      const scelta = document.getElementById('scelta-pagamento');
+      if (!scelta) return;
+      const btnPaypal = document.getElementById('sp-paypal');
+      const btnBonifico = document.getElementById('sp-bonifico');
+      const pannelloBonifico = document.getElementById('sp-pannello-bonifico');
+      const boxPaypal = document.getElementById('paypal-quota-box');
+      const notaPaypal = document.getElementById('sp-paypal-nota');
+
+      function setAttivo(btn, attivo) {
+        btn.classList.toggle('border-[#C8923E]', attivo);
+        btn.classList.toggle('border-[#F5EEDD]/25', !attivo);
+        btn.setAttribute('aria-pressed', attivo ? 'true' : 'false');
+      }
+
+      if (btnBonifico && pannelloBonifico) {
+        btnBonifico.addEventListener('click', () => {
+          pannelloBonifico.classList.remove('hidden');
+          setAttivo(btnBonifico, true);
+          if (btnPaypal) setAttivo(btnPaypal, false);
+          pannelloBonifico.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      }
+
+      if (btnPaypal) {
+        btnPaypal.addEventListener('click', () => {
+          const gate = (boxPaypal && boxPaypal.dataset.live === '1') ||
+            new URLSearchParams(window.location.search).get('paypal') === '1';
+          if (gate && boxPaypal) {
+            // I bottoni PayPal vivono nel PASSO 2 in alto: mostralo e vacci.
+            boxPaypal.classList.remove('hidden');
+            setAttivo(btnPaypal, true);
+            if (btnBonifico) setAttivo(btnBonifico, false);
+            boxPaypal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else if (notaPaypal) {
+            notaPaypal.textContent = 'in attivazione — intanto usa il bonifico';
+          }
+        });
+      }
+
+      // Upload ricevuta → edge fn ricevuta-ocr (verifica sempre manuale).
+      const fileInput = document.getElementById('ricevuta-file');
+      const invia = document.getElementById('ricevuta-invia');
+      const esito = document.getElementById('ricevuta-esito');
+      function mostraRicevutaEsito(msg, ok) {
+        if (!esito) return;
+        esito.classList.remove('hidden');
+        esito.style.background = ok ? '#1d4d3a' : '#5a1f1f';
+        esito.style.borderLeftColor = ok ? '#C8923E' : '#d97a7a';
+        esito.style.color = '#F5EEDD';
+        esito.textContent = msg;
+        esito.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      if (invia && fileInput) {
+        invia.addEventListener('click', async () => {
+          const file = fileInput.files && fileInput.files[0];
+          if (!file) {
+            mostraRicevutaEsito('Scegli prima il file della ricevuta.', false);
+            return;
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            mostraRicevutaEsito('Il file supera i 10 MB: riprova con una foto o un PDF più leggero.', false);
+            return;
+          }
+          invia.disabled = true;
+          invia.textContent = 'Caricamento…';
+          try {
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('tipo', 'quota');
+            fd.append('nome', scelta.dataset.nome || '');
+            fd.append('email', scelta.dataset.email || '');
+            const resp = await fetch(scelta.dataset.ricevutaUrl, { method: 'POST', body: fd });
+            const out = await resp.json().catch(() => ({}));
+            if (resp.ok && out.success) {
+              mostraRicevutaEsito('Ricevuta caricata! La verificheremo e riceverai conferma via email.', true);
+            } else {
+              mostraRicevutaEsito(out.error || 'Caricamento non riuscito. Riprova, o invia la ricevuta a info@elbrenz.eu.', false);
+            }
+          } catch {
+            mostraRicevutaEsito('Errore di connessione. Riprova, o invia la ricevuta a info@elbrenz.eu.', false);
+          } finally {
+            invia.disabled = false;
+            invia.textContent = 'Carica la ricevuta';
+          }
+        });
+      }
+    })();
+  </script>
+
+  {/* M2.R: contatti per chi ha difficoltà col modulo o col pagamento */}
+  <section class="bg-[#FDF9F0] py-14">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <h2
+        class="text-2xl md:text-3xl text-[#1E2E26] font-medium m-0 mb-4 leading-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Hai bisogno di una mano?
+      </h2>
+      <p
+        class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-6"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Se il modulo o il bonifico ti mettono in difficoltà, nessun problema:
+        scrivici o chiamaci e facciamo tutto insieme.
+      </p>
+      <p class="text-lg m-0" style="font-family: 'Inter', sans-serif;">
+        <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline font-medium">info@elbrenz.eu</a>
+        <span class="text-[#0F0F0F]/40 mx-3">·</span>
+        <a href="tel:+393471077636" class="text-[#C8923E] no-underline hover:underline font-medium">+39 347 107 7636</a>
+      </p>
     </div>
   </section>
 
@@ -332,6 +719,9 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
       feedback.style.borderLeft = `3px solid ${type === 'success' ? '#C8923E' : '#d97a7a'}`;
       feedback.style.padding = '14px 18px';
       feedback.textContent = message;
+      // Il riquadro deve essere SEMPRE visibile dopo l'invio (M2.6 fix):
+      // porta il feedback in vista, qualunque sia la posizione di scroll.
+      feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     function hideFeedback() {
@@ -405,7 +795,16 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         const data = await resp.json().catch(() => ({}));
 
         if (resp.ok && data.success) {
-          showFeedback('Richiesta inviata. Ti risponderemo presto da info@elbrenz.eu.', 'success');
+          showFeedback('Domanda inviata, grazie! Ora scegli qui sotto come versare la quota di 20 € (passo 2). Il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.', 'success');
+          // M2.6-bis: il riquadro di conferma "diventa" il selettore del
+          // passo 2 — reveal + memorizza nome/email per la ricevuta
+          // (il form sta per essere resettato).
+          const scelta = document.getElementById('scelta-pagamento');
+          if (scelta) {
+            scelta.dataset.nome = payload.nome;
+            scelta.dataset.email = payload.email;
+            scelta.classList.remove('hidden');
+          }
           form.reset();
         } else if (resp.status === 429) {
           showFeedback(data.error || 'Hai inviato troppe richieste. Riprova più tardi.', 'error');
@@ -417,7 +816,7 @@ const CONTACT_FORM_URL = `${SUPABASE_URL}/functions/v1/contact-form`;
         showFeedback('Errore di connessione. Riprova o scrivi direttamente a info@elbrenz.eu.', 'error');
       } finally {
         submit.disabled = false;
-        submit.textContent = 'Invia richiesta info';
+        submit.textContent = 'Invia la domanda — passo 1 di 3';
       }
     });
   }

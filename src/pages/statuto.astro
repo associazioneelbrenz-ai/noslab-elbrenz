@@ -1,0 +1,265 @@
+---
+/**
+ * /statuto — pagina istituzionale "Lo Statuto" (M2.6).
+ *
+ * Contenuto: pagina WP "Lo Statuto" (wp_id 173, publish) da
+ * docs/pagine_wp_contenuti/pages_md/lo-statuto.md, integrale (22 articoli in
+ * 4 Titoli). Adattamenti solo tipografici: rimosso il grassetto totale del
+ * testo WP, struttura in Titoli/Articoli con heading; testo invariato.
+ * Statuto modificato ed approvato dall'Assemblea dei Soci il 30 gennaio 2014.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+
+const titoli = [
+  {
+    nome: 'Titolo I',
+    tema: 'Costituzione e scopi',
+    articoli: [
+      {
+        n: 1,
+        testo: [
+          'In data 21.12.2009 è stata costituita, nel rispetto del Codice Civile e della L. 383/2000, un’associazione denominata “Associazione storico, culturale, linguistica EL BRENZ”. L’Associazione ha sede in Val di Sole, nel paese di Malè (TN) in via Trento, ed opera nel territorio delle Valli del Noce.',
+        ],
+      },
+      {
+        n: 2,
+        testo: [
+          'L’Associazione non ha scopo di lucro, è apolitica e apartitica, ed intende operare nei settori culturale, editoriale, formativo e ricreativo al fine di far riscoprire e valorizzare la storia, la cultura, la lingua, le tradizioni e i valori delle comunità delle Valli del Noce. A questo scopo, verrà promosso sempre ove possibile, l’utilizzo delle varianti del ladino anaunico. L’Associazione potrà svolgere, a titolo d’esempio, le seguenti attività:',
+        ],
+        lista: [
+          'Settore culturale: convegni, conferenze, dibattiti, seminari, concerti, rievocazioni;',
+          'Settore formativo: corsi, convenzioni con istituzioni, scuole, enti locali;',
+          'Settore editoriale: pubblicazione di atti, studi, ricerche, tradizioni, usi e costumi, memorie, apertura di siti web;',
+          'Settore ricreativo: visite formative, viaggi d’istruzione, manifestazioni, folklore, gemellaggi, scambi culturali, proiezione di film. L’Associazione si impegna ad organizzare ogni anno una cena e una gita sociale.',
+        ],
+      },
+      {
+        n: 3,
+        testo: [
+          'Possono essere socie dell’Associazione tutte le persone fisiche e giuridiche che abbiano interesse al raggiungimento degli scopi dell’Associazione e presentino domanda di iscrizione nei modi previsti dal presente statuto.',
+        ],
+      },
+      {
+        n: 4,
+        testo: ['I soci si dividono in Soci Fondatori, Ordinari e Sostenitori.'],
+        lista: [
+          'Soci Fondatori: coloro che hanno concorso alla costituzione dell’Associazione.',
+          'Soci Ordinari: tutti coloro che aderiscono all’Associazione nel corso della sua esistenza, sostenendone le attività tramite il versamento della quota associativa.',
+          'Soci Sostenitori: coloro che desiderano provvedere a versamenti ulteriori alla quota associativa, in segno tangibile di appoggio alle iniziative ed all’attività dell’Associazione.',
+        ],
+        coda: [
+          'La divisione dei soci nelle suddette categorie non implica alcuna differenza di trattamento tra i soci in merito ai loro diritti e doveri nei confronti dell’Associazione. Ciascun socio ha diritto a partecipare effettivamente alla vita dell’Associazione.',
+          'Tutti i soci che abbiano la maggiore età hanno diritto all’elettorato attivo e passivo. In particolare, tali soci, hanno diritto di voto per l’approvazione e le modificazioni dello statuto e degli eventuali regolamenti per l’elezione degli organi sociali.',
+          'Per aderire all’associazione occorre avanzare domanda scritta e firmata, indirizzata al Presidente. In tale domanda deve anche essere precisato che il richiedente si impegna ad accettare le norme dello statuto sociale e la disciplina relativa, ad osservare le disposizioni che saranno emanate dal Consiglio Direttivo, il quale dovrà procedere entro sessanta giorni dal suo ricevimento; nel caso di diniego l’interessato può proporre appello in assemblea.',
+        ],
+      },
+      {
+        n: 5,
+        testo: ['Il Consiglio Direttivo stabilisce la misura della quota associativa annuale.'],
+      },
+      {
+        n: 6,
+        testo: [
+          'Ogni socio può in ogni momento esercitare il diritto di recesso; tale diritto ha effetto a decorrere dal secondo mese successivo a quello nel quale il Consiglio Direttivo riceve la relativa notifica.',
+          'La qualità di socio si perde:',
+        ],
+        lista: [
+          'Per mancato pagamento della quota associativa;',
+          'Per esclusione decisa dal Consiglio Direttivo in caso di comportamento contrario agli scopi dell’Associazione. L’associato escluso può proporre appello alla prima Assemblea ordinaria utile.',
+        ],
+      },
+      {
+        n: 7,
+        testo: [
+          'L’esercizio dei diritti sociali spetta ai soci regolarmente iscritti e in regola con il versamento della quota associativa. È garantita l’uniformità del rapporto e delle modalità associative. Le quote e i contributi associativi non sono trasferibili, ad eccezione dei trasferimenti a causa di morte, e non sono rivalutabili.',
+        ],
+      },
+    ],
+  },
+  {
+    nome: 'Titolo II',
+    tema: "Organi dell'Associazione",
+    articoli: [
+      {
+        n: 8,
+        testo: ['Gli organi dell’Associazione sono:'],
+        lista: [
+          'L’Assemblea dei soci;',
+          'Il Consiglio Direttivo;',
+          'Il Presidente;',
+          'Due (2) Revisori dei Conti.',
+        ],
+        coda: [
+          'L’elezione degli organi amministrativi non può essere in alcun modo vincolata o limitata ed è informata a criteri di massima libertà di partecipazione all’elettorato attivo e passivo.',
+        ],
+      },
+      {
+        n: 9,
+        testo: [
+          'L’Assemblea è l’organo sovrano dell’Associazione. Tutti i soci in regola con gli obblighi imposti dall’Associazione, ed in particolare con il versamento delle quote associative, possono partecipare all’Assemblea generale.',
+          'Ciascun socio ha diritto ad un voto e può farsi rappresentare all’Assemblea da altro socio mediante delega scritta e firmata; la delega può essere conferita solo ad altro socio. Sono ammesse al massimo due deleghe per socio.',
+        ],
+      },
+      {
+        n: 10,
+        testo: [
+          'L’Assemblea è convocata dal Presidente almeno una volta all’anno per l’approvazione del bilancio consuntivo. Essa inoltre provvede a:',
+        ],
+        lista: [
+          'eleggere gli organi sociali;',
+          'delineare il programma delle attività sociali;',
+          'deliberare sulle modifiche del presente statuto;',
+          'approvare gli eventuali regolamenti che disciplinano lo svolgimento dell’attività dell’Associazione;',
+          'deliberare sull’eventuale destinazione degli utili, di fondi, riserve o capitali, durante la vita dell’Associazione, qualora ciò sia consentito dalla legge e dal presente statuto;',
+          'delibera lo scioglimento e la liquidazione dell’Associazione e la devoluzione del suo patrimonio.',
+        ],
+        coda: [
+          'L’Assemblea si riunirà ogni qualvolta sarà convocata dal Presidente o ne sia fatta richiesta motivata e sottoscritta da almeno un decimo dei soci. La convocazione deve pervenire, per iscritto, ai soci almeno quindici giorni prima della data dell’Assemblea e deve indicare il luogo, il giorno e l’ora sia di prima che di seconda convocazione e l’ordine del giorno da discutere.',
+          'L’adunanza di seconda convocazione non può essere fissata lo stesso giorno stabilito per la prima convocazione.',
+        ],
+      },
+      {
+        n: 11,
+        testo: [
+          'Salvo che non sia diversamente stabilito da norme di legge o del presente statuto, le deliberazioni dell’Assemblea sono prese a maggioranza di voti e con la presenza di almeno la metà degli associati.',
+          'In seconda convocazione la deliberazione è valida qualunque sia il numero degli intervenuti.',
+          'Le votazioni si fanno per alzata di mano oppure per appello nominale. Si voterà a scrutinio segreto quando ne faccia domanda uno o più soci presenti.',
+        ],
+      },
+      {
+        n: 12,
+        testo: [
+          'L’Assemblea straordinaria delibera sulle modifiche dello Statuto e sull’eventuale scioglimento dell’Associazione.',
+          'In caso di modifiche statutarie, l’Assemblea è validamente costituita con la presenza dei tre quarti dei soci e delibera con voto favorevole della maggioranza dei presenti.',
+          'Per lo scioglimento dell’Associazione e la devoluzione del patrimonio è necessario il voto favorevole di almeno tre quarti degli associati.',
+        ],
+      },
+      {
+        n: 13,
+        testo: [
+          'L’Associazione è amministrata da un Consiglio Direttivo composto da un numero minimo di 4 consiglieri ai quali si aggiungono il Presidente, i due (2) Vicepresidenti e il Segretario/Tesoriere, eletti dall’Assemblea ordinaria. Il Consiglio Direttivo è coadiuvato, nella gestione, dal Gruppo Giovani composto da tutti i soci con età inferiore ai trenta (30) anni. Il Gruppo Giovani elegge al suo interno un referente che lo rappresenta.',
+          'Il Consiglio Direttivo resta in carica per la durata di 3 anni ed è rieleggibile.',
+        ],
+      },
+      {
+        n: 14,
+        testo: ['Al Consiglio Direttivo sono attribuite le seguenti funzioni:'],
+        lista: [
+          'la gestione ordinaria e straordinaria dell’Associazione, in base alle linee direttive ricevute dall’Assemblea;',
+          'la nomina, al suo interno, dei Vicepresidenti e del Segretario;',
+          'l’ammissione all’Associazione di nuovi soci;',
+          'l’esclusione degli associati;',
+          'la discussione e l’approvazione preventiva del bilancio consuntivo annuale redatto dal Segretario Tesoriere.',
+        ],
+        coda: [
+          'La carica di consigliere non prevede alcun compenso, salvo il rimborso delle spese documentate, entro i limiti preventivamente stabiliti dal Consiglio Direttivo.',
+        ],
+      },
+      {
+        n: 15,
+        testo: [
+          'Il Consiglio Direttivo è convocato dal Presidente ogniqualvolta questi lo ritenga necessario oppure ne sia fatta richiesta dalla maggioranza dei consiglieri. La convocazione è fatta mediante lettera, contenente l’indicazione del luogo, del giorno e dell’ora della riunione, nonché l’ordine del giorno, spedita a tutti i consiglieri almeno otto giorni prima dell’adunanza.',
+          'Il Consiglio Direttivo è comunque validamente costituito, anche in assenza delle suddette formalità di convocazione, qualora siano presenti tutti i suoi membri.',
+        ],
+      },
+      {
+        n: 16,
+        testo: [
+          'Il Consiglio Direttivo è presieduto dal Presidente o, in caso di sua assenza o impedimento, dai Vicepresidenti; in mancanza di entrambi, da un altro membro del Consiglio designato dai presenti.',
+          'Il Consiglio Direttivo è validamente costituito qualora siano presenti almeno la metà dei suoi membri. Le deliberazioni del Consiglio sono assunte a maggioranza dei presenti.',
+          'In caso di morte o dimissioni di un consigliere prima della scadenza del mandato il Consiglio provvederà alla sua sostituzione mediante cooptazione. Qualora, per qualsiasi motivo, venga a mancare la maggioranza dei consiglieri, l’intero Consiglio Direttivo si intenderà decaduto e dovrà essere rinnovato.',
+        ],
+      },
+      {
+        n: 17,
+        testo: [
+          'Il Presidente ha la rappresentanza legale dell’Associazione di fronte a terzi e in giudizio, vigila e cura perché siano attuate le deliberazioni del consiglio e dell’Assemblea, provvede a quanto si addica all’osservanza delle disposizioni statutarie e della disciplina sociale.',
+          'In caso di urgenza può agire con i poteri del Consiglio; le deliberazioni così adottate dovranno tuttavia essere sottoposte all’approvazione di quest’ultimo nella prima riunione.',
+        ],
+      },
+    ],
+  },
+  {
+    nome: 'Titolo III',
+    tema: 'Patrimonio Sociale',
+    articoli: [
+      {
+        n: 18,
+        testo: [
+          'Il patrimonio dell’Associazione è costituito dalle quote associative, da contributi e da ogni altra elargizione, in beni e in denaro, ordinaria e straordinaria fatta a favore dell’Associazione, nonché dai lasciti, donazioni, eredità che eventualmente dovessero pervenire all’Associazione.',
+          'Il patrimonio è altresì costituito dalle entrate derivanti da attività economiche eventualmente realizzate in conformità alle finalità istituzionali dell’Associazione.',
+        ],
+      },
+      {
+        n: 19,
+        testo: [
+          'L’esercizio sociale va dal 1 gennaio al 31 dicembre di ogni anno; alla fine di ogni esercizio il Consiglio Direttivo procederà alla discussione e approvazione preventiva del rendiconto economico e finanziario redatto dal Segretario/Tesoriere, che dovrà essere approvato dall’Assemblea da convocarsi entro quattro mesi dalla chiusura dell’esercizio.',
+          'Il rendiconto dovrà essere depositato presso la sede dell’Associazione nei quindici giorni che precedono l’assemblea convocata per la sua approvazione ed ogni associato potrà prenderne visione.',
+        ],
+      },
+      {
+        n: 20,
+        testo: [
+          'È fatto divieto di distribuire tra gli associati, anche in modo indiretto, utili o avanzi di gestione nonché fondi, riserve o capitale durante la vita dell’Associazione, salvo che la destinazione o la distribuzione non siano imposte dalla legge.',
+        ],
+      },
+    ],
+  },
+  {
+    nome: 'Titolo IV',
+    tema: "Scioglimento dell'Associazione e disposizioni finali",
+    articoli: [
+      {
+        n: 21,
+        testo: [
+          'In caso di scioglimento dell’Associazione, il patrimonio residuo sarà devoluto ad altra Associazione con finalità identiche o analoghe, o ai fini di pubblica utilità, sentito l’organismo di controllo di cui all’articolo 3, comma 190, della legge 23 dicembre 1996, n. 662, e salvo diversa destinazione imposta dalla legge.',
+        ],
+      },
+      {
+        n: 22,
+        testo: [
+          'Per quanto non espressamente previsto dalle norme del presente statuto si applicano le norme del Codice Civile e le leggi vigenti in materia.',
+        ],
+      },
+    ],
+  },
+];
+---
+<PaginaIstituzionale
+  occhiello="L'Associazione"
+  titolo="Lo Statuto"
+  intro="Lo statuto dell'Associazione Storico Culturale Linguistica El Brenz, modificato ed approvato dall'Assemblea dei Soci il 30 gennaio 2014."
+  metaDescription="Lo Statuto dell'Associazione El Brenz: costituzione e scopi, organi sociali, patrimonio e disposizioni finali. Approvato dall'Assemblea dei Soci il 30 gennaio 2014."
+>
+  <div class="prosa-istituzionale">
+    {titoli.map((t) => (
+      <section>
+        <h2>
+          {t.nome} — {t.tema}
+        </h2>
+        {t.articoli.map((a) => (
+          <article class="mb-8">
+            <h3>Art. {a.n}</h3>
+            {a.testo.map((p) => (
+              <p>{p}</p>
+            ))}
+            {a.lista && (
+              <ul>
+                {a.lista.map((v) => (
+                  <li>{v}</li>
+                ))}
+              </ul>
+            )}
+            {a.coda && a.coda.map((p) => <p>{p}</p>)}
+          </article>
+        ))}
+      </section>
+    ))}
+
+    <p class="mt-12 pt-6 border-t border-[#E5DFCF] text-sm text-[#0F0F0F]/60">
+      <em>Statuto modificato ed approvato dall'Assemblea dei Soci in data 30
+      gennaio 2014.</em>
+    </p>
+  </div>
+</PaginaIstituzionale>
