@@ -190,4 +190,40 @@ const eventi = defineCollection({
   }),
 });
 
-export const collections = { articoli, eventi };
+// Collezione rubrica (M2.8) — "Una terra, cinque lingue": la rubrica mensile
+// trilingue di El Brenz pubblicata anche su UT24 (unsertirol24.com),
+// collaborazione con credito e link sempre presenti.
+// Un file per uscita: src/content/rubrica/YYYY-MM-slug.md
+// Corpo: TRE sezioni nell'ordine ladino → italiano → tedesco, separate dagli
+// heading fissi "## Ladin anaunic", "## Italiano", "## Deutsch" che il layout
+// riconosce (ancore + attributi lang). Il ladino viene SEMPRE per primo:
+// scelta identitaria. Pilastro editoriale di riferimento: Lingua e ladinità.
+const rubrica = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/rubrica" }),
+
+  schema: z.object({
+    /** Titolo in ladino anaunico — SEMPRE presente, mostrato per primo. */
+    titolo_lad: z.string().min(1).max(200),
+    /** Titolo italiano. */
+    titolo_it: z.string().min(1).max(200),
+    /** Titolo tedesco. */
+    titolo_de: z.string().min(1).max(200),
+
+    /** Data di uscita (mensile). */
+    data: z.coerce.date(),
+
+    /** Autore, di norma la firma collettiva. */
+    autore: z.string().default("El Brenz"),
+
+    /** Link all'uscita originale su UT24 (credito obbligatorio quando c'è). */
+    link_ut24: z.string().url().optional(),
+
+    /** Estratto italiano per card e meta description. */
+    estratto_it: z.string().max(300),
+
+    /** true = non pubblicata (come `bozza` degli eventi). */
+    bozza: z.boolean().default(false),
+  }),
+});
+
+export const collections = { articoli, eventi, rubrica };

@@ -1,0 +1,137 @@
+---
+/**
+ * /una-terra-cinque-lingue — indice della rubrica trilingue (M2.8).
+ *
+ * La rubrica mensile di El Brenz in ladino anaunico, italiano e tedesco,
+ * pubblicata anche su UT24 (unsertirol24.com) — collaborazione con credito
+ * e link sempre presenti. Elenco uscite raggruppate per anno (pattern di
+ * ElencoArticoliPerAnno, adattato: quella component è tipata sugli
+ * articoli, qui la lista è resa inline con lo stesso stile).
+ * Pilastro editoriale di riferimento: Lingua e ladinità.
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { formatDataIT } from '../../lib/articoli';
+
+const uscite = (await getCollection('rubrica', ({ data }) => !data.bozza))
+  .sort((a, b) => b.data.data.getTime() - a.data.data.getTime());
+
+const perAnno = new Map<number, typeof uscite>();
+for (const u of uscite) {
+  const anno = u.data.data.getFullYear();
+  if (!perAnno.has(anno)) perAnno.set(anno, []);
+  perAnno.get(anno)!.push(u);
+}
+const anni = [...perAnno.keys()].sort((x, y) => y - x);
+---
+<Layout
+  title="Una terra, cinque lingue"
+  description="La rubrica mensile di El Brenz in ladino anaunico, italiano e tedesco, in collaborazione con UT24 — Unser Tirol 24. Una terra plurilingue, raccontata nelle sue lingue."
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+      <p
+        class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Rubrica · Lingua e ladinità
+      </p>
+      <h1
+        class="text-4xl md:text-6xl leading-[1.08] tracking-tight m-0 mb-6"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;"
+      >
+        Una terra, <em class="text-[#C8923E]" style="font-style: italic;">cinque lingue</em>.
+      </h1>
+      <p
+        class="text-lg md:text-xl leading-relaxed text-[#F5EEDD]/85 m-0 max-w-2xl"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Ogni mese raccontiamo le nostre valli in <em>ladin anaunic</em>,
+        italiano e tedesco: perché una terra plurilingue si capisce solo
+        nelle sue lingue. La rubrica esce anche su
+        <a href="https://www.unsertirol24.com/" target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">UT24 — Unser Tirol 24</a>,
+        con cui collaboriamo.
+      </p>
+    </div>
+  </header>
+
+  <section class="bg-[#FDF9F0]">
+    <div class="max-w-4xl mx-auto px-6 py-16 md:py-20">
+      {uscite.length > 0 ? (
+        <div class="space-y-16">
+          {anni.map((anno) => (
+            <section>
+              <h2
+                class="text-3xl md:text-4xl text-[#C8923E] font-medium mb-7 pb-3 border-b border-[#E5DFCF]"
+                style="font-family: 'Playfair Display', serif;"
+              >
+                {anno}
+              </h2>
+              <ul class="list-none m-0 p-0 space-y-3">
+                {perAnno.get(anno)!.map((u) => (
+                  <li>
+                    <a
+                      href={`/una-terra-cinque-lingue/${u.id}`}
+                      class="group block bg-white border border-[#E5DFCF] hover:border-[#C8923E] transition-colors p-6 no-underline"
+                    >
+                      <p
+                        class="text-[11px] tracking-[0.18em] uppercase text-[#C8923E] m-0 mb-2"
+                        style="font-family: 'Inter', sans-serif;"
+                      >
+                        <time datetime={u.data.data.toISOString()}>{formatDataIT(u.data.data)}</time>
+                        <span class="text-[#1E2E26]/45"> · lad / it / de</span>
+                      </p>
+                      <h3
+                        class="text-2xl text-[#1E2E26] font-medium leading-tight m-0 group-hover:text-[#C8923E] transition-colors"
+                        style="font-family: 'Playfair Display', serif;"
+                        lang="lld-anau"
+                      >
+                        {u.data.titolo_lad}
+                      </h3>
+                      <p
+                        class="text-base text-[#1E2E26]/70 leading-snug m-0 mt-1"
+                        style="font-family: 'Playfair Display', serif; font-style: italic;"
+                      >
+                        {u.data.titolo_it}
+                      </p>
+                      <p
+                        class="text-[#0F0F0F]/70 leading-relaxed m-0 mt-3"
+                        style="font-family: 'Source Serif 4', Georgia, serif;"
+                      >
+                        {u.data.estratto_it}
+                      </p>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      ) : (
+        <div class="bg-white border border-[#E5DFCF] p-8 md:p-12">
+          <span
+            class="inline-block text-[11px] tracking-[0.18em] uppercase text-[#C8923E] border border-[#C8923E] px-3 py-1.5 mb-6"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            In arrivo
+          </span>
+          <h2
+            class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-4"
+            style="font-family: 'Playfair Display', serif;"
+          >
+            Le prime uscite stanno arrivando
+          </h2>
+          <p
+            class="text-[#0F0F0F]/75 leading-relaxed m-0"
+            style="font-family: 'Source Serif 4', Georgia, serif;"
+          >
+            Stiamo riportando qui, uscita per uscita, la rubrica che
+            pubblichiamo ogni mese su UT24. Nel frattempo puoi leggerla su
+            <a href="https://www.unsertirol24.com/" target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">unsertirol24.com</a>.
+          </p>
+        </div>
+      )}
+    </div>
+  </section>
+</Layout>

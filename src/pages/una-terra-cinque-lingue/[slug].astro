@@ -1,0 +1,153 @@
+---
+/**
+ * /una-terra-cinque-lingue/[slug] — pagina di un'uscita della rubrica (M2.8).
+ *
+ * Switcher lingua in testa: tre pill ad ANCORA (zero JS) che saltano alle
+ * sezioni. Astro assegna gli id agli heading del markdown ("## Ladin
+ * anaunic" → #ladin-anaunic, "## Italiano" → #italiano, "## Deutsch" →
+ * #deutsch). Il ladino viene SEMPRE per primo (scelta identitaria).
+ *
+ * Attributi lang per accessibilità: l'HTML renderizzato (entry.rendered.html
+ * del Content Layer) viene suddiviso sui tre heading fissi e ogni sezione è
+ * avvolta in un <section lang="...">. NB: il brief chiedeva lang="lad", ma
+ * "lad" è il codice ISO del giudeo-spagnolo: si usa "lld-anau" (ladino,
+ * variante anaunica), già convenzione del sito (motto in home). Se un
+ * heading manca, fallback: contenuto intero senza wrapper (pagina comunque
+ * funzionante).
+ *
+ * Footer: credito "Pubblicato anche su UT24" con link_ut24 quando presente.
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+import { formatDataIT } from '../../lib/articoli';
+
+export async function getStaticPaths() {
+  const uscite = await getCollection('rubrica', ({ data }) => !data.bozza);
+  return uscite.map((u) => ({ params: { slug: u.id }, props: { uscita: u } }));
+}
+
+const { uscita } = Astro.props;
+await render(uscita); // popola uscita.rendered per il loader glob
+
+const SEZIONI = [
+  { id: 'ladin-anaunic', label: 'Ladin anaunic', lang: 'lld-anau' },
+  { id: 'italiano', label: 'Italiano', lang: 'it' },
+  { id: 'deutsch', label: 'Deutsch', lang: 'de' },
+] as const;
+
+// Suddivide l'HTML renderizzato sui tre heading fissi e avvolge ogni parte
+// in <section lang> (accessibilità). Fallback: HTML intero se il match salta.
+const htmlIntero = uscita.rendered?.html ?? '';
+let sezioniHtml: { lang: string; html: string }[] | null = null;
+const indici = SEZIONI.map((s) => htmlIntero.indexOf(`<h2 id="${s.id}"`));
+if (indici.every((i) => i >= 0) && indici[0] < indici[1] && indici[1] < indici[2]) {
+  sezioniHtml = SEZIONI.map((s, n) => ({
+    lang: s.lang,
+    html: htmlIntero.slice(indici[n], n + 1 < indici.length ? indici[n + 1] : undefined),
+  }));
+}
+---
+<Layout
+  title={`${uscita.data.titolo_it} — Una terra, cinque lingue`}
+  description={uscita.data.estratto_it}
+  ogType="article"
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-3xl mx-auto px-6 py-14 md:py-20">
+      <p
+        class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        <a href="/una-terra-cinque-lingue" class="text-[#D9A94E] no-underline hover:underline">Una terra, cinque lingue</a>
+        · <time datetime={uscita.data.data.toISOString()}>{formatDataIT(uscita.data.data)}</time>
+      </p>
+      <h1
+        class="text-3xl md:text-5xl leading-[1.12] tracking-tight m-0 mb-3"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;"
+        lang="lld-anau"
+      >
+        {uscita.data.titolo_lad}
+      </h1>
+      <p class="text-xl md:text-2xl text-[#F5EEDD]/80 m-0 leading-snug" style="font-family: 'Playfair Display', serif; font-style: italic;">
+        {uscita.data.titolo_it}
+      </p>
+      <p class="text-base text-[#F5EEDD]/55 m-0 mt-1 leading-snug" style="font-family: 'Playfair Display', serif; font-style: italic;" lang="de">
+        {uscita.data.titolo_de}
+      </p>
+
+      {/* Switcher lingua: sole ancore, zero JS. */}
+      <nav class="mt-8 flex flex-wrap gap-2" aria-label="Scegli la lingua" style="font-family: 'Inter', sans-serif;">
+        {SEZIONI.map((s) => (
+          <a
+            href={`#${s.id}`}
+            class="inline-block border border-[#C8923E]/60 text-[#C8923E] px-4 py-1.5 text-[12px] font-medium tracking-[0.14em] uppercase rounded-full no-underline hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors"
+          >
+            {s.label}
+          </a>
+        ))}
+      </nav>
+    </div>
+  </header>
+
+  <article class="bg-[#FDF9F0]">
+    <div class="max-w-3xl mx-auto px-6 py-14 md:py-16 prosa-rubrica">
+      {sezioniHtml
+        ? sezioniHtml.map((s) => <section lang={s.lang} set:html={s.html} />)
+        : <div set:html={htmlIntero} />}
+
+      <footer class="mt-14 pt-6 border-t border-[#E5DFCF]" style="font-family: 'Inter', sans-serif;">
+        <p class="text-sm text-[#0F0F0F]/60 m-0">
+          Rubrica di {uscita.data.autore} · pilastro <a href="/lingua" class="text-[#C8923E] no-underline hover:underline">Lingua e ladinità</a>
+          {uscita.data.link_ut24 && (
+            <>
+              {' '}· Pubblicato anche su{' '}
+              <a href={uscita.data.link_ut24} target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">
+                UT24 – Unser Tirol 24 →
+              </a>
+            </>
+          )}
+        </p>
+      </footer>
+    </div>
+  </article>
+</Layout>
+
+<style is:global>
+  /* Prosa della rubrica (autonoma: questa pagina non usa
+     PaginaIstituzionale, quindi definisce qui i propri stili). */
+  .prosa-rubrica {
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: rgba(15, 15, 15, 0.82);
+    line-height: 1.75;
+    font-size: 1.0625rem;
+  }
+  .prosa-rubrica h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 500;
+    color: #c8923e;
+    font-size: 1.6rem;
+    line-height: 1.2;
+    margin: 2.75rem 0 1rem;
+    border-bottom: 1px solid #e5dfcf;
+    padding-bottom: 8px;
+    scroll-margin-top: 24px;
+  }
+  .prosa-rubrica section:first-child h2 {
+    margin-top: 0;
+  }
+  .prosa-rubrica p {
+    margin: 0 0 1rem;
+  }
+  .prosa-rubrica a {
+    color: #c8923e;
+    text-decoration: none;
+  }
+  .prosa-rubrica a:hover {
+    text-decoration: underline;
+  }
+  .prosa-rubrica ul {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+  }
+</style>
