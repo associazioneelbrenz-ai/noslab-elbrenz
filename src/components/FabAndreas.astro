@@ -43,9 +43,9 @@ const { pathname } = Astro.props;
 const normalized = pathname.replace(/\/$/, '').toLowerCase();
 const isHidden = normalized === '/andreas';
 
-// TODO: bottone Presidente — inserire numero Diego e attivare (micro-diff:
-// valorizzare NUMERO_DIEGO, es. '3931234567'; consenso già registrato).
-const NUMERO_DIEGO = '';
+// Bottone Presidente attivato 8/7/2026 (numero fornito da Cristian,
+// consenso di Diego registrato).
+const NUMERO_DIEGO = '3471077636';
 const MSG_WHATSAPP = encodeURIComponent(
   "Ciao! Ho visto il sito El Brenz e vorrei informazioni sull'Associazione.",
 );
