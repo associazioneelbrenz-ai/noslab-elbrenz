@@ -17,6 +17,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { paypalAccessToken, paypalApiBase } from '../_shared/paypal.ts';
+import { firmaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
 
 const STATI: Record<string, string> = {
   'PAYMENT.CAPTURE.COMPLETED': 'completato',
@@ -36,15 +37,22 @@ async function notificaCompletato(
   orderId: string | null,
 ): Promise<void> {
   let q = supabase.from('pagamenti_tesseramento')
-    .select('id, tipo, anonimo, nome, email, importo, metodo, notificato, domanda_id');
+    .select('id, tipo, anonimo, nome, email, payer_email, importo, metodo, notificato, domanda_id');
   if (captureId) q = q.eq('capture_id', captureId);
   else if (orderId) q = q.eq('order_id', orderId);
   else return;
   const { data: riga } = await q.maybeSingle();
   if (!riga || riga.notificato) return;
 
-  // aggancio domanda (solo quota, serve una email sul pagamento)
+  // Aggancio domanda (solo quota): 1) match per email su domande in attesa;
+  // 2) FIX A2 (approvato da Cristian 8/7/2026): se non c'è alcuna domanda
+  //    agganciabile, la CREIAMO in stato 'in_attesa' dai dati del pagamento
+  //    — così una quota completata ha SEMPRE domanda_id, anche se l'utente
+  //    ha pagato senza inviare il modulo o ha abbandonato dopo il pagamento.
+  //    MAI approvazione automatica: il segretario completa i dati e approva
+  //    dalla scheda.
   let domandaId: string | null = riga.domanda_id ?? null;
+  let domandaCreata = false;
   if (riga.tipo === 'quota' && !domandaId && riga.email) {
     const { data: dom } = await supabase.from('domande_tesseramento')
       .select('id')
@@ -53,12 +61,31 @@ async function notificaCompletato(
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (dom) {
-      domandaId = dom.id;
-      await supabase.from('pagamenti_tesseramento')
-        .update({ domanda_id: dom.id, updated_at: new Date().toISOString() })
-        .eq('id', riga.id);
+    if (dom) domandaId = dom.id;
+  }
+  if (riga.tipo === 'quota' && !domandaId) {
+    const emailDomanda = riga.email || riga.payer_email || 'da-completare@elbrenz.eu';
+    const nomeDomanda = riga.nome || riga.payer_email || '(da identificare)';
+    const { data: nuova, error: insErr } = await supabase
+      .from('domande_tesseramento')
+      .insert({
+        nome: nomeDomanda,
+        email: emailDomanda,
+        messaggio: `Domanda creata automaticamente dal pagamento PayPal (capture ${captureId ?? 'n/d'}). Completare i dati anagrafici prima dell'approvazione.`,
+      })
+      .select('id')
+      .single();
+    if (!insErr && nuova) {
+      domandaId = nuova.id;
+      domandaCreata = true;
+    } else if (insErr) {
+      console.error('[paypal-webhook] auto-creazione domanda fallita:', insErr);
     }
+  }
+  if (riga.tipo === 'quota' && domandaId && domandaId !== riga.domanda_id) {
+    await supabase.from('pagamenti_tesseramento')
+      .update({ domanda_id: domandaId, updated_at: new Date().toISOString() })
+      .eq('id', riga.id);
   }
 
   const sharedSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
@@ -69,11 +96,22 @@ async function notificaCompletato(
   const metodoLabel = riga.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico';
   const chi = riga.anonimo ? 'Donatore anonimo' : (riga.nome || riga.email || 'sconosciuto');
   const cosa = riga.tipo === 'quota' ? 'Quota sociale 2026' : 'Donazione';
-  const aggancio = riga.tipo === 'quota'
-    ? (domandaId
-      ? `<p style="color:#2d8659;">✓ Agganciato alla domanda <strong>#${domandaId.slice(0, 8)}</strong>.</p>`
-      : `<p style="color:#a33;"><strong>⚠ Pagamento orfano:</strong> nessuna domanda in attesa con questa email — verificare manualmente.</p>`)
-    : '';
+  let aggancio = '';
+  if (riga.tipo === 'quota') {
+    if (domandaCreata) {
+      aggancio = `<p style="color:#8a6215;"><strong>⚠ Domanda creata automaticamente dal pagamento</strong> (#${domandaId!.slice(0, 8)}): completare i dati anagrafici dalla scheda prima dell'approvazione.</p>`;
+    } else if (domandaId) {
+      aggancio = `<p style="color:#2d8659;">✓ Agganciato alla domanda <strong>#${domandaId.slice(0, 8)}</strong>.</p>`;
+    } else {
+      aggancio = `<p style="color:#a33;"><strong>⚠ Pagamento orfano:</strong> impossibile creare o agganciare una domanda — verificare manualmente.</p>`;
+    }
+    const adminSecret = Deno.env.get('ADMIN_ACTION_SECRET');
+    if (domandaId && adminSecret) {
+      const exp = Date.now() + TOKEN_TTL_MS;
+      const t = await firmaToken(adminSecret, 'vista', domandaId, exp);
+      aggancio += `<p style="margin-top:14px;"><a href="${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda?d=${domandaId}&exp=${exp}&t=${t}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:10px 22px;text-decoration:none;font-weight:600;font-size:13px;border-radius:4px;">Apri scheda domanda →</a></p>`;
+    }
+  }
   const html = `<!DOCTYPE html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;">
   <div style="background:#fff;padding:28px;border-radius:8px;border-top:4px solid #2d8659;">
     <h1 style="color:#1E2E26;font-size:20px;margin:0 0 16px;">Pagamento ricevuto ✓</h1>
