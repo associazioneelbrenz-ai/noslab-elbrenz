@@ -5,13 +5,14 @@
  * Usato da tutte le pagine pubbliche del sito.
  * Include:
  *   - <head> con meta SEO base e import di global.css
- *   - <BannerAndreas /> banda CTA oro sopra header
  *   - <Header /> con wordmark + navigazione
  *   - <slot /> per il contenuto della pagina
  *   - <footer> con firma istituzionale + bandiera ladina + credit NosLab
  *   - <FabAndreas /> bottone galleggiante (nascosto su /andreas)
  *
  * M.A.2.5: aggiunti BannerAndreas e FabAndreas come entry point globali ad Andreas.
+ * M3.0 (8/7/2026): BannerAndreas RIMOSSO su decisione Cristian — ridondante
+ * col widget flottante con badge; il componente resta in src/components/.
  */
 
 import '../styles/global.css';
@@ -19,7 +20,6 @@ import Wordmark from '../components/Wordmark.astro';
 import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 import BandieraLadina from '../components/BandieraLadina.astro';
 import Header from '../components/Header.astro';
-import BannerAndreas from '../components/BannerAndreas.astro';
 import FabAndreas from '../components/FabAndreas.astro';
 import CookieConsent from '../components/CookieConsent.astro';
 
@@ -87,7 +87,6 @@ const currentPath = Astro.url.pathname;
   </head>
   <body class="bg-[#F8F1E4] text-[#0F0F0F] min-h-screen flex flex-col">
 
-    <BannerAndreas />
     <Header />
 
     <main class="flex-1">
