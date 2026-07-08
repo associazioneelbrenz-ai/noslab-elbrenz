@@ -11,9 +11,10 @@
  *   - Al page load: ZERO richieste a domini terzi. Solo un placeholder
  *     brandizzato con avviso cookie, link all'informativa, bottone "Carica"
  *     e link diretto al contenuto come fallback.
- *   - Al click su "Carica": inject runtime dell'embed. YouTube usa il
- *     dominio youtube-nocookie.com (privacy-enhanced). Instagram carica
- *     embed.js di Meta una sola volta per pagina.
+ *   - Al click su "Carica": inject runtime di un SOLO iframe (deroga
+ *     estesa 8/7/2026: mai script/SDK di terze parti). YouTube usa
+ *     youtube-nocookie.com (privacy-enhanced); Instagram l'endpoint
+ *     /p|reel/{code}/embed/; Facebook il Page Plugin via iframe.
  *   - La scelta vale per il provider ed è ricordata PER LA SESSIONE con un
  *     cookie tecnico first-party (`eb_embed_<provider>`, senza scadenza =
  *     muore con la sessione del browser; niente localStorage per policy).
@@ -24,13 +25,13 @@
  *     caricano senza click (consenso globale già espresso).
  *   - Dimensioni riservate via aspect-ratio: nessun layout shift al load.
  *
- * Props: provider ('youtube'|'instagram'), url (URL pubblico del video o
+ * Props: provider ('youtube'|'instagram'|'facebook'), url (URL pubblico del video o
  * del post), titolo (per aria-label e fallback), rapporto (aspect-ratio
  * CSS opzionale), thumb (immagine self-hosted opzionale come sfondo).
  */
 
 interface Props {
-  provider: 'youtube' | 'instagram';
+  provider: 'youtube' | 'instagram' | 'facebook';
   url: string;
   titolo: string;
   rapporto?: string;
@@ -39,15 +40,27 @@ interface Props {
 
 const { provider, url, titolo, rapporto, thumb } = Astro.props;
 
-// YouTube: estrai l'ID per costruire l'embed privacy-enhanced.
+// M2.9-bis (deroga estesa 8/7/2026): SOLO iframe al click, nessun SDK JS
+// di Meta in nessun caso. L'URL dell'iframe si calcola qui a build time.
 let embedSrc = '';
 if (provider === 'youtube') {
+  // Dominio privacy-enhanced.
   const m = url.match(/(?:youtu\.be\/|[?&]v=|\/embed\/)([A-Za-z0-9_-]{6,})/);
   embedSrc = m ? `https://www.youtube-nocookie.com/embed/${m[1]}` : '';
+} else if (provider === 'instagram') {
+  // Post o reel singolo: /p/{code}/embed/ o /reel/{code}/embed/.
+  // I parametri di condivisione (?igsh=…) sono tracking: SEMPRE omessi.
+  const m = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/);
+  embedSrc = m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/` : '';
+} else if (provider === 'facebook') {
+  // Meta Page Plugin via SOLO iframe (deroga estesa): url = pagina FB.
+  embedSrc = 'https://www.facebook.com/plugins/page.php?href=' +
+    encodeURIComponent(url.split('?')[0]) +
+    '&tabs=timeline&width=340&height=500&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=true';
 }
 
-const ratio = rapporto ?? (provider === 'youtube' ? '16 / 9' : '4 / 5');
-const providerLabel = provider === 'youtube' ? 'YouTube' : 'Instagram';
+const ratio = rapporto ?? (provider === 'youtube' ? '16 / 9' : provider === 'facebook' ? '340 / 500' : '4 / 5');
+const providerLabel = provider === 'youtube' ? 'YouTube' : provider === 'facebook' ? 'Facebook' : 'Instagram';
 const titolare = provider === 'youtube' ? 'Google' : 'Meta';
 ---
 <div
@@ -117,47 +130,28 @@ const titolare = provider === 'youtube' ? 'Google' : 'Meta';
         } catch { return false; }
       }
 
-      var igScriptCaricato = false;
+      // Deroga estesa M2.9-bis: SOLO iframe, per tutti i provider — mai
+      // script di terze parti (niente embed.js Meta, niente SDK).
       function carica(box) {
-        var provider = box.dataset.provider;
-        if (box.dataset.caricato === '1') return;
+        if (box.dataset.caricato === '1' || !box.dataset.embedSrc) return;
         box.dataset.caricato = '1';
         var ph = box.querySelector('.ec-placeholder');
         if (ph) ph.remove();
-
-        if (provider === 'youtube' && box.dataset.embedSrc) {
-          var f = document.createElement('iframe');
-          f.src = box.dataset.embedSrc;
-          f.title = box.dataset.titolo || 'Video';
+        var f = document.createElement('iframe');
+        f.src = box.dataset.embedSrc;
+        f.title = box.dataset.titolo || 'Contenuto incorporato';
+        f.loading = 'lazy';
+        if (box.dataset.provider === 'youtube') {
           f.allow = 'accelerometer; encrypted-media; picture-in-picture; web-share';
           f.allowFullscreen = true;
-          f.referrerPolicy = 'strict-origin-when-cross-origin';
-          f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
-          box.appendChild(f);
-        } else if (provider === 'instagram') {
-          var bq = document.createElement('blockquote');
-          bq.className = 'instagram-media';
-          bq.setAttribute('data-instgrm-permalink', box.dataset.url);
-          bq.setAttribute('data-instgrm-version', '14');
-          bq.style.cssText = 'position:absolute;inset:0;width:100%;margin:0;overflow:auto;background:#fff;';
-          box.appendChild(bq);
-          if (!igScriptCaricato) {
-            igScriptCaricato = true;
-            var s = document.createElement('script');
-            s.async = true;
-            s.src = 'https://www.instagram.com/embed.js';
-            document.body.appendChild(s);
-          } else if (window.instgrm && window.instgrm.Embeds) {
-            window.instgrm.Embeds.process();
-          }
         }
+        f.referrerPolicy = 'strict-origin-when-cross-origin';
+        f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;';
+        box.appendChild(f);
       }
 
       function caricaProvider(provider) {
         document.querySelectorAll('.embed-consenso[data-provider="' + provider + '"]').forEach(carica);
-        if (provider === 'instagram' && window.instgrm && window.instgrm.Embeds) {
-          window.instgrm.Embeds.process();
-        }
       }
 
       document.addEventListener('click', function (e) {
@@ -172,7 +166,7 @@ const titolare = provider === 'youtube' ? 'Google' : 'Meta';
       });
 
       // Consenso già espresso (sessione o categoria banner) → carica subito.
-      ['youtube', 'instagram'].forEach(function (provider) {
+      ['youtube', 'instagram', 'facebook'].forEach(function (provider) {
         if (cookieSessione(provider) || categoriaBannerAccettata()) {
           caricaProvider(provider);
         }

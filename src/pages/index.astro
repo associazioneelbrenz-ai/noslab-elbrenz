@@ -19,7 +19,13 @@ import EmbedConsenso from '../components/EmbedConsenso.astro';
 // click-to-load (un click carica tutte e tre — il consenso vale per il
 // provider). Finché è null restano le thumbnail statiche self-hosted.
 function migoleUrls(): [string, string, string] | null {
-  return null; // ← sostituire con i 3 URL dei post quando arrivano
+  // M2.9-bis: reel PUBBLICI forniti da Cristian l'8/7/2026 (senza ?igsh=,
+  // che è tracking di condivisione). Formato verticale → rapporto 9:16.
+  return [
+    'https://www.instagram.com/reel/DaK4JBVMQAE/',
+    'https://www.instagram.com/reel/DZe6NM8MxxI/',
+    'https://www.instagram.com/reel/DS5Vl-RjC84/',
+  ];
 }
 const MIGOLE_POST_URLS = migoleUrls();
 
@@ -170,7 +176,7 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
           style="font-family: 'Playfair Display', serif;"
           lang="lld-anau"
         >
-          Rais fonde no le 'nglacia
+          Raìs fonde no le 'nglacia
         </p>
         <p
           class="text-xs tracking-[0.15em] uppercase text-[#F5EEDD]/55"
@@ -462,7 +468,8 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
                 <EmbedConsenso
                   provider="instagram"
                   url={postUrl}
-                  titolo={`Migola de Storia n. ${i + 1}`}
+                  titolo={`Migola de Storia n. ${i + 1} (reel Instagram)`}
+                  rapporto="9 / 16"
                   thumb={`/social/migole/migola-0${i + 1}.webp`}
                 />
               ))}
@@ -509,11 +516,14 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
             Eventi, foto d'archivio e discussioni con chi ama la storia delle
             nostre valli: la piazza digitale della nosa Sociazion.
           </p>
-          <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] p-4 mb-5">
-            <p class="text-sm text-[#1E2E26]/85 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
-              «Rais fonde no le 'nglacia» — e nemmeno le amicizie: ci trovi
-              tutti i giorni, dalle valli e da lontano.
-            </p>
+          {/* M2.9-bis (deroga estesa): timeline della pagina via Page Plugin,
+              SOLO iframe al click. Larghezza max plugin 500px. */}
+          <div class="w-full max-w-[500px] mb-5">
+            <EmbedConsenso
+              provider="facebook"
+              url="https://www.facebook.com/ASSOCIAZIONELBRENZ"
+              titolo="Pagina Facebook El Brenz (timeline)"
+            />
           </div>
           <a
             href="https://www.facebook.com/ASSOCIAZIONELBRENZ"
