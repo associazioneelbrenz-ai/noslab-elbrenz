@@ -1,29 +1,38 @@
 ---
 /**
- * FabAndreas — Bottone galleggiante "Chiedi ad Andreas"
+ * FabAndreas — Bottone galleggiante "Chiedi ad Andreas" + widget overlay
  *
- * Sempre presente nell'angolo bottom-right di tutte le pagine
- * tranne /andreas (sarebbe ridondante).
+ * M3.0 (8 luglio 2026): il click NON naviga più a /andreas — apre/chiude un
+ * pannello chat in overlay sulla pagina corrente. La pagina /andreas resta
+ * viva e identica per link diretti e banner; lì il FAB resta nascosto
+ * (niente doppia chat sulla stessa vista).
  *
- * Comportamento:
- *   - Position fixed bottom-right
- *   - Avatar Andreas circolare con ring oro
- *   - Tooltip "Chiedi ad Andreas" appare su hover/focus (desktop only)
- *   - z-30: sotto drawer mobile (z-50) e backdrop (z-40), sopra contenuto
- *   - Hover: scale 1.05 + tooltip
- *   - Click: redirect a /andreas
+ * Pannello:
+ *   - Desktop: ~380×560 ancorato bottom-right; mobile: quasi tutto schermo.
+ *   - z-40: sopra il contenuto, SOTTO il cookie banner (#cc-main z-50).
+ *   - Chat = <AndreasChat compatto />: stessa logica/contatore della pagina
+ *     (andreas-chat.js si aggancia agli stessi id; il FAB è nascosto su
+ *     /andreas quindi mai due istanze).
+ *   - Fascia "Preferisci parlare con una persona?": WhatsApp del Presidente
+ *     (Diego — TODO: numero non ancora fornito, bottone predisposto ma
+ *     spento) e del Segretario (Cristian). Messaggio precompilato uguale
+ *     per entrambi. Consenso di Diego registrato (8/7, riferito dal
+ *     segretario). Solo link: zero script terzi.
+ *   - Footer: link alla pagina completa (il disclaimer è già nella chat).
  *
- * Accessibility:
- *   - aria-label esplicito (no testo visibile a riposo)
- *   - focus-visible ring oro
- *   - Tooltip è decorativa (pointer-events-none, hidden mobile)
+ * Badge notifica: pallino "1" con pulse dolce, visibile finché
+ * localStorage 'andreas_widget_seen' !== '1' (impostato alla prima
+ * apertura; localStorage tecnico/UX, citato in cookie policy). Il pannello
+ * NON si apre mai da solo.
  *
- * Riceve pathname dalla pagina chiamante (Astro non ha context globale).
+ * ZONA PROTETTA: la edge function andreas-chat NON è toccata — il widget
+ * la consuma con le stesse chiamate e gli stessi limiti (3 domande/giorno
+ * ospiti, contatore condiviso).
  *
- * M.A.2.5 — entry point Andreas
- * M.A.2.5 fix BUG-003: normalizzo pathname rimuovendo trailing slash
- *   perché Astro in production restituisce '/andreas/' invece di '/andreas'
+ * M.A.2.5 — entry point Andreas · fix BUG-003 trailing slash.
  */
+
+import AndreasChat from './andreas/AndreasChat.astro';
 
 interface Props {
   pathname: string;
@@ -31,33 +40,210 @@ interface Props {
 
 const { pathname } = Astro.props;
 
-// Normalizza: rimuove trailing slash e confronta case-insensitive.
-// Gestisce '/andreas', '/andreas/', '/Andreas' tutti come stessa pagina.
 const normalized = pathname.replace(/\/$/, '').toLowerCase();
 const isHidden = normalized === '/andreas';
+
+// TODO: bottone Presidente — inserire numero Diego e attivare (micro-diff:
+// valorizzare NUMERO_DIEGO, es. '3931234567'; consenso già registrato).
+const NUMERO_DIEGO = '';
+const MSG_WHATSAPP = encodeURIComponent(
+  "Ciao! Ho visto il sito El Brenz e vorrei informazioni sull'Associazione.",
+);
 ---
 {!isHidden && (
-  <a
-    href="/andreas"
-    class="group fixed bottom-5 right-5 md:bottom-6 md:right-6 z-30 flex items-center gap-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8923E] focus-visible:ring-offset-2 rounded-full"
-    aria-label="Chiedi ad Andreas, l'assistente digitale dell'Associazione"
-  >
-    <span
-      class="hidden md:block bg-[#1E2E26] text-[#F5EEDD] text-sm px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-200 shadow-lg whitespace-nowrap pointer-events-none"
-      style="font-family: 'Inter', sans-serif;"
-      aria-hidden="true"
+  <>
+    <button
+      type="button"
+      id="fab-andreas"
+      class="group fixed bottom-5 right-5 md:bottom-6 md:right-6 z-30 flex items-center gap-3 bg-transparent border-0 p-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#C8923E] focus-visible:ring-offset-2 rounded-full"
+      aria-label="Chiedi ad Andreas, l'assistente digitale dell'Associazione"
+      aria-expanded="false"
+      aria-controls="andreas-widget"
     >
-      Chiedi ad Andreas
-    </span>
-    <span class="block w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden bg-[#F8F1E4] shadow-xl ring-2 ring-[#C8923E] hover:scale-105 transition-transform duration-200">
-      <img
-        src="/assets/branding/andreas/andreas-sorriso-fab.png"
-        alt=""
-        class="w-full h-full object-cover"
-        loading="lazy"
-        width="64"
-        height="64"
-      />
-    </span>
-  </a>
+      <span
+        class="hidden md:block bg-[#1E2E26] text-[#F5EEDD] text-sm px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity duration-200 shadow-lg whitespace-nowrap pointer-events-none"
+        style="font-family: 'Inter', sans-serif;"
+        aria-hidden="true"
+      >
+        Chiedi ad Andreas
+      </span>
+      <span class="relative block w-14 h-14 md:w-16 md:h-16 rounded-full overflow-visible">
+        <span class="block w-full h-full rounded-full overflow-hidden bg-[#F8F1E4] shadow-xl ring-2 ring-[#C8923E] group-hover:scale-105 transition-transform duration-200">
+          <img
+            src="/assets/branding/andreas/andreas-sorriso-fab.png"
+            alt=""
+            class="w-full h-full object-cover"
+            loading="lazy"
+            width="64"
+            height="64"
+          />
+        </span>
+        <span
+          id="fab-andreas-badge"
+          class="hidden absolute -top-1 -right-1 w-5 h-5 items-center justify-center rounded-full bg-[#b03030] text-white text-[11px] font-bold shadow fab-badge-pulse"
+          style="font-family: 'Inter', sans-serif;"
+          aria-hidden="true"
+        >1</span>
+      </span>
+    </button>
+
+    <div
+      id="andreas-widget"
+      class="hidden fixed z-40 inset-x-2 bottom-2 top-14 md:inset-auto md:right-6 md:bottom-24 md:w-[380px] md:h-[560px] md:max-h-[calc(100vh-120px)] bg-[#F5EEDD] border border-[#C8923E]/60 rounded-xl shadow-2xl overflow-hidden flex-col"
+      role="dialog"
+      aria-modal="false"
+      aria-label="Chat con Andreas, assistente digitale"
+    >
+      <div class="flex items-center gap-3 bg-[#1E2E26] px-4 py-3 flex-shrink-0">
+        <img
+          src="/assets/branding/andreas/andreas-sorriso-fab.png"
+          alt=""
+          class="w-9 h-9 rounded-full ring-1 ring-[#C8923E] object-cover"
+          width="36"
+          height="36"
+          loading="lazy"
+        />
+        <div class="flex-1 min-w-0">
+          <p class="text-[#F5EEDD] text-sm font-semibold m-0 leading-tight" style="font-family: 'Inter', sans-serif;">Andreas</p>
+          <p class="text-[#D9A94E] text-[11px] m-0 leading-tight" style="font-family: 'Inter', sans-serif;">l'assistente delle Valli</p>
+        </div>
+        <button
+          type="button"
+          id="andreas-widget-close"
+          class="flex items-center justify-center w-9 h-9 text-[#F5EEDD] hover:text-[#D9A94E] bg-transparent border-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A94E] rounded"
+          aria-label="Chiudi la chat"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <line x1="5" y1="5" x2="19" y2="19"></line><line x1="5" y1="19" x2="19" y2="5"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex-1 min-h-0 overflow-y-auto">
+        <AndreasChat compatto />
+      </div>
+
+      <div class="flex-shrink-0 border-t border-[#C8923E]/30 bg-[#F8F1E4] px-4 py-3">
+        <p class="text-[11px] tracking-[0.14em] uppercase text-[#1E2E26]/60 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">
+          Preferisci parlare con una persona?
+        </p>
+        <div class="flex flex-col gap-1.5" style="font-family: 'Inter', sans-serif;">
+          {NUMERO_DIEGO && (
+            <a
+              href={`https://wa.me/39${NUMERO_DIEGO}?text=${MSG_WHATSAPP}`}
+              target="_blank"
+              rel="noopener"
+              aria-label="Scrivi su WhatsApp al Presidente Diego Magnoni"
+              class="inline-flex items-center gap-2 text-sm text-[#1E2E26] no-underline border border-[#C8923E]/60 rounded-full px-4 py-2 hover:bg-[#1E2E26] hover:text-[#F5EEDD] transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              Scrivi al Presidente — Diego
+            </a>
+          )}
+          {/* TODO: bottone Presidente — inserire numero Diego e attivare
+              (valorizzare NUMERO_DIEGO nel frontmatter, una riga). */}
+          <a
+            href={`https://wa.me/393396383790?text=${MSG_WHATSAPP}`}
+            target="_blank"
+            rel="noopener"
+            aria-label="Scrivi su WhatsApp al Segretario Cristian Bresadola"
+            class="inline-flex items-center gap-2 text-sm text-[#1E2E26] no-underline border border-[#C8923E]/60 rounded-full px-4 py-2 hover:bg-[#1E2E26] hover:text-[#F5EEDD] transition-colors"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+            Scrivi al Segretario — Cristian
+          </a>
+        </div>
+        <p class="text-[11px] m-0 mt-2 text-right" style="font-family: 'Inter', sans-serif;">
+          <a href="/andreas" class="text-[#C8923E] no-underline hover:underline">Apri la pagina completa di Andreas →</a>
+        </p>
+      </div>
+    </div>
+
+    <script is:inline>
+      // Widget Andreas (M3.0): toggle, ESC, badge. Nessuna chiamata di rete
+      // propria: la chat usa andreas-chat.js già caricato dal componente.
+      (function () {
+        var fab = document.getElementById('fab-andreas');
+        var widget = document.getElementById('andreas-widget');
+        var chiudi = document.getElementById('andreas-widget-close');
+        var badge = document.getElementById('fab-andreas-badge');
+        if (!fab || !widget || !chiudi) return;
+
+        // Badge finché il widget non è mai stato aperto (localStorage tecnico).
+        try {
+          if (localStorage.getItem('andreas_widget_seen') !== '1' && badge) {
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+          }
+        } catch (e) { /* storage bloccato: nessun badge, nessun errore */ }
+
+        function apri() {
+          // Prima apertura: carica lo script chat (che a sua volta carica
+          // marked/DOMPurify da CDN) — MAI al page load, solo su azione.
+          if (!window.__andreasChatScript) {
+            window.__andreasChatScript = true;
+            var s = document.createElement('script');
+            s.type = 'module';
+            s.src = '/scripts/andreas-chat.js';
+            document.body.appendChild(s);
+          }
+          widget.classList.remove('hidden');
+          widget.classList.add('flex', 'andreas-widget--in');
+          fab.setAttribute('aria-expanded', 'true');
+          try { localStorage.setItem('andreas_widget_seen', '1'); } catch (e) { /* no-op */ }
+          if (badge) { badge.classList.add('hidden'); badge.classList.remove('flex'); }
+          chiudi.focus();
+        }
+        function serra() {
+          widget.classList.add('hidden');
+          widget.classList.remove('flex', 'andreas-widget--in');
+          fab.setAttribute('aria-expanded', 'false');
+          fab.focus();
+        }
+        fab.addEventListener('click', function () {
+          widget.classList.contains('hidden') ? apri() : serra();
+        });
+        chiudi.addEventListener('click', serra);
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !widget.classList.contains('hidden')) serra();
+        });
+      })();
+    </script>
+
+    <style is:global>
+      /* Animazione apertura discreta + pulse dolce del badge (M3.0). */
+      .andreas-widget--in {
+        animation: andreasWidgetIn 150ms ease-out;
+        transform-origin: bottom right;
+      }
+      @keyframes andreasWidgetIn {
+        from { opacity: 0; transform: scale(0.96) translateY(6px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      .fab-badge-pulse {
+        animation: fabBadgePulse 2.4s ease-in-out infinite;
+      }
+      @keyframes fabBadgePulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.12); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .andreas-widget--in, .fab-badge-pulse { animation: none; }
+      }
+      /* La chat compatta dentro il pannello: niente cornice di pagina,
+         riempie l'altezza disponibile, messaggi scrollabili. */
+      #andreas-widget .andreas-chat {
+        max-width: none;
+        margin: 0;
+        padding: 0 12px;
+        display: flex;
+        flex-direction: column;
+        min-height: 100%;
+      }
+      #andreas-widget .andreas-chat__messages {
+        flex: 1;
+        min-height: 180px;
+      }
+    </style>
+  </>
 )}

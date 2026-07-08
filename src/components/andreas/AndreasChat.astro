@@ -26,20 +26,28 @@
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
 const mockMode = !supabaseUrl;
+
+// M3.0: variante compatta per il widget overlay (FabAndreas) — omette
+// l'hero di pagina (il pannello ha già il proprio header, e un secondo
+// h1 per pagina sarebbe scorretto). Default false: la pagina /andreas
+// resta IDENTICA.
+interface Props {
+  compatto?: boolean;
+}
+const { compatto = false } = Astro.props;
 ---
 
-<section class="andreas-chat" aria-label="Chat con Andreas">
+<section class={`andreas-chat ${compatto ? 'andreas-chat--compatta' : ''}`} aria-label="Chat con Andreas">
 
-  <!-- =========================================================================
-       HERO della pagina — header verde foresta + titolo Andreas
-       ========================================================================= -->
-  <header class="andreas-chat__hero">
-    <div class="andreas-chat__eyebrow">ASSISTENTE DIGITALE</div>
-    <h1 class="andreas-chat__title">Andreas</h1>
-    <p class="andreas-chat__subtitle">
-      Storia, lingua e cultura delle Valli del Noce. Chiedi quello che vuoi sapere.
-    </p>
-  </header>
+  {!compatto && (
+    <header class="andreas-chat__hero">
+      <div class="andreas-chat__eyebrow">ASSISTENTE DIGITALE</div>
+      <h1 class="andreas-chat__title">Andreas</h1>
+      <p class="andreas-chat__subtitle">
+        Storia, lingua e cultura delle Valli del Noce. Chiedi quello che vuoi sapere.
+      </p>
+    </header>
+  )}
 
   <!-- =========================================================================
        CHAT — area messaggi (popolata via JS)
@@ -134,5 +142,10 @@ const mockMode = !supabaseUrl;
 <!-- =========================================================================
      SCRIPT client-side (vanilla, type=module)
      Carica DOPO il blocco config sopra. Legge window.ANDREAS_CONFIG.
+     M3.0: in modalità compatta (widget) lo script NON viene emesso qui —
+     lo inietta FabAndreas alla PRIMA APERTURA del pannello, così le pagine
+     non contattano cdn.jsdelivr.net (marked/DOMPurify di ensureLibs) al
+     load ma solo dopo un'azione esplicita, coerente col click-to-load.
+     Sulla pagina /andreas il comportamento resta identico (eager).
      ========================================================================= -->
-<script src="/scripts/andreas-chat.js" type="module" is:inline></script>
+{!compatto && <script src="/scripts/andreas-chat.js" type="module" is:inline></script>}
