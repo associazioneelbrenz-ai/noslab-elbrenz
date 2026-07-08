@@ -177,7 +177,7 @@ Deno.serve(async (req: Request) => {
         <p style="color:rgba(245,238,221,.7);text-transform:uppercase;letter-spacing:.18em;font-size:10px;margin:0 0 4px;">Tessera socio · anno ${ANNO}</p>
         <p style="font-size:26px;margin:0 0 4px;font-family:Georgia,serif;color:#F5EEDD;">${esc(socio.nome)}</p>
         <p style="font-size:15px;margin:0 0 22px;color:#C8923E;font-weight:600;letter-spacing:.06em;">N. ${numero}</p>
-        <p style="margin:0;color:#D9A94E;font-style:italic;font-family:Georgia,serif;font-size:16px;">Rais fonde no le 'nglacia</p>
+        <p style="margin:0;color:#D9A94E;font-style:italic;font-family:Georgia,serif;font-size:16px;">Raìs fonde no le 'nglacia</p>
         <p style="font-size:10px;color:rgba(245,238,221,.5);margin:4px 0 0;letter-spacing:.04em;">Radici profonde non gelano · valida fino al 31/12/${ANNO}</p>
       </div>
       <div style="height:6px;background:#1E4FB4;"></div>
