@@ -1,0 +1,200 @@
+---
+/**
+ * LightboxEmbed — copertina self-hosted + lightbox con embed (M2.9-ter).
+ *
+ * Sostituisce gli embed inline nella sezione "Seguici" (decisione Cristian
+ * 8/7/2026: chrome Meta invasivo, doppio click). La card è una copertina
+ * statica brandizzata (ZERO richieste a terzi al load); il click apre un
+ * lightbox a schermo dove l'iframe si carica:
+ *   - SUBITO, se la categoria "embed" del banner è accettata o c'è già il
+ *     cookie di sessione eb_embed_instagram (stesso storage di
+ *     EmbedConsenso.astro — i due sistemi si riconoscono a vicenda);
+ *   - altrimenti dopo il pannello di consenso nel lightbox, con checkbox
+ *     "Ricorda la mia scelta" che salva la categoria nel banner
+ *     (window.CookieConsent, esposta da CookieConsent.astro) → da lì in
+ *     poi caricamento diretto ovunque e per sempre.
+ *
+ * Il lightbox è un singleton costruito via JS al primo uso: il componente
+ * può comparire N volte senza duplicare markup. Chiusura: X, ESC, click
+ * sull'overlay. Niente librerie, niente SDK Meta (solo iframe).
+ *
+ * Props: url (URL pubblico del reel/post), titolo (aria + fallback),
+ * cover (immagine locale della copertina).
+ */
+
+interface Props {
+  url: string;
+  titolo: string;
+  cover: string;
+}
+
+const { url, titolo, cover } = Astro.props;
+
+// Stesso parsing di EmbedConsenso: /p|reel/{code}/embed/, tracking
+// (?igsh=…) sempre omesso perché si parte dal solo shortcode.
+const m = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/);
+const embedSrc = m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/` : '';
+---
+<button
+  type="button"
+  class="lbx-card group relative block w-full overflow-hidden rounded-[6px] border border-[#C8923E] bg-[#1E2E26] p-0 cursor-pointer shadow-[0_1px_4px_rgba(30,46,38,0.18)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(30,46,38,0.28)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8923E]"
+  style="aspect-ratio: 9 / 16;"
+  data-embed-src={embedSrc}
+  data-url={url}
+  data-titolo={titolo}
+  aria-haspopup="dialog"
+  aria-label={`Guarda: ${titolo}`}
+>
+  <img
+    src={cover}
+    alt=""
+    aria-hidden="true"
+    loading="lazy"
+    decoding="async"
+    class="absolute inset-0 w-full h-full object-cover"
+  />
+  {/* Play button brand: cerchio avorio semi-trasparente, triangolo verde. */}
+  <span
+    class="absolute inset-0 flex items-center justify-center"
+    aria-hidden="true"
+  >
+    <span class="flex items-center justify-center w-14 h-14 rounded-full bg-[#F5EEDD]/85 shadow-[0_2px_10px_rgba(15,15,15,0.25)] transition-transform duration-200 group-hover:scale-110">
+      <svg width="20" height="22" viewBox="0 0 20 22" fill="none" class="ml-1">
+        <path d="M1 1.5v19c0 .8.9 1.3 1.6.9l16-9.5c.7-.4.7-1.4 0-1.8l-16-9.5C1.9.2 1 .7 1 1.5Z" fill="#1E2E26"/>
+      </svg>
+    </span>
+  </span>
+</button>
+
+<script is:inline>
+  // Singleton per pagina: markup del lightbox creato via JS al primo uso.
+  if (!window.__lightboxEmbedInit) {
+    window.__lightboxEmbedInit = true;
+
+    (function () {
+      var overlay = null;
+      var apertoDa = null; // elemento che riceve di nuovo il focus alla chiusura
+
+      function consensoGiaDato() {
+        // 1) cookie di sessione condiviso con EmbedConsenso
+        var sessione = document.cookie.split('; ').some(function (c) {
+          return c === 'eb_embed_instagram=1';
+        });
+        if (sessione) return true;
+        // 2) categoria "embed" del banner (vanilla-cookieconsent v3)
+        try {
+          var raw = document.cookie.split('; ').find(function (c) { return c.indexOf('cc_cookie=') === 0; });
+          if (!raw) return false;
+          var dati = JSON.parse(decodeURIComponent(raw.slice('cc_cookie='.length)));
+          return Array.isArray(dati.categories) && dati.categories.indexOf('embed') !== -1;
+        } catch { return false; }
+      }
+
+      function salvaConsenso(ricorda) {
+        // Sempre il cookie di sessione (funziona anche senza banner);
+        // se "ricorda" anche la categoria del banner, così il caricamento
+        // è diretto ovunque e sopravvive alla sessione.
+        document.cookie = 'eb_embed_instagram=1; path=/; SameSite=Lax';
+        if (ricorda && window.CookieConsent && typeof window.CookieConsent.acceptCategory === 'function') {
+          try {
+            var attuali = (window.CookieConsent.getUserPreferences() || {}).acceptedCategories || [];
+            if (attuali.indexOf('embed') === -1) attuali = attuali.concat('embed');
+            window.CookieConsent.acceptCategory(attuali);
+          } catch (e) { /* il cookie di sessione resta comunque attivo */ }
+        }
+      }
+
+      function chiudi() {
+        if (!overlay) return;
+        overlay.remove();
+        overlay = null;
+        document.removeEventListener('keydown', suEsc);
+        document.documentElement.style.overflow = '';
+        if (apertoDa && apertoDa.focus) apertoDa.focus();
+        apertoDa = null;
+      }
+
+      function suEsc(e) {
+        if (e.key === 'Escape') chiudi();
+      }
+
+      function iframeReel(src, titolo) {
+        var f = document.createElement('iframe');
+        f.src = src;
+        f.title = titolo || 'Contenuto incorporato';
+        f.loading = 'eager';
+        f.referrerPolicy = 'strict-origin-when-cross-origin';
+        f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;';
+        return f;
+      }
+
+      function pannelloConsenso(card, contenitore) {
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#1E2E26;';
+        wrap.innerHTML =
+          '<p style="margin:0;font:600 10px/1.4 Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#D9A94E;">Contenuto da Instagram</p>' +
+          '<p style="margin:0;font:400 13px/1.5 Inter,sans-serif;color:rgba(245,238,221,.85);max-width:34ch;">Caricandolo verranno impostati cookie di terze parti (Meta) — <a href="/cookie-policy" style="color:#C8923E;">informativa</a></p>' +
+          '<label style="display:flex;align-items:center;gap:8px;font:400 13px/1 Inter,sans-serif;color:#F5EEDD;cursor:pointer;">' +
+            '<input type="checkbox" class="lbx-ricorda" checked style="accent-color:#C8923E;width:16px;height:16px;"> Ricorda la mia scelta' +
+          '</label>' +
+          '<button type="button" class="lbx-carica" style="background:#C8923E;color:#1E2E26;border:0;padding:10px 26px;font:600 12px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Carica</button>' +
+          '<a href="' + (card.dataset.url || '#') + '" target="_blank" rel="noopener" style="font:400 11px/1 Inter,sans-serif;color:rgba(245,238,221,.6);">oppure apri su Instagram →</a>';
+        wrap.querySelector('.lbx-carica').addEventListener('click', function () {
+          salvaConsenso(wrap.querySelector('.lbx-ricorda').checked);
+          wrap.remove();
+          contenitore.appendChild(iframeReel(card.dataset.embedSrc, card.dataset.titolo));
+        });
+        return wrap;
+      }
+
+      function apri(card) {
+        if (overlay || !card.dataset.embedSrc) return;
+        apertoDa = card;
+
+        overlay = document.createElement('div');
+        overlay.id = 'lbx-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', card.dataset.titolo || 'Contenuto incorporato');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(20,25,22,0.85);display:flex;align-items:center;justify-content:center;padding:16px;';
+
+        var scatola = document.createElement('div');
+        scatola.style.cssText = 'position:relative;aspect-ratio:9/16;height:min(85vh,85svh);max-width:calc(100vw - 32px);background:#1E2E26;border:1px solid rgba(200,146,62,.5);border-radius:6px;overflow:hidden;';
+        if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          scatola.animate(
+            [{ opacity: 0, transform: 'scale(.96)' }, { opacity: 1, transform: 'scale(1)' }],
+            { duration: 180, easing: 'ease-out' },
+          );
+        }
+
+        var x = document.createElement('button');
+        x.type = 'button';
+        x.setAttribute('aria-label', 'Chiudi');
+        x.textContent = '✕';
+        x.style.cssText = 'position:absolute;top:8px;right:8px;z-index:2;width:36px;height:36px;border:0;border-radius:50%;background:rgba(245,238,221,.9);color:#1E2E26;font-size:16px;line-height:1;cursor:pointer;';
+        x.addEventListener('click', chiudi);
+        scatola.appendChild(x);
+
+        if (consensoGiaDato()) {
+          scatola.appendChild(iframeReel(card.dataset.embedSrc, card.dataset.titolo));
+        } else {
+          scatola.appendChild(pannelloConsenso(card, scatola));
+        }
+
+        overlay.appendChild(scatola);
+        overlay.addEventListener('click', function (e) {
+          if (e.target === overlay) chiudi();
+        });
+        document.body.appendChild(overlay);
+        document.documentElement.style.overflow = 'hidden';
+        document.addEventListener('keydown', suEsc);
+        x.focus();
+      }
+
+      document.addEventListener('click', function (e) {
+        var card = e.target && e.target.closest ? e.target.closest('.lbx-card') : null;
+        if (card) apri(card);
+      });
+    })();
+  }
+</script>

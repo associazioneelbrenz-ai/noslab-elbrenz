@@ -12,7 +12,8 @@ import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 // M2.6-bis: box "Sostieni El Brenz" — esiste in pagina SOLO col flag
 // go-live pagamenti attivo (build time, vedi src/lib/pagamenti.ts).
 import { PAGAMENTI_LIVE } from '../lib/pagamenti';
-import EmbedConsenso from '../components/EmbedConsenso.astro';
+import LightboxEmbed from '../components/LightboxEmbed.astro';
+import fs from 'node:fs';
 
 // M2.9 (deroga 8/7/2026): quando Cristian fornisce gli URL dei 3 post
 // Instagram delle migole, inserirli qui: le celle diventano embed
@@ -28,6 +29,16 @@ function migoleUrls(): [string, string, string] | null {
   ];
 }
 const MIGOLE_POST_URLS = migoleUrls();
+
+// M2.9-ter: copertine dei reel. Path FISSI — quando Cristian carica
+// public/social/migole/migola-{1,2,3}.jpg basta una rebuild, zero
+// modifiche al codice. Finché mancano, restano i placeholder brandizzati
+// già esistenti (migola-0N.webp). Il check è a build time (SSG).
+function copertinaMigola(n: number): string {
+  return fs.existsSync(`public/social/migole/migola-${n}.jpg`)
+    ? `/social/migole/migola-${n}.jpg`
+    : `/social/migole/migola-0${n}.webp`;
+}
 
 // AGGIUNTA M2.4 (home ricca): blocco "Ultimi articoli".
 // Riusa gli helper di lib/articoli e lo stesso filtro produzione di
@@ -425,12 +436,12 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
   </section>
 
 
-  {/* M2.7 — sezione "Seguici": card Migole de Storia (Instagram) + Facebook.
-      NESSUN embed/iframe/SDK Meta (cookie di terze parti senza consenso,
-      stessa regola del video YouTube): thumbnail self-hosted e wordmark
-      ricreati inline. Le 3 migole in public/social/migole/ sono PLACEHOLDER
-      brandizzati: sostituirle con le immagini reali fornite da Cristian
-      (stessi nomi file, quadrate ~400px). */}
+  {/* M2.7/M2.9-ter — sezione "Seguici": card Migole de Storia (Instagram)
+      + Facebook. Al page load NESSUNA richiesta a domini Meta: copertine
+      self-hosted, l'iframe del reel vive SOLO nel lightbox (LightboxEmbed,
+      consenso per categoria "embed" o cookie di sessione). Facebook =
+      card interamente nostra, zero iframe (Opzione A). Copertine reali:
+      caricare public/social/migole/migola-{1,2,3}.jpg e fare rebuild. */}
   <section class="bg-[#FDF9F0] py-24">
     <div class="max-w-5xl mx-auto px-6">
       <h2
@@ -462,16 +473,19 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
           >
             Briciole di storia delle nostre valli, ogni settimana su Instagram.
           </p>
+          {/* M2.9-ter: copertine nostre + lightbox (gli EmbedConsenso
+              inline rimossi su decisione Cristian 8/7/2026). Mobile:
+              carosello orizzontale con snap; desktop: 3 colonne. */}
           {MIGOLE_POST_URLS ? (
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-5">
+            <div class="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:pb-0 mb-5">
               {MIGOLE_POST_URLS.map((postUrl, i) => (
-                <EmbedConsenso
-                  provider="instagram"
-                  url={postUrl}
-                  titolo={`Migola de Storia n. ${i + 1} (reel Instagram)`}
-                  rapporto="9 / 16"
-                  thumb={`/social/migole/migola-0${i + 1}.webp`}
-                />
+                <div class="w-[200px] min-w-[200px] snap-center sm:w-auto sm:min-w-0">
+                  <LightboxEmbed
+                    url={postUrl}
+                    titolo={`Migola de Storia n. ${i + 1} (reel Instagram)`}
+                    cover={copertinaMigola(i + 1)}
+                  />
+                </div>
               ))}
             </div>
           ) : (
@@ -495,13 +509,24 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
           </a>
         </div>
 
+        {/* M2.9-ter (Opzione A, decisione Cristian 8/7/2026): card
+            interamente nostra, ZERO iframe/richieste verso Meta. Il Page
+            Plugin è stato rimosso (rimozione esplicitamente autorizzata). */}
         <div class="bg-white border border-[#E5DFCF] p-8 flex flex-col">
-          <div class="flex items-center gap-3 mb-2">
-            <span
-              class="inline-flex items-center justify-center w-9 h-9 rounded-full text-white font-bold"
-              style="background: #1877F2; font-family: Georgia, serif; font-size: 22px;"
+          <div class="flex items-center gap-3 mb-3">
+            <img
+              src="/logo-eb-header.png"
+              alt=""
               aria-hidden="true"
-            >f</span>
+              width="40"
+              height="40"
+              loading="lazy"
+              decoding="async"
+              class="block w-10 h-10 object-contain"
+            />
+            <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" class="shrink-0">
+              <path fill="#1E2E26" d="M24 12.073C24 5.446 18.627.073 12 .073S0 5.446 0 12.073c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073Z"/>
+            </svg>
             <h3
               class="text-2xl text-[#1E2E26] font-medium leading-tight m-0"
               style="font-family: 'Playfair Display', serif;"
@@ -509,30 +534,30 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
               La comunità su Facebook
             </h3>
           </div>
+          {/* Social proof statico — aggiornare periodicamente a mano. */}
+          <p
+            class="text-sm text-[#1E2E26] m-0 mb-3"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            <strong>Oltre 1.350 follower</strong>
+          </p>
           <p
             class="text-sm text-[#0F0F0F]/70 leading-relaxed m-0 mb-5"
             style="font-family: 'Source Serif 4', Georgia, serif;"
           >
             Eventi, foto d'archivio e discussioni con chi ama la storia delle
-            nostre valli: la piazza digitale della nosa Sociazion.
+            nostre valli: la piazza digitale della nosa Sociazion. Ogni
+            settimana appuntamenti, ricordi dei paesi e piccole scoperte
+            dagli archivi, insieme a chi le valli le vive.
           </p>
-          {/* M2.9-bis (deroga estesa): timeline della pagina via Page Plugin,
-              SOLO iframe al click. Larghezza max plugin 500px. */}
-          <div class="w-full max-w-[500px] mb-5">
-            <EmbedConsenso
-              provider="facebook"
-              url="https://www.facebook.com/ASSOCIAZIONELBRENZ"
-              titolo="Pagina Facebook El Brenz (timeline)"
-            />
-          </div>
           <a
             href="https://www.facebook.com/ASSOCIAZIONELBRENZ"
             target="_blank"
             rel="noopener"
-            class="mt-auto inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+            class="mt-auto inline-block self-start bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors"
             style="font-family: 'Inter', sans-serif;"
           >
-            Segui la pagina
+            Seguici su Facebook
           </a>
         </div>
 
