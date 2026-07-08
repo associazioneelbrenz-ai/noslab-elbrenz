@@ -228,8 +228,19 @@ Deno.serve(async (req: Request) => {
   const supplementary = (resource.supplementary_data ?? {}) as Record<string, unknown>;
   const related = (supplementary.related_ids ?? {}) as Record<string, unknown>;
   const orderId: string | null = related.order_id ? String(related.order_id) : null;
+  // AGGIUNTA (fix 8/7/2026): nei webhook REFUNDED reali supplementary_data
+  // spesso manca — il capture_id sta nel link "up" del refund
+  // (…/v2/payments/captures/{id}). Fallback: parse dei links.
+  let captureDaLink: string | null = null;
+  if (eventType === 'PAYMENT.CAPTURE.REFUNDED' && Array.isArray(resource.links)) {
+    for (const l of resource.links as Array<Record<string, unknown>>) {
+      const href = typeof l.href === 'string' ? l.href : '';
+      const m = href.match(/\/(?:payments\/)?captures\/([A-Z0-9]+)/i);
+      if (l.rel === 'up' && m) { captureDaLink = m[1]; break; }
+    }
+  }
   const captureId: string | null = eventType === 'PAYMENT.CAPTURE.REFUNDED'
-    ? (related.capture_id ? String(related.capture_id) : null)
+    ? (related.capture_id ? String(related.capture_id) : captureDaLink)
     : (resource.id ? String(resource.id) : null);
   const importo = (resource.amount as Record<string, unknown> | undefined)?.value ?? null;
 
