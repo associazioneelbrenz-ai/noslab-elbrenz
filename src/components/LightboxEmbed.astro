@@ -26,9 +26,13 @@ interface Props {
   url: string;
   titolo: string;
   cover: string;
+  /** Titolo VISIBILE sulla copertina (fascia alta). Opzionale. */
+  etichetta?: string;
+  /** Micro-etichetta in fondo alla copertina (es. hashtag). Opzionale. */
+  hashtag?: string;
 }
 
-const { url, titolo, cover } = Astro.props;
+const { url, titolo, cover, etichetta, hashtag } = Astro.props;
 
 // Stesso parsing di EmbedConsenso: /p|reel/{code}/embed/, tracking
 // (?igsh=…) sempre omesso perché si parte dal solo shortcode.
@@ -53,6 +57,20 @@ const embedSrc = m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/` : '';
     decoding="async"
     class="absolute inset-0 w-full h-full object-cover"
   />
+  {/* M2.9-ter (rifinitura): gerarchia a 3 livelli senza sovrapposizioni —
+      titolo in ALTO su fascia sfumata (leggibile sempre, senza hover),
+      play centrato nel campo libero, hashtag micro in fondo. */}
+  {etichetta && (
+    <span
+      class="absolute inset-x-0 top-0 px-4 pt-3 pb-8 text-left"
+      style="background: linear-gradient(180deg, rgba(20,25,22,0.78) 0%, rgba(20,25,22,0.45) 55%, transparent 100%);"
+    >
+      <span
+        class="block text-[15px] leading-snug text-[#F5EEDD]"
+        style="font-family: 'Playfair Display', serif;"
+      >{etichetta}</span>
+    </span>
+  )}
   {/* Play button brand: cerchio avorio semi-trasparente, triangolo verde. */}
   <span
     class="absolute inset-0 flex items-center justify-center"
@@ -64,6 +82,17 @@ const embedSrc = m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/` : '';
       </svg>
     </span>
   </span>
+  {hashtag && (
+    <span
+      class="absolute inset-x-0 bottom-0 px-4 pb-2.5 pt-8"
+      style="background: linear-gradient(0deg, rgba(20,25,22,0.7) 0%, transparent 100%);"
+    >
+      <span
+        class="block text-[9px] tracking-[0.16em] uppercase text-[#D9A94E]"
+        style="font-family: 'Inter', sans-serif;"
+      >{hashtag}</span>
+    </span>
+  )}
 </button>
 
 <script is:inline>

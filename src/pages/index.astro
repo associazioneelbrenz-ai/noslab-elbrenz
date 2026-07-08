@@ -40,6 +40,9 @@ function copertinaMigola(n: number): string {
     : `/social/migole/migola-0${n}.webp`;
 }
 
+// M2.9-ter (rifinitura): titoli VISIBILI sulle copertine (fascia alta).
+const MIGOLE_ETICHETTE = ['Storia delle valli', 'Parlate ladine', 'Memoria e radici'];
+
 // AGGIUNTA M2.4 (home ricca): blocco "Ultimi articoli".
 // Riusa gli helper di lib/articoli e lo stesso filtro produzione di
 // PaginaPilastro (!draft && !archivio). Ordinamento data desc, primi 4.
@@ -490,6 +493,8 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
                     url={postUrl}
                     titolo={`Migola de Storia n. ${i + 1} (reel Instagram)`}
                     cover={copertinaMigola(i + 1)}
+                    etichetta={MIGOLE_ETICHETTE[i]}
+                    hashtag="#migoledestoria"
                   />
                 </div>
               ))}
@@ -501,14 +506,13 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
               <img src="/social/migole/migola-03.webp" alt="Migola de Storia: memoria e radici" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
             </div>
           )}
-          <p class="text-[12px] tracking-[0.14em] uppercase text-[#C8923E] m-0 mb-5" style="font-family: 'Inter', sans-serif;">
-            #migoledestoria
-          </p>
+          {/* M2.9-ter rifinitura: hashtag spostato SULLE copertine; bottoni
+              delle due card gemelli (stile, altezza, focus oro, mt-auto). */}
           <a
             href="https://www.instagram.com/elbrenzass"
             target="_blank"
             rel="noopener"
-            class="mt-auto inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+            class="mt-auto inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
             style="font-family: 'Inter', sans-serif;"
           >
             Seguici su Instagram
@@ -556,11 +560,27 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
             settimana appuntamenti, ricordi dei paesi e piccole scoperte
             dagli archivi, insieme a chi le valli le vive.
           </p>
+          {/* M2.9-ter rifinitura: micro-righe di sostanza (SVG sobri, niente
+              emoji) per bilanciare la colonna. */}
+          <ul class="list-none p-0 m-0 mb-6 flex flex-col gap-2.5" style="font-family: 'Inter', sans-serif;">
+            <li class="flex items-center gap-2.5 text-sm text-[#1E2E26]/85">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="shrink-0"><path d="M4 8a2 2 0 0 1 2-2h1.2l1-1.6A1 1 0 0 1 9.1 4h5.8a1 1 0 0 1 .9.4l1 1.6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="#C8923E" stroke-width="1.6"/><circle cx="12" cy="12.5" r="3.2" stroke="#C8923E" stroke-width="1.6"/></svg>
+              Foto d'archivio dei nostri paesi
+            </li>
+            <li class="flex items-center gap-2.5 text-sm text-[#1E2E26]/85">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="shrink-0"><rect x="4" y="5" width="16" height="15" rx="2" stroke="#C8923E" stroke-width="1.6"/><path d="M4 9.5h16M8.5 3.5v3M15.5 3.5v3" stroke="#C8923E" stroke-width="1.6"/></svg>
+              Eventi e rievocazioni in valle
+            </li>
+            <li class="flex items-center gap-2.5 text-sm text-[#1E2E26]/85">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="shrink-0"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.4 3.6c-.6.5-1.6.1-1.6-.8V6.5Z" stroke="#C8923E" stroke-width="1.6"/></svg>
+              Ricordi e discussioni con la comunità
+            </li>
+          </ul>
           <a
             href="https://www.facebook.com/ASSOCIAZIONELBRENZ"
             target="_blank"
             rel="noopener"
-            class="mt-auto inline-block self-start bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors"
+            class="mt-auto inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
             style="font-family: 'Inter', sans-serif;"
           >
             Seguici su Facebook
