@@ -9,4 +9,6 @@
 //           quota 20€ + donazione anonima 1€ + rimborsi verificati).
 //
 // Flip deliberato da Cristian, poi build + deploy.
-export const PAGAMENTI_LIVE = false;
+// GO-LIVE 8/7/2026: test reale completato (quota 20€ + donazione anonima 1€
+// + rimborsi riconciliati via webhook, verifica 4/4) e OK di Cristian.
+export const PAGAMENTI_LIVE = true;

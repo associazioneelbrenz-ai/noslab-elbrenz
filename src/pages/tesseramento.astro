@@ -227,6 +227,13 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
                 Riceverai la conferma via email da
                 <strong>info@elbrenz.eu</strong> — non devi fare altro.
               </p>
+              {/* AGGIUNTA go-live pagamenti (8/7/2026): link a /dona. */}
+              {PAGAMENTI_LIVE && (
+                <p class="text-sm text-[#0F0F0F]/70 leading-relaxed m-0 mt-4" style="font-family: 'Inter', sans-serif;">
+                  Vuoi fare qualcosa in più per le nostre valli? Oltre alla
+                  quota puoi <a href="/dona" class="text-[#C8923E] no-underline hover:underline">sostenerci con una donazione libera</a>.
+                </p>
+              )}
             </div>
           </div>
         </li>

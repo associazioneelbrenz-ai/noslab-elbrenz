@@ -432,6 +432,12 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
       >
         Diventa socio
       </a>
+      {/* AGGIUNTA go-live pagamenti (8/7/2026): link secondario /dona. */}
+      {PAGAMENTI_LIVE && (
+        <p class="text-sm text-[#F5EEDD]/70 m-0 mt-5" style="font-family: 'Inter', sans-serif;">
+          Oppure <a href="/dona" class="text-[#C8923E] underline hover:text-[#D9A94E]">sostienici con una donazione libera</a> →
+        </p>
+      )}
     </div>
   </section>
 
