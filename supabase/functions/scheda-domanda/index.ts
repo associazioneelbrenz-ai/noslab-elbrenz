@@ -80,10 +80,22 @@ Deno.serve(async (req: Request) => {
   }
 
   const url = new URL(req.url);
-  const d = url.searchParams.get('d') ?? '';
-  const exp = parseInt(url.searchParams.get('exp') ?? '', 10);
-  const t = url.searchParams.get('t') ?? '';
-  const azione = url.searchParams.get('azione'); // per POST: approva | respingi
+  // Parametri sia nel PATH (nuovo, immune all'encoding quoted-printable delle
+  // email: un `=` seguito da due cifre esadecimali viene corrotto) sia in
+  // query string (retrocompatibile con i link già inviati).
+  //   Path vista:  /scheda-domanda/vista/{d}/{exp}/{t}
+  //   Path azione: /scheda-domanda/azione/{approva|respingi}/{d}/{exp}/{t}
+  let d = url.searchParams.get('d') ?? '';
+  let exp = parseInt(url.searchParams.get('exp') ?? '', 10);
+  let t = url.searchParams.get('t') ?? '';
+  let azione = url.searchParams.get('azione'); // per POST: approva | respingi
+  const mAz = url.pathname.match(/\/azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+  const mVista = url.pathname.match(/\/vista\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+  if (mAz) {
+    azione = mAz[1]; d = mAz[2]; exp = parseInt(mAz[3], 10); t = mAz[4];
+  } else if (mVista) {
+    d = mVista[1]; exp = parseInt(mVista[2], 10); t = mVista[3];
+  }
 
   if (!/^[0-9a-f-]{36}$/.test(d)) return erroreHtml('Link non valido.');
 

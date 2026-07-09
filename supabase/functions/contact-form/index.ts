@@ -417,7 +417,9 @@ serve(async (req) => {
     if (domanda && adminSecret) {
       const exp = Date.now() + TOKEN_TTL_MS
       const t = await firmaToken(adminSecret, 'vista', domanda.id, exp)
-      const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda?d=${domanda.id}&exp=${exp}&t=${t}`
+      // Parametri nel PATH (non query string): un `=` seguito da due cifre
+      // esadecimali verrebbe corrotto dall'encoding quoted-printable dell'email.
+      const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda/vista/${domanda.id}/${exp}/${t}`
       schedaHtml = `
     <div style="margin-top: 20px; text-align: center;">
       <a href="${url}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 28px;text-decoration:none;font-weight:600;font-size:14px;border-radius:4px;">Apri scheda domanda →</a>
