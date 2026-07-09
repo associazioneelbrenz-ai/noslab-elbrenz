@@ -413,69 +413,73 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
       tre pilastri SVG, bottone PayPal invariato su pedana avorio. Render
       SOLO a flag pagamenti attivo; porta al NOSTRO flusso /dona. */}
   {PAGAMENTI_LIVE && (
-    <section class="bg-[#F5EEDD] py-16 md:py-20">
-      <div class="max-w-[640px] mx-auto px-6">
+    <section class="bg-[#F5EEDD] py-14 md:py-16">
+      <div class="max-w-4xl mx-auto px-6">
         <div class="bg-[#1E2E26] border border-[#C8923E] rounded-[4px] p-[5px]">
-          <div class="border border-[#C8923E]/60 rounded-[2px] px-8 py-12 md:px-12 text-center">
-            <p
-              class="text-lg md:text-xl italic text-[#C8923E] m-0 mb-1 leading-snug"
-              style="font-family: 'Playfair Display', serif;"
-              lang="lld-anau"
-            >
-              Raìs fonde no le 'nglacia
-            </p>
-            <p
-              class="text-[11px] tracking-[0.18em] uppercase text-[#F5EEDD]/70 m-0 mb-7"
-              style="font-family: 'Inter', sans-serif;"
-            >
-              Radici profonde non gelano
-            </p>
-            <h2
-              class="text-3xl md:text-4xl font-medium text-[#F5EEDD] m-0 mb-5 leading-tight"
-              style="font-family: 'Playfair Display', serif;"
-            >
-              Sostieni <em style="font-style: italic; color: #C8923E;">El Brenz</em>
-            </h2>
-            <p
-              class="text-base text-[#F5EEDD]/85 leading-relaxed m-0 mb-9 max-w-md mx-auto"
-              style="font-family: 'Source Serif 4', Georgia, serif;"
-            >
-              Ogni donazione dà forza alle ricerche, alle pubblicazioni e
-              alla digitalizzazione della memoria delle nostre valli. Anche
-              un piccolo gesto tiene vive le radici.
-            </p>
-            {/* Tre pilastri: SVG monocromi oro, etichette micro avorio. */}
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 mb-10" style="font-family: 'Inter', sans-serif;">
-              <div class="flex flex-col items-center gap-2">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 5.5C10.5 4.3 8.6 3.8 6.3 3.8c-1 0-1.9.1-2.8.4v14.6c.9-.3 1.8-.4 2.8-.4 2.3 0 4.2.5 5.7 1.7 1.5-1.2 3.4-1.7 5.7-1.7 1 0 1.9.1 2.8.4V4.2c-.9-.3-1.8-.4-2.8-.4-2.3 0-4.2.5-5.7 1.7Zm0 0v14.6" stroke="#C8923E" stroke-width="1.6" stroke-linejoin="round"/></svg>
-                <span class="text-[11px] tracking-[0.12em] uppercase text-[#F5EEDD]/80">Ricerche e pubblicazioni</span>
-              </div>
-              <div class="flex flex-col items-center gap-2">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 19 9.2 8.4a1 1 0 0 1 1.7 0l2.4 4.1 1.9-2.9a1 1 0 0 1 1.7 0L21 19H3Z" stroke="#C8923E" stroke-width="1.6" stroke-linejoin="round"/><path d="m8 12.5 1.5 1.8 1.4-1.8" stroke="#C8923E" stroke-width="1.4" stroke-linejoin="round"/></svg>
-                <span class="text-[11px] tracking-[0.12em] uppercase text-[#F5EEDD]/80">Memoria delle valli</span>
-              </div>
-              <div class="flex flex-col items-center gap-2">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H10l-4.4 3.6c-.6.5-1.6.1-1.6-.8V6.5Z" stroke="#C8923E" stroke-width="1.6"/><path d="M8 9h8M8 12h5" stroke="#C8923E" stroke-width="1.4" stroke-linecap="round"/></svg>
-                <span class="text-[11px] tracking-[0.12em] uppercase text-[#F5EEDD]/80">Lingua ladina</span>
-              </div>
+          <div class="border border-[#C8923E]/60 rounded-[2px] overflow-hidden md:grid md:grid-cols-[2fr_3fr]">
+            {/* Foto calda: rievocazione "Nossa Storia" 2013 (già pubblica
+                in /gallery). Su mobile fascia alta, su desktop colonna. */}
+            <div class="relative h-44 md:h-auto">
+              <img
+                src="/social/sostieni-nossa-storia.webp"
+                alt="Rievocazione Nossa Storia 2013: il gruppo in costume con le bandiere in piazza"
+                loading="lazy"
+                decoding="async"
+                class="absolute inset-0 w-full h-full object-cover"
+                style="object-position: 50% 30%;"
+              />
+              <div class="absolute inset-0" style="background: linear-gradient(180deg, transparent 40%, rgba(30,46,38,0.55) 100%);" aria-hidden="true"></div>
             </div>
-            {/* Pedana avorio: stacca il bottone PayPal (invariato, vincoli
-                brand) dal pannello verde. */}
-            <div class="inline-block bg-[#F5EEDD] rounded-[10px] px-4 sm:px-6 py-5">
-              <a
-                href="/dona"
-                class="inline-flex items-center gap-2 whitespace-nowrap bg-[#FFC439] hover:bg-[#f2b636] transition-colors rounded-full px-5 sm:px-8 py-3.5 no-underline"
+            <div class="px-7 py-8 md:px-9 md:py-9 text-center md:text-left">
+              <p
+                class="text-base italic text-[#C8923E] m-0 leading-snug"
+                style="font-family: 'Playfair Display', serif;"
+                lang="lld-anau"
+              >
+                Raìs fonde no le 'nglacia
+              </p>
+              <p
+                class="text-[10px] tracking-[0.16em] uppercase text-[#F5EEDD]/60 m-0 mb-4"
                 style="font-family: 'Inter', sans-serif;"
               >
-                <span class="text-base font-bold italic" aria-hidden="true">
-                  <span style="color: #003087;">Pay</span><span style="color: #009cde;">Pal</span>
-                </span>
-                <span class="text-sm font-medium text-[#1E2E26]">Dona con PayPal o carta</span>
-              </a>
+                Radici profonde non gelano
+              </p>
+              <h2
+                class="text-2xl md:text-3xl font-medium text-[#F5EEDD] m-0 mb-3 leading-tight"
+                style="font-family: 'Playfair Display', serif;"
+              >
+                Sostieni <em style="font-style: italic; color: #C8923E;">El Brenz</em>
+              </h2>
+              <p
+                class="text-[15px] text-[#F5EEDD]/85 leading-relaxed m-0 mb-4"
+                style="font-family: 'Source Serif 4', Georgia, serif;"
+              >
+                Ogni donazione dà forza alle ricerche, alle pubblicazioni e
+                alla memoria delle nostre valli. Anche un piccolo gesto
+                tiene vive le radici.
+              </p>
+              {/* Pilastri in una riga sola, compatti. */}
+              <p class="flex flex-wrap justify-center md:justify-start items-center gap-x-3 gap-y-1 m-0 mb-6 text-[10px] tracking-[0.13em] uppercase text-[#D9A94E]" style="font-family: 'Inter', sans-serif;">
+                <span>Ricerche</span><span aria-hidden="true" class="text-[#F5EEDD]/40">·</span>
+                <span>Memoria delle valli</span><span aria-hidden="true" class="text-[#F5EEDD]/40">·</span>
+                <span>Lingua ladina</span>
+              </p>
+              <div class="inline-block bg-[#F5EEDD] rounded-[10px] px-4 py-3.5">
+                <a
+                  href="/dona"
+                  class="inline-flex items-center gap-2 whitespace-nowrap bg-[#FFC439] hover:bg-[#f2b636] transition-colors rounded-full px-5 sm:px-7 py-3 no-underline"
+                  style="font-family: 'Inter', sans-serif;"
+                >
+                  <span class="text-base font-bold italic" aria-hidden="true">
+                    <span style="color: #003087;">Pay</span><span style="color: #009cde;">Pal</span>
+                  </span>
+                  <span class="text-sm font-medium text-[#1E2E26]">Dona con PayPal o carta</span>
+                </a>
+              </div>
+              <p class="m-0 mt-3" style="font-family: 'Inter', sans-serif;">
+                <a href="/dona#bonifico" class="text-sm text-[#C8923E] no-underline hover:underline">oppure con bonifico</a>
+              </p>
             </div>
-            <p class="m-0 mt-5" style="font-family: 'Inter', sans-serif;">
-              <a href="/dona#bonifico" class="text-sm text-[#C8923E] no-underline hover:underline">oppure con bonifico</a>
-            </p>
           </div>
         </div>
       </div>
