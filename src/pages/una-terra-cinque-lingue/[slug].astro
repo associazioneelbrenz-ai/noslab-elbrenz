@@ -97,13 +97,25 @@ if (indici.every((i) => i >= 0) && indici[0] < indici[1] && indici[1] < indici[2
         : <div set:html={htmlIntero} />}
 
       <footer class="mt-14 pt-6 border-t border-[#E5DFCF]" style="font-family: 'Inter', sans-serif;">
-        <p class="text-sm text-[#0F0F0F]/60 m-0">
+        <p class="text-sm text-[#0F0F0F]/60 m-0 flex flex-wrap items-center gap-x-1.5 gap-y-2">
           Rubrica di {uscita.data.autore} · pilastro <a href="/lingua" class="text-[#C8923E] no-underline hover:underline">Lingua e ladinità</a>
           {uscita.data.link_ut24 && (
             <>
               {' '}· Pubblicato anche su{' '}
               <a href={uscita.data.link_ut24} target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">
                 UT24 – Unser Tirol 24 →
+              </a>
+              {/* AGGIUNTA 8/7/2026: logo UT24 (credito partnership, ok
+                  Manuela Sartori). Contenitore bianco: il JPG non ha
+                  trasparenza. */}
+              <a
+                href="https://www.unsertirol24.com"
+                target="_blank"
+                rel="noopener"
+                aria-label="UnserTirol24"
+                class="inline-block bg-white rounded px-2 py-1 shadow-sm align-middle"
+              >
+                <img src="/partner/ut24-logo.jpg" alt="UnserTirol24" width="36" height="36" loading="lazy" decoding="async" class="block w-9 h-9 object-contain" />
               </a>
             </>
           )}
