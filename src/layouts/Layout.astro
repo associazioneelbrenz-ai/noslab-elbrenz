@@ -154,11 +154,19 @@ const currentPath = Astro.url.pathname;
         <p class="text-xs text-[#F5EEDD]/55 m-0">
           © 2026 Associazione Storico Culturale Linguistica El Brenz · Tutti i diritti riservati
         </p>
-        <p class="text-xs text-[#F5EEDD]/55 m-0">
-          Piattaforma realizzata pro-bono da
-          <a href="https://noslab.it" target="_blank" rel="noopener" class="text-[#D9A94E] no-underline hover:underline">NosLab S.a.s.</a>
-          · noslab.it
-        </p>
+        {/* AGGIORNAMENTO 8/7/2026 sera (decisione Cristian): credit NosLab
+            col logo ufficiale (bianco su trasparente, ok sul verde scuro
+            del footer) al posto del solo testo. */}
+        <a
+          href="https://noslab.it"
+          target="_blank"
+          rel="noopener"
+          aria-label="NosLab — sviluppo del sito"
+          class="inline-flex items-center gap-2 opacity-80 hover:opacity-100 transition-opacity no-underline mr-20 md:mr-24"
+        >
+          <span class="text-xs text-[#F5EEDD]/70">Sito sviluppato da</span>
+          <img src="/partner/noslab-logo-footer.png" alt="NosLab" width="110" height="28" loading="lazy" decoding="async" class="h-6 md:h-7 w-auto" />
+        </a>
       </div>
     </footer>
 
