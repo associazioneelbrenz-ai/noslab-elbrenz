@@ -203,8 +203,22 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
     </div>
   </section>
 
-  <section class="bg-[#FDF9F0] py-24">
-    <div class="max-w-3xl mx-auto px-6 text-center">
+  {/* AGGIUNTA M5.0 v2 — filigrana Aquila Tirolensis (pubblico dominio) nella
+      fascia sotto la hero: centro-destra, parzialmente fuori viewport,
+      dietro il contenuto, opacità 0.05, nascosta su mobile. Ritocchi
+      opacità/posizione = micro-diff (deroga screenshot di Cristian). */}
+  <section class="relative overflow-hidden bg-[#FDF9F0] py-24">
+    <img
+      src="/decoro/aquila-tirolensis-filigrana.webp"
+      alt=""
+      aria-hidden="true"
+      class="hidden md:block pointer-events-none select-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[62vw] max-w-[900px] opacity-[0.05] object-contain z-0"
+      width="900"
+      height="900"
+      loading="lazy"
+      decoding="async"
+    />
+    <div class="relative z-10 max-w-3xl mx-auto px-6 text-center">
       <h2
         class="text-3xl md:text-5xl font-medium mb-8 leading-tight"
         style="font-family: 'Playfair Display', serif;"
@@ -418,6 +432,53 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
             In collaborazione con UnserTirol24
           </span>
         </a>
+      </div>
+    </div>
+  </section>
+
+  {/* AGGIUNTA M5.0 v2 — card "Convenzioni Soci" (stile brand su avorio, NON
+      pannello verde). Icona vantaggio + CTA alla pagina + micro-link al form
+      di proposta (/convenzioni#proponi). */}
+  <section class="bg-[#F8F1E4] py-14">
+    <div class="max-w-2xl mx-auto px-6">
+      <div class="bg-white rounded-lg border-t-2 border-[#C8923E] shadow-sm p-8 md:p-10 text-center">
+        <svg
+          viewBox="0 0 24 24" fill="none" stroke="#C8923E" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"
+          class="mx-auto mb-4 w-9 h-9" aria-hidden="true"
+        >
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+          <line x1="7" y1="7" x2="7.01" y2="7" />
+        </svg>
+        <h2
+          class="text-2xl md:text-3xl m-0 mb-3 text-[#1E2E26]"
+          style="font-family: 'Playfair Display', serif; font-weight: 500;"
+        >
+          Convenzioni Soci
+        </h2>
+        <p
+          class="text-base text-[#1E2E26]/80 leading-relaxed m-0 mb-6"
+          style="font-family: 'Source Serif 4', Georgia, serif;"
+        >
+          La tessera El Brenz apre le porte delle nostre valli: sconti e attenzioni
+          dalle realtà del territorio che sostengono la <em>nosa storia</em>.
+        </p>
+        <a
+          href="/convenzioni"
+          class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Scopri le convenzioni
+        </a>
+        <p class="mt-4 m-0">
+          <a
+            href="/convenzioni#proponi"
+            class="text-sm text-[#1E2E26]/60 underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Hai un'attività? Proponi la tua
+          </a>
+        </p>
       </div>
     </div>
   </section>
