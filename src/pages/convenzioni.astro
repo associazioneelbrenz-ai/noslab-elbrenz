@@ -1,0 +1,364 @@
+---
+/**
+ * /convenzioni — Convenzioni Soci (M5.0 v2).
+ *
+ * SSR (prerender=false): la griglia legge la vista pubblica
+ * `convenzioni_pubbliche` (solo stato='attiva', mai dati del referente).
+ * Chiunque può PROPORRE dal form → edge fn `convenzioni-proposta` → nulla
+ * diventa pubblico senza approvazione HMAC del Direttivo via email.
+ * Pilastro editoriale di riferimento: Vita associativa.
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+const PROPOSTA_ENDPOINT = `${SUPABASE_URL}/functions/v1/convenzioni-proposta`;
+
+type ConvenzionePubblica = {
+  id: string;
+  nome_attivita: string;
+  categoria: string;
+  localita: string | null;
+  beneficio: string;
+  dettagli: string | null;
+  url: string | null;
+};
+
+// Etichette e ordine di visualizzazione delle categorie.
+const CATEGORIE: { key: string; label: string }[] = [
+  { key: 'rifugi', label: 'Rifugi e ospitalità' },
+  { key: 'locali', label: 'Locali e ristorazione' },
+  { key: 'servizi', label: 'Servizi' },
+  { key: 'cultura', label: 'Cultura' },
+  { key: 'benessere', label: 'Sport e benessere' },
+  { key: 'altro', label: 'Altro' },
+];
+const LABEL = Object.fromEntries(CATEGORIE.map((c) => [c.key, c.label]));
+
+let attive: ConvenzionePubblica[] = [];
+try {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+    auth: { persistSession: false },
+  });
+  const { data } = await supabase
+    .from('convenzioni_pubbliche')
+    .select('id, nome_attivita, categoria, localita, beneficio, dettagli, url')
+    .order('nome_attivita', { ascending: true });
+  attive = (data as ConvenzionePubblica[]) ?? [];
+} catch (e) {
+  console.error('[convenzioni] lettura vista fallita:', e);
+  attive = [];
+}
+
+// Raggruppa per categoria, nell'ordine di CATEGORIE.
+const perCategoria = CATEGORIE
+  .map((c) => ({ ...c, items: attive.filter((a) => a.categoria === c.key) }))
+  .filter((g) => g.items.length > 0);
+---
+
+<Layout
+  title="Convenzioni Soci"
+  description="Le convenzioni riservate ai soci dell'Associazione El Brenz: sconti e vantaggi presso rifugi, locali, servizi e realtà culturali delle Valli del Noce. Basta la tessera a vista, nessuna registrazione."
+>
+  <!-- HERO -->
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+      <p
+        class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Vita associativa
+      </p>
+      <h1
+        class="text-4xl md:text-5xl leading-tight m-0 mb-6"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;"
+      >
+        Convenzioni <em class="text-[#C8923E]" style="font-style: italic;">Soci</em>
+      </h1>
+      <p
+        class="text-lg leading-relaxed text-[#F5EEDD]/85 m-0 max-w-2xl"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Essere soci del Brenz conviene anche fuori dalle nostre attività: rifugi,
+        locali, servizi e realtà culturali delle valli riservano vantaggi a chi
+        porta con sé la tessera. <strong>Nessuna registrazione, nessun dato:</strong>
+        basta mostrare la tessera del socio.
+      </p>
+    </div>
+  </header>
+
+  <!-- COME FUNZIONA -->
+  <section class="bg-[#F8F1E4]">
+    <div class="max-w-4xl mx-auto px-6 py-12 grid gap-6 md:grid-cols-3" style="font-family: 'Inter', sans-serif;">
+      <div>
+        <p class="text-[#C8923E] text-2xl m-0 mb-2" style="font-family: 'Playfair Display', serif;">1</p>
+        <p class="text-sm text-[#1E2E26]/80 m-0 leading-relaxed">Tesserati al Brenz per l'anno in corso.</p>
+      </div>
+      <div>
+        <p class="text-[#C8923E] text-2xl m-0 mb-2" style="font-family: 'Playfair Display', serif;">2</p>
+        <p class="text-sm text-[#1E2E26]/80 m-0 leading-relaxed">Presso l'attività convenzionata, mostra la tua tessera.</p>
+      </div>
+      <div>
+        <p class="text-[#C8923E] text-2xl m-0 mb-2" style="font-family: 'Playfair Display', serif;">3</p>
+        <p class="text-sm text-[#1E2E26]/80 m-0 leading-relaxed">Ricevi il vantaggio riservato ai soci. Tutto qui.</p>
+      </div>
+    </div>
+  </section>
+
+  {perCategoria.length > 0 && (
+    <section class="bg-[#F8F1E4]">
+      <div class="max-w-5xl mx-auto px-6 pb-16">
+        {perCategoria.map((gruppo) => (
+          <div class="mb-12">
+            <h2
+              class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30"
+              style="font-family: 'Inter', sans-serif;"
+            >
+              {gruppo.label}
+            </h2>
+            <div class="grid gap-5 md:grid-cols-2">
+              {gruppo.items.map((c) => (
+                <article class="bg-white rounded-lg p-6 shadow-sm border-t-2 border-[#C8923E]">
+                  <h3
+                    class="text-xl m-0 mb-1 text-[#1E2E26]"
+                    style="font-family: 'Playfair Display', serif; font-weight: 500;"
+                  >
+                    {c.nome_attivita}
+                  </h3>
+                  {c.localita && (
+                    <p class="text-xs uppercase tracking-wider text-[#1E2E26]/50 m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+                      {c.localita}
+                    </p>
+                  )}
+                  <p class="text-base font-medium text-[#C8923E] m-0 mb-2" style="font-family: 'Inter', sans-serif;">
+                    {c.beneficio}
+                  </p>
+                  {c.dettagli && (
+                    <p class="text-sm text-[#1E2E26]/75 m-0 mb-3 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+                      {c.dettagli}
+                    </p>
+                  )}
+                  {c.url && (
+                    <a
+                      href={c.url}
+                      target="_blank"
+                      rel="noopener nofollow"
+                      class="text-sm text-[#1E2E26] underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]"
+                      style="font-family: 'Inter', sans-serif;"
+                    >
+                      Sito dell'attività →
+                    </a>
+                  )}
+                </article>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- PROPONI LA TUA CONVENZIONE -->
+  <section class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-3xl mx-auto px-6 py-16">
+      <p
+        class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Sei un'attività delle valli?
+      </p>
+      <h2
+        class="text-3xl md:text-4xl leading-tight m-0 mb-4"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;"
+      >
+        Proponi la tua <em class="text-[#C8923E]" style="font-style: italic;">convenzione</em>
+      </h2>
+      <p class="text-base text-[#F5EEDD]/85 m-0 mb-8 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Offri un vantaggio ai soci del Brenz e comparirai in questa pagina. La
+        proposta arriva al Direttivo, che la valuta prima della pubblicazione:
+        i tuoi dati di contatto non saranno mai resi pubblici.
+      </p>
+
+      <form id="conv-form" data-endpoint={PROPOSTA_ENDPOINT} class="grid gap-5" style="font-family: 'Inter', sans-serif;" novalidate>
+        <!-- honeypot -->
+        <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <label class="block">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Nome dell'attività *</span>
+            <input name="nome_attivita" required maxlength="120" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+          </label>
+          <label class="block">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Categoria *</span>
+            <select name="categoria" required class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]">
+              <option value="">— scegli —</option>
+              {CATEGORIE.map((c) => <option value={c.key}>{c.label}</option>)}
+            </select>
+          </label>
+        </div>
+
+        <div class="grid gap-5 md:grid-cols-2">
+          <label class="block">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Località</span>
+            <input name="localita" maxlength="100" placeholder="es. Val di Rabbi" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+          </label>
+          <label class="block">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Sito web</span>
+            <input name="url" type="url" maxlength="300" placeholder="https://…" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+          </label>
+        </div>
+
+        <label class="block">
+          <span class="block text-sm text-[#F5EEDD]/80 mb-1">Beneficio per i soci * <span class="text-[#F5EEDD]/50">(max 200 caratteri)</span></span>
+          <input name="beneficio" required maxlength="200" placeholder="es. Sconto 10% sul soggiorno" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+        </label>
+
+        <label class="block">
+          <span class="block text-sm text-[#F5EEDD]/80 mb-1">Dettagli <span class="text-[#F5EEDD]/50">(facoltativo)</span></span>
+          <textarea name="dettagli" maxlength="1000" rows="3" placeholder="Condizioni, periodi di validità, note…" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]"></textarea>
+        </label>
+
+        <div class="border-t border-[#F5EEDD]/15 pt-5 grid gap-5 md:grid-cols-2">
+          <label class="block">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Nome del referente *</span>
+            <input name="referente_nome" required maxlength="100" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+          </label>
+          <label class="block">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Email del referente *</span>
+            <input name="referente_email" type="email" required maxlength="200" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+          </label>
+        </div>
+        <label class="block md:w-1/2">
+          <span class="block text-sm text-[#F5EEDD]/80 mb-1">Telefono <span class="text-[#F5EEDD]/50">(facoltativo)</span></span>
+          <input name="referente_telefono" maxlength="40" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+        </label>
+
+        <label class="flex items-start gap-3 text-sm text-[#F5EEDD]/85">
+          <input type="checkbox" name="accettazione_schema_tipo" required class="mt-1 shrink-0" />
+          <span>Ho letto e accetto lo <a href="/convenzioni/schema-tipo" target="_blank" class="text-[#D9A94E] underline">schema di convenzione-tipo</a>. *</span>
+        </label>
+        <label class="flex items-start gap-3 text-sm text-[#F5EEDD]/85">
+          <input type="checkbox" name="accettazione_privacy" required class="mt-1 shrink-0" />
+          <span>Acconsento al trattamento dei dati per la gestione della proposta, come da <a href="/privacy" target="_blank" class="text-[#D9A94E] underline">informativa privacy</a>. *</span>
+        </label>
+
+        <div id="conv-feedback" class="hidden rounded"></div>
+
+        <div>
+          <button
+            id="conv-submit"
+            type="submit"
+            class="bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]"
+          >
+            Invia la proposta
+          </button>
+        </div>
+        <p class="text-xs text-[#F5EEDD]/50 m-0">
+          L'adesione telematica, una volta approvata dall'Associazione, perfeziona
+          la convenzione. Preferisci la firma cartacea? Scrivi a
+          <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] underline">info@elbrenz.eu</a>.
+        </p>
+      </form>
+    </div>
+  </section>
+
+  <!-- CTA tesseramento -->
+  <section class="bg-[#F8F1E4]">
+    <div class="max-w-3xl mx-auto px-6 py-12 text-center" style="font-family: 'Inter', sans-serif;">
+      <p class="text-base text-[#1E2E26]/80 m-0 mb-4">
+        Non sei ancora socio? Le convenzioni sono uno dei tanti motivi per esserlo.
+      </p>
+      <a
+        href="/tesseramento"
+        class="inline-block bg-[#1E2E26] text-[#F5EEDD] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#2a3f34] transition-colors"
+      >
+        Diventa socio →
+      </a>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('conv-form') as HTMLFormElement | null;
+  const submit = document.getElementById('conv-submit') as HTMLButtonElement | null;
+  const feedback = document.getElementById('conv-feedback') as HTMLDivElement | null;
+
+  if (form && submit && feedback) {
+    const endpoint = form.dataset.endpoint;
+    const formOpenedAt = Date.now();
+
+    function show(message: string, type: 'success' | 'error') {
+      if (!feedback) return;
+      feedback.classList.remove('hidden');
+      feedback.style.background = type === 'success' ? '#1d4d3a' : '#5a1f1f';
+      feedback.style.color = '#F5EEDD';
+      feedback.style.borderLeft = `3px solid ${type === 'success' ? '#C8923E' : '#d97a7a'}`;
+      feedback.style.padding = '14px 18px';
+      feedback.textContent = message;
+      feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      feedback.classList.add('hidden');
+
+      if (!endpoint) {
+        show('Configurazione mancante. Scrivi a info@elbrenz.eu.', 'error');
+        return;
+      }
+
+      const fd = new FormData(form);
+      const payload = {
+        nome_attivita: ((fd.get('nome_attivita') as string) || '').trim(),
+        categoria: ((fd.get('categoria') as string) || '').trim(),
+        localita: ((fd.get('localita') as string) || '').trim(),
+        beneficio: ((fd.get('beneficio') as string) || '').trim(),
+        dettagli: ((fd.get('dettagli') as string) || '').trim(),
+        url: ((fd.get('url') as string) || '').trim(),
+        referente_nome: ((fd.get('referente_nome') as string) || '').trim(),
+        referente_email: ((fd.get('referente_email') as string) || '').trim(),
+        referente_telefono: ((fd.get('referente_telefono') as string) || '').trim(),
+        accettazione_schema_tipo: fd.get('accettazione_schema_tipo') === 'on',
+        accettazione_privacy: fd.get('accettazione_privacy') === 'on',
+        _honeypot: (fd.get('_honeypot') as string) || '',
+        _ts: formOpenedAt,
+      };
+
+      if (payload.nome_attivita.length < 2) return show("Inserisci il nome dell'attività.", 'error');
+      if (!payload.categoria) return show('Scegli una categoria.', 'error');
+      if (payload.beneficio.length < 5) return show('Descrivi il beneficio per i soci.', 'error');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.referente_email)) return show('Email del referente non valida.', 'error');
+      if (payload.referente_nome.length < 2) return show('Inserisci il nome del referente.', 'error');
+      if (!payload.accettazione_schema_tipo) return show('Devi accettare lo schema di convenzione-tipo.', 'error');
+      if (!payload.accettazione_privacy) return show("Devi accettare l'informativa privacy.", 'error');
+
+      submit.disabled = true;
+      submit.textContent = 'Invio in corso…';
+      try {
+        const resp = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+          show('Grazie! La proposta è arrivata all’Associazione ed è in verifica. Vi ricontattiamo a breve all’indirizzo indicato.', 'success');
+          form.reset();
+        } else if (resp.status === 429) {
+          show(data.error || 'Hai inviato troppe proposte. Riprova più tardi.', 'error');
+        } else {
+          show(data.error || 'Si è verificato un errore. Riprova o scrivi a info@elbrenz.eu.', 'error');
+        }
+      } catch (err) {
+        show('Errore di rete. Controlla la connessione e riprova.', 'error');
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Invia la proposta';
+      }
+    });
+  }
+</script>

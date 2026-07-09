@@ -10,6 +10,7 @@ _9 luglio 2026 · base per il kit legale M4.1_
 | **Quota tesseramento PayPal** | nome, cognome, email (se forniti), importo, order_id | `pagamenti_tesseramento` + link a `domande_tesseramento` | PayPal, Supabase | Libro Soci / contabili |
 | **Chat Andreas pubblica** (`andreas-chat`) | testo domanda; **ip_hash SHA256** per rate limit | **NON salvata** per utenti pubblici; `ai_rate_limit_pubblico` solo hash IP+giorno | **Anthropic (USA)** per la risposta, OpenAI (embedding), Supabase | rate limit: per giorno |
 | **Chat Andreas autenticata** | domanda + risposta, conversazione | `ai_conversazione`, `ai_messaggio` | Anthropic, OpenAI, Supabase | persistente (account socio) |
+| **Proposta convenzione** (`/convenzioni`, edge `convenzioni-proposta`) | nome attività, categoria, località, beneficio, dettagli, url; **referente**: nome, email, telefono; IP hashato (rate limit) | tabella `convenzioni` (referente MAI pubblico; vista `convenzioni_pubbliche` espone solo campi attività); notifica a info@ + cortesia al referente via Resend | Supabase, Resend | proposte rifiutate: cancellate entro 12 mesi; convenzioni attive: durata del rapporto |
 | **Newsletter** (futura) | email | tabella `newsletter` | Supabase, (invio Resend) | fino a disiscrizione |
 
 **Note**: IP visitatore compare nella mail di notifica al Direttivo (`contact-form`) e nel rate limit. OCR e Andreas comportano trasferimento USA (Anthropic/OpenAI) → **da dichiarare** in informativa (AUD-D2).
