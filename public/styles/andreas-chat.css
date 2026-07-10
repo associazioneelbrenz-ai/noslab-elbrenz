@@ -39,9 +39,31 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Carico i font solo se non già presenti dal Layout globale.
-   Se il sito ha già Cormorant + Inter caricati, questo @import diventa no-op. */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600&display=swap');
+/* AUD-E3 (10/7/2026): font self-hosted — sostituito l'@import verso Google
+   con @font-face locali (Cormorant Garamond variabile; Inter arriva già
+   dal Layout globale, ridichiarata qui per le pagine che usano solo
+   questo foglio). Zero chiamate a fonts.googleapis.com. */
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/cormorant-garamond.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: italic;
+  font-weight: 400 500;
+  font-display: swap;
+  src: url('/fonts/cormorant-garamond-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/fonts/inter.woff2') format('woff2');
+}
 
 /* ---------- Hero ---------- */
 
