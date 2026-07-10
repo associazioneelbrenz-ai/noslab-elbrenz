@@ -12,6 +12,7 @@ Le cose da sistemare sono **soprattutto di conformità privacy e di "cinture di 
 1. **Mancano le intestazioni di sicurezza** che dicono al browser come proteggere i visitatori (nessuna è configurata). Rischio medio, correzione semplice e a rischio quasi nullo.
 2. **L'informativa privacy è incompleta**: cita solo 3 fornitori (Netlify, Supabase, Resend) ma il sito ne usa altri che trattano dati — soprattutto **Anthropic** (l'assistente Andreas, elaborazione negli USA), oltre a PayPal, e i **font di Google** caricati da server americani. Questo è il punto più delicato per il GDPR.
 3. **I caratteri tipografici** arrivano da Google: vanno ospitati sul nostro sito (è insieme un tema di privacy e di velocità).
+4. *(aggiornamento 10/7)* Sono uscite **correzioni di sicurezza per alcune librerie** che il sito usa in produzione (il framework Astro e l'adattatore Netlify): nessuna falla sfruttabile con il nostro codice attuale, ma l'aggiornamento va pianificato a breve, con collaudo prima della pubblicazione.
 
 Nessun problema **critico e attivamente sfruttabile** è emerso: non è stato necessario interrompere l'audit. Tutto ciò che segue è pianificabile con calma, per ondate.
 
@@ -36,10 +37,10 @@ Effort: S = < 1h · M = mezza giornata · L = più giornate.
 | AUD-B4a | Sec Supabase | **Funzioni SECURITY DEFINER eseguibili da `anon`** (`has_ruolo`, `has_ruolo_min`, `e_socio_in_regola`, `peso_ruolo`). Advisor WARN. | advisors security → `anon_security_definer_function_executable` | MEDIO | `REVOKE EXECUTE ... FROM anon` dove non serve; verificare non rompa le policy che le richiamano. | M | Medio: alcune policy potrebbero dipenderne — testare prima. |
 | AUD-F2a | SEO | **Manca 404 personalizzata** (`src/pages/404.astro` assente); Netlify serve un 404 generico. | `ls src/pages/404.astro` → assente; `curl` 404 ok ma non brandizzato | BASSO | Creare `src/pages/404.astro` con layout del sito e link utili. | S | Nullo. |
 | AUD-F2b | SEO | **Copertura Open Graph scarsa** in home (1 sola meta `og:`). | `curl https://elbrenz.eu/ \| grep -c og:` → 1 | BASSO | Completare og:title/description/image/url/type via Layout (DEBT-015 collegato). | M | Nullo. |
-| AUD-E1 | Perf | **Performance mobile 45/100** (Lighthouse locale): LCP 4.7s, **TBT 2.660ms** (alto), CLS 0.002 (ottimo), peso 596 KiB. Il TBT elevato è coerente con font Google bloccanti + JS. Accessibilità **96**, SEO **100**. | `lh-home.json` (headless) | MEDIO | Interventi combinati: self-host font [E3], differire JS non critico, ottimizzare LCP (hero). Rimisurare dopo Ondata 3. | M | Basso, ma misurare prima/dopo. |
+| AUD-E1 | Perf | **Performance mobile disomogenea** (Lighthouse locale, 5 pagine — completato 10/7): home **45** (LCP 4.7s, **TBT 2.660ms**), tesseramento **66** (TBT 670ms, PayPal SDK), archivio **82**, andreas **86**, articolo **94**. CLS ovunque ottimo (≤0.065). Il problema è concentrato sulla **home** (TBT da font Google bloccanti + JS) e in parte su tesseramento. Accessibilità 94–96, SEO **100** ovunque. | `lh-home.json`, `lh-articolo.json`, `lh-tesseramento.json`, `lh-andreas.json`, `lh-archivio.json` | MEDIO | Interventi combinati: self-host font [E3], differire JS non critico in home, ottimizzare LCP (hero). Rimisurare dopo Ondata 3. | M | Basso, ma misurare prima/dopo. |
 | AUD-B4b | Sec Supabase | **Estensioni `citext` e `vector` in schema public** (advisor WARN, già noto DEBT-010: lo spostamento richiede privilegi superuser non disponibili). | advisors security → `extension_in_public` | BASSO | Spostare in schema dedicato quando/se possibile; nel frattempo accettato. | M | Medio: spostare estensioni può rompere riferimenti — rimandato. |
 | AUD-B4c | Perf DB | **~80 indici mai usati** + `multiple_permissive_policies` su molte tabelle (advisor). Pulizia/consolidamento (già noto DEBT-011). | advisors performance | BASSO | Rivedere indici inutilizzati e consolidare policy permissive ridondanti. Nessuna urgenza. | L | Medio: rimuovere indici sbagliati degrada query — analisi prima. |
-| AUD-C3 | Deps | **27 vulnerabilità npm** (6 low, 18 moderate, 3 high) **tutte in devDependencies** (catena `yaml` → `yaml-language-server` → `@astrojs/language-server`). Non finiscono nel bundle di produzione. | `npm audit` → catena solo dev | BASSO | Aggiornare `@astrojs/language-server` quando esce fix; non urgente (già DEBT-019b). | S | `npm audit fix --force` porterebbe breaking change (yaml) → evitare. |
+| AUD-C3 | Deps | **27 vulnerabilità npm** (6 low, 18 moderate, 3 high). ⚠ **Riclassificato il 10/7**: nuove advisory toccano anche dipendenze di **produzione** — `astro` HIGH (XSS spread props — pattern non usato da noi; SSRF Host header su error page in SSR — noi abbiamo route SSR) e `@astrojs/netlify` moderate. Il resto è toolchain dev o solo-Windows. | `npm audit --omit=dev` 10/7 → dettaglio in `censimenti/npm_audit.md` | MEDIO | `npm audit fix` (senza `--force`) in Ondata 1 + build e smoke test completo prima del deploy. `--force` resta vietato (DEBT-019b). | S | Basso-medio: aggiornamento framework → testare build e route SSR. |
 
 ---
 
@@ -63,6 +64,7 @@ Effort: S = < 1h · M = mezza giornata · L = più giornate.
 **Ondata 1 — sicurezza a rischio ~zero (subito)**
 - AUD-A1 security headers (`public/_headers`, CSP in Report-Only) — non tocca codice applicativo.
 - AUD-F2a 404 personalizzata · AUD-C2a cap input Andreas · AUD-B3 CORS whitelist su otp-*/send-email (con autorizzazione puntuale edge function).
+- AUD-C3 `npm audit fix` (senza `--force`) — advisory 10/7 su astro/@astrojs/netlify (produzione): build + smoke test completo prima del deploy.
 
 **Ondata 2 — conformità privacy e testi legali** (chat web + Cristian scrivono i testi; Code implementa)
 - AUD-D2 processor mancanti in privacy (Anthropic/PayPal/Google Fonts/Meta/YouTube) · AUD-D4 IP · AUD-D5 retention ricevute · AUD-D6 titolare in cookie-policy · kit legale M4.1.
@@ -76,9 +78,11 @@ Effort: S = < 1h · M = mezza giornata · L = più giornate.
 - `censimenti/D1_flussi_dati.md` — punti di raccolta dati (per kit legale)
 - `censimenti/D2_processor.md` — terze parti effettive vs dichiarate
 - `censimenti/D3_cookie_storage.md` — cookie/localStorage reali
+- `censimenti/D5_retention.md` — retention dichiarata vs applicata (completato 10/7)
+- `censimenti/npm_audit.md` — dettaglio vulnerabilità npm e riclassificazione AUD-C3 (10/7)
 - `censimenti/advisors_supabase.md` — output integrale advisors
-- `lh-home.json` — Lighthouse home (mobile, headless locale): Performance **45**, Accessibilità **96**, SEO **100**; LCP 4.7s, TBT 2.660ms, CLS 0.002, 596 KiB. (PageSpeed API in quota esaurita per il 9/7 → misura via Lighthouse locale.)
+- Lighthouse (mobile, headless locale, 9-10/7): `lh-home.json` (perf **45**, LCP 4.7s, TBT 2.660ms, CLS 0.002, 596 KiB, 17 req) · `lh-articolo.json` (**94**, LCP 2.0s, TBT 160ms, 688 KiB, 38 req) · `lh-tesseramento.json` (**66**, LCP 4.3s, TBT 670ms, 831 KiB, 29 req) · `lh-andreas.json` (**86**, LCP 3.9s, TBT 30ms, 559 KiB, 21 req) · `lh-archivio.json` (**82**, LCP 4.5s, TBT 0ms, 456 KiB, 16 req). (PageSpeed API in quota esaurita il 9/7 → misure via Lighthouse locale.)
 
 ---
 
-*Fase 1 completata. Nessun fix applicato. In attesa dell'ok di Cristian, voce per voce o per ondata (Fase 2). I fix su edge function e sulle pagine legali richiedono autorizzazione puntuale come da brief.*
+*Fase 1 COMPLETATA il 10 luglio 2026 (censimento D5, npm audit aggiornato e Lighthouse multi-pagina inclusi). Nessun fix applicato. In attesa dell'ok di Cristian, voce per voce o per ondata (Fase 2). I fix su edge function e sulle pagine legali richiedono autorizzazione puntuale come da brief.*
