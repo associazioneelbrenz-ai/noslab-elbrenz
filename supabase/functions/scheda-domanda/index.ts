@@ -21,6 +21,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { firmaToken, verificaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
+import { ensureCodiceEQr, tesseraEmailHtml } from '../_shared/tessera.ts';
 
 const ANNO = 2026;
 
@@ -165,41 +166,24 @@ Deno.serve(async (req: Request) => {
     if (tessereLive) {
       const sharedSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
       if (sharedSecret) {
-        // Tessera digitale: logo dell'associazione (hosted sul sito, URL
-        // assoluta stabile) + bandiera ladina (strisce azzurro/bianco/verde,
-        // colori ufficiali del componente BandieraLadina: email-safe, niente
-        // SVG che Gmail scarta).
-        const LOGO_URL = 'https://elbrenz-app.netlify.app/logo-eb-footer@2x.png';
-        const tesseraHtml = `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#F8F1E4;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
-  <div style="max-width:560px;margin:0 auto;">
-    <div style="background:#1E2E26;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(30,46,38,.35);">
-      <!-- bandiera ladina -->
-      <div style="height:6px;background:#1E4FB4;"></div>
-      <div style="height:6px;background:#FFFFFF;"></div>
-      <div style="height:6px;background:#1E9C48;"></div>
-      <div style="padding:34px 36px;color:#F5EEDD;">
-        <table role="presentation" style="width:100%;border-collapse:collapse;"><tr>
-          <td style="width:76px;vertical-align:top;"><img src="${LOGO_URL}" alt="Timbro Associazione El Brenz" width="64" height="64" style="display:block;border-radius:50%;"/></td>
-          <td style="vertical-align:middle;padding-left:6px;">
-            <p style="color:#D9A94E;text-transform:uppercase;letter-spacing:.22em;font-size:10px;margin:0 0 6px;">Associazione Storico Culturale Linguistica</p>
-            <h1 style="font-family:Georgia,serif;font-size:26px;margin:0;color:#F5EEDD;font-weight:500;">El <em style="color:#C8923E;">Brenz</em> dle Val del Nos</h1>
-          </td>
-        </tr></table>
-        <div style="border-top:1px solid rgba(200,146,62,.45);margin:22px 0 20px;"></div>
-        <p style="color:rgba(245,238,221,.7);text-transform:uppercase;letter-spacing:.18em;font-size:10px;margin:0 0 4px;">Tessera socio · anno ${ANNO}</p>
-        <p style="font-size:26px;margin:0 0 4px;font-family:Georgia,serif;color:#F5EEDD;">${esc(socio.nome)}</p>
-        <p style="font-size:15px;margin:0 0 22px;color:#C8923E;font-weight:600;letter-spacing:.06em;">N. ${numero}</p>
-        <p style="margin:0;color:#D9A94E;font-style:italic;font-family:Georgia,serif;font-size:16px;">Raìs fonde no le 'nglacia</p>
-        <p style="font-size:10px;color:rgba(245,238,221,.5);margin:4px 0 0;letter-spacing:.04em;">Radici profonde non gelano · valida fino al 31/12/${ANNO}</p>
-      </div>
-      <div style="height:6px;background:#1E4FB4;"></div>
-      <div style="height:6px;background:#FFFFFF;"></div>
-      <div style="height:6px;background:#1E9C48;"></div>
-    </div>
-    <p style="color:#1E2E26;font-size:15px;margin:22px 8px;">Benvenuto nella <em>nosa Sociazion</em>! La tua domanda è stata approvata dal Consiglio Direttivo: questa email vale come tessera digitale per l'anno ${ANNO}.</p>
-    <p style="color:#999;font-size:11px;margin:0 8px;">Associazione El Brenz · Via Trento 40, 38027 Malè (TN) · info@elbrenz.eu</p>
-  </div></body></html>`;
+        // AGGIORNATO 10/7 (autorizzazione puntuale): template allineato al
+        // design tessera QR (M5.5) — card scura, bandiera ladina, filigrana
+        // Aquila, QR di verifica. Rendering condiviso in _shared/tessera.ts
+        // (stesso di tessera-invio). La logica di approvazione è invariata.
         try {
+          const { urlVerifica, qrUrl } = await ensureCodiceEQr(
+            supabase,
+            { id: d, numero_tessera: numero, anno: ANNO, codice_tessera: null },
+            secret,
+          );
+          const tesseraHtml = tesseraEmailHtml({
+            nome: socio.nome,
+            numero,
+            anno: ANNO,
+            qrUrl,
+            urlVerifica,
+            intro: `Benvenuto nella <em>nosa Sociazion</em>! La tua domanda è stata approvata dal Consiglio Direttivo: questa email vale come tessera digitale per l'anno ${ANNO}.`,
+          });
           const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },

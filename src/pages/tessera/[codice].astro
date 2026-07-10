@@ -49,6 +49,12 @@ const annoCorrente = Number(
 );
 const inRegola = tessera !== null && tessera.anno === annoCorrente;
 const qrUrl = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/tessere/qr/${codice}.png`;
+// Download wallet (M5.5 Fase A): PNG verticale e PDF A6 generati server-side.
+const downloadPng = `${SUPABASE_URL}/functions/v1/tessera-download/${codice}/png`;
+const downloadPdf = `${SUPABASE_URL}/functions/v1/tessera-download/${codice}/pdf`;
+// Fase B (Google Wallet): bottone nascosto finché WALLET_GOOGLE_LIVE!=='true'.
+const walletGoogleLive = import.meta.env.WALLET_GOOGLE_LIVE === 'true';
+const walletGoogleUrl = `${SUPABASE_URL}/functions/v1/wallet-google/${codice}`;
 ---
 
 <Layout title="Verifica tessera socio" description="Verifica in tempo reale della tessera socio El Brenz.">
@@ -104,6 +110,27 @@ const qrUrl = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/tessere/
               <p class="text-[#1E2E26]/70 text-sm mt-1">La tessera si riferisce all'anno {tessera.anno}. Per il rinnovo: <a href="/tesseramento" class="underline">tesseramento</a>.</p>
             </div>
           )}
+
+          <div class="mt-8 rounded-xl bg-white border-t-4 border-[#C8923E] shadow-lg px-6 py-6">
+            <h2 class="text-[#C8923E] uppercase tracking-[.18em] text-xs font-semibold mb-3">Scarica la tessera</h2>
+            <div class="flex flex-wrap gap-3">
+              <a href={downloadPng} class="inline-block bg-[#1E2E26] text-[#F5EEDD] px-5 py-3 rounded-lg font-semibold text-sm hover:opacity-90">📱 Immagine per il telefono (PNG)</a>
+              <a href={downloadPdf} class="inline-block bg-white text-[#1E2E26] border-2 border-[#1E2E26] px-5 py-3 rounded-lg font-semibold text-sm hover:bg-[#F8F1E4]">🖨 PDF stampabile (A6)</a>
+              {walletGoogleLive && (
+                <a href={walletGoogleUrl} class="inline-block bg-[#1E4FB4] text-white px-5 py-3 rounded-lg font-semibold text-sm hover:opacity-90">Aggiungi a Google Wallet</a>
+              )}
+            </div>
+            <p class="text-[#1E2E26]/60 text-xs mt-3">L'immagine è in formato verticale, pensata per la galleria del telefono. La prima generazione può richiedere qualche secondo.</p>
+          </div>
+
+          <div class="mt-6 rounded-xl bg-[#FDF9F0] border-l-4 border-[#C8923E] px-6 py-5">
+            <h2 class="text-[#8a6215] uppercase tracking-[.18em] text-xs font-semibold mb-2">Portala sempre con te</h2>
+            <p class="text-[#1E2E26]/80 text-sm mb-2">Questa pagina <em>è</em> la tua tessera viva, con verifica in tempo reale: aggiungila alla schermata Home del telefono.</p>
+            <ul class="text-[#1E2E26]/70 text-sm space-y-1 list-disc list-inside">
+              <li><strong>iPhone/iPad</strong>: apri questa pagina in Safari → tocca <strong>Condividi</strong> (□↑) → <strong>Aggiungi a schermata Home</strong>.</li>
+              <li><strong>Android</strong>: apri questa pagina in Chrome → menu <strong>⋮</strong> → <strong>Aggiungi a schermata Home</strong>.</li>
+            </ul>
+          </div>
         </>
       ) : (
         <div class="rounded-2xl bg-white border-t-4 border-[#C8923E] shadow-lg px-8 py-10 text-center">

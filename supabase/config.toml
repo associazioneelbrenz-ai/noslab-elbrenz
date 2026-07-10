@@ -1,0 +1,15 @@
+# Config CLI Supabase — creata il 10/7/2026 per gli static file di
+# tessera-download (wasm resvg + font Playfair). Le altre function NON sono
+# elencate: continuano a deployarsi come sempre (flag --no-verify-jwt a mano).
+
+project_id = "noslab-elbrenz"
+
+[functions.tessera-download]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/tessera-download/index.ts"
+static_files = [
+  "./functions/tessera-download/index_bg.wasm",
+  "./functions/tessera-download/fonts/PlayfairDisplay-Regular.ttf",
+  "./functions/tessera-download/fonts/PlayfairDisplay-Italic.ttf",
+]
