@@ -1,0 +1,34 @@
+---
+/**
+ * 404 — pagina non trovata, brandizzata (AUD-F2a, Ondata 1).
+ * Statica: Netlify serve dist/404.html automaticamente per i path inesistenti.
+ */
+
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Pagina non trovata" description="La pagina cercata non esiste o è stata spostata.">
+  <section class="bg-[#F8F1E4] py-20 px-6 min-h-[60vh] flex items-center">
+    <div class="max-w-xl mx-auto text-center">
+      <p class="text-[#C8923E] uppercase tracking-[.2em] text-xs font-semibold mb-3">Errore 404</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Questo sentiero non porta da nessuna parte
+      </h1>
+      <div class="w-14 h-[2px] bg-[#C8923E] mx-auto mb-6" aria-hidden="true"></div>
+      <p class="text-[#1E2E26]/80 leading-relaxed mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+        La pagina che cerchi non esiste o è stata spostata. Puoi tornare sui sentieri battuti:
+      </p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="/" class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+          Torna alla home
+        </a>
+        <a href="/archivio-storico" class="inline-block bg-white text-[#1E2E26] border border-[#C8923E]/60 px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:border-[#C8923E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+          Archivio storico
+        </a>
+      </div>
+      <p class="mt-8 text-sm text-[#1E2E26]/60">
+        Cercavi qualcosa di preciso? Chiedi ad <a href="/andreas" class="underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]">Andreas</a> o scrivici a <a href="mailto:info@elbrenz.eu" class="underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]">info@elbrenz.eu</a>.
+      </p>
+    </div>
+  </section>
+</Layout>
