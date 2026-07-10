@@ -150,6 +150,12 @@ Deno.serve(async (req: Request) => {
       return new Response(JSON.stringify({ ok: false, error: "missing_query" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } });
     }
+    // AUD-C2a (10/7, deroga puntuale di Cristian): cap input a 600 caratteri
+    // (controllo costi embedding/Claude). Il widget mostra il limite.
+    if (String(body.query).length > 600) {
+      return new Response(JSON.stringify({ ok: false, error: "query_too_long", max: 600 }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } });
+    }
 
     // ------------------------------------------------------------------------
     // BRANCH 1: detect autenticato vs pubblico

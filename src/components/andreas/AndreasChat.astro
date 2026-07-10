@@ -71,8 +71,8 @@ const { compatto = false } = Astro.props;
         class="andreas-chat__textarea"
         placeholder="Scrivi la tua domanda…"
         rows="1"
-        aria-label="Scrivi la tua domanda ad Andreas"
-        maxlength="500"
+        aria-label="Scrivi la tua domanda ad Andreas (massimo 600 caratteri)"
+        maxlength="600"
       ></textarea>
       <button
         type="submit"
@@ -88,6 +88,7 @@ const { compatto = false } = Astro.props;
     <div class="andreas-chat__meta">
       <span class="andreas-chat__hint">
         Premi <kbd>Invio</kbd> per inviare · <kbd>Shift+Invio</kbd> per andare a capo
+        · <span id="andreas-charcount" aria-live="polite">0</span>/600 caratteri
       </span>
       <span id="andreas-counter" class="andreas-chat__counter">
         <strong>3</strong> domande rimanenti oggi

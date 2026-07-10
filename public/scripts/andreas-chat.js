@@ -117,6 +117,14 @@
     $form = document.getElementById('andreas-composer');
     $counter = document.getElementById('andreas-counter');
 
+    // AUD-C2a (10/7): contatore caratteri live accanto al limite (max 600).
+    const $charcount = document.getElementById('andreas-charcount');
+    if ($charcount) {
+      $textarea?.addEventListener('input', () => {
+        $charcount.textContent = String($textarea.value.length);
+      });
+    }
+
     if (!$messages || !$textarea || !$sendBtn || !$form || !$counter) {
       console.error('[AndreasChat] Elementi DOM non trovati. Hai inserito <AndreasChat /> nella pagina?');
       return false;
