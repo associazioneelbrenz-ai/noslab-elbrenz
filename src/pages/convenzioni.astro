@@ -270,6 +270,18 @@ const perCategoria = CATEGORIE
           <input name="referente_telefono" maxlength="40" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
         </label>
 
+        <div>
+          <label for="conv-logo" class="block text-sm mb-1 text-[#F5EEDD]/85">Logo dell'attività (facoltativo)</label>
+          <input
+            id="conv-logo"
+            name="logo"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            class="block w-full text-sm text-[#F5EEDD]/85 file:mr-3 file:px-4 file:py-2 file:rounded file:border-0 file:bg-[#C8923E] file:text-[#1E2E26] file:text-sm file:font-medium file:cursor-pointer"
+          />
+          <p class="text-xs text-[#F5EEDD]/50 m-0 mt-1">PNG, JPG o WebP, massimo 1 MB — meglio se a sfondo trasparente. Verrà pubblicato sulla card solo se la convenzione è approvata.</p>
+        </div>
+
         <label class="flex items-start gap-3 text-sm text-[#F5EEDD]/85">
           <input type="checkbox" name="accettazione_schema_tipo" required class="mt-1 shrink-0" />
           <span>Ho letto e accetto lo <a href="/convenzioni/schema-tipo" target="_blank" class="text-[#D9A94E] underline">schema di convenzione-tipo</a>. *</span>
@@ -359,7 +371,23 @@ const perCategoria = CATEGORIE
         accettazione_privacy: fd.get('accettazione_privacy') === 'on',
         _honeypot: (fd.get('_honeypot') as string) || '',
         _ts: formOpenedAt,
+        logo_b64: '',
       };
+
+      const logoInput = document.getElementById('conv-logo') as HTMLInputElement | null;
+      const logoFile = logoInput?.files?.[0];
+      if (logoFile) {
+        if (logoFile.size > 1048576) return show('Il logo supera 1 MB: riducilo e riprova.', 'error');
+        if (!['image/png', 'image/jpeg', 'image/webp'].includes(logoFile.type)) {
+          return show('Formato logo non supportato: usa PNG, JPG o WebP.', 'error');
+        }
+        payload.logo_b64 = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result));
+          r.onerror = reject;
+          r.readAsDataURL(logoFile);
+        });
+      }
 
       if (payload.nome_attivita.length < 2) return show("Inserisci il nome dell'attività.", 'error');
       if (!payload.categoria) return show('Scegli una categoria.', 'error');

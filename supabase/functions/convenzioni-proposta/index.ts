@@ -51,6 +51,27 @@ const FIELD_LIMITS = {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const CATEGORIE = ['rifugi', 'locali', 'servizi', 'cultura', 'benessere', 'altro']
 
+// Logo del proponente (facoltativo): resta nel bucket PRIVATO
+// convenzioni-staging finché il Direttivo non approva — mai pubblico prima.
+// Validazione server-side su magic bytes (il MIME dichiarato non conta).
+const LOGO_MAX_BYTES = 1_048_576 // 1 MB
+const LOGO_STAGING_BUCKET = 'convenzioni-staging'
+const LOGO_PUBLIC_BUCKET = 'assets-pubblici'
+
+function sniffImmagine(bytes: Uint8Array): { ext: string; mime: string } | null {
+  if (bytes.length > 8 && bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47) {
+    return { ext: 'png', mime: 'image/png' }
+  }
+  if (bytes.length > 3 && bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF) {
+    return { ext: 'jpg', mime: 'image/jpeg' }
+  }
+  if (bytes.length > 12 && bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+    return { ext: 'webp', mime: 'image/webp' }
+  }
+  return null
+}
+
 const SEND_EMAIL_URL =
   'https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/send-email'
 const RECIPIENT_EMAIL = 'info@elbrenz.eu'
@@ -244,13 +265,42 @@ async function gestisciAzione(req: Request, url: URL): Promise<Response> {
   if (azione === 'approva') patch.approvata_il = new Date().toISOString()
 
   const { data: updated } = await supabase.from('convenzioni')
-    .update(patch).eq('id', id).eq('stato', 'proposta').select('id').maybeSingle()
+    .update(patch).eq('id', id).eq('stato', 'proposta').select('id, logo_staging_path').maybeSingle()
 
   if (!updated) {
     return htmlResponse(`<h1>Nessuna modifica</h1><p>La proposta non era più in stato «proposta» (già approvata o rifiutata in precedenza).</p>`)
   }
+
+  // All'approvazione, il logo in staging PRIVATO diventa pubblico
+  // (best-effort: se fallisce, la convenzione resta attiva senza logo e
+  // la card usa il fallback con l'iniziale).
+  let notaLogo = ''
+  if (azione === 'approva' && updated.logo_staging_path) {
+    try {
+      const staging = updated.logo_staging_path as string
+      const ext = staging.split('.').pop() ?? 'png'
+      const { data: file, error: dlErr } = await supabase.storage
+        .from(LOGO_STAGING_BUCKET).download(staging)
+      if (dlErr || !file) throw dlErr ?? new Error('download vuoto')
+      const pubPath = `convenzioni/loghi/proposta-${id}.${ext}`
+      const { error: upErr } = await supabase.storage.from(LOGO_PUBLIC_BUCKET)
+        .upload(pubPath, await file.arrayBuffer(), {
+          contentType: ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg',
+          upsert: true,
+        })
+      if (upErr) throw upErr
+      await supabase.from('convenzioni')
+        .update({ logo_path: pubPath, logo_staging_path: null, updated_at: new Date().toISOString() }).eq('id', id)
+      await supabase.storage.from(LOGO_STAGING_BUCKET).remove([staging])
+      notaLogo = '<p>Logo del proponente pubblicato insieme alla convenzione.</p>'
+    } catch (e) {
+      console.error('[convenzioni] pubblicazione logo fallita:', e)
+      notaLogo = '<p style="color:#8a6215;">⚠ Il logo caricato dal proponente non è stato pubblicato (errore tecnico): la card usa l\'iniziale. Recuperabile dal bucket convenzioni-staging.</p>'
+    }
+  }
+
   return htmlResponse(azione === 'approva'
-    ? `<h1>Convenzione approvata ✓</h1><p>Ora è pubblica sul sito nella pagina Convenzioni.</p>`
+    ? `<h1>Convenzione approvata ✓</h1><p>Ora è pubblica sul sito nella pagina Convenzioni.</p>${notaLogo}`
     : `<h1>Proposta rifiutata</h1><p>La proposta è stata archiviata. Nessuna comunicazione automatica è stata inviata al proponente.</p>`)
 }
 
@@ -302,6 +352,8 @@ serve(async (req) => {
   const accettazione_privacy = body.accettazione_privacy === true
   const honeypot = typeof body._honeypot === 'string' ? body._honeypot : ''
   const ts = typeof body._ts === 'number' ? body._ts : 0
+  // logo facoltativo: base64 (con o senza prefisso data:)
+  const logoB64 = typeof body.logo_b64 === 'string' ? body.logo_b64.replace(/^data:[^;]+;base64,/, '') : ''
 
   // Honeypot + time-trap: risposta 200 silenziosa (bot).
   if (honeypot.length > 0) { console.warn(`[convenzioni] honeypot ip=${ip}`); return jsonResponse({ success: true }, 200, cors) }
@@ -322,6 +374,23 @@ serve(async (req) => {
   if (!accettazione_schema_tipo) return jsonResponse({ error: 'Devi accettare lo schema di convenzione-tipo.' }, 400, cors)
   if (!accettazione_privacy) return jsonResponse({ error: 'Devi accettare l\'informativa privacy.' }, 400, cors)
 
+  // Logo: decodifica + sniffing PRIMA dell'insert (input invalido = 400 pulito)
+  let logoBytes: Uint8Array | null = null
+  let logoTipo: { ext: string; mime: string } | null = null
+  if (logoB64) {
+    if (logoB64.length > LOGO_MAX_BYTES * 1.4) {
+      return jsonResponse({ error: 'Il logo supera 1 MB.' }, 400, cors)
+    }
+    try {
+      logoBytes = Uint8Array.from(atob(logoB64), (c) => c.charCodeAt(0))
+    } catch {
+      return jsonResponse({ error: 'Logo non leggibile.' }, 400, cors)
+    }
+    if (logoBytes.length > LOGO_MAX_BYTES) return jsonResponse({ error: 'Il logo supera 1 MB.' }, 400, cors)
+    logoTipo = sniffImmagine(logoBytes)
+    if (!logoTipo) return jsonResponse({ error: 'Formato logo non supportato: usa PNG, JPG o WebP.' }, 400, cors)
+  }
+
   // INSERT (service role) — PRIMA della mail (lezione A2). Il client è già
   // stato creato in cima per il rate limit.
   const { data: inserted, error: insErr } = await supabase.from('convenzioni').insert({
@@ -340,6 +409,22 @@ serve(async (req) => {
     return jsonResponse({ error: 'Non è stato possibile registrare la proposta. Riprova o scrivi a info@elbrenz.eu.' }, 500, cors)
   }
 
+  // Upload logo in staging PRIVATO (best-effort: la proposta è già salvata)
+  let logoCaricato = false
+  if (logoBytes && logoTipo) {
+    const stagingPath = `${inserted.id}.${logoTipo.ext}`
+    const { error: upErr } = await supabase.storage.from(LOGO_STAGING_BUCKET)
+      .upload(stagingPath, logoBytes, { contentType: logoTipo.mime, upsert: true })
+    if (upErr) {
+      console.error('[convenzioni] upload logo staging fallito:', upErr)
+    } else {
+      await supabase.from('convenzioni')
+        .update({ logo_staging_path: stagingPath, updated_at: new Date().toISOString() })
+        .eq('id', inserted.id)
+      logoCaricato = true
+    }
+  }
+
   // Email al Direttivo con link HMAC (best-effort: la proposta è già salvata).
   const adminSecret = Deno.env.get('ADMIN_ACTION_SECRET')
   const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/convenzioni-proposta`
@@ -349,9 +434,12 @@ serve(async (req) => {
     const tR = await firmaToken(adminSecret, 'azione-rifiuta', inserted.id, exp)
     const linkA = `${base}/azione/approva/${inserted.id}/${exp}/${tA}`
     const linkR = `${base}/azione/rifiuta/${inserted.id}/${exp}/${tR}`
+    const dettagliConLogo = logoCaricato
+      ? `${dettagli}${dettagli ? '\n' : ''}[Logo caricato dal proponente: sarà pubblicato automaticamente all'approvazione]`
+      : dettagli
     await inviaEmail(RECIPIENT_EMAIL,
       `Nuova proposta di convenzione — ${nome_attivita}`,
-      mailDirettivo({ nome_attivita, categoria, localita, beneficio, dettagli, url: rawUrl, referente_nome, referente_email, referente_telefono }, linkA, linkR),
+      mailDirettivo({ nome_attivita, categoria, localita, beneficio, dettagli: dettagliConLogo, url: rawUrl, referente_nome, referente_email, referente_telefono }, linkA, linkR),
       referente_email)
   } else {
     console.warn('[convenzioni] ADMIN_ACTION_SECRET assente: mail Direttivo senza link azione')
