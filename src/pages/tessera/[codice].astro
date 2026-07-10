@@ -1,0 +1,118 @@
+---
+/**
+ * /tessera/{codice} — verifica pubblica in tempo reale della tessera socio (M5.5).
+ *
+ * SSR (prerender=false): il codice (HMAC troncato, non enumerabile) viene
+ * cercato via RPC `tessera_verifica` — lookup SOLO per codice esatto, nessun
+ * elenco soci esposto. La pagina mostra i soli dati essenziali autorizzati:
+ * nome, numero tessera, anno, stato "in regola". Nessun altro dato personale.
+ *
+ * "Socio in regola {anno}" = domanda in stato approvata con anno = anno
+ * corrente (i 19 soci storici del Libro Soci sono a DB come approvata/2026).
+ * Il QR sulla tessera email punta a questa pagina: un esercente convenzionato
+ * la apre con una scansione e verifica al volo.
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+// Pagina di verifica: fuori dagli indici, il codice è una capability URL.
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+Astro.response.headers.set('Cache-Control', 'no-store');
+
+const codice = Astro.params.codice ?? '';
+const codiceValido = /^\d{1,6}-\d{4}-[0-9a-f]{24}$/.test(codice);
+
+type Tessera = { nome: string; numero_tessera: number; anno: number; stato: string };
+let tessera: Tessera | null = null;
+
+if (codiceValido) {
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
+      auth: { persistSession: false },
+    });
+    const { data } = await supabase.rpc('tessera_verifica', { codice });
+    tessera = (data && data.length > 0) ? (data[0] as Tessera) : null;
+  } catch (e) {
+    console.error('[tessera] verifica fallita:', e);
+    tessera = null;
+  }
+}
+
+const annoCorrente = Number(
+  new Intl.DateTimeFormat('it-IT', { timeZone: 'Europe/Rome', year: 'numeric' }).format(new Date()),
+);
+const inRegola = tessera !== null && tessera.anno === annoCorrente;
+const qrUrl = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/tessere/qr/${codice}.png`;
+---
+
+<Layout title="Verifica tessera socio" description="Verifica in tempo reale della tessera socio El Brenz.">
+  <section class="bg-[#F8F1E4] py-12 px-4 min-h-[70vh]">
+    <div class="max-w-xl mx-auto">
+      {tessera ? (
+        <>
+          <div class="rounded-2xl overflow-hidden shadow-2xl bg-[#1E2E26]">
+            <div class="h-1.5 bg-[#1E4FB4]"></div>
+            <div class="h-1.5 bg-white"></div>
+            <div class="h-1.5 bg-[#1E9C48]"></div>
+            <div
+              class="px-8 py-9 text-[#F5EEDD] bg-no-repeat"
+              style="background-image:url('/decoro/aquila-oro-filigrana.png');background-position:right -60px center;background-size:340px auto;"
+            >
+              <div class="flex items-center gap-4">
+                <img src="/logo-eb-footer@2x.png" alt="Timbro Associazione El Brenz" width="64" height="64" class="rounded-full shrink-0" />
+                <div>
+                  <p class="text-[#D9A94E] uppercase tracking-[.22em] text-[10px] mb-1">Associazione Storico Culturale Linguistica</p>
+                  <p class="font-serif text-2xl">El <em class="text-[#C8923E]">Brenz</em> dle Val del Nos</p>
+                </div>
+              </div>
+              <div class="border-t border-[#C8923E]/45 my-6"></div>
+              <div class="flex items-end justify-between gap-4 flex-wrap">
+                <div>
+                  <p class="text-[#F5EEDD]/70 uppercase tracking-[.18em] text-[10px] mb-1">Tessera socio · anno {tessera.anno}</p>
+                  <p class="font-serif text-3xl mb-1">{tessera.nome}</p>
+                  <p class="text-[#C8923E] font-semibold tracking-wide mb-5">N. {tessera.numero_tessera}</p>
+                  <p class="text-[#D9A94E] italic font-serif">Raìs fonde no le 'nglacia</p>
+                  <p class="text-[10px] text-[#F5EEDD]/50 mt-1">Radici profonde non gelano · valida fino al 31/12/{tessera.anno}</p>
+                </div>
+                <div class="shrink-0">
+                  <div class="bg-white rounded-xl p-1.5 w-[120px]">
+                    <img src={qrUrl} alt="QR di verifica tessera" width="108" height="108" class="block" />
+                  </div>
+                  <p class="text-[9px] text-[#F5EEDD]/60 mt-1.5 text-center">verifica in tempo reale</p>
+                </div>
+              </div>
+            </div>
+            <div class="h-1.5 bg-[#1E4FB4]"></div>
+            <div class="h-1.5 bg-white"></div>
+            <div class="h-1.5 bg-[#1E9C48]"></div>
+          </div>
+
+          {inRegola ? (
+            <div class="mt-6 rounded-xl bg-[#eaf3ee] border-l-4 border-[#2d8659] px-6 py-4 text-center">
+              <p class="text-[#2d8659] text-lg font-semibold">✓ Socio in regola {annoCorrente}</p>
+              <p class="text-[#1E2E26]/70 text-sm mt-1">Verificato in tempo reale sul registro dell'associazione.</p>
+            </div>
+          ) : (
+            <div class="mt-6 rounded-xl bg-[#fdf3df] border-l-4 border-[#C8923E] px-6 py-4 text-center">
+              <p class="text-[#8a6215] text-lg font-semibold">Tessera non in regola per l'anno {annoCorrente}</p>
+              <p class="text-[#1E2E26]/70 text-sm mt-1">La tessera si riferisce all'anno {tessera.anno}. Per il rinnovo: <a href="/tesseramento" class="underline">tesseramento</a>.</p>
+            </div>
+          )}
+        </>
+      ) : (
+        <div class="rounded-2xl bg-white border-t-4 border-[#C8923E] shadow-lg px-8 py-10 text-center">
+          <p class="text-[#C8923E] uppercase tracking-[.18em] text-xs font-semibold mb-2">El Brenz · Verifica tessera</p>
+          <h1 class="font-serif text-2xl text-[#1E2E26] mb-3">Tessera non trovata</h1>
+          <p class="text-[#1E2E26]/70">Il codice non corrisponde ad alcuna tessera valida. Controlla il link o scrivi a <a href="mailto:info@elbrenz.eu" class="underline">info@elbrenz.eu</a>.</p>
+        </div>
+      )}
+      <p class="text-center text-xs text-[#1E2E26]/50 mt-8">Questa pagina mostra solo i dati essenziali della tessera: nessun altro dato personale è esposto.</p>
+    </div>
+  </section>
+</Layout>
