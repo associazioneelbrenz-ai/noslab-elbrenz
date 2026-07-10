@@ -122,12 +122,52 @@ try {
   console.error('[home] marquee convenzioni: lettura fallita:', e);
   convenzionateMarquee = [];
 }
-// con pochi loghi la fila si ripete per riempire il nastro (loop pieno);
-// le copie di riempimento sono decorative (aria-hidden, non focusabili)
-const filaMarquee = convenzionateMarquee.length > 0
-  ? Array.from({ length: Math.max(1, Math.ceil(8 / convenzionateMarquee.length)) }, () => convenzionateMarquee).flat()
+// FIX mobile 10/7 (Safari iOS): niente lazy sulle immagini del nastro e
+// width/height ESPLICITI (le img dentro un transform non vengono osservate
+// dal lazy-load di Safari: restavano scariche e, senza dimensioni
+// intrinseche, collassavano a larghezza zero -> striscia vuota).
+// Dimensioni lette a BUILD TIME dagli header PNG/WebP dei loghi.
+async function dimensioniLogo(url: string): Promise<{ w: number; h: number }> {
+  try {
+    const r = await fetch(url);
+    const b = new Uint8Array(await r.arrayBuffer());
+    const dv = new DataView(b.buffer);
+    if (b[0] === 0x89 && b[1] === 0x50) {
+      return { w: dv.getUint32(16), h: dv.getUint32(20) }; // PNG IHDR
+    }
+    if (b[8] === 0x57 && b[9] === 0x45) { // RIFF....WEBP
+      const fourcc = String.fromCharCode(b[12], b[13], b[14], b[15]);
+      if (fourcc === 'VP8X') {
+        return { w: 1 + (b[24] | (b[25] << 8) | (b[26] << 16)), h: 1 + (b[27] | (b[28] << 8) | (b[29] << 16)) };
+      }
+      if (fourcc === 'VP8L') {
+        const n = dv.getUint32(21, true);
+        return { w: 1 + (n & 0x3fff), h: 1 + ((n >> 14) & 0x3fff) };
+      }
+      if (fourcc === 'VP8 ') {
+        return { w: dv.getUint16(26, true) & 0x3fff, h: dv.getUint16(28, true) & 0x3fff };
+      }
+    }
+  } catch (e) {
+    console.error('[home] marquee: dimensioni logo non lette:', url, e);
+  }
+  return { w: 200, h: 64 }; // fallback prudente: evita comunque il collasso
+}
+const marqueeConDim = await Promise.all(
+  convenzionateMarquee.map(async (c) => ({ ...c, ...(await dimensioniLogo(c.src)) })),
+);
+
+// Il singolo gruppo deve essere SEMPRE piu' largo del viewport (>=1440px di
+// sicurezza, anche a 320px): ripetizioni calcolate sulla larghezza RESA
+// (h mobile 64px + gap 96px). Con piu' convenzioni attive scenderanno da sole.
+const larghezzaSet = marqueeConDim.reduce((t, c) => t + (c.w * 64) / c.h + 96, 0);
+const nRipetizioni = Math.max(1, Math.ceil(1440 / Math.max(1, larghezzaSet)));
+const filaMarquee = marqueeConDim.length > 0
+  ? Array.from({ length: nRipetizioni }, () => marqueeConDim).flat()
   : [];
-const marqueeRipetute = filaMarquee.slice(convenzionateMarquee.length);
+const marqueeRipetute = filaMarquee.slice(marqueeConDim.length);
+// durata proporzionale alla lunghezza della fila (~5s per logo, rif. 40s/8)
+const durataMarquee = `${filaMarquee.length * 5}s`;
 ---
 <Layout ogImage="/og/og-home.jpg"
   title="El Brenz dle Val del Nos"
@@ -574,27 +614,27 @@ const marqueeRipetute = filaMarquee.slice(convenzionateMarquee.length);
           Con noi nelle valli
         </p>
         <div class="overflow-hidden">
-          <div class="flex w-max eb-marquee__track">
+          <div class="flex w-max eb-marquee__track" style={`animation-duration:${durataMarquee}`}>
             <div class="flex items-center gap-24 md:gap-32 pr-24 md:pr-32">
-              {convenzionateMarquee.map((c) => (
+              {marqueeConDim.map((c) => (
                 <a
                   href="/convenzioni"
                   class="shrink-0 eb-marquee__logo focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C8923E]"
                   aria-label={`${c.nome} — scopri le convenzioni soci`}
                 >
-                  <img src={c.src} alt={`Logo ${c.nome}`} class="h-16 md:h-20 w-auto object-contain" loading="lazy" decoding="async" />
+                  <img src={c.src} alt={`Logo ${c.nome}`} width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
                 </a>
               ))}
               {marqueeRipetute.map((c) => (
                 <a href="/convenzioni" tabindex="-1" aria-hidden="true" class="shrink-0 eb-marquee__logo eb-marquee__rep">
-                  <img src={c.src} alt="" class="h-16 md:h-20 w-auto object-contain" loading="lazy" decoding="async" />
+                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
                 </a>
               ))}
             </div>
             <div class="flex items-center gap-24 md:gap-32 pr-24 md:pr-32 eb-marquee__dup" aria-hidden="true">
               {filaMarquee.map((c) => (
                 <a href="/convenzioni" tabindex="-1" class="shrink-0 eb-marquee__logo">
-                  <img src={c.src} alt="" class="h-16 md:h-20 w-auto object-contain" loading="lazy" decoding="async" />
+                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
                 </a>
               ))}
             </div>
