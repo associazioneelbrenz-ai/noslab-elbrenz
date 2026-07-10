@@ -13,7 +13,6 @@ import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 // go-live pagamenti attivo (build time, vedi src/lib/pagamenti.ts).
 import { PAGAMENTI_LIVE } from '../lib/pagamenti';
 import LightboxEmbed from '../components/LightboxEmbed.astro';
-import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 
 // M2.9 (deroga 8/7/2026): quando Cristian fornisce gli URL dei 3 post
@@ -92,44 +91,8 @@ function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: s
     anno: String(data.getFullYear()),
   };
 }
-
-// M5.0 (10/7/2026) — marquee "Con noi nelle valli": loghi delle convenzioni
-// ATTIVE letti a BUILD TIME dalla vista pubblica (i futuri loghi entrano da
-// soli al rebuild). Per la striscia serve la variante orizzontale: derivata
-// per convenzione di naming (-payoff/-vert -> -orizz, preferendo .webp);
-// se il file ha un nome diverso resta il logo originale. Se 0 attive con
-// logo, la sezione non si renderizza.
-type ConvenzioneMarquee = { nome_attivita: string; logo_path: string | null };
-let convenzionateMarquee: { nome: string; src: string }[] = [];
-try {
-  const sb = createClient(
-    import.meta.env.PUBLIC_SUPABASE_URL as string,
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string,
-    { auth: { persistSession: false } },
-  );
-  const { data } = await sb.from('convenzioni_pubbliche')
-    .select('nome_attivita, logo_path')
-    .order('nome_attivita', { ascending: true });
-  convenzionateMarquee = ((data as ConvenzioneMarquee[]) ?? [])
-    .filter((c) => c.logo_path)
-    .map((c) => ({
-      nome: c.nome_attivita,
-      src: `${import.meta.env.PUBLIC_SUPABASE_URL}/storage/v1/object/public/assets-pubblici/${
-        (c.logo_path as string).replace(/-(payoff|vert)\.(png|webp)$/, '-orizz.webp')
-      }`,
-    }));
-} catch (e) {
-  console.error('[home] marquee convenzioni: lettura fallita:', e);
-  convenzionateMarquee = [];
-}
-// con pochi loghi la fila si ripete per riempire il nastro (loop pieno);
-// le copie di riempimento sono decorative (aria-hidden, non focusabili)
-const filaMarquee = convenzionateMarquee.length > 0
-  ? Array.from({ length: Math.max(1, Math.ceil(8 / convenzionateMarquee.length)) }, () => convenzionateMarquee).flat()
-  : [];
-const marqueeRipetute = filaMarquee.slice(convenzionateMarquee.length);
 ---
-<Layout ogImage="/og/og-home.jpg"
+<Layout
   title="El Brenz dle Val del Nos"
   description="Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Custodiamo la lingua ladino-anaunica e la storia di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo."
 >
@@ -473,59 +436,19 @@ const marqueeRipetute = filaMarquee.slice(convenzionateMarquee.length);
     </div>
   </section>
 
-  {/* M5.0 — card "Convenzioni Soci", redesign 10/7 (autorizzazione puntuale):
-      pannello avorio con bordo oro sottile (NON card bianca flat, NON pannello
-      verde: la card Sostieni verde è adiacente). Illustrazione originale
-      inline: portale ad arco delle valli con tag convenzione appeso (scelta
-      di Cristian al gate, al posto della stretta di mano). CTA e micro-link
-      invariati. */}
+  {/* AGGIUNTA M5.0 v2 — card "Convenzioni Soci" (stile brand su avorio, NON
+      pannello verde). Icona vantaggio + CTA alla pagina + micro-link al form
+      di proposta (/convenzioni#proponi). */}
   <section class="bg-[#F8F1E4] py-14">
     <div class="max-w-2xl mx-auto px-6">
-      <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors py-10 px-8 md:py-12 md:px-12 text-center">
+      <div class="bg-white rounded-lg border-t-2 border-[#C8923E] shadow-sm p-8 md:p-10 text-center">
         <svg
-          viewBox="0 0 120 80" fill="none"
-          class="mx-auto mb-5 w-[84px] md:w-[120px] h-auto"
-          aria-hidden="true" role="presentation"
+          viewBox="0 0 24 24" fill="none" stroke="#C8923E" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round"
+          class="mx-auto mb-4 w-9 h-9" aria-hidden="true"
         >
-          <g stroke="#C8923E" stroke-linecap="round" stroke-linejoin="round">
-            {/* portale avvolto: archi, conci, imposte, corsi di pietra, plinti */}
-            <g stroke-width="2.5">
-              <path d="M28 74 V47 C28 28, 42 15, 60 15 C78 15, 92 28, 92 47 V74" />
-              <path d="M36.5 74 V47 C36.5 33, 46 23.5, 60 23.5 C74 23.5, 83.5 33, 83.5 47 V74" />
-            </g>
-            <g stroke-width="1.7">
-              <path d="M63.3 23.7 L64.5 15.3" />
-              <path d="M68.0 24.9 L70.9 16.9" />
-              <path d="M75.1 29.0 L80.6 22.5" />
-              <path d="M80.4 35.2 L87.7 31.0" />
-              <path d="M56.7 23.7 L55.5 15.3" />
-              <path d="M52.0 24.9 L49.1 16.9" />
-              <path d="M44.9 29.0 L39.4 22.5" />
-              <path d="M39.6 35.2 L32.3 31.0" />
-            </g>
-            <g stroke-width="2">
-              <path d="M25 47 H39.5" />
-              <path d="M80.5 47 H95" />
-            </g>
-            <g stroke-width="1.7">
-              <path d="M28 56 H36.5" />
-              <path d="M28 65 H36.5" />
-              <path d="M83.5 56 H92" />
-              <path d="M83.5 65 H92" />
-            </g>
-            <g stroke-width="2.5">
-              <path d="M23 74 H41.5" />
-              <path d="M78.5 74 H97" />
-            </g>
-          </g>
-          {/* cordino fino al foro del tag convenzione */}
-          <path d="M60 23.5 C60.5 31, 63.5 41, 66.2 47.2" stroke="#1E2E26" stroke-width="1.7" stroke-linecap="round" />
-          <g transform="rotate(9 59 48)">
-            <path d="M51 38.5 L67 38.5 L73.5 48 L67 57.5 L51 57.5 Z" stroke="#1E2E26" stroke-width="2.2" stroke-linejoin="round" />
-            <circle cx="66.5" cy="48" r="1.9" stroke="#1E2E26" stroke-width="1.6" />
-            <path d="M55 45 H62" stroke="#C8923E" stroke-width="2.2" stroke-linecap="round" />
-            <path d="M55 51 H60" stroke="#C8923E" stroke-width="2.2" stroke-linecap="round" />
-          </g>
+          <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+          <line x1="7" y1="7" x2="7.01" y2="7" />
         </svg>
         <h2
           class="text-2xl md:text-3xl m-0 mb-3 text-[#1E2E26]"
@@ -533,7 +456,6 @@ const marqueeRipetute = filaMarquee.slice(convenzionateMarquee.length);
         >
           Convenzioni Soci
         </h2>
-        <div class="w-14 h-[2px] bg-[#C8923E] mx-auto mb-5" aria-hidden="true"></div>
         <p
           class="text-base text-[#1E2E26]/80 leading-relaxed m-0 mb-6"
           style="font-family: 'Source Serif 4', Georgia, serif;"
@@ -551,7 +473,7 @@ const marqueeRipetute = filaMarquee.slice(convenzionateMarquee.length);
         <p class="mt-4 m-0">
           <a
             href="/convenzioni#proponi"
-            class="text-sm text-[#1E2E26]/60 underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
+            class="text-sm text-[#1E2E26]/60 underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]"
             style="font-family: 'Inter', sans-serif;"
           >
             Hai un'attività? Proponi la tua
@@ -560,49 +482,6 @@ const marqueeRipetute = filaMarquee.slice(convenzionateMarquee.length);
       </div>
     </div>
   </section>
-
-  {/* M5.0 (10/7/2026) — striscia "Con noi nelle valli": marquee CSS-only dei
-      loghi delle convenzioni ATTIVE (build time, vista pubblica). Loop =
-      due metà identiche + translateX(-50%); grayscale solo dove esiste
-      l'hover (media query hover:hover in global.css); reduced-motion =
-      statica coi soli loghi unici. I loghi linkano a /convenzioni: la home
-      porta dentro, è la pagina convenzioni che porta fuori. */}
-  {filaMarquee.length > 0 && (
-    <section class="bg-[#F8F1E4] pb-14" aria-label="Le realtà convenzionate">
-      <div class="max-w-5xl mx-auto px-6">
-        <p class="text-center text-[10px] tracking-[0.22em] uppercase text-[#8a6215] mb-6" style="font-family: 'Inter', sans-serif;">
-          Con noi nelle valli
-        </p>
-        <div class="overflow-hidden">
-          <div class="flex w-max eb-marquee__track">
-            <div class="flex items-center gap-24 md:gap-32 pr-24 md:pr-32">
-              {convenzionateMarquee.map((c) => (
-                <a
-                  href="/convenzioni"
-                  class="shrink-0 eb-marquee__logo focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C8923E]"
-                  aria-label={`${c.nome} — scopri le convenzioni soci`}
-                >
-                  <img src={c.src} alt={`Logo ${c.nome}`} class="h-16 md:h-20 w-auto object-contain" loading="lazy" decoding="async" />
-                </a>
-              ))}
-              {marqueeRipetute.map((c) => (
-                <a href="/convenzioni" tabindex="-1" aria-hidden="true" class="shrink-0 eb-marquee__logo eb-marquee__rep">
-                  <img src={c.src} alt="" class="h-16 md:h-20 w-auto object-contain" loading="lazy" decoding="async" />
-                </a>
-              ))}
-            </div>
-            <div class="flex items-center gap-24 md:gap-32 pr-24 md:pr-32 eb-marquee__dup" aria-hidden="true">
-              {filaMarquee.map((c) => (
-                <a href="/convenzioni" tabindex="-1" class="shrink-0 eb-marquee__logo">
-                  <img src={c.src} alt="" class="h-16 md:h-20 w-auto object-contain" loading="lazy" decoding="async" />
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  )}
 
   {/* M2.6-bis / redesign TASK 5 (8/7/2026) — card "Sostieni El Brenz":
       pannello verde su avorio con doppia cornice oro "ex libris", motto,

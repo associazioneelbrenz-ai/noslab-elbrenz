@@ -46,7 +46,7 @@ type Foto = { id: string; w: number; h: number; tw: number; th: number };
 const fotoDi = (slug: string): Foto[] =>
   (manifest as Record<string, Foto[]>)[slug] ?? [];
 ---
-<PaginaIstituzionale
+<PaginaIstituzionale ogImage="/og/og-photogallery.jpg"
   occhiello="Archivio"
   titolo="Photogallery"
   intro="Le immagini delle nostre attività: rievocazioni, commemorazioni e momenti di vita associativa, dalle gallerie del nostro archivio."
