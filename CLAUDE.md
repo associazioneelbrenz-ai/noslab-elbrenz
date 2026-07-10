@@ -12,7 +12,19 @@
 **Founder + dev**: Cristian Bresadola (super_admin, unico developer)
 **Owner Google + GitHub repo**: `associazione.elbrenz@gmail.com` / `associazioneelbrenz-ai`
 
-Sito pubblico in produzione: `https://elbrenz-app.netlify.app` (cutover a `elbrenz.eu` in Sprint 3, 1ª settimana giugno 2026).
+Sito pubblico in produzione: **`https://elbrenz.eu`** (apex, dominio primario; cutover DNS eseguito l'8/7/2026; `www` redirige all'apex; `elbrenz-app.netlify.app` resta come alias Netlify).
+
+---
+
+## AGGIORNAMENTI 9-10 luglio 2026 (leggere: superano regole precedenti)
+
+- **DEPLOY = SEMPRE Claude, in automatico.** Dopo ogni modifica al sito: build → commit → push → `netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2` → smoke test su elbrenz.eu. NON lasciare il deploy a Cristian, NON chiedere. **Il DNS resta solo di Cristian.** (Supera "Deploy e DNS li fa solo Cristian".)
+- **Pagamenti in produzione**: `PAGAMENTI_LIVE=true` (`src/lib/pagamenti.ts:14`) ratificato dopo test E2E live. Quota + donazioni operative. `TESSERE_LIVE=true` (secret). Annunci pubblici li fa Cristian, non Code.
+- **PWA soci = LO STESSO Supabase del sito** (`wacknihvdjxltiqvxtqr`): decisione Cristian 9/7. Supera la regola "PWA = nuovo Supabase". Separati restano repo, progetto Netlify, subdominio (proposta `app.elbrenz.eu`).
+- **Feature Convenzioni (M5.0 v2)** live: tabella `convenzioni` + vista `convenzioni_pubbliche` + edge `convenzioni-proposta` + pagine `/convenzioni` e `/convenzioni/schema-tipo`.
+- **KB Andreas**: sorgente Baratter (Athesia 2017), 30 chunk, via nuova edge `ingest-chunks`. `andreas-chat` resta INTOCCABILE.
+- **Link HMAC nelle email**: SEMPRE nel PATH, mai in query string (`=`+2 hex si corrompe in quoted-printable). Vale per scheda-domanda e convenzioni-proposta.
+- Handoff corrente: **`docs/HANDOFF_2026-07-10.md`**.
 
 ---
 
