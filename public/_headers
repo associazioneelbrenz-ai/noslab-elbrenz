@@ -1,0 +1,13 @@
+# Security headers (AUD-A1, Ondata 1 — 10/7/2026).
+# CSP in modalità REPORT-ONLY come primo passo (brief M4.0): non blocca nulla,
+# le violazioni compaiono nella console del browser; si irrigidisce a
+# Content-Security-Policy solo dopo un periodo di osservazione.
+# HSTS senza `preload` (scelta prudente: preload è semi-permanente).
+
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypal.com; frame-src https://www.paypal.com https://www.instagram.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
