@@ -48,3 +48,4 @@ docs/pagine_wp_contenuti/
 # Test results (rigenerabili)
 ma1_results/
 supabase/.temp/
+.backups/
