@@ -22,7 +22,9 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 
 const cors = {
-  'Access-Control-Allow-Origin': '*',
+  // AUD-B3 (10/7/2026): endpoint solo server-to-server (shared secret) —
+  // nessun client browser legittimo, origine ristretta all'apex.
+  'Access-Control-Allow-Origin': 'https://elbrenz.eu',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-send-email-secret',
 }

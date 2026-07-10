@@ -1,11 +1,24 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const ALLOWED_ORIGINS = [
+  'https://elbrenz-app.netlify.app',
+  'https://elbrenz.eu',
+  'https://www.elbrenz.eu',
+  'http://localhost:4321',  // Astro dev default
+  'http://localhost:3000',  // dev alt
+];
+
+// AUD-B3 (10/7/2026, autorizzazione puntuale): CORS da wildcard a whitelist.
+function corsFor(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 function isValidEmail(e: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && e.length <= 254;
@@ -41,6 +54,7 @@ function emailText(codice: string): string {
 }
 
 Deno.serve(async (req: Request) => {
+  const CORS = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST") return new Response(JSON.stringify({ error: "method_not_allowed" }), { status: 405, headers: CORS });
 

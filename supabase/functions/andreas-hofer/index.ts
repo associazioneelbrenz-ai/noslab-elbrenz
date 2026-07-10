@@ -14,6 +14,14 @@
 //  - OPENAI_API_KEY      (opzionale, abilita embedding semantico)
 // ============================================================
 
+const ALLOWED_ORIGINS = [
+  'https://elbrenz-app.netlify.app',
+  'https://elbrenz.eu',
+  'https://www.elbrenz.eu',
+  'http://localhost:4321',  // Astro dev default
+  'http://localhost:3000',  // dev alt
+];
+
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -69,10 +77,13 @@ Associazione El Brenz APS, fondata il 21 dicembre 2009. Sede a Mezzana, in Val d
 // HTTP handler
 // ------------------------------------------------------------
 Deno.serve(async (req: Request) => {
+  // AUD-B3 (10/7/2026, autorizzazione puntuale): CORS da wildcard a whitelist.
+  const origin = req.headers.get("origin") ?? "";
   const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Vary": "Origin",
   };
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Metodo non consentito" }, 405, corsHeaders);
