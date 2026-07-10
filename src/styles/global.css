@@ -118,3 +118,28 @@
     .wordmark { font-size: 1.6rem; }
   }
 }
+
+/* M5.0 (10/7/2026) — marquee loghi convenzionati in home (CSS-only, no JS).
+   Loop infinito: due metà identiche, translateX(-50%). */
+@keyframes eb-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.eb-marquee__track {
+  animation: eb-marquee-scroll 40s linear infinite;
+}
+/* Grayscale sobrio SOLO dove esiste davvero l'hover (mouse/trackpad):
+   sui dispositivi touch i loghi restano a colori pieni. Media query
+   sulla capacità (hover: hover), NON sulla larghezza dello schermo. */
+@media (hover: hover) {
+  .eb-marquee__logo img { filter: grayscale(40%); transition: filter 0.3s ease; }
+  .eb-marquee__logo:hover img,
+  .eb-marquee__logo:focus-visible img { filter: none; }
+}
+/* Reduced motion: striscia statica e centrata, solo i loghi unici
+   (le copie di riempimento e la metà duplicata spariscono). */
+@media (prefers-reduced-motion: reduce) {
+  .eb-marquee__track { animation: none; width: 100%; }
+  .eb-marquee__track > div:first-child { flex-wrap: wrap; justify-content: center; width: 100%; padding-right: 0; }
+  .eb-marquee__rep, .eb-marquee__dup { display: none; }
+}
