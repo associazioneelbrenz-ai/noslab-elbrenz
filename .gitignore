@@ -49,3 +49,4 @@ docs/pagine_wp_contenuti/
 ma1_results/
 supabase/.temp/
 .backups/
+*.bak
