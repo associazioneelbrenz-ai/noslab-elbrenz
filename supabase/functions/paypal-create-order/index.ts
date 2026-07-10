@@ -23,6 +23,11 @@ import {
 
 const ANNO_QUOTA = 2026;
 const IMPORTO_QUOTA = '20.00'; // deliberato dal Direttivo — MAI dal client
+// Integrazione quota 2026 (10 → 20 €) per i 19 soci storici che hanno già
+// versato 10 € sui registri. Importo FISSATO QUI, mai dal client; il socio
+// è identificato dal codice tessera (HMAC non enumerabile) → domanda_id
+// agganciata già alla creazione (riconciliazione automatica nel webhook).
+const IMPORTO_INTEGRAZIONE = '10.00';
 const DONAZIONE_MIN = 1.0;
 const DONAZIONE_MAX = 500.0;
 
@@ -47,12 +52,40 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'JSON non valido' }, 400, cors);
   }
 
-  const tipo = body.tipo === 'donazione' ? 'donazione' : 'quota';
+  const tipo = body.tipo === 'donazione' ? 'donazione'
+    : body.tipo === 'integrazione' ? 'integrazione'
+    : 'quota';
   const anonimo = tipo === 'donazione' && body.anonimo === true;
+
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  );
 
   let importo: string;
   let descrizione: string;
-  if (tipo === 'quota') {
+  let domandaId: string | null = null;
+  let nomeIntegrazione: string | null = null;
+  let emailIntegrazione: string | null = null;
+  if (tipo === 'integrazione') {
+    const codice = String(body.codice ?? '');
+    if (!/^\d{1,6}-\d{4}-[0-9a-f]{24}$/.test(codice)) {
+      return jsonResponse({ error: 'Codice tessera non valido.' }, 400, cors);
+    }
+    const { data: socio } = await supabase.from('domande_tesseramento')
+      .select('id, nome, email, numero_tessera')
+      .eq('codice_tessera', codice)
+      .eq('stato', 'approvata')
+      .maybeSingle();
+    if (!socio) {
+      return jsonResponse({ error: 'Tessera non trovata.' }, 400, cors);
+    }
+    importo = IMPORTO_INTEGRAZIONE;
+    descrizione = `Integrazione quota ${ANNO_QUOTA} – tessera n. ${socio.numero_tessera}`;
+    domandaId = socio.id;
+    nomeIntegrazione = socio.nome;
+    emailIntegrazione = socio.email;
+  } else if (tipo === 'quota') {
     importo = IMPORTO_QUOTA;
     descrizione = `Quota sociale ${ANNO_QUOTA} – El Brenz`;
   } else {
@@ -75,19 +108,16 @@ Deno.serve(async (req: Request) => {
     descrizione = 'Erogazione liberale – El Brenz';
   }
 
-  const nome = anonimo ? null : String(body.nome ?? '').trim().slice(0, 100) || null;
-  const cognome = anonimo ? null : String(body.cognome ?? '').trim().slice(0, 100) || null;
-  const email = anonimo ? null : String(body.email ?? '').trim().slice(0, 200) || null;
-
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  );
+  const nome = tipo === 'integrazione' ? nomeIntegrazione
+    : anonimo ? null : String(body.nome ?? '').trim().slice(0, 100) || null;
+  const cognome = anonimo || tipo === 'integrazione' ? null : String(body.cognome ?? '').trim().slice(0, 100) || null;
+  const email = tipo === 'integrazione' ? emailIntegrazione
+    : anonimo ? null : String(body.email ?? '').trim().slice(0, 200) || null;
 
   // riga a DB prima dell'ordine: custom_id PayPal = id riga
   const { data: riga, error: dbErr } = await supabase
     .from('pagamenti_tesseramento')
-    .insert({ tipo, anonimo, nome, cognome, email, anno: ANNO_QUOTA, importo, stato: 'creato' })
+    .insert({ tipo, anonimo, nome, cognome, email, anno: ANNO_QUOTA, importo, stato: 'creato', domanda_id: domandaId })
     .select('id')
     .single();
   if (dbErr || !riga) {

@@ -95,7 +95,9 @@ async function notificaCompletato(
   }
   const metodoLabel = riga.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico';
   const chi = riga.anonimo ? 'Donatore anonimo' : (riga.nome || riga.email || 'sconosciuto');
-  const cosa = riga.tipo === 'quota' ? 'Quota sociale 2026' : 'Donazione';
+  const cosa = riga.tipo === 'quota' ? 'Quota sociale 2026'
+    : riga.tipo === 'integrazione' ? 'Integrazione quota 2026 (10 €)'
+    : 'Donazione';
   let aggancio = '';
   if (riga.tipo === 'quota') {
     if (domandaCreata) {
