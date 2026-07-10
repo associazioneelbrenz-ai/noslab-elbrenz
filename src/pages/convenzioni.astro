@@ -26,7 +26,13 @@ type ConvenzionePubblica = {
   beneficio: string;
   dettagli: string | null;
   url: string | null;
+  logo_path: string | null;
 };
+
+// URL pubblica del logo su Storage (bucket assets-pubblici); i loghi sono
+// brand asset di terzi: si usano intatti, nessuna rielaborazione.
+const logoUrl = (path: string) =>
+  `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/${path}`;
 
 // Etichette e ordine di visualizzazione delle categorie.
 const CATEGORIE: { key: string; label: string }[] = [
@@ -46,7 +52,7 @@ try {
   });
   const { data } = await supabase
     .from('convenzioni_pubbliche')
-    .select('id, nome_attivita, categoria, localita, beneficio, dettagli, url')
+    .select('id, nome_attivita, categoria, localita, beneficio, dettagli, url, logo_path')
     .order('nome_attivita', { ascending: true });
   attive = (data as ConvenzionePubblica[]) ?? [];
 } catch (e) {
@@ -122,13 +128,40 @@ const perCategoria = CATEGORIE
             </h2>
             <div class="grid gap-5 md:grid-cols-2">
               {gruppo.items.map((c) => (
-                <article class="bg-white rounded-lg p-6 shadow-sm border-t-2 border-[#C8923E]">
+                <article class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors p-6">
+                  {/* area logo ad altezza fissa: regge proporzioni molto diverse
+                      (NosLab largo, Punto Riflesso verticale), logo centrato */}
+                  <div class="h-[88px] md:h-[112px] flex items-center justify-center mb-4">
+                    {c.logo_path ? (
+                      <img
+                        src={logoUrl(c.logo_path)}
+                        alt={`Logo ${c.nome_attivita}`}
+                        class="max-h-[72px] md:max-h-[96px] max-w-full object-contain"
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span
+                        class="w-16 h-16 rounded-full bg-[#C8923E] text-[#1E2E26] flex items-center justify-center text-3xl"
+                        style="font-family: 'Playfair Display', serif;"
+                        aria-hidden="true"
+                      >
+                        {c.nome_attivita.charAt(0)}
+                      </span>
+                    )}
+                  </div>
                   <h3
                     class="text-xl m-0 mb-1 text-[#1E2E26]"
                     style="font-family: 'Playfair Display', serif; font-weight: 500;"
                   >
                     {c.nome_attivita}
                   </h3>
+                  <span
+                    class="inline-block text-[10px] uppercase tracking-[0.14em] text-[#8a6215] bg-[#C8923E]/15 rounded-full px-3 py-1 mb-2"
+                    style="font-family: 'Inter', sans-serif;"
+                  >
+                    {LABEL[c.categoria] ?? c.categoria}
+                  </span>
                   {c.localita && (
                     <p class="text-xs uppercase tracking-wider text-[#1E2E26]/50 m-0 mb-3" style="font-family: 'Inter', sans-serif;">
                       {c.localita}
