@@ -18,6 +18,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { paypalAccessToken, paypalApiBase } from '../_shared/paypal.ts';
 import { firmaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
+import { grazieIntegrazioneHtml, avvisoCondivisa } from '../_shared/integrazione.ts';
 
 const STATI: Record<string, string> = {
   'PAYMENT.CAPTURE.COMPLETED': 'completato',
@@ -141,6 +142,33 @@ async function notificaCompletato(
         .update({ notificato: true, updated_at: new Date().toISOString() })
         .eq('id', riga.id);
       console.log('[paypal-webhook] notifica inviata per', riga.id);
+
+      // Ringraziamento al socio per l'INTEGRAZIONE completata (11/7): dentro
+      // il guard `notificato` (idempotente sui replay). Link alla tessera
+      // ESISTENTE: nessuna nuova tessera, nessun QR.
+      if (riga.tipo === 'integrazione' && riga.domanda_id) {
+        const { data: dom } = await supabase.from('domande_tesseramento')
+          .select('nome, email, numero_tessera, codice_tessera, anno')
+          .eq('id', riga.domanda_id).maybeSingle();
+        if (dom?.codice_tessera && dom.email) {
+          const grazieHtml = grazieIntegrazioneHtml({
+            nome: dom.nome,
+            anno: dom.anno ?? 2026,
+            codiceTessera: dom.codice_tessera,
+            avviso: avvisoCondivisa(dom.numero_tessera, dom.nome),
+          });
+          await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },
+            body: JSON.stringify({
+              to: dom.email,
+              subject: `Grazie ${dom.nome}: la tua quota ${dom.anno ?? 2026} è completa · El Brenz`,
+              html: grazieHtml,
+              tags: [{ name: 'source', value: 'integrazione-grazie' }],
+            }),
+          }).catch((e) => console.error('[paypal-webhook] grazie integrazione fallito:', e));
+        }
+      }
     } else {
       console.error('[paypal-webhook] send-email fallita:', resp.status);
     }

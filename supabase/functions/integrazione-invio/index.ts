@@ -11,6 +11,7 @@
 // condivise n.13/n.14), avviso?: string (riga extra) }.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { grazieIntegrazioneHtml, avvisoCondivisa } from '../_shared/integrazione.ts';
 
 const ANNO = 2026;
 const SITO = 'https://elbrenz.eu';
@@ -47,6 +48,7 @@ Deno.serve(async (req: Request) => {
   }
   const numero = Number(body.numero);
   if (!Number.isInteger(numero) || numero < 1) return json({ error: 'numero non valido' }, 400);
+  const modalitaGrazie = (body as Record<string, unknown>).ringraziamento === true;
   const toOverride = typeof body.to === 'string' && body.to.includes('@') ? body.to.trim() : null;
   const avviso = typeof body.avviso === 'string' ? body.avviso.trim().slice(0, 300) : '';
 
@@ -61,6 +63,30 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
   if (!socio) return json({ error: `Nessun socio approvato con tessera n. ${numero}` }, 404);
   if (!socio.codice_tessera) return json({ error: 'Codice tessera mancante: inviare prima la tessera' }, 409);
+
+  // Collaudo retroattivo del ringraziamento (11/7): stesso template del
+  // webhook, inviato a mano al singolo socio (usato per la n.4 di Cristian).
+  if (modalitaGrazie) {
+    const grazieHtml = grazieIntegrazioneHtml({
+      nome: socio.nome,
+      anno: ANNO,
+      codiceTessera: socio.codice_tessera,
+      avviso: avvisoCondivisa(socio.numero_tessera, socio.nome),
+    });
+    const dest = toOverride ?? socio.email;
+    const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sendSecret },
+      body: JSON.stringify({
+        to: dest,
+        subject: `Grazie ${socio.nome}: la tua quota ${ANNO} è completa · El Brenz`,
+        html: grazieHtml,
+        tags: [{ name: 'source', value: 'integrazione-grazie' }],
+      }),
+    });
+    if (!r.ok) return json({ ok: false, numero, error: `send-email ${r.status}` }, 502);
+    return json({ ok: true, numero, ringraziamento: true, inviato_a: dest });
+  }
 
   const urlIntegrazione = `${SITO}/integrazione/${socio.codice_tessera}`;
   const html = `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#F8F1E4;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
