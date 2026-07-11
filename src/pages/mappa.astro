@@ -169,7 +169,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       </div>
 
       <p class="text-xs text-[#1E2E26]/50 mt-8 m-0" style="font-family: 'Inter', sans-serif;">
-        Cartografia: © Provincia Autonoma di Trento — SIAT (CTP 2020, Ortofoto 2015), licenza CC BY ·
+        Cartografia: © Provincia Autonoma di Trento · SIAT (CTP 2020, Ortofoto 2015), licenza CC BY ·
         in caso di indisponibilità del servizio provinciale: © OpenStreetMap contributors ·
         <a href="/crediti-e-licenze" class="underline">crediti e licenze</a>
       </p>
@@ -183,7 +183,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   // Mappa delle Valli — init SOLO su gesto (import dinamico di Leaflet).
   const BBOX_VALLI: [[number, number], [number, number]] = [[46.17, 10.48], [46.48, 11.18]];
   const WMS_BASE = 'https://siat.provincia.tn.it/geoserver/stem';
-  const ATTR_PAT = 'Cartografia © <a href="https://siat.provincia.tn.it">Provincia Autonoma di Trento — SIAT</a> (CC BY)';
+  const ATTR_PAT = 'Cartografia © <a href="https://siat.provincia.tn.it">Provincia Autonoma di Trento · SIAT</a> (CC BY)';
   const ATTR_OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
   const dati = JSON.parse(document.getElementById('mappa-dati')?.textContent ?? '{}');

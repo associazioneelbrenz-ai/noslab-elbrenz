@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
     <p style="color:#1E2E26;font-size:15px;line-height:1.6;margin:12px 0 0;">quest'anno la <em>nosa Sociazion</em> è cresciuta: la piattaforma digitale su elbrenz.eu, la tessera con QR e verifica in tempo reale, le <a href="${SITO}/convenzioni" style="color:#8a6215;">convenzioni per i soci</a> e l'assistente storico Andreas. Per coprire i costi di queste nuove attività il Consiglio Direttivo ha portato la quota annuale da 10 a <strong>20 €</strong>.</p>
     <p style="color:#1E2E26;font-size:15px;line-height:1.6;margin:12px 0 0;">Hai già versato 10 € per il ${ANNO}: ti chiediamo di <strong>integrare i 10 € mancanti</strong>. Bastano due minuti, in modo sicuro con PayPal o carta:</p>
     <p style="text-align:center;margin:26px 0;">
-      <a href="${urlIntegrazione}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:14px 30px;text-decoration:none;font-weight:600;font-size:15px;border-radius:4px;">Integra 10 € — tessera n. ${numero}</a>
+      <a href="${urlIntegrazione}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:14px 30px;text-decoration:none;font-weight:600;font-size:15px;border-radius:4px;">Integra 10 € (tessera n. ${numero})</a>
     </p>
     <p style="color:#666;font-size:13px;line-height:1.6;margin:0;">Preferisci il bonifico o hai domande? Rispondi a questa email o scrivi a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>. Grazie di cuore per il sostegno alla <em>nosa storia</em>.</p>
     ${avviso ? `<p style="color:#8a6215;font-size:13px;margin:14px 0 0;background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;">${esc(avviso)}</p>` : ''}
@@ -91,7 +91,7 @@ Deno.serve(async (req: Request) => {
       headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sendSecret },
       body: JSON.stringify({
         to: destinatario,
-        subject: `Quota ${ANNO}: integrazione di 10 € — El Brenz (tessera n. ${numero})`,
+        subject: `Quota ${ANNO}: integrazione di 10 € · El Brenz (tessera n. ${numero})`,
         html,
         tags: [{ name: 'source', value: 'integrazione-quota' }],
       }),

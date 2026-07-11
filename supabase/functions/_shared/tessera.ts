@@ -112,7 +112,7 @@ export function tesseraEmailHtml(p: {
       <div style="height:6px;background:#1E9C48;"></div>
     </div>
     <p style="color:#1E2E26;font-size:15px;margin:22px 8px 0;">${p.intro}</p>
-    <p style="color:#1E2E26;font-size:14px;margin:12px 8px 0;">📲 <a href="${p.urlVerifica}" style="color:#8a6215;font-weight:600;">Scarica la versione per il telefono</a> — dalla pagina della tessera puoi salvarla in galleria o aggiungerla alla schermata Home.</p>
+    <p style="color:#1E2E26;font-size:14px;margin:12px 8px 0;">📲 <a href="${p.urlVerifica}" style="color:#8a6215;font-weight:600;">Scarica la versione per il telefono</a>: dalla pagina della tessera puoi salvarla in galleria o aggiungerla alla schermata Home.</p>
     ${p.avviso ? `<p style="color:#8a6215;font-size:13px;margin:12px 8px 0;background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;">${esc(p.avviso)}</p>` : ''}
     <p style="color:#999;font-size:11px;margin:16px 8px 0;">Associazione El Brenz · Via Trento 40, 38027 Malè (TN) · info@elbrenz.eu</p>
   </div></body></html>`;

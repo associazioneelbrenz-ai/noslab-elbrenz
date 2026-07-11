@@ -189,7 +189,7 @@ Deno.serve(async (req: Request) => {
             headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },
             body: JSON.stringify({
               to: socio.email,
-              subject: `Benvenuto in El Brenz — tessera n. ${numero} (${ANNO})`,
+              subject: `Benvenuto in El Brenz: tessera n. ${numero} (${ANNO})`,
               html: tesseraHtml,
               tags: [{ name: 'source', value: 'tessera' }],
             }),

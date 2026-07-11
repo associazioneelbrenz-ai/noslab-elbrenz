@@ -206,17 +206,17 @@ Deno.serve(async (req: Request) => {
   const ccTempo = categoria === 'tempo_competenze' ? (Deno.env.get('SPORTELLO_CC_TEMPO_COMPETENZE') ?? '') : '';
 
   await inviaEmail(RECIPIENT,
-    `[SPORTELLO][${categoria}] ${codice} — ${nome}`,
+    `[SPORTELLO][${categoria}] ${codice} · ${nome}`,
     `<!DOCTYPE html><html><body style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;">
       <div style="background:#fff;padding:32px;border-radius:8px;border-top:4px solid #C8923E;">
-        <h1 style="color:#1E2E26;font-size:19px;margin:0 0 4px;">Sportello El Brenz — nuova pratica</h1>
+        <h1 style="color:#1E2E26;font-size:19px;margin:0 0 4px;">Sportello El Brenz: nuova pratica</h1>
         <p style="color:#666;font-size:13px;margin:0 0 20px;">${esc(codice)} · ${esc(ETICHETTE[categoria])}</p>
         <table style="width:100%;border-collapse:collapse;font-size:14px;">${tabella}</table>
         <p style="color:#999;font-size:11px;margin-top:16px;">Rispondi direttamente a questa email per rispondere al mittente. Gli allegati sono nel bucket privato contatti-staging/${esc(riga.id)}.</p>
       </div></body></html>`,
     email);
   if (ccTempo) {
-    await inviaEmail(ccTempo, `[SPORTELLO][tempo_competenze] ${codice} — ${nome}`,
+    await inviaEmail(ccTempo, `[SPORTELLO][tempo_competenze] ${codice} · ${nome}`,
       `<p>Copia per conoscenza della pratica ${esc(codice)} (volontariato/competenze). Dettagli nella casella info@elbrenz.eu.</p>`);
   }
 
@@ -224,7 +224,7 @@ Deno.serve(async (req: Request) => {
     ? `<p style="color:#1E2E26;font-size:15px;line-height:1.6;margin:12px 0 0;background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;"><strong>I tuoi originali ti verranno restituiti dopo la digitalizzazione.</strong></p>`
     : '';
   await inviaEmail(email,
-    `Sportello El Brenz — pratica ${codice} ricevuta`,
+    `Sportello El Brenz: pratica ${codice} ricevuta`,
     `<!DOCTYPE html><html><body style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;">
       <div style="background:#fff;padding:32px;border-radius:8px;border-top:4px solid #C8923E;">
         <table role="presentation" style="border-collapse:collapse;"><tr>
