@@ -3,6 +3,13 @@
 # pagine WP dalle old_url estratte (docs/pagine_wp_contenuti, locale).
 # Netlify: prima regola che matcha vince; i file reali hanno precedenza.
 
+# ---- URL brevi PERMANENTI per materiali stampati (11/7/2026) ----
+# /socio = URL su vetrofanie/adesivi/locandine: MAI rimuovere o rinominare.
+# Se la pagina di destinazione cambia, si aggiorna QUI il target.
+# Netlify inoltra la querystring (utm_*) di default se il target non ne ha una.
+/socio  /tesseramento  301
+/socio/  /tesseramento  301
+
 # ---- Pagine WP → nuove rotte ----
 /lassociazione-2/  /chi-siamo  301
 /lassociazione-2  /chi-siamo  301
