@@ -1,0 +1,64 @@
+---
+/**
+ * /crediti-e-licenze — attribuzioni di immagini, cartografia, font e
+ * software di terze parti usati dal sito (M-F1 STEP 3; chiude il TODO
+ * aperto con la filigrana Aquila del 9/7). Pagina fattuale, non legale.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+---
+
+<PaginaIstituzionale
+  occhiello="Il sito"
+  titolo="Crediti e licenze"
+  intro="Le fonti, le immagini e gli strumenti di terzi che il sito di El Brenz utilizza, con le rispettive licenze. L'attribuzione impeccabile fa parte del nostro lavoro di associazione storica."
+  metaDescription="Crediti e licenze del sito elbrenz.eu: cartografia della Provincia Autonoma di Trento, immagini di pubblico dominio, font e software open source."
+>
+  <div class="space-y-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+    <section>
+      <h2 class="text-sm uppercase tracking-wider text-[#8a6215] mb-3" style="font-family: 'Inter', sans-serif;">Cartografia</h2>
+      <ul class="list-disc list-inside space-y-2 text-[#1E2E26]/85 m-0 p-0">
+        <li><strong>Mappa delle Valli</strong>: cartografia © <a href="https://siat.provincia.tn.it" class="text-[#8a6215] underline" rel="noopener" target="_blank">Provincia Autonoma di Trento — SIAT</a> (Carta Tecnica Provinciale 2020, Ortofoto 2015), servizi WMS pubblici, licenza <a href="https://creativecommons.org/licenses/by/4.0/deed.it" class="text-[#8a6215] underline" rel="noopener" target="_blank">CC BY</a>. Le mappe si caricano solo su richiesta dell'utente; il servizio provinciale non imposta cookie.</li>
+        <li>In caso di indisponibilità del servizio provinciale la mappa usa le tile standard di <strong>OpenStreetMap</strong>: © <a href="https://www.openstreetmap.org/copyright" class="text-[#8a6215] underline" rel="noopener" target="_blank">OpenStreetMap</a> contributors, licenza ODbL.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-sm uppercase tracking-wider text-[#8a6215] mb-3" style="font-family: 'Inter', sans-serif;">Immagini</h2>
+      <ul class="list-disc list-inside space-y-2 text-[#1E2E26]/85 m-0 p-0">
+        <li><strong>Aquila Tirolensis</strong> (filigrana della home e della tessera socio): incisione di Matthias Burgklechner, XVII secolo, opera di <strong>pubblico dominio</strong>; elaborazione grafica El Brenz.</li>
+        <li>I <strong>loghi delle attività convenzionate</strong> appartengono ai rispettivi titolari e sono pubblicati con il loro consenso, senza alcuna alterazione.</li>
+        <li>Le fotografie senza altra indicazione sono dell'archivio dell'Associazione El Brenz.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="text-sm uppercase tracking-wider text-[#8a6215] mb-3" style="font-family: 'Inter', sans-serif;">Caratteri tipografici</h2>
+      <p class="text-[#1E2E26]/85 m-0">
+        Playfair Display, Source Serif 4, Inter e Cormorant Garamond sono serviti
+        direttamente da questo sito (nessuna chiamata a server esterni) con licenze
+        libere <a href="https://openfontlicense.org" class="text-[#8a6215] underline" rel="noopener" target="_blank">SIL Open Font License</a>.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-sm uppercase tracking-wider text-[#8a6215] mb-3" style="font-family: 'Inter', sans-serif;">Software</h2>
+      <p class="text-[#1E2E26]/85 m-0">
+        Il sito è costruito con software open source, fra cui
+        <a href="https://astro.build" class="text-[#8a6215] underline" rel="noopener" target="_blank">Astro</a> (MIT),
+        <a href="https://tailwindcss.com" class="text-[#8a6215] underline" rel="noopener" target="_blank">Tailwind CSS</a> (MIT) e
+        <a href="https://leafletjs.com" class="text-[#8a6215] underline" rel="noopener" target="_blank">Leaflet</a> (BSD-2-Clause).
+        Un grazie di cuore alle rispettive comunità.
+      </p>
+    </section>
+
+    <section>
+      <h2 class="text-sm uppercase tracking-wider text-[#8a6215] mb-3" style="font-family: 'Inter', sans-serif;">Contenuti in arrivo</h2>
+      <p class="text-[#1E2E26]/85 m-0">
+        Il layer del <strong>catasto asburgico (1861)</strong> sulla Mappa delle Valli sarà
+        un'elaborazione El Brenz su mappe d'impianto del catasto asburgico,
+        © Provincia Autonoma di Trento — Servizio Catasto, licenza CC BY.
+      </p>
+    </section>
+  </div>
+</PaginaIstituzionale>
