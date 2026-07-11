@@ -24,11 +24,13 @@ interface Props {
   metaDescription?: string;
   /** OG image della pagina (path assoluto, es. "/og/og-dona.jpg"). */
   ogImage?: string;
+  /** Titolo meta/<title> alternativo (default: `${titolo} — El Brenz`). */
+  metaTitle?: string;
 }
 
 const { occhiello, titolo, intro, metaDescription } = Astro.props;
 ---
-<Layout title={`${titolo} — El Brenz`} description={metaDescription ?? intro} ogImage={Astro.props.ogImage}>
+<Layout title={Astro.props.metaTitle ?? `${titolo} — El Brenz`} description={metaDescription ?? intro} ogImage={Astro.props.ogImage}>
   <header class="bg-[#1E2E26] text-[#F5EEDD]">
     <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
       <p
