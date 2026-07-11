@@ -30,16 +30,16 @@ const SITO = 'https://elbrenz.eu';
 const LOGO_URL = `${SITO}/logo-eb-footer@2x.png`;
 
 // whitelist categorie e campi payload ammessi per ciascuna
-const CATEGORIE: Record<string, { tipo: 'richiesta' | 'offerta'; campi: string[]; upload?: boolean }> = {
+const CATEGORIE: Record<string, { tipo: 'richiesta' | 'offerta'; campi: string[]; upload?: boolean; archivio?: boolean }> = {
   ricerca_storica:  { tipo: 'richiesta', campi: ['localita', 'cognome_maso', 'periodo', 'cosa_sai_gia'] },
   pubblicazioni:    { tipo: 'richiesta', campi: ['titolo', 'copie', 'consegna'] },
   scuole_visite:    { tipo: 'richiesta', campi: ['data', 'tipo_pubblico', 'tema'] },
   stampa_media:     { tipo: 'richiesta', campi: ['testata'] },
   altro:            { tipo: 'richiesta', campi: [] },
-  documenti_foto:   { tipo: 'offerta', campi: ['periodo', 'luogo', 'modalita'], upload: true },
-  oggetti:          { tipo: 'offerta', campi: ['descrizione'], upload: true },
-  memorie_racconti: { tipo: 'offerta', campi: [] },
-  parole_proverbi:  { tipo: 'offerta', campi: ['parola', 'significato', 'paese_detto'] },
+  documenti_foto:   { tipo: 'offerta', campi: ['periodo', 'luogo', 'modalita', 'consenso_custode'], upload: true, archivio: true },
+  oggetti:          { tipo: 'offerta', campi: ['descrizione', 'consenso_custode'], upload: true, archivio: true },
+  memorie_racconti: { tipo: 'offerta', campi: ['consenso_custode'], archivio: true },
+  parole_proverbi:  { tipo: 'offerta', campi: ['parola', 'significato', 'paese_detto', 'consenso_custode'], archivio: true },
   tempo_competenze: { tipo: 'offerta', campi: ['competenze', 'disponibilita'] },
 };
 const ETICHETTE: Record<string, string> = {
@@ -138,6 +138,12 @@ Deno.serve(async (req: Request) => {
   if (!messaggio && Object.keys(payload).length === 0) {
     return json({ error: 'Raccontaci qualcosa: il messaggio è vuoto.' }, 400, c);
   }
+  // Custodi della Memoria: nelle categorie d'archivio la scelta è OBBLIGATORIA
+  if (def.archivio) {
+    if (payload.consenso_custode !== 'nome' && payload.consenso_custode !== 'anonimo') {
+      return json({ error: 'Scegli come preferisci essere ringraziato (nome o anonimato).' }, 400, c);
+    }
+  }
 
   // allegati: solo per le categorie con upload
   const files = fd.getAll('allegati').filter((f): f is File => f instanceof File && f.size > 0);
@@ -194,6 +200,11 @@ Deno.serve(async (req: Request) => {
   const tabella = righe.map(([k, v]) =>
     `<tr><td style="padding:7px 0;border-bottom:1px solid #eee;color:#8a6215;width:140px;vertical-align:top;">${esc(k)}</td><td style="padding:7px 0;border-bottom:1px solid #eee;color:#1E2E26;">${esc(v)}</td></tr>`).join('');
 
+  // PREDISPOSTO, NON ATTIVO (decisione Cristian in sospeso): copia della
+  // notifica tempo_competenze a Diego — si attiva creando il secret
+  // SPORTELLO_CC_TEMPO_COMPETENZE con l'email di destinazione.
+  const ccTempo = categoria === 'tempo_competenze' ? (Deno.env.get('SPORTELLO_CC_TEMPO_COMPETENZE') ?? '') : '';
+
   await inviaEmail(RECIPIENT,
     `[SPORTELLO][${categoria}] ${codice} — ${nome}`,
     `<!DOCTYPE html><html><body style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;">
@@ -204,6 +215,10 @@ Deno.serve(async (req: Request) => {
         <p style="color:#999;font-size:11px;margin-top:16px;">Rispondi direttamente a questa email per rispondere al mittente. Gli allegati sono nel bucket privato contatti-staging/${esc(riga.id)}.</p>
       </div></body></html>`,
     email);
+  if (ccTempo) {
+    await inviaEmail(ccTempo, `[SPORTELLO][tempo_competenze] ${codice} — ${nome}`,
+      `<p>Copia per conoscenza della pratica ${esc(codice)} (volontariato/competenze). Dettagli nella casella info@elbrenz.eu.</p>`);
+  }
 
   const notaPrestito = categoria === 'documenti_foto' && payload.modalita === 'prestito_digitalizzazione'
     ? `<p style="color:#1E2E26;font-size:15px;line-height:1.6;margin:12px 0 0;background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;"><strong>I tuoi originali ti verranno restituiti dopo la digitalizzazione.</strong></p>`

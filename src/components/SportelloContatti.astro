@@ -13,6 +13,9 @@
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
 const ENDPOINT = `${SUPABASE_URL}/functions/v1/contatti-submit`;
+const HERO_BASE = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/sportello`;
+// categorie che alimentano l'archivio: radio "Custodi della Memoria" obbligatorio
+const CATEGORIE_ARCHIVIO = ['documenti_foto', 'oggetti', 'memorie_racconti', 'parole_proverbi'];
 
 type Campo = { nome: string; label: string; tipo?: 'text' | 'textarea' | 'select' | 'date'; opzioni?: [string, string][]; placeholder?: string };
 type Cat = { chiave: string; label: string; campi: Campo[]; upload?: boolean; nota?: string };
@@ -64,15 +67,33 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
 ---
 
 <section id="sportello" class="mt-14 scroll-mt-20">
-  <div class="text-center mb-8">
-    <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">Sportello El Brenz</p>
-    <h2 class="text-2xl md:text-3xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
-      Porta la tua <em class="text-[#C8923E]">Storia</em>
-    </h2>
-    <div class="w-14 h-[2px] bg-[#C8923E] mx-auto mb-3" aria-hidden="true"></div>
-    <p class="text-[#1E2E26]/70 italic m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
-      Ogni famiglia custodisce un pezzo della <em>nosa storia</em>. Anche la tua.
-    </p>
+  {/* HERO fotografico (file forniti da Cristian, generati con AI su direzione
+      creativa dell'Associazione — credito in /crediti-e-licenze). Above the
+      fold della sezione: eager. object-position center 60%: protagonisti
+      foto e quaderno, non il soffitto. */}
+  <div class="relative rounded-md overflow-hidden mb-10 h-[200px] md:h-[320px]" id="porta">
+    <picture>
+      <source media="(max-width: 767px)" srcset={`${HERO_BASE}/hero-mobile.webp`} type="image/webp" />
+      <source srcset={`${HERO_BASE}/hero.webp`} type="image/webp" />
+      <img
+        src={`${HERO_BASE}/hero.jpg`}
+        alt="Tavolo di una stua alpina con fotografie d'epoca, quaderno e lente d'ingrandimento"
+        class="absolute inset-0 w-full h-full object-cover object-[center_60%]"
+        width="1920" height="1056"
+        loading="eager"
+        decoding="async"
+      />
+    </picture>
+    <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26]/75 via-[#1E2E26]/30 to-[#1E2E26]/20" aria-hidden="true"></div>
+    <div class="absolute inset-x-0 bottom-0 p-6 md:p-8 text-center">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">Sportello El Brenz</p>
+      <h2 class="text-2xl md:text-4xl text-[#F5EEDD] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Porta la tua <em class="text-[#C8923E]">Storia</em>
+      </h2>
+      <p class="text-[#F5EEDD]/85 italic m-0 text-sm md:text-base" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Ogni famiglia custodisce un pezzo della <em>nosa storia</em>. Anche la tua.
+      </p>
+    </div>
   </div>
 
   {/* bivio a due card */}
@@ -123,6 +144,19 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
             )}
           </div>
         ))}
+        {CATEGORIE_ARCHIVIO.includes(cat.chiave) && (
+          <fieldset class="border border-[#C8923E]/40 rounded-md px-4 py-3 m-0">
+            <legend class="text-sm text-[#1E2E26]/80 px-1">Se il tuo contributo entrerà nell'archivio, come preferisci essere ringraziato? *</legend>
+            <label class="flex items-start gap-2 text-sm text-[#1E2E26]/85 mb-2">
+              <input type="radio" name={`custode_${cat.chiave}`} value="nome" required class="mt-1 accent-[#C8923E]" />
+              <span>Con il mio nome tra i <a href="/custodi-della-memoria" target="_blank" class="text-[#8a6215] underline">Custodi della Memoria</a></span>
+            </label>
+            <label class="flex items-start gap-2 text-sm text-[#1E2E26]/85">
+              <input type="radio" name={`custode_${cat.chiave}`} value="anonimo" required class="mt-1 accent-[#C8923E]" />
+              <span>Preferisco restare anonimo/a</span>
+            </label>
+          </fieldset>
+        )}
         {cat.upload && (
           <div>
             <label for={`sp-${cat.chiave}-allegati`} class="block text-sm mb-1 text-[#1E2E26]/80">Fotografie o scansioni (fino a 3 file, 5 MB l'uno — JPG, PNG, WebP o PDF)</label>
@@ -195,6 +229,13 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
       feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    // arrivo con #porta (card home, pagina Custodi): apre subito il percorso offerta
+    if (location.hash === '#porta') {
+      requestAnimationFrame(() => {
+        (document.querySelector('.sportello-bivio[data-percorso=offerta]') as HTMLButtonElement | null)?.click();
+      });
+    }
+
     bivio.forEach((b) => b.addEventListener('click', () => {
       percorso = b.dataset.percorso!;
       categoria = '';
@@ -263,6 +304,13 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
       fd.set('consenso', (form.querySelector('[name=consenso]') as HTMLInputElement).checked ? 'on' : '');
       // solo i campi della categoria attiva
       const gruppo = document.querySelector(`.sportello-campi[data-campi="${categoria}"]`)!;
+      // Custodi della Memoria: radio obbligatorio nelle categorie d'archivio
+      const radioCustode = gruppo.querySelector<HTMLInputElement>(`[name=custode_${categoria}]:checked`);
+      const custodeRichiesto = gruppo.querySelector(`[name=custode_${categoria}]`) !== null;
+      if (custodeRichiesto) {
+        if (!radioCustode) return mostra('Dicci come preferisci essere ringraziato (o scegli l\u2019anonimato).', false);
+        fd.set('p_consenso_custode', radioCustode.value);
+      }
       gruppo.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[name^=p_]').forEach((c) => {
         if (c.value.trim()) fd.set(c.name, c.value.trim());
       });

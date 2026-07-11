@@ -1,0 +1,86 @@
+---
+/**
+ * /custodi-della-memoria — il grazie pubblico alle famiglie e alle persone
+ * che affidano materiali e memorie a El Brenz (Sportello, 11/07/2026).
+ *
+ * SSR: legge la vista pubblica v_custodi_memoria (solo visibile=true,
+ * curatela MANUALE del Direttivo — mai inserimenti automatici). Elenco per
+ * anno dal più recente; gli anonimi sono aggregati in coda a ogni anno.
+ * NIENTE numeri, classifiche o foto: righe sobrie. Tabella vuota → invito.
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+type Custode = { nome_pubblico: string; paese: string | null; descrizione_contributo: string; anno: number; anonimo: boolean };
+let custodi: Custode[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('v_custodi_memoria').select('*')
+    .order('anno', { ascending: false }).order('nome_pubblico');
+  custodi = (data as Custode[]) ?? [];
+} catch (e) {
+  console.error('[custodi] lettura vista fallita:', e);
+}
+
+const perAnno = new Map<number, { nominati: Custode[]; anonimi: number }>();
+for (const c of custodi) {
+  if (!perAnno.has(c.anno)) perAnno.set(c.anno, { nominati: [], anonimi: 0 });
+  const g = perAnno.get(c.anno)!;
+  if (c.anonimo) g.anonimi += 1;
+  else g.nominati.push(c);
+}
+const anni = [...perAnno.keys()].sort((a, b) => b - a);
+---
+
+<PaginaIstituzionale
+  occhiello="L'Associazione"
+  titolo="I Custodi della Memoria"
+  intro="Le famiglie e le persone che hanno affidato a El Brenz un pezzo della nosa storia. A loro il grazie delle valli."
+  metaDescription="I Custodi della Memoria: le famiglie e le persone che hanno donato o prestato a El Brenz fotografie, documenti, oggetti e parole delle Valli del Noce."
+>
+  {anni.length === 0 ? (
+    <div class="text-center py-10">
+      <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Il primo custode potresti essere tu: una fotografia, un documento,
+        una parola della <em>nosa</em> parlata bastano ad accendere una storia.
+      </p>
+      <a href="/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">
+        Porta la tua Storia
+      </a>
+    </div>
+  ) : (
+    <div class="space-y-10">
+      {anni.map((anno) => {
+        const g = perAnno.get(anno)!;
+        return (
+          <section>
+            <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">{anno}</h2>
+            <ul class="list-none p-0 m-0 space-y-4">
+              {g.nominati.map((c) => (
+                <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span class="text-xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{c.nome_pubblico}</span>
+                  {c.paese && <span class="text-[11px] tracking-[0.14em] uppercase text-[#C8923E]" style="font-family: 'Inter', sans-serif;">{c.paese}</span>}
+                  <span class="text-[#1E2E26]/70 text-sm w-full md:w-auto" style="font-family: 'Source Serif 4', Georgia, serif;">{c.descrizione_contributo}</span>
+                </li>
+              ))}
+              {g.anonimi > 0 && (
+                <li class="text-[#1E2E26]/60 italic text-sm pt-1" style="font-family: 'Source Serif 4', Georgia, serif;">
+                  …e {g.anonimi === 1 ? 'un custode che ha scelto' : `${g.anonimi} custodi che hanno scelto`} la riservatezza.
+                </li>
+              )}
+            </ul>
+          </section>
+        );
+      })}
+      <p class="pt-4 text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Anche la tua famiglia custodisce qualcosa? <a href="/contatti#porta" class="text-[#8a6215] underline">Porta la tua Storia</a>.
+      </p>
+    </div>
+  )}
+</PaginaIstituzionale>
