@@ -74,42 +74,50 @@ export function tesseraEmailHtml(p: {
   intro: string;
   avviso?: string;
 }): string {
-  return `<!DOCTYPE html><html><body style="margin:0;padding:24px;background:#F8F1E4;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
+  return `<!DOCTYPE html><html><head>
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<style>:root{color-scheme:light}</style>
+</head><body style="margin:0;padding:24px;background:#F8F1E4;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;">
   <div style="max-width:560px;margin:0 auto;">
-    <div style="background:#1E2E26;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(30,46,38,.35);">
+    <div style="background:#F5EEDD;border-radius:14px;overflow:hidden;box-shadow:0 8px 28px rgba(30,46,38,.35);">
       <!-- bandiera ladina -->
+      <div style="border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.12);">
       <div style="height:6px;background:#1E4FB4;"></div>
       <div style="height:6px;background:#FFFFFF;"></div>
       <div style="height:6px;background:#1E9C48;"></div>
+      </div>
       <!-- corpo tessera con filigrana Aquila Tirolensis dorata -->
-      <div style="padding:34px 36px;color:#F5EEDD;background-image:url('${FILIGRANA_URL}');background-repeat:no-repeat;background-position:right -60px center;background-size:340px auto;">
+      <div style="padding:34px 36px;color:#1E2E26;background-image:url('${FILIGRANA_URL}');background-repeat:no-repeat;background-position:right -60px center;background-size:340px auto;">
         <table role="presentation" style="width:100%;border-collapse:collapse;"><tr>
           <td style="width:76px;vertical-align:top;"><img src="${LOGO_URL}" alt="Timbro Associazione El Brenz" width="64" height="64" style="display:block;border-radius:50%;"/></td>
           <td style="vertical-align:middle;padding-left:6px;">
-            <p style="color:#D9A94E;text-transform:uppercase;letter-spacing:.22em;font-size:10px;margin:0 0 6px;">Associazione Storico Culturale Linguistica</p>
-            <h1 style="font-family:Georgia,serif;font-size:26px;margin:0;color:#F5EEDD;font-weight:500;">El <em style="color:#C8923E;">Brenz</em> dle Val del Nos</h1>
+            <p style="color:#C8923E;text-transform:uppercase;letter-spacing:.22em;font-size:10px;margin:0 0 6px;">Associazione Storico Culturale Linguistica</p>
+            <h1 style="font-family:Georgia,serif;font-size:26px;margin:0;color:#1E2E26;font-weight:500;">El <em style="color:#C8923E;">Brenz</em> dle Val del Nos</h1>
           </td>
         </tr></table>
         <div style="border-top:1px solid rgba(200,146,62,.45);margin:22px 0 20px;"></div>
         <table role="presentation" style="width:100%;border-collapse:collapse;"><tr>
           <td style="vertical-align:top;">
-            <p style="color:rgba(245,238,221,.7);text-transform:uppercase;letter-spacing:.18em;font-size:10px;margin:0 0 4px;">Tessera socio · anno ${p.anno}</p>
-            <p style="font-size:26px;margin:0 0 4px;font-family:Georgia,serif;color:#F5EEDD;">${esc(p.nome)}</p>
+            <p style="color:#C8923E;text-transform:uppercase;letter-spacing:.18em;font-size:10px;margin:0 0 4px;">Tessera socio · anno ${p.anno}</p>
+            <p style="font-size:26px;margin:0 0 4px;font-family:Georgia,serif;color:#1E2E26;">${esc(p.nome)}</p>
             <p style="font-size:15px;margin:0 0 22px;color:#C8923E;font-weight:600;letter-spacing:.06em;">N. ${p.numero}</p>
             <p style="margin:0;color:#D9A94E;font-style:italic;font-family:Georgia,serif;font-size:16px;">Raìs fonde no le 'nglacia</p>
-            <p style="font-size:10px;color:rgba(245,238,221,.5);margin:4px 0 0;letter-spacing:.04em;">Radici profonde non gelano · valida fino al 31/12/${p.anno}</p>
+            <p style="font-size:10px;color:rgba(30,46,38,.55);margin:4px 0 0;letter-spacing:.04em;">Radici profonde non gelano · valida fino al 31/12/${p.anno}</p>
           </td>
           <td style="width:132px;vertical-align:bottom;padding-left:14px;">
-            <div style="background:#FFFFFF;border-radius:10px;padding:6px;width:120px;">
+            <div style="background:#FFFFFF;border:1px solid #E5DFCF;border-radius:10px;padding:6px;width:120px;">
               <img src="${p.qrUrl}" alt="QR di verifica tessera" width="108" height="108" style="display:block;"/>
             </div>
-            <p style="font-size:9px;color:rgba(245,238,221,.6);margin:6px 0 0;text-align:center;letter-spacing:.03em;">verifica in tempo reale</p>
+            <p style="font-size:9px;color:rgba(30,46,38,.55);margin:6px 0 0;text-align:center;letter-spacing:.03em;">verifica in tempo reale</p>
           </td>
         </tr></table>
       </div>
+      <div style="border-radius:3px;overflow:hidden;box-shadow:0 0 0 1px rgba(0,0,0,.12);">
       <div style="height:6px;background:#1E4FB4;"></div>
       <div style="height:6px;background:#FFFFFF;"></div>
       <div style="height:6px;background:#1E9C48;"></div>
+      </div>
     </div>
     <p style="color:#1E2E26;font-size:15px;margin:22px 8px 0;">${p.intro}</p>
     <p style="color:#1E2E26;font-size:14px;margin:12px 8px 0;">📲 <a href="${p.urlVerifica}" style="color:#8a6215;font-weight:600;">Scarica la versione per il telefono</a>: dalla pagina della tessera puoi salvarla in galleria o aggiungerla alla schermata Home.</p>
