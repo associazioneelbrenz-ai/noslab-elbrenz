@@ -378,29 +378,22 @@ const durataMarquee = `${filaMarquee.length * 5}s`;
       fotografie (line-art oro, 2 iterazioni, verificato). */}
   <section class="bg-[#F8F1E4] py-14">
     <div class="max-w-2xl mx-auto px-6">
-      <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors py-10 px-8 md:py-12 md:px-12 text-center">
-        <svg viewBox="0 0 120 80" fill="none" class="mx-auto mb-5 w-[84px] md:w-[110px] h-auto" aria-hidden="true" role="presentation">
-          <g stroke="#C8923E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <g transform="rotate(-12 45 34)">
-              <rect x="33" y="16" width="24" height="30" fill="#F5EEDD" />
-              <rect x="36.5" y="19.5" width="17" height="17" />
-            </g>
-            <g transform="rotate(10 76 32)">
-              <rect x="64" y="14" width="24" height="30" fill="#F5EEDD" />
-              <rect x="67.5" y="17.5" width="17" height="17" />
-            </g>
-            <g>
-              <rect x="49" y="10" width="23" height="29" fill="#F5EEDD" />
-              <rect x="52.5" y="13.5" width="16" height="16" />
-            </g>
-            <path d="M22 40 L98 40 L94 70 L26 70 Z" fill="#F5EEDD" />
-            <path d="M22 40 L98 40 L94 70 L26 70 Z" />
-            <path d="M22 40 L10 30 L30 27 L36 38" fill="#F5EEDD" />
-            <path d="M22 40 L10 30 L30 27 L36 38" />
-            <path d="M98 40 L110 30 L90 27 L84 38" fill="#F5EEDD" />
-            <path d="M98 40 L110 30 L90 27 L84 38" />
-          </g>
-        </svg>
+      <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors overflow-hidden text-center">
+        {/* Foto dello Sportello al posto dell'icona (richiesta Cristian 11/7:
+            "cattura di più") — stessa immagine dell'hero /contatti, lazy
+            perche' sotto la piega. */}
+        <picture>
+          <source srcset={`${import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co'}/storage/v1/object/public/assets-pubblici/sportello/hero-mobile.webp`} type="image/webp" />
+          <img
+            src={`${import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co'}/storage/v1/object/public/assets-pubblici/sportello/hero-mobile.jpg`}
+            alt="Fotografie d'epoca e quaderno su un tavolo di stua alpina"
+            class="w-full h-44 md:h-56 object-cover object-[center_60%]"
+            width="960" height="528"
+            loading="lazy"
+            decoding="async"
+          />
+        </picture>
+        <div class="py-8 px-8 md:py-10 md:px-12">
         <h2 class="text-2xl md:text-3xl m-0 mb-3 text-[#1E2E26]" style="font-family: 'Playfair Display', serif; font-weight: 500;">
           Porta la tua Storia
         </h2>
@@ -426,6 +419,7 @@ const durataMarquee = `${filaMarquee.length * 5}s`;
             Cosa puoi portare?
           </a>
         </p>
+        </div>
       </div>
     </div>
   </section>

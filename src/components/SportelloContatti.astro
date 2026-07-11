@@ -103,6 +103,18 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
       <span class="block text-sm text-[#1E2E26]/65">Ricerche storiche, pubblicazioni, visite per scuole e gruppi, stampa.</span>
     </button>
     <button type="button" data-percorso="offerta" aria-pressed="false" class="sportello-bivio bg-[#F5EEDD] border border-[#C8923E]/50 hover:border-[#C8923E] rounded-md p-6 text-left cursor-pointer transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+      {/* SVG scatola-con-foto (ex card home, spostato qui 11/7 — regola
+          ferrea: non si butta cio' che funziona) */}
+      <svg viewBox="0 0 120 80" fill="none" class="w-16 h-auto mb-2 sportello-bivio-icona" aria-hidden="true" role="presentation">
+        <g stroke="#C8923E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <g transform="rotate(-12 45 34)"><rect x="33" y="16" width="24" height="30" fill="#F5EEDD" /><rect x="36.5" y="19.5" width="17" height="17" /></g>
+          <g transform="rotate(10 76 32)"><rect x="64" y="14" width="24" height="30" fill="#F5EEDD" /><rect x="67.5" y="17.5" width="17" height="17" /></g>
+          <g><rect x="49" y="10" width="23" height="29" fill="#F5EEDD" /><rect x="52.5" y="13.5" width="16" height="16" /></g>
+          <path d="M22 40 L98 40 L94 70 L26 70 Z" fill="#F5EEDD" /><path d="M22 40 L98 40 L94 70 L26 70 Z" />
+          <path d="M22 40 L10 30 L30 27 L36 38" fill="#F5EEDD" /><path d="M22 40 L10 30 L30 27 L36 38" />
+          <path d="M98 40 L110 30 L90 27 L84 38" fill="#F5EEDD" /><path d="M98 40 L110 30 L90 27 L84 38" />
+        </g>
+      </svg>
       <span class="block text-lg text-[#1E2E26] mb-1" style="font-family: 'Playfair Display', serif;">Porta la tua Storia</span>
       <span class="block text-sm text-[#1E2E26]/65">Documenti, foto, oggetti, memorie, parole delle valli, tempo e competenze.</span>
     </button>
