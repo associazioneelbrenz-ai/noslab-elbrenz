@@ -767,6 +767,17 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         gdpr: formData.get('gdpr') === 'on',
         _honeypot: (formData.get('_honeypot') as string || ''),
         _ts: formOpenedAt,
+        // VETR 2/3 (11/7): tracciamento sorgente leggero — solo lettura della
+        // querystring alla submit, zero cookie/localStorage. Se assenti: null.
+        utm: (() => {
+          const q = new URLSearchParams(location.search);
+          const u = {
+            source: q.get('utm_source') || '',
+            medium: q.get('utm_medium') || '',
+            campaign: q.get('utm_campaign') || '',
+          };
+          return u.source || u.medium || u.campaign ? u : null;
+        })(),
       };
 
       // Validazione client minima (server è autoritativo)

@@ -289,6 +289,15 @@ serve(async (req) => {
   const gdpr = body.gdpr === true
   const honeypot = typeof body._honeypot === 'string' ? body._honeypot : ''
   const ts = typeof body._ts === 'number' ? body._ts : 0
+  // VETR 2/3 (11/7): sorgente utm opzionale (source/medium/campaign, stringhe
+  // corte) -> colonna sorgente_utm jsonb; assente = NULL.
+  let sorgenteUtm: Record<string, string> | null = null
+  if (body.utm && typeof body.utm === 'object') {
+    const u = body.utm as Record<string, unknown>
+    const pulisci = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 100) : '')
+    const cand = { source: pulisci(u.source), medium: pulisci(u.medium), campaign: pulisci(u.campaign) }
+    if (cand.source || cand.medium || cand.campaign) sorgenteUtm = cand
+  }
 
   // 6. Honeypot: se compilato, è un bot. Risposta 200 silenziosa.
   if (honeypot.length > 0) {
@@ -388,6 +397,7 @@ serve(async (req) => {
         data_nascita: dataNascita,
         comune_nascita: comuneNascita,
         sesso,
+        sorgente_utm: sorgenteUtm,
       })
       .select('id')
       .single()
