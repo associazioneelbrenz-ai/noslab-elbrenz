@@ -92,7 +92,13 @@ Deno.serve(async (req: Request) => {
   let azione = url.searchParams.get('azione'); // per POST: approva | respingi
   const mAz = url.pathname.match(/\/azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
   const mVista = url.pathname.match(/\/vista\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
-  if (mAz) {
+  // Azioni in un click dall'email (11/7): GET di CONFERMA con bottone,
+  // token dedicati scope email-*, 7 giorni, monouso per stato.
+  const mEmail = url.pathname.match(/\/email-azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+  let emailAzione: 'approva' | 'respingi' | null = null;
+  if (mEmail) {
+    emailAzione = mEmail[1] as 'approva' | 'respingi'; d = mEmail[2]; exp = parseInt(mEmail[3], 10); t = mEmail[4];
+  } else if (mAz) {
     azione = mAz[1]; d = mAz[2]; exp = parseInt(mAz[3], 10); t = mAz[4];
   } else if (mVista) {
     d = mVista[1]; exp = parseInt(mVista[2], 10); t = mVista[3];
@@ -105,14 +111,59 @@ Deno.serve(async (req: Request) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  // ------------------------------------------------- GET: conferma da email
+  if (emailAzione) {
+    const okTok = await verificaToken(secret, `email-${emailAzione}`, d, exp, t);
+    if (!okTok) return erroreHtml('Link non valido o scaduto (i bottoni email valgono 7 giorni). Usa la scheda completa dalla stessa email.');
+    const { data: dom } = await supabase.from('domande_tesseramento')
+      .select('nome, stato, numero_tessera').eq('id', d).maybeSingle();
+    if (!dom) return erroreHtml('Domanda non trovata.');
+    if (dom.stato !== 'in_attesa') {
+      return pagina('Già gestita', `
+        <p class="occhiello">El Brenz · Tesseramento</p>
+        <h1>Nessuna azione necessaria</h1>
+        <p>La domanda di <strong>${esc(dom.nome)}</strong> risulta già <span class="stato ${esc(dom.stato)}">${esc(dom.stato)}</span>${dom.numero_tessera ? ` con tessera n. <strong>${dom.numero_tessera}</strong>` : ''}.</p>`);
+    }
+    const expAz = Date.now() + TOKEN_TTL_MS;
+    const tAz = await firmaToken(secret, `azione-${emailAzione}`, d, expAz);
+    const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda`;
+    if (emailAzione === 'approva') {
+      return pagina('Conferma approvazione', `
+        <p class="occhiello">El Brenz · Tesseramento</p>
+        <h1>Confermi l'approvazione di ${esc(dom.nome)}?</h1>
+        <p>Verranno assegnati numero di tessera e QR, e partirà l'email con la tessera digitale.</p>
+        <form method="post" action="${base}?d=${d}&exp=${expAz}&t=${tAz}&azione=approva">
+          <button type="submit" class="btn btn-ok">Sì, approva e invia la tessera</button>
+        </form>
+        <p class="nota">Se non intendevi approvare, chiudi semplicemente questa pagina: non è successo nulla.</p>`);
+    }
+    return pagina('Conferma rifiuto', `
+      <p class="occhiello">El Brenz · Tesseramento</p>
+      <h1>Confermi il rifiuto della domanda di ${esc(dom.nome)}?</h1>
+      <p>Nessuna email automatica verrà inviata al richiedente: il caso resta da gestire a mano.</p>
+      <form method="post" action="${base}?d=${d}&exp=${expAz}&t=${tAz}&azione=respingi">
+        <label style="display:block;font-size:13px;color:#666;margin-bottom:6px;">Motivo (facoltativo, resta interno)</label>
+        <textarea name="motivo" rows="3" maxlength="500" style="width:100%;box-sizing:border-box;border:1px solid #E5DFCF;border-radius:4px;padding:10px;font-family:inherit;font-size:14px;"></textarea>
+        <div style="margin-top:14px;">
+          <button type="submit" class="btn btn-no">Sì, rifiuta la domanda</button>
+        </div>
+      </form>
+      <p class="nota">Se non intendevi rifiutare, chiudi semplicemente questa pagina: non è successo nulla.</p>`);
+  }
+
   // ---------------------------------------------------------------- POST: azioni
   if (req.method === 'POST' && (azione === 'approva' || azione === 'respingi')) {
     const okToken = await verificaToken(secret, `azione-${azione}`, d, exp, t);
     if (!okToken) return erroreHtml('Token azione non valido o scaduto.');
 
     if (azione === 'respingi') {
+      let motivo = '';
+      try {
+        const fd = await req.formData();
+        motivo = String(fd.get('motivo') ?? '').trim().slice(0, 500);
+      } catch { /* form senza body: nessun motivo */ }
       const { data: agg } = await supabase.from('domande_tesseramento')
-        .update({ stato: 'respinta', approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .update({ stato: 'respinta', motivo_rifiuto: motivo || null, approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq('id', d).eq('stato', 'in_attesa')
         .select('id');
       const fatto = agg && agg.length > 0;
@@ -160,6 +211,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const socio = agg[0];
+    let linkTessera = '';
     const tessereLive = Deno.env.get('TESSERE_LIVE') === 'true';
     let esitoInvio = `<p class="nota">⚠ Invio email tessera DISATTIVATO (flag TESSERE_LIVE spento: Resend senza dominio autenticato). La tessera n. ${numero} è assegnata: inviala dopo l'attivazione.</p>`;
 
@@ -176,6 +228,7 @@ Deno.serve(async (req: Request) => {
             { id: d, numero_tessera: numero, anno: ANNO, codice_tessera: null },
             secret,
           );
+          linkTessera = `<p><a href="${urlVerifica}" style="color:#2d8659;font-weight:600;">Vedi la tessera pubblica di ${esc(socio.nome)} →</a></p>`;
           const tesseraHtml = tesseraEmailHtml({
             nome: socio.nome,
             numero,
@@ -212,6 +265,7 @@ Deno.serve(async (req: Request) => {
       <h1>Domanda approvata ✓</h1>
       <p><strong>${esc(socio.nome)}</strong> è socio ${ANNO} con tessera <strong>n. ${numero}</strong> (scadenza 31/12/${ANNO}).</p>
       ${esitoInvio}
+      ${linkTessera}
       <p class="nota">Approvazione registrata: via email-link segretario, ${new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}. Ricordare la ratifica nel prossimo verbale del CD.</p>`);
   }
 

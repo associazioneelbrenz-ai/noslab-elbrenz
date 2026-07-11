@@ -430,10 +430,22 @@ serve(async (req) => {
       // Parametri nel PATH (non query string): un `=` seguito da due cifre
       // esadecimali verrebbe corrotto dall'encoding quoted-printable dell'email.
       const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda/vista/${domanda.id}/${exp}/${t}`
+      // Azioni in un click (11/7): token dedicati NEL PATH, scadenza 7 giorni,
+      // monouso per stato (la domanda gestita non si rigestisce). Il click
+      // atterra su una pagina di CONFERMA con bottone: doppio step, zero
+      // approvazioni accidentali dalle anteprime email.
+      const exp7 = Date.now() + 7 * 24 * 60 * 60 * 1000
+      const tEA = await firmaToken(adminSecret, 'email-approva', domanda.id, exp7)
+      const tER = await firmaToken(adminSecret, 'email-respingi', domanda.id, exp7)
+      const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda`
+      const urlEA = `${base}/email-azione/approva/${domanda.id}/${exp7}/${tEA}`
+      const urlER = `${base}/email-azione/respingi/${domanda.id}/${exp7}/${tER}`
       schedaHtml = `
     <div style="margin-top: 20px; text-align: center;">
-      <a href="${url}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 28px;text-decoration:none;font-weight:600;font-size:14px;border-radius:4px;">Apri scheda domanda →</a>
-      <p style="color:#999;font-size:11px;margin-top:8px;">Link riservato al Direttivo, valido 30 giorni. Da lì si approva e si invia la tessera.</p>
+      <a href="${urlEA}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 28px;text-decoration:none;font-weight:600;font-size:14px;border-radius:4px;margin:0 6px 8px;">✓ Approva</a>
+      <a href="${urlER}" style="display:inline-block;background:#fff;color:#a33;border:2px solid #d97a7a;padding:10px 26px;text-decoration:none;font-weight:600;font-size:14px;border-radius:4px;margin:0 6px 8px;">✗ Rifiuta</a>
+      <p style="margin:10px 0 0;"><a href="${url}" style="color:#8a6215;font-size:13px;">Apri la scheda completa →</a></p>
+      <p style="color:#999;font-size:11px;margin-top:8px;">Bottoni validi 7 giorni, con conferma in pagina; scheda completa valida 30 giorni.</p>
     </div>`
     } else if (domanda && !adminSecret) {
       schedaHtml = `<p style="color:#999;font-size:11px;margin-top:16px;">Scheda domanda non disponibile: configurare ADMIN_ACTION_SECRET (vedi docs/SETUP_PAYPAL.md).</p>`
