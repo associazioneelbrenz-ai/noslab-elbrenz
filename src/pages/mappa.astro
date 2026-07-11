@@ -1,0 +1,334 @@
+---
+/**
+ * /mappa — Mappa delle Valli (M-F1, Fase 1).
+ *
+ * Cartografia UFFICIALE PAT (WMS CTP 2020 + Ortofoto 2015, EPSG:3857
+ * verificato dai GetCapabilities — STEP 0) con fallback OpenStreetMap se il
+ * servizio provinciale non risponde. Due famiglie di punti filtrabili:
+ * luoghi di interesse storico-culturale e attività convenzionate.
+ *
+ * SSR (prerender=false): i punti si leggono A OGNI RICHIESTA dalle viste
+ * pubbliche (v_luoghi_mappa, v_convenzioni_mappa) — ogni luogo pubblicato
+ * e ogni convenzione geolocalizzata appare senza rebuild (richiesta di
+ * Cristian). L'elenco testuale sotto la mappa è server-rendered: SEO +
+ * alternativa accessibile.
+ *
+ * CARICAMENTO DIFFERITO: Leaflet (npm, pinnato 1.9.4, zero CDN) si importa
+ * dinamicamente SOLO al click "Carica la mappa": niente peso sul first load
+ * (TBT) e nessuna richiesta a server terzi senza gesto dell'utente (privacy).
+ * La futura PWA Soci erediterà v_luoghi_mappa tal quale.
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+type Luogo = {
+  id: string; nome: string; categoria: string; valle: string;
+  lat: number; lng: number; descrizione_breve: string | null; url_articolo: string | null;
+};
+type ConvenzioneMappa = {
+  id: string; nome_attivita: string; categoria: string; localita: string | null;
+  beneficio: string; lat: number; lng: number;
+};
+
+let luoghi: Luogo[] = [];
+let convenzioni: ConvenzioneMappa[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const [l, c] = await Promise.all([
+    sb.from('v_luoghi_mappa').select('*').order('nome'),
+    sb.from('v_convenzioni_mappa').select('*').order('nome_attivita'),
+  ]);
+  luoghi = (l.data as Luogo[]) ?? [];
+  convenzioni = (c.data as ConvenzioneMappa[]) ?? [];
+} catch (e) {
+  console.error('[mappa] lettura viste fallita:', e);
+}
+
+const VALLI: Record<string, string> = {
+  val_di_non: 'Val di Non',
+  val_di_sole: 'Val di Sole',
+  val_di_rabbi: 'Val di Rabbi',
+  val_di_pejo: 'Val di Pejo',
+  fuori_valle: 'Fuori valle',
+};
+const CATEGORIE_LUOGHI: Record<string, string> = {
+  castelli_e_residenze: 'Castelli e residenze',
+  cultura_materiale: 'Cultura materiale',
+  luoghi_sacri: 'Luoghi sacri',
+  grande_guerra: 'Grande Guerra',
+  memoria_e_comunita: 'Memoria e comunità',
+};
+
+const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOGHI };
+---
+
+<Layout
+  title="Mappa delle Valli"
+  description="La mappa interattiva delle Valli del Noce: luoghi di interesse storico-culturale e attività convenzionate con l'Associazione El Brenz, su cartografia ufficiale della Provincia Autonoma di Trento."
+  ogImage="/og/og-mappa.jpg"
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-5xl mx-auto px-6 py-14 md:py-16">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">
+        Le nostre valli
+      </p>
+      <h1 class="text-3xl md:text-4xl leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Mappa delle <em class="text-[#C8923E]">Valli</em>
+      </h1>
+      <p class="text-[#F5EEDD]/75 max-w-2xl m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+        I luoghi dove la <em>nosa storia</em> è di casa e le realtà che accolgono i soci
+        El Brenz, sulla cartografia ufficiale del Trentino.
+      </p>
+    </div>
+  </header>
+
+  <section class="bg-[#F8F1E4] py-10">
+    <div class="max-w-5xl mx-auto px-6">
+
+      {/* Filtri: tipo e valle. Stato replicato nella querystring (condivisibile). */}
+      <div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="Filtra per tipo" style="font-family: 'Inter', sans-serif;">
+        <button type="button" data-filtro-tipo="tutti" aria-pressed="true" class="mappa-filtro bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#1E2E26] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Tutto</button>
+        <button type="button" data-filtro-tipo="luoghi" aria-pressed="false" class="mappa-filtro bg-white text-[#1E2E26] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#C8923E]/40 hover:border-[#C8923E] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Luoghi di interesse</button>
+        <button type="button" data-filtro-tipo="convenzioni" aria-pressed="false" class="mappa-filtro bg-white text-[#1E2E26] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#C8923E]/40 hover:border-[#C8923E] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Convenzioni</button>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-6" role="group" aria-label="Filtra per valle" style="font-family: 'Inter', sans-serif;">
+        <button type="button" data-filtro-valle="tutte" aria-pressed="true" class="mappa-filtro-valle bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#1E2E26] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Tutte le valli</button>
+        {Object.entries(VALLI).filter(([k]) => k !== 'fuori_valle').map(([k, label]) => (
+          <button type="button" data-filtro-valle={k} aria-pressed="false" class="mappa-filtro-valle bg-white text-[#1E2E26] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#C8923E]/40 hover:border-[#C8923E] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">{label}</button>
+        ))}
+      </div>
+
+      {/* Placeholder brand: la mappa si inizializza SOLO su gesto esplicito. */}
+      <div id="mappa-placeholder" class="bg-[#F5EEDD] border border-[#C8923E]/50 rounded-md text-center py-20 px-6">
+        <svg viewBox="0 0 120 80" class="mx-auto mb-5 w-20 h-auto" aria-hidden="true" role="presentation">
+          <g fill="none" stroke="#C8923E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 20 L44 12 L76 20 L106 12 V60 L76 68 L44 60 L14 68 Z"/>
+            <path d="M44 12 V60 M76 20 V68"/>
+          </g>
+          <path d="M60 26 C53 26 47.5 31.5 47.5 38.5 C47.5 47.5 60 62 60 62 S72.5 47.5 72.5 38.5 C72.5 31.5 67 26 60 26 Z" fill="#C8923E" stroke="#1E2E26" stroke-width="2"/>
+          <circle cx="60" cy="38.5" r="4.5" fill="#1E2E26"/>
+        </svg>
+        <p class="text-[#1E2E26]/75 max-w-md mx-auto mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+          La mappa usa la cartografia ufficiale della Provincia Autonoma di Trento.
+          Si carica solo quando lo chiedi tu: nessun dato parte prima.
+        </p>
+        <button
+          id="mappa-carica"
+          type="button"
+          class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase cursor-pointer border-0 hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Carica la mappa
+        </button>
+      </div>
+
+      <div id="mappa-wrap" class="hidden">
+        <div id="mappa" class="h-[70vh] min-h-[420px] rounded-md border border-[#C8923E]/50 z-0" tabindex="0" aria-label="Mappa interattiva delle Valli del Noce"></div>
+        <p id="mappa-nota-zoom" class="text-xs text-[#1E2E26]/55 mt-2 m-0" style="font-family: 'Inter', sans-serif;">
+          Per usare lo zoom con la rotellina clicca prima sulla mappa. Su telefono: due dita.
+        </p>
+      </div>
+
+      {/* Alternativa testuale accessibile + SEO: server-rendered, sempre fresca. */}
+      <div class="mt-10">
+        <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-4 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">
+          I luoghi sulla mappa
+        </h2>
+        {luoghi.length === 0 && convenzioni.length === 0 ? (
+          <p class="text-[#1E2E26]/60 text-sm" style="font-family: 'Source Serif 4', Georgia, serif;">
+            I primi luoghi arriveranno presto: la mappa cresce man mano che il
+            Direttivo pubblica i luoghi della <em>nosa storia</em> e le convenzioni
+            si geolocalizzano.
+          </p>
+        ) : (
+          <ul class="grid gap-3 md:grid-cols-2 list-none p-0 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+            {luoghi.map((l) => (
+              <li class="bg-white border-l-4 border-[#C8923E] px-4 py-3">
+                <strong class="text-[#1E2E26]">{l.nome}</strong>
+                <span class="text-xs text-[#1E2E26]/55"> · {CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · {VALLI[l.valle] ?? l.valle}</span>
+                {l.descrizione_breve && <p class="text-sm text-[#1E2E26]/75 m-0 mt-1">{l.descrizione_breve}</p>}
+                {l.url_articolo && <a href={l.url_articolo} class="text-sm text-[#8a6215] underline">Leggi la storia</a>}
+              </li>
+            ))}
+            {convenzioni.map((c) => (
+              <li class="bg-white border-l-4 border-[#1E2E26] px-4 py-3">
+                <strong class="text-[#1E2E26]">{c.nome_attivita}</strong>
+                <span class="text-xs text-[#1E2E26]/55"> · Convenzione{c.localita ? ` · ${c.localita}` : ''}</span>
+                <p class="text-sm text-[#C8923E] font-medium m-0 mt-1" style="font-family: 'Inter', sans-serif;">{c.beneficio}</p>
+                <a href="/convenzioni" class="text-sm text-[#8a6215] underline">Vedi la convenzione</a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <p class="text-xs text-[#1E2E26]/50 mt-8 m-0" style="font-family: 'Inter', sans-serif;">
+        Cartografia: © Provincia Autonoma di Trento — SIAT (CTP 2020, Ortofoto 2015), licenza CC BY ·
+        in caso di indisponibilità del servizio provinciale: © OpenStreetMap contributors ·
+        <a href="/crediti-e-licenze" class="underline">crediti e licenze</a>
+      </p>
+    </div>
+  </section>
+</Layout>
+
+<script type="application/json" id="mappa-dati" set:html={JSON.stringify(datiMappa)} />
+
+<script>
+  // Mappa delle Valli — init SOLO su gesto (import dinamico di Leaflet).
+  const BBOX_VALLI: [[number, number], [number, number]] = [[46.17, 10.48], [46.48, 11.18]];
+  const WMS_BASE = 'https://siat.provincia.tn.it/geoserver/stem';
+  const ATTR_PAT = 'Cartografia © <a href="https://siat.provincia.tn.it">Provincia Autonoma di Trento — SIAT</a> (CC BY)';
+  const ATTR_OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+  const dati = JSON.parse(document.getElementById('mappa-dati')?.textContent ?? '{}');
+  const btnCarica = document.getElementById('mappa-carica');
+  const placeholder = document.getElementById('mappa-placeholder');
+  const wrap = document.getElementById('mappa-wrap');
+
+  let mappa: import('leaflet').Map | null = null;
+  let markers: { tipo: string; valle: string; m: import('leaflet').Marker }[] = [];
+  let filtroTipo = 'tutti';
+  let filtroValle = 'tutte';
+
+  // stato filtri da querystring (link condivisibili)
+  const qs = new URLSearchParams(location.search);
+  if (['luoghi', 'convenzioni'].includes(qs.get('tipo') ?? '')) filtroTipo = qs.get('tipo')!;
+  if (Object.keys(dati.valli ?? {}).includes(qs.get('valle') ?? '')) filtroValle = qs.get('valle')!;
+
+  function aggiornaBottoni() {
+    document.querySelectorAll<HTMLButtonElement>('.mappa-filtro').forEach((b) => {
+      const attivo = b.dataset.filtroTipo === filtroTipo;
+      b.setAttribute('aria-pressed', String(attivo));
+      b.classList.toggle('bg-[#1E2E26]', attivo);
+      b.classList.toggle('text-[#F5EEDD]', attivo);
+      b.classList.toggle('border-[#1E2E26]', attivo);
+      b.classList.toggle('bg-white', !attivo);
+      b.classList.toggle('text-[#1E2E26]', !attivo);
+      b.classList.toggle('border-[#C8923E]/40', !attivo);
+    });
+    document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-valle').forEach((b) => {
+      const attivo = b.dataset.filtroValle === filtroValle;
+      b.setAttribute('aria-pressed', String(attivo));
+      b.classList.toggle('bg-[#1E2E26]', attivo);
+      b.classList.toggle('text-[#F5EEDD]', attivo);
+      b.classList.toggle('border-[#1E2E26]', attivo);
+      b.classList.toggle('bg-white', !attivo);
+      b.classList.toggle('text-[#1E2E26]', !attivo);
+      b.classList.toggle('border-[#C8923E]/40', !attivo);
+    });
+    const p = new URLSearchParams();
+    if (filtroTipo !== 'tutti') p.set('tipo', filtroTipo);
+    if (filtroValle !== 'tutte') p.set('valle', filtroValle);
+    history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
+  }
+
+  function applicaFiltri() {
+    if (!mappa) return;
+    for (const { tipo, valle, m } of markers) {
+      const okTipo = filtroTipo === 'tutti' || tipo === filtroTipo;
+      const okValle = filtroValle === 'tutte' || valle === filtroValle || tipo === 'convenzioni';
+      if (okTipo && okValle) m.addTo(mappa);
+      else m.remove();
+    }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('.mappa-filtro').forEach((b) =>
+    b.addEventListener('click', () => { filtroTipo = b.dataset.filtroTipo!; aggiornaBottoni(); applicaFiltri(); }));
+  document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-valle').forEach((b) =>
+    b.addEventListener('click', () => { filtroValle = b.dataset.filtroValle!; aggiornaBottoni(); applicaFiltri(); }));
+  aggiornaBottoni();
+
+  function goccia(colori: { corpo: string; bordo: string }) {
+    return `<svg viewBox="0 0 32 44" width="32" height="44" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="${colori.corpo}" stroke="${colori.bordo}" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="${colori.bordo}"/></svg>`;
+  }
+
+  async function initMappa() {
+    const [{ default: L }] = await Promise.all([
+      import('leaflet'),
+      import('leaflet/dist/leaflet.css'),
+    ]);
+
+    placeholder?.classList.add('hidden');
+    wrap?.classList.remove('hidden');
+
+    mappa = L.map('mappa', {
+      minZoom: 9,
+      maxZoom: 17,
+      scrollWheelZoom: false, // anti scroll-jacking: si attiva al click
+      maxBounds: [[45.95, 10.2], [46.7, 11.45]],
+    });
+    mappa.fitBounds(BBOX_VALLI);
+    mappa.on('click focus', () => mappa!.scrollWheelZoom.enable());
+
+    // base PAT con fallback OSM: probe leggero con timeout
+    let basiOk = false;
+    try {
+      const probe = await fetch(`${WMS_BASE}/ctp2020_bn_00/wms?SERVICE=WMS&REQUEST=GetCapabilities`, {
+        method: 'HEAD', signal: AbortSignal.timeout(4000), mode: 'no-cors',
+      });
+      basiOk = true; void probe;
+    } catch { basiOk = false; }
+
+    if (basiOk) {
+      const ctp = L.tileLayer.wms(`${WMS_BASE}/ctp2020_bn_00/wms`, {
+        layers: 'ctp2020_bn_00', format: 'image/png', version: '1.3.0', attribution: ATTR_PAT,
+      });
+      const orto = L.tileLayer.wms(`${WMS_BASE}/ecw-rgb-2015/wms`, {
+        layers: 'ecw-rgb-2015', format: 'image/jpeg', version: '1.3.0', attribution: ATTR_PAT,
+      });
+      ctp.addTo(mappa);
+      L.control.layers({ 'Carta tecnica': ctp, 'Ortofoto': orto }, {}, { position: 'topright' }).addTo(mappa);
+    } else {
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17, attribution: ATTR_OSM,
+      }).addTo(mappa);
+    }
+
+    const iconaLuogo = L.divIcon({
+      html: goccia({ corpo: '#C8923E', bordo: '#1E2E26' }),
+      className: '', iconSize: [32, 44], iconAnchor: [16, 43], popupAnchor: [0, -40],
+    });
+    const iconaConv = L.divIcon({
+      html: goccia({ corpo: '#1E2E26', bordo: '#C8923E' }),
+      className: '', iconSize: [32, 44], iconAnchor: [16, 43], popupAnchor: [0, -40],
+    });
+
+    for (const l of dati.luoghi ?? []) {
+      const m = L.marker([l.lat, l.lng], { icon: iconaLuogo, title: l.nome, alt: l.nome });
+      m.bindPopup(`
+        <div style="font-family:'Source Serif 4',Georgia,serif;min-width:200px;max-width:250px;">
+          <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1E2E26;margin:0 0 4px;">${l.nome}</p>
+          <span style="font-family:'Inter',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a6215;background:rgba(200,146,62,.15);border-radius:999px;padding:2px 10px;">${dati.categorie?.[l.categoria] ?? l.categoria}</span>
+          ${l.descrizione_breve ? `<p style="font-size:13px;color:rgba(30,46,38,.8);margin:8px 0 0;">${l.descrizione_breve}</p>` : ''}
+          ${l.url_articolo ? `<p style="margin:8px 0 0;"><a href="${l.url_articolo}" style="color:#8a6215;">Leggi la storia →</a></p>` : ''}
+        </div>`);
+      markers.push({ tipo: 'luoghi', valle: l.valle, m });
+    }
+    for (const c of dati.convenzioni ?? []) {
+      const m = L.marker([c.lat, c.lng], { icon: iconaConv, title: c.nome_attivita, alt: c.nome_attivita });
+      m.bindPopup(`
+        <div style="font-family:'Source Serif 4',Georgia,serif;min-width:200px;max-width:250px;">
+          <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1E2E26;margin:0 0 4px;">${c.nome_attivita}</p>
+          <span style="font-family:'Inter',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#F5EEDD;background:#1E2E26;border-radius:999px;padding:2px 10px;">Convenzione soci</span>
+          <p style="font-size:13px;color:#8a6215;font-weight:600;margin:8px 0 0;">${c.beneficio}</p>
+          <p style="margin:8px 0 0;"><a href="/convenzioni" style="color:#8a6215;">Vedi la convenzione →</a></p>
+        </div>`);
+      markers.push({ tipo: 'convenzioni', valle: '', m });
+    }
+    applicaFiltri();
+  }
+
+  btnCarica?.addEventListener('click', () => {
+    btnCarica.textContent = 'Carico…';
+    initMappa().catch((e) => {
+      console.error('[mappa] init fallita:', e);
+      btnCarica.textContent = 'Riprova a caricare la mappa';
+    });
+  });
+</script>
