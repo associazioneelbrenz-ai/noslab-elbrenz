@@ -89,7 +89,7 @@ const MSG_WHATSAPP = encodeURIComponent(
 
     <div
       id="andreas-widget"
-      class="hidden fixed z-40 inset-x-2 bottom-2 top-14 md:inset-auto md:right-6 md:bottom-24 md:w-[380px] md:h-[560px] md:max-h-[calc(100vh-120px)] bg-[#F5EEDD] border border-[#C8923E]/60 rounded-xl shadow-2xl overflow-hidden flex-col"
+      class="hidden fixed z-40 inset-0 h-[100dvh] rounded-none md:inset-auto md:right-6 md:bottom-24 md:w-[420px] md:h-[75vh] md:min-h-[480px] md:max-h-[calc(100vh-120px)] md:rounded-xl bg-[#F5EEDD] border border-[#C8923E]/60 shadow-2xl overflow-hidden flex-col"
       role="dialog"
       aria-modal="false"
       aria-label="Chat con Andreas, assistente digitale"
@@ -110,7 +110,7 @@ const MSG_WHATSAPP = encodeURIComponent(
         <button
           type="button"
           id="andreas-widget-close"
-          class="flex items-center justify-center w-9 h-9 text-[#F5EEDD] hover:text-[#D9A94E] bg-transparent border-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A94E] rounded"
+          class="flex items-center justify-center w-11 h-11 text-[#F5EEDD] hover:text-[#D9A94E] bg-transparent border-0 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#D9A94E] rounded"
           aria-label="Chiudi la chat"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
@@ -119,11 +119,15 @@ const MSG_WHATSAPP = encodeURIComponent(
         </button>
       </div>
 
-      <div class="flex-1 min-h-0 overflow-y-auto">
+      <div class="flex-1 min-h-0 flex flex-col">
         <AndreasChat compatto />
       </div>
 
-      <div class="flex-shrink-0 border-t border-[#C8923E]/30 bg-[#F8F1E4] px-4 py-3">
+      <div id="andreas-widget-footer" class="flex-shrink-0 border-t border-[#C8923E]/30 bg-[#F8F1E4] px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <p id="andreas-persona-mini" class="hidden text-[12px] m-0 mb-1" style="font-family: 'Inter', sans-serif;">
+          <button type="button" id="andreas-persona-riapri" class="text-[#8a6215] underline bg-transparent border-0 cursor-pointer p-0 text-[12px]">Parla con una persona ↗</button>
+        </p>
+        <div id="andreas-persona-pieno">
         <p class="text-[11px] tracking-[0.14em] uppercase text-[#1E2E26]/60 font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">
           Preferisci parlare con una persona?
         </p>
@@ -153,6 +157,7 @@ const MSG_WHATSAPP = encodeURIComponent(
             Scrivi al Segretario — Cristian
           </a>
         </div>
+        </div>
         <p class="text-[11px] m-0 mt-2 text-right" style="font-family: 'Inter', sans-serif;">
           <a href="/andreas" class="text-[#C8923E] no-underline hover:underline">Apri la pagina completa di Andreas →</a>
         </p>
@@ -177,6 +182,54 @@ const MSG_WHATSAPP = encodeURIComponent(
           }
         } catch (e) { /* storage bloccato: nessun badge, nessun errore */ }
 
+        var mini = document.getElementById('andreas-persona-mini');
+        var pieno = document.getElementById('andreas-persona-pieno');
+        var riapri = document.getElementById('andreas-persona-riapri');
+        function eMobile() {
+          return window.matchMedia('(max-width: 767px), (pointer: coarse)').matches;
+        }
+        // Blocco "persona": pieno SOLO a conversazione vuota; dal primo
+        // messaggio collassa in una riga-link che riespande (recupera
+        // ~120px verticali per i messaggi).
+        var personaEspansaManuale = false;
+        function contaMessaggi() {
+          var m = document.getElementById('andreas-messages');
+          return m ? m.children.length : 0;
+        }
+        function aggiornaPersona() {
+          if (!mini || !pieno) return;
+          var haMessaggi = contaMessaggi() > 0;
+          var collassa = haMessaggi && !personaEspansaManuale;
+          pieno.classList.toggle('hidden', collassa);
+          mini.classList.toggle('hidden', !collassa);
+        }
+        if (riapri) riapri.addEventListener('click', function () {
+          personaEspansaManuale = true; aggiornaPersona();
+        });
+        // Auto-scroll all'ultimo messaggio + aggiornamento persona a ogni
+        // risposta (osserva il contenitore, zero tocchi ad andreas-chat.js).
+        var osservato = false;
+        function osserva() {
+          var m = document.getElementById('andreas-messages');
+          if (!m || osservato) return;
+          osservato = true;
+          new MutationObserver(function () {
+            m.scrollTop = m.scrollHeight;
+            personaEspansaManuale = false;
+            aggiornaPersona();
+          }).observe(m, { childList: true });
+        }
+        // Focus trap nell'overlay mobile (dialog modale a tutto schermo).
+        function trappola(e) {
+          if (e.key !== 'Tab' || widget.classList.contains('hidden') || !eMobile()) return;
+          var focusabili = widget.querySelectorAll('button, a[href], textarea, input, [tabindex]:not([tabindex="-1"])');
+          if (!focusabili.length) return;
+          var primo = focusabili[0], ultimo = focusabili[focusabili.length - 1];
+          if (e.shiftKey && document.activeElement === primo) { ultimo.focus(); e.preventDefault(); }
+          else if (!e.shiftKey && document.activeElement === ultimo) { primo.focus(); e.preventDefault(); }
+        }
+        document.addEventListener('keydown', trappola);
+
         function apri() {
           // Prima apertura: carica lo script chat (che a sua volta carica
           // marked/DOMPurify da CDN) — MAI al page load, solo su azione.
@@ -192,12 +245,27 @@ const MSG_WHATSAPP = encodeURIComponent(
           fab.setAttribute('aria-expanded', 'true');
           try { localStorage.setItem('andreas_widget_seen', '1'); } catch (e) { /* no-op */ }
           if (badge) { badge.classList.add('hidden'); badge.classList.remove('flex'); }
-          chiudi.focus();
+          osserva();
+          aggiornaPersona();
+          if (eMobile()) {
+            // sheet a tutto schermo: modale vero + scroll lock del body;
+            // NIENTE autofocus sull'input (aprirebbe la tastiera subito).
+            widget.setAttribute('aria-modal', 'true');
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.overflow = 'hidden';
+            chiudi.focus();
+          } else {
+            widget.setAttribute('aria-modal', 'false');
+            var ta = document.getElementById('andreas-textarea');
+            if (ta) ta.focus(); else chiudi.focus();
+          }
         }
         function serra() {
           widget.classList.add('hidden');
           widget.classList.remove('flex', 'andreas-widget--in');
           fab.setAttribute('aria-expanded', 'false');
+          document.documentElement.style.overflow = '';
+          document.body.style.overflow = '';
           fab.focus();
         }
         fab.addEventListener('click', function () {
@@ -230,19 +298,44 @@ const MSG_WHATSAPP = encodeURIComponent(
       @media (prefers-reduced-motion: reduce) {
         .andreas-widget--in, .fab-badge-pulse { animation: none; }
       }
-      /* La chat compatta dentro il pannello: niente cornice di pagina,
-         riempie l'altezza disponibile, messaggi scrollabili. */
+      /* Redesign 11/7 (deroga SOLO layout): colonna flex — header fisso,
+         messaggi flex-1 SCROLLABILI (è l'unica area che cresce), composer
+         fisso in basso. La chat riempie tutta l'altezza del pannello. */
       #andreas-widget .andreas-chat {
         max-width: none;
         margin: 0;
         padding: 0 12px;
         display: flex;
         flex-direction: column;
-        min-height: 100%;
+        height: 100%;
+        min-height: 0;
+        flex: 1;
       }
       #andreas-widget .andreas-chat__messages {
-        flex: 1;
-        min-height: 180px;
+        flex: 1 1 0;
+        min-height: 120px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      /* contatori in una sola riga compatta: via i suggerimenti tastiera */
+      #andreas-widget .andreas-chat__hint-tasti { display: none; }
+      #andreas-widget .andreas-chat__meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 11px;
+      }
+      /* Mobile: apertura slide-up del foglio a tutto schermo */
+      @media (max-width: 767px) {
+        .andreas-widget--in {
+          animation: andreasSheetIn 200ms ease-out;
+          transform-origin: bottom center;
+        }
+        @keyframes andreasSheetIn {
+          from { opacity: 0.6; transform: translateY(24px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       }
     </style>
   </>
