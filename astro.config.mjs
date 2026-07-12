@@ -24,6 +24,15 @@ export default defineConfig({
   // dei redirect, degli header di sicurezza e delle edge functions future.
   adapter: netlify(),
 
+  // Redirect 301 permanenti (per non perdere i link legacy).
+  redirects: {
+    // vecchio slug WP del documentario -> pagina d'onore Fiöi dal Nos
+    '/documentario-ladinita-nonesa-e-solandra-cultura-e-lingua': {
+      status: 301,
+      destination: '/fioi-dal-nos',
+    },
+  },
+
   integrations: [
     react(),
     sitemap(),

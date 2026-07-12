@@ -330,6 +330,30 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
     </div>
   </section>
 
+  {/* Posto d'onore — documentario "Fiöi dal Nos" (due anni di lavoro). */}
+  <section class="bg-[#16231d] text-[#F5EEDD] py-16 md:py-20">
+    <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+      <a href="/fioi-dal-nos" class="relative block rounded-xl overflow-hidden shadow-2xl group border border-[#C8923E]/30" style="aspect-ratio:16/9;" aria-label="Guarda il documentario Fiöi dal Nos">
+        <div class="absolute inset-0 bg-[#1E2E26]" aria-hidden="true"></div>
+        <div class="absolute inset-0 opacity-[0.16] pointer-events-none" aria-hidden="true"
+          style="background-image:url('/decoro/aquila-oro-filigrana.png');background-repeat:no-repeat;background-position:center;background-size:280px auto;"></div>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span class="flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#C8923E] text-[#1E2E26] shadow-xl group-hover:scale-105 transition-transform" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+        </div>
+      </a>
+      <div>
+        <p class="text-[11px] tracking-[0.24em] uppercase text-[#D9A94E] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">Il nostro documentario</p>
+        <h2 class="text-3xl md:text-4xl leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">Fiöi dal Nos</h2>
+        <p class="text-[#F5EEDD]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem;">
+          Ladinità nonesa e solandra: cultura e lingua. Due anni di lavoro per riscoprire le radici storiche, culturali e linguistiche delle nostre valli, dalla civiltà dei Reti alle parlate di oggi.
+        </p>
+        <a href="/fioi-dal-nos" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-semibold tracking-wider uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors" style="font-family: 'Inter', sans-serif;">Guarda il documentario →</a>
+      </div>
+    </div>
+  </section>
+
   {/* AGGIUNTA M2.4 — blocco "Ultimi articoli": i 4 più recenti di produzione.
       Card sul pattern di ElencoArticoliPerAnno (bianche, bordo E5DFCF, hover
       oro) su sfondo avorio brand. Nessun link "tutti gli articoli": non esiste
