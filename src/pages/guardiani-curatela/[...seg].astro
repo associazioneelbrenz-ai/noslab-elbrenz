@@ -1,0 +1,105 @@
+---
+/**
+ * /guardiani-curatela/{azione}/{id}/{exp}/{token} — pagina di curatela dei
+ * contributi «Guardiani de la lenga». Rende la conferma HTML sul NOSTRO
+ * dominio (la piattaforma Supabase forza text/plain sull'HTML servito dalle
+ * edge) e chiama l'edge guardiani-contributo in JSON per peek + esecuzione.
+ * Il token HMAC arriva nel path (mai query: quoted-printable). SSR.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+const [azione, id, exp, token] = seg;
+const valido = (azione === 'valida' || azione === 'rifiuta')
+  && /^[0-9a-f-]{36}$/i.test(id ?? '') && /^\d+$/.test(exp ?? '') && /^[0-9a-f]+$/i.test(token ?? '');
+// URL edge (il matching lato edge è ancora /azione/{azione}/...)
+const EDGE = `${SB_URL}/functions/v1/guardiani-contributo/azione/${azione}/${id}/${exp}/${token}`;
+---
+
+<Layout title="Curatela · Guardiani de la lenga" description="Curatela dei contributi al glossario del ladino anaunico." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
+    <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9" style="font-family: 'Inter', sans-serif;" data-edge={valido ? EDGE : ''} data-azione={azione} id="cur-card">
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">Guardiani de la lenga · curatela</p>
+      <div id="cur-body">
+        <p id="cur-loading" class="text-[#1E2E26]/70 m-0">Carico…</p>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const card = document.getElementById('cur-card')!;
+    const body = document.getElementById('cur-body')!;
+    const edge = card.getAttribute('data-edge') || '';
+    const azione = card.getAttribute('data-azione') || '';
+
+    const H = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const titolo = (t: string) => `<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 8px;">${t}</h1>`;
+    const testo = (t: string) => `<p style="color:#1E2E26;opacity:.85;margin:0 0 8px;line-height:1.6;">${t}</p>`;
+
+    if (!edge) { body.innerHTML = titolo('Link non valido') + testo('Il link di curatela non è valido. Apri la mail più recente.'); return; }
+
+    const btn = (label: string, cls: string) => `padding:11px 26px;border-radius:4px;border:0;font-weight:600;font-size:14px;cursor:pointer;${cls}`;
+
+    async function peek() {
+      try {
+        const r = await fetch(edge, { headers: { Accept: 'application/json' } });
+        const d = await r.json();
+        if (d.error === 'gia_gestito') {
+          body.innerHTML = titolo('Già gestito') + testo(`Il termine «${H(d.lemma || '')}» risulta già <strong>${H(d.stato || '')}</strong>.`);
+          return;
+        }
+        if (!d.ok) {
+          body.innerHTML = titolo('Link non valido o scaduto') + testo('I link di curatela valgono 30 giorni. Apri la mail più recente.');
+          return;
+        }
+        render(d);
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Non riesco a caricare il contributo. Riprova tra poco.');
+      }
+    }
+
+    function render(d: any) {
+      if (azione === 'valida') {
+        body.innerHTML = titolo(`Pubblicare «${H(d.lemma)}»?`)
+          + testo(`Variante: ${H(d.variante || '')}. Confermando, il termine entra nel glossario pubblico.`)
+          + `<div style="margin-top:18px;"><button id="cur-go" style="${btn('', 'background:#C8923E;color:#1E2E26;')}">Sì, pubblica</button></div>`;
+      } else {
+        body.innerHTML = titolo(`Rifiutare «${H(d.lemma)}»?`)
+          + `<label style="display:block;font-size:13px;color:#666;margin:8px 0 6px;">Motivo (facoltativo, interno)</label>`
+          + `<textarea id="cur-motivo" rows="3" maxlength="500" style="width:100%;box-sizing:border-box;border:1px solid #E5DFCF;border-radius:4px;padding:10px;font-family:inherit;font-size:14px;"></textarea>`
+          + `<div style="margin-top:14px;"><button id="cur-go" style="${btn('', 'background:#fff;color:#a33;border:2px solid #d97a7a;')}">Sì, rifiuta</button></div>`;
+      }
+      document.getElementById('cur-go')!.addEventListener('click', () => esegui(d.post));
+    }
+
+    async function esegui(post: { id: string; exp: number; t: string }) {
+      const go = document.getElementById('cur-go') as HTMLButtonElement | null;
+      if (go) { go.disabled = true; go.textContent = 'Attendi…'; }
+      const motivoEl = document.getElementById('cur-motivo') as HTMLTextAreaElement | null;
+      const postUrl = edge.replace(/\/azione\/(valida|rifiuta)\/.*$/, `/azione/${azione}/${post.id}/${post.exp}/${post.t}`);
+      try {
+        const r = await fetch(postUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(motivoEl ? { motivo: motivoEl.value } : {}),
+        });
+        const d = await r.json();
+        if (d.ok) {
+          body.innerHTML = titolo(azione === 'valida' ? 'Pubblicato ✓' : 'Contributo rifiutato') + testo(H(d.message || 'Fatto.'));
+        } else if (d.error === 'gia_gestito') {
+          body.innerHTML = titolo('Già gestito') + testo('Il contributo era già stato gestito.');
+        } else {
+          body.innerHTML = titolo('Non riuscito') + testo('Riprova aprendo di nuovo il link dalla mail.');
+        }
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Errore di connessione. Riprova tra poco.');
+      }
+    }
+
+    peek();
+  })();
+</script>
