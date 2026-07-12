@@ -32,12 +32,46 @@ function tgApi(token: string, method: string, payload: Record<string, unknown>):
   });
 }
 
-// HTML escape + conversione markdown di Andreas (*corsivo*, _corsivo_) in
-// <i>…</i> per parse_mode=HTML (tiene il corsivo dei termini ladini).
-function toTelegramHtml(text: string): string {
-  let t = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  t = t.replace(/\*([^*\n]+)\*/g, '<i>$1</i>');
-  t = t.replace(/(^|[\s(])_([^_\n]+)_(?=[\s).,;:!?]|$)/g, '$1<i>$2</i>');
+// Converte il markdown "alla Claude" di andreas-chat in HTML Telegram-safe
+// (parse_mode=HTML supporta solo <b> <i> <u> <s> <a> <code> <pre>).
+// Robusto contro l'output LLM: header senza #, grassetto/corsivo bilanciati,
+// link/fonti senza parentesi quadre grezze, asterischi orfani rimossi (meglio
+// togliere un * spaiato che far sbavare il corsivo su mezza frase). Tiene il
+// corsivo dei termini ladini.
+function toTelegramHtml(md: string): string {
+  // 1. escape HTML PRIMA di inserire i tag
+  let t = md.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // 2. blocchi di codice ``` ``` -> <pre> (protetti dagli altri passaggi)
+  t = t.replace(/```[a-zA-Z0-9]*\n?([\s\S]*?)```/g, (_m, c) => `<pre>${String(c).replace(/\n+$/, '')}</pre>`);
+
+  // 3. per riga: header (#..###### -> grassetto, niente #) e liste (- / * -> •)
+  t = t.split('\n').map((line) => {
+    const h = line.match(/^\s*#{1,6}\s+(.*\S)\s*$/);
+    if (h) return `<b>${h[1]}</b>`;
+    const li = line.match(/^\s*[-*]\s+(.*)$/);
+    if (li) return `• ${li[1]}`;
+    return line;
+  }).join('\n');
+
+  // 4. inline code `code`
+  t = t.replace(/`([^`\n]+)`/g, '<code>$1</code>');
+
+  // 5. grassetto **testo** / __testo__ (prima del corsivo, così ** non diventa *)
+  t = t.replace(/\*\*([^\n]+?)\*\*/g, '<b>$1</b>');
+  t = t.replace(/__([^\n]+?)__/g, '<b>$1</b>');
+
+  // 6. link [testo](url) -> <a href>; poi [Titolo] senza url -> Titolo (no [])
+  t = t.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2">$1</a>');
+  t = t.replace(/\[([^\]\n]+)\]/g, '$1');
+
+  // 7. corsivo *testo* / _testo_ SOLO se bilanciato e senza newline (anti-sbavamento)
+  t = t.replace(/\*([^*\n]+?)\*/g, '<i>$1</i>');
+  t = t.replace(/(^|[\s(>])_([^_\n]+?)_(?=[\s).,;:!?<]|$)/g, '$1<i>$2</i>');
+
+  // 8. pulizia: asterischi/hash orfani residui (sicurezza > fedeltà)
+  t = t.replace(/\*/g, '');
+  t = t.replace(/(^|\n)\s*#{1,6}\s*/g, '$1');
   return t;
 }
 
