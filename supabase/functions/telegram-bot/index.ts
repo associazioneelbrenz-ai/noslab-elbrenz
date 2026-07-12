@@ -121,6 +121,14 @@ serve(async (req: Request) => {
       await sendMessage(token, chatId, await comandoEventi());
       return new Response('', { status: 200 });
     }
+    // Helper per configurare le notifiche al direttivo: restituisce l'id
+    // numerico della chat/gruppo corrente (serve per impostare il chat_id
+    // del gruppo "Sala comando" nei Secrets). Read-only, innocuo.
+    if (cmd === '/chatid' || cmd.startsWith('/chatid')) {
+      const tipo = message?.chat?.type ?? 'sconosciuto';
+      await sendMessage(token, chatId, `Chat id: <code>${chatId}</code>\nTipo: ${tipo}`);
+      return new Response('', { status: 200 });
+    }
     // altri comandi non riconosciuti → trattali come domanda? No: guida.
     if (cmd.startsWith('/')) {
       await sendMessage(token, chatId, 'Comando non riconosciuto. Prova /eventi, /tessera, oppure scrivimi una domanda su storia e lingua delle nostre valli.');
