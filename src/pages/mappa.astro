@@ -248,11 +248,32 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
     return `<svg viewBox="0 0 32 44" width="32" height="44" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="${colori.corpo}" stroke="${colori.bordo}" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="${colori.bordo}"/></svg>`;
   }
 
+  // Carica Leaflet SELF-HOSTED (zero CDN, zero bundler): due file statici a
+  // path fisso serviti da Netlify. Sostituisce il doppio import dinamico
+  // (JS+CSS) che non si risolveva a runtime sulla pagina SSR (post mortem 12/7).
+  function caricaLeaflet(): Promise<any> {
+    if ((window as any).L) return Promise.resolve((window as any).L);
+    return new Promise((resolve, reject) => {
+      if (!document.getElementById('leaflet-css')) {
+        const link = document.createElement('link');
+        link.id = 'leaflet-css';
+        link.rel = 'stylesheet';
+        link.href = '/leaflet/leaflet.css';
+        document.head.appendChild(link);
+      }
+      const s = document.createElement('script');
+      s.src = '/leaflet/leaflet.js';
+      s.onload = () =>
+        (window as any).L
+          ? resolve((window as any).L)
+          : reject(new Error('leaflet.js caricato ma window.L assente'));
+      s.onerror = () => reject(new Error('Impossibile caricare /leaflet/leaflet.js'));
+      document.head.appendChild(s);
+    });
+  }
+
   async function initMappa() {
-    const [{ default: L }] = await Promise.all([
-      import('leaflet'),
-      import('leaflet/dist/leaflet.css'),
-    ]);
+    const L = await caricaLeaflet();
 
     placeholder?.classList.add('hidden');
     wrap?.classList.remove('hidden');
@@ -329,6 +350,14 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
     initMappa().catch((e) => {
       console.error('[mappa] init fallita:', e);
       btnCarica.textContent = 'Riprova a caricare la mappa';
+      const box = document.getElementById('mappa-placeholder');
+      if (box && !document.getElementById('mappa-errore')) {
+        const p = document.createElement('p');
+        p.id = 'mappa-errore';
+        p.style.cssText = 'color:#a33;font-size:12px;margin-top:12px;text-align:center;';
+        p.textContent = 'Dettaglio errore: ' + (e?.message ?? String(e));
+        box.appendChild(p);
+      }
     });
   });
 </script>
