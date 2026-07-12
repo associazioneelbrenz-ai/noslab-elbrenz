@@ -23,7 +23,7 @@ import { getCollection, render } from 'astro:content';
 import { formatDataIT } from '../../lib/articoli';
 
 export async function getStaticPaths() {
-  const uscite = await getCollection('rubrica', ({ data }) => !data.bozza);
+  const uscite = await getCollection('rubrica', ({ data }) => !data.bozza && !data.link_only);
   return uscite.map((u) => ({ params: { slug: u.id }, props: { uscita: u } }));
 }
 

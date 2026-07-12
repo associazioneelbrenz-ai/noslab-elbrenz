@@ -208,8 +208,8 @@ const rubrica = defineCollection({
     titolo_lad: z.string().min(1).max(200),
     /** Titolo italiano. */
     titolo_it: z.string().min(1).max(200),
-    /** Titolo tedesco. */
-    titolo_de: z.string().min(1).max(200),
+    /** Titolo tedesco (opzionale per le uscite solo-link a UT24). */
+    titolo_de: z.string().min(1).max(200).optional(),
 
     /** Data di uscita (mensile). */
     data: z.coerce.date(),
@@ -225,6 +225,9 @@ const rubrica = defineCollection({
 
     /** true = non pubblicata (come `bozza` degli eventi). */
     bozza: z.boolean().default(false),
+
+    /** true = card che rimanda a UT24, senza pagina di dettaglio ne ri-hosting. */
+    link_only: z.boolean().default(false),
   }),
 });
 

@@ -88,7 +88,9 @@ const anni = [...perAnno.keys()].sort((x, y) => y - x);
                 {perAnno.get(anno)!.map((u) => (
                   <li>
                     <a
-                      href={`/una-terra-cinque-lingue/${u.id}`}
+                      href={u.data.link_only && u.data.link_ut24 ? u.data.link_ut24 : `/una-terra-cinque-lingue/${u.id}`}
+                      target={u.data.link_only ? '_blank' : undefined}
+                      rel={u.data.link_only ? 'noopener' : undefined}
                       class="group block bg-white border border-[#E5DFCF] hover:border-[#C8923E] transition-colors p-6 no-underline"
                     >
                       <p
@@ -96,7 +98,7 @@ const anni = [...perAnno.keys()].sort((x, y) => y - x);
                         style="font-family: 'Inter', sans-serif;"
                       >
                         <time datetime={u.data.data.toISOString()}>{formatDataIT(u.data.data)}</time>
-                        <span class="text-[#1E2E26]/45"> · lad / it / de</span>
+                        <span class="text-[#1E2E26]/45">{u.data.link_only ? ' · Leggi su UT24 →' : ' · lad / it / de'}</span>
                       </p>
                       <h3
                         class="text-2xl text-[#1E2E26] font-medium leading-tight m-0 group-hover:text-[#C8923E] transition-colors"
