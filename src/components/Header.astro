@@ -56,6 +56,7 @@ import Wordmark from '../components/Wordmark.astro';
 type NavChild = { href?: string; label: string };
 type NavItem = { label: string; href?: string; highlight?: boolean; children?: NavChild[] };
 
+const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 const navItems: NavItem[] = [
   {
     label: "L'Associazione",
@@ -87,6 +88,7 @@ const navItems: NavItem[] = [
       { href: '/lunari-dal-nos', label: 'Lunari dal Nos' },
       { href: '/portale-memoria', label: 'Portale Memoria' },
       { href: '/una-terra-cinque-lingue', label: 'Una terra, cinque lingue' },
+      ...(GUARDIANI_LIVE ? [{ href: '/guardiani-de-la-lenga', label: 'Guardiani de la lenga' }] : []),
     ],
   },
   {

@@ -168,6 +168,9 @@ const filaMarquee = marqueeConDim.length > 0
 const marqueeRipetute = filaMarquee.slice(marqueeConDim.length);
 // durata proporzionale alla lunghezza della fila (~5s per logo, rif. 40s/8)
 const durataMarquee = `${filaMarquee.length * 5}s`;
+
+// Guardiani de la lenga: card in home dietro flag (default OFF).
+const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 ---
 <Layout ogImage="/og/og-home.jpg"
   title="El Brenz dle Val del Nos"
@@ -513,6 +516,32 @@ const durataMarquee = `${filaMarquee.length * 5}s`;
       )}
     </div>
   </section>
+
+  {/* Guardiani de la lenga (12/7): card-progetto dietro GUARDIANI_LIVE.
+      Non compare finche' il glossario non ha termini validati. */}
+  {GUARDIANI_LIVE && (
+    <section class="bg-[#F8F1E4] py-14">
+      <div class="max-w-2xl mx-auto px-6">
+        <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors py-10 px-8 md:py-12 md:px-12 text-center">
+          <svg viewBox="0 0 120 80" fill="none" class="mx-auto mb-5 w-[84px] md:w-[104px] h-auto" aria-hidden="true" role="presentation">
+            <g stroke="#C8923E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M60 22 C50 15, 32 15, 22 20 L22 60 C32 55, 50 55, 60 62 C70 55, 88 55, 98 60 L98 20 C88 15, 70 15, 60 22 Z" />
+              <path d="M60 22 V62" />
+              <path d="M30 30 H50 M30 38 H50 M70 30 H90 M70 38 H90" stroke-width="1.7" />
+            </g>
+            <circle cx="60" cy="12" r="3.5" fill="#1E2E26" />
+          </svg>
+          <h2 class="text-2xl md:text-3xl m-0 mb-3 text-[#1E2E26]" style="font-family: 'Playfair Display', serif; font-weight: 500;">Guardiani de la lenga</h2>
+          <div class="w-14 h-[2px] bg-[#C8923E] mx-auto mb-5" aria-hidden="true"></div>
+          <p class="text-base text-[#1E2E26]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Il <em>noneso</em>, il <em>solander</em>, il <em>rabies</em>, il <em>pegaes</em>:
+            proponi le parole della <em>nosa lenga</em> e falle entrare nel glossario vivo delle valli.
+          </p>
+          <a href="/guardiani-de-la-lenga" class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">Diventa Guardian de la lenga</a>
+        </div>
+      </div>
+    </section>
+  )}
 
   {/* AGGIUNTA 8/7/2026 — card rubrica "Una terra, cinque lingue" (UT24):
       banda identitaria che porta alla rubrica trilingue. Stessa veste
