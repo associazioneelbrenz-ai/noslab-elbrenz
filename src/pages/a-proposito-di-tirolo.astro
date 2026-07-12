@@ -9,8 +9,10 @@
 import Layout from '../layouts/Layout.astro';
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
-const PDF_URL = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/biblioteca/altmayer-a-proposito-di-tirolo-2024.pdf`;
-const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-semibold tracking-wider uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]';
+// L'URL del PDF NON è nel sorgente: lo restituisce l'edge download-lead dopo
+// un submit valido del modulo (lead-gen), così il modulo non è aggirabile.
+const LEAD_URL = `${SUPABASE_URL}/functions/v1/download-lead`;
+const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-semibold tracking-wider uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors cursor-pointer border-0 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]';
 ---
 
 <Layout
@@ -33,7 +35,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-sem
           <p class="text-lg text-[#F5EEDD]/85 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
             Un dono del prof. Everton Altmayer, voce del Tirolo brasiliano di Treze Tílias.
           </p>
-          <a href={PDF_URL} target="_blank" rel="noopener" class={CTA}>Scarica il libro (PDF) →</a>
+          <button type="button" class={CTA} data-apri-download>Scarica il libro (PDF) →</button>
         </div>
       </div>
     </div>
@@ -47,11 +49,129 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-sem
       <p class="mt-5">Il prof. Altmayer, amico dell'Associazione, ci ha concesso di mettere la sua opera a disposizione di tutti, gratuitamente: un gesto di amicizia tra le due sponde della stessa memoria tirolese. A lui va la <em>nosa</em> gratitudine.</p>
 
       <div class="mt-10 text-center">
-        <a href={PDF_URL} target="_blank" rel="noopener" class={CTA}>Scarica il libro (PDF)</a>
+        <button type="button" class={CTA} data-apri-download>Scarica il libro (PDF)</button>
         <p class="text-xs text-[#1E2E26]/55 mt-4" style="font-family: 'Inter', sans-serif;">
           Opera di Everton Altmayer · Treze Tílias, 2024 · pubblicata per gentile concessione dell'autore. Tutti i diritti restano dell'autore.
         </p>
       </div>
     </div>
   </article>
+
+  {/* MODAL lead-gen download */}
+  <div id="dl-overlay" class="hidden fixed inset-0 z-50 bg-[#1E2E26]/70 backdrop-blur-sm items-center justify-center px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+    <div id="dl-modal" class="bg-[#F5EEDD] rounded-lg shadow-2xl w-full max-w-md mx-auto my-auto p-6 md:p-8 relative" data-lead-url={LEAD_URL}>
+      <button type="button" id="dl-close" aria-label="Chiudi" class="absolute top-3 right-3 w-9 h-9 flex items-center justify-center text-[#1E2E26]/50 hover:text-[#1E2E26] text-2xl leading-none rounded focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8923E]">×</button>
+      <h2 id="dl-title" class="text-2xl text-[#1E2E26] leading-tight m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Scarica il libro</h2>
+      <p class="text-sm text-[#1E2E26]/70 m-0 mb-5" style="font-family: 'Inter', sans-serif;">Lascia i tuoi dati per scaricare il libro, concesso gratuitamente dall'autore Everton Altmayer.</p>
+      <form id="dl-form" novalidate style="font-family: 'Inter', sans-serif;">
+        <div class="mb-3">
+          <label for="dl-nome" class="block text-sm text-[#1E2E26]/75 mb-1">Nome <span class="text-[#a33]">*</span></label>
+          <input type="text" id="dl-nome" required autocomplete="name" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        <div class="mb-3">
+          <label for="dl-email" class="block text-sm text-[#1E2E26]/75 mb-1">Email <span class="text-[#a33]">*</span></label>
+          <input type="email" id="dl-email" required autocomplete="email" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        <div class="mb-4">
+          <label for="dl-tel" class="block text-sm text-[#1E2E26]/75 mb-1">Telefono <span class="text-[#1E2E26]/45">(facoltativo)</span></label>
+          <input type="tel" id="dl-tel" autocomplete="tel" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        {/* honeypot */}
+        <div class="hidden" aria-hidden="true"><label>Non compilare<input type="text" id="dl-website" tabindex="-1" autocomplete="off" /></label></div>
+        <label class="flex items-start gap-2.5 mb-2.5 text-sm text-[#1E2E26]/80 cursor-pointer">
+          <input type="checkbox" id="dl-privacy" class="mt-0.5 w-4 h-4 accent-[#C8923E]" />
+          <span>Ho letto e accetto l'<a href="/gita-giochi-medievali-2026/privacy" target="_blank" class="text-[#8a6215] underline">informativa privacy</a>. <span class="text-[#a33]">*</span></span>
+        </label>
+        <label class="flex items-start gap-2.5 mb-5 text-sm text-[#1E2E26]/80 cursor-pointer">
+          <input type="checkbox" id="dl-news" class="mt-0.5 w-4 h-4 accent-[#C8923E]" />
+          <span>Voglio ricevere gli aggiornamenti di El Brenz.</span>
+        </label>
+        <button type="submit" id="dl-submit" class="w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Scarica il libro (PDF)</button>
+        <div id="dl-esito" class="hidden mt-3 text-sm rounded px-3 py-2"></div>
+      </form>
+    </div>
+  </div>
 </Layout>
+
+<script>
+  // Modal lead-gen: raccoglie nome+email, poi l'edge download-lead restituisce
+  // l'URL del PDF e facciamo partire il download. Focus trap minimale + ESC.
+  (function () {
+    const overlay = document.getElementById('dl-overlay');
+    const modal = document.getElementById('dl-modal');
+    const form = document.getElementById('dl-form') as HTMLFormElement | null;
+    const esito = document.getElementById('dl-esito');
+    const submit = document.getElementById('dl-submit') as HTMLButtonElement | null;
+    if (!overlay || !modal || !form || !submit) return;
+    const leadUrl = modal.getAttribute('data-lead-url')!;
+    let openedAt = 0;
+    let lastFocus: HTMLElement | null = null;
+
+    const apri = () => {
+      lastFocus = document.activeElement as HTMLElement;
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      openedAt = Date.now();
+      (document.getElementById('dl-nome') as HTMLInputElement | null)?.focus();
+      document.body.style.overflow = 'hidden';
+    };
+    const chiudi = () => {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+      document.body.style.overflow = '';
+      lastFocus?.focus();
+    };
+    document.querySelectorAll('[data-apri-download]').forEach((b) => b.addEventListener('click', apri));
+    document.getElementById('dl-close')?.addEventListener('click', chiudi);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) chiudi(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.classList.contains('hidden')) chiudi(); });
+
+    const msg = (t: string, ok: boolean) => {
+      if (!esito) return;
+      esito.classList.remove('hidden');
+      esito.style.background = ok ? '#eaf3ee' : '#fbecec';
+      esito.style.color = '#1E2E26';
+      esito.textContent = t;
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = (document.getElementById('dl-nome') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('dl-email') as HTMLInputElement).value.trim();
+      const telefono = (document.getElementById('dl-tel') as HTMLInputElement).value.trim();
+      const privacy = (document.getElementById('dl-privacy') as HTMLInputElement).checked;
+      const news = (document.getElementById('dl-news') as HTMLInputElement).checked;
+      const honeypot = (document.getElementById('dl-website') as HTMLInputElement).value;
+      if (nome.length < 2) { msg('Scrivi il tuo nome.', false); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg('Email non valida.', false); return; }
+      if (!privacy) { msg('Serve il consenso privacy per scaricare.', false); return; }
+      submit.disabled = true;
+      submit.textContent = 'Preparo il download…';
+      try {
+        const r = await fetch(leadUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome, email, telefono, consenso_privacy: privacy, consenso_newsletter: news,
+            risorsa: 'libro-altmayer', _honeypot: honeypot, _ts: openedAt,
+            sorgente: { ref: document.referrer || null },
+          }),
+        });
+        const out = await r.json();
+        if (r.ok && out.url) {
+          const a = document.createElement('a');
+          a.href = out.url; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('download', '');
+          document.body.appendChild(a); a.click(); a.remove();
+          msg('Grazie! Il download è partito. Se non parte, controlla la tua email.', true);
+          setTimeout(chiudi, 2200);
+        } else {
+          msg(out.error || 'Non è stato possibile avviare il download. Riprova.', false);
+        }
+      } catch {
+        msg('Errore di connessione. Riprova tra poco.', false);
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Scarica il libro (PDF)';
+      }
+    });
+  })();
+</script>

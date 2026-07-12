@@ -1,0 +1,275 @@
+---
+/**
+ * /gita-giochi-medievali-2026/iscrizione — iscrizione + anticipo 30 € della
+ * gita sociale ai Giochi Medievali (V1). Flusso a step:
+ *   1. verifica socio (edge gita-verifica-socio) → tariffa agevolata o upsell
+ *   2. modulo dati (posti 1–10, consenso privacy obbligatorio)
+ *   3. anticipo 30 € × posti via PayPal (accetta anche carta) — edge
+ *      gita-crea-ordine / gita-cattura-ordine
+ * Il posto è fermato SOLO a pagamento riuscito. Bonus preorder −5 € sul
+ * totale se si prenota entro il 31/7 (bloccato server-side alla creazione).
+ *
+ * Eccezione ammessa alla regola "no fetch client-side": SDK PayPal +
+ * createOrder/onApprove, come su /dona e /tesseramento.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const VERIFICA_URL = `${SUPABASE_URL}/functions/v1/gita-verifica-socio`;
+const CREATE_URL = `${SUPABASE_URL}/functions/v1/gita-crea-ordine`;
+const CAPTURE_URL = `${SUPABASE_URL}/functions/v1/gita-cattura-ordine`;
+const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJc1GPwUL2wgh64lSCKfaEkKZlaC';
+
+// Bonus preorder attivo (informativo lato pagina; il valore è deciso e
+// bloccato dal server alla creazione dell'ordine).
+const PREORDER_ATTIVO = Date.now() <= new Date('2026-07-31T23:59:59+02:00').getTime();
+
+const label = "block text-sm text-[#1E2E26]/70 mb-1.5";
+const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] focus:outline-none focus:border-[#C8923E] rounded";
+---
+
+<Layout
+  title="Iscriviti alla gita ai Giochi Medievali — El Brenz"
+  description="Iscriviti alla gita sociale El Brenz ai Giochi Medievali di Sluderno (22 agosto 2026): verifica la tariffa socio, blocca il posto con l'anticipo di 30 €, bonus preorder di 5 € entro il 31 luglio. Posti limitati."
+  ogImage="/og/og-gita-giochi-medievali.jpg"
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-2xl mx-auto px-6 py-12 md:py-16">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">Gita sociale · 22 agosto 2026</p>
+      <h1 class="text-3xl md:text-4xl leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Blocca il tuo posto per i <em class="text-[#C8923E]" style="font-style: italic;">Giochi Medievali</em>
+      </h1>
+      <p class="text-lg text-[#F5EEDD]/85 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Sluderno, ai piedi di Castel Coira. Posti limitati: si fermano solo con l'anticipo.
+      </p>
+    </div>
+  </header>
+
+  <main class="bg-[#F8F1E4]">
+    <div
+      class="max-w-2xl mx-auto px-6 py-10 md:py-14"
+      id="gita-box"
+      data-verifica-url={VERIFICA_URL}
+      data-create-url={CREATE_URL}
+      data-capture-url={CAPTURE_URL}
+      data-paypal-client-id={PAYPAL_CLIENT_ID}
+    >
+      {/* STEP 1 — socio */}
+      <section class="bg-white border border-[#E5DFCF] rounded p-6 md:p-8 mb-6">
+        <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-1" style="font-family: 'Playfair Display', serif;">1 · Sei già socio El Brenz?</h2>
+        <p class="text-sm text-[#1E2E26]/65 m-0 mb-5" style="font-family: 'Inter', sans-serif;">I soci hanno la tariffa agevolata. Verifica con la tua email (facoltativo il numero di tessera).</p>
+        <div class="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
+          <div>
+            <label class={label} for="g-email" style="font-family: 'Inter', sans-serif;">La tua email</label>
+            <input class={input} type="email" id="g-email" autocomplete="email" placeholder="nome@esempio.it" style="font-family: 'Inter', sans-serif;" />
+          </div>
+          <button type="button" id="g-verifica" class="bg-[#1E2E26] text-[#F5EEDD] px-6 py-2.5 rounded font-medium hover:bg-[#2a3f34] transition-colors" style="font-family: 'Inter', sans-serif;">Verifica</button>
+        </div>
+        <div class="mt-3">
+          <label class={label} for="g-tessera" style="font-family: 'Inter', sans-serif;">Numero tessera <span class="text-[#1E2E26]/45">(facoltativo)</span></label>
+          <input class={input} type="text" id="g-tessera" placeholder="codice dalla tua tessera" style="font-family: 'Inter', sans-serif;" />
+        </div>
+
+        {/* esito socio */}
+        <div id="g-esito-socio" class="hidden mt-5 rounded px-4 py-3 text-sm" style="font-family: 'Inter', sans-serif;"></div>
+
+        {/* upsell non socio */}
+        <div id="g-upsell" class="hidden mt-5 bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded px-5 py-4">
+          <p class="m-0 mb-1 text-[#1E2E26] font-medium" style="font-family: 'Playfair Display', serif;">Diventa socio e risparmia sulla gita</p>
+          <p class="m-0 mb-4 text-sm text-[#1E2E26]/75" style="font-family: 'Inter', sans-serif;">Con la tessera El Brenz partecipi a tariffa agevolata e sostieni tutto l'anno la memoria delle nostre valli. Puoi comunque proseguire come non socio.</p>
+          <div class="flex flex-wrap gap-3" style="font-family: 'Inter', sans-serif;">
+            <a href="/tesseramento" class="bg-[#C8923E] text-[#1E2E26] px-5 py-2.5 rounded font-semibold no-underline hover:bg-[#D9A94E] transition-colors">Diventa socio e prenota →</a>
+            <button type="button" id="g-prosegui-nonsocio" class="border-2 border-[#E5DFCF] text-[#1E2E26] px-5 py-2.5 rounded font-medium hover:border-[#C8923E] transition-colors bg-white">Prosegui come non socio</button>
+          </div>
+        </div>
+      </section>
+
+      {/* STEP 2 + 3 — modulo + anticipo (nascosti finché non si sblocca) */}
+      <section id="g-modulo" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8">
+        <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-5" style="font-family: 'Playfair Display', serif;">2 · I tuoi dati</h2>
+        <div class="grid sm:grid-cols-2 gap-4" style="font-family: 'Inter', sans-serif;">
+          <div>
+            <label class={label} for="g-nome">Nome</label>
+            <input class={input} type="text" id="g-nome" autocomplete="given-name" />
+          </div>
+          <div>
+            <label class={label} for="g-cognome">Cognome</label>
+            <input class={input} type="text" id="g-cognome" autocomplete="family-name" />
+          </div>
+          <div>
+            <label class={label} for="g-telefono">Telefono</label>
+            <input class={input} type="tel" id="g-telefono" autocomplete="tel" placeholder="per contatti sulla gita" />
+          </div>
+          <div>
+            <label class={label} for="g-posti">Quanti posti</label>
+            <select class={input} id="g-posti">
+              {[1,2,3,4,5,6,7,8].map((n) => (<option value={String(n)}>{n} {n === 1 ? 'posto' : 'posti'}</option>))}
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-6 bg-[#F8F1E4] rounded p-5" style="font-family: 'Inter', sans-serif;">
+          <div class="flex items-baseline justify-between">
+            <span class="text-[#1E2E26]/75 text-sm">Anticipo ora (30 € a posto)</span>
+            <span id="g-totale" class="text-2xl text-[#1E2E26] font-semibold">30,00 €</span>
+          </div>
+          {PREORDER_ATTIVO && (
+            <p class="m-0 mt-2 text-sm text-[#2d8659] font-medium">🏰 Bonus preorder: −5 € sul totale della gita se prenoti entro il 31 luglio.</p>
+          )}
+          <p class="m-0 mt-2 text-xs text-[#1E2E26]/55">Il saldo (costo totale − anticipo{PREORDER_ATTIVO ? ' − bonus' : ''}) ti sarà comunicato appena definito: nessun addebito automatico.</p>
+        </div>
+
+        <label class="flex items-start gap-3 mt-5 text-sm text-[#1E2E26]/80 cursor-pointer" style="font-family: 'Inter', sans-serif;">
+          <input type="checkbox" id="g-consenso" class="mt-1 w-4 h-4 accent-[#C8923E]" />
+          <span>Ho letto e accetto l'<a href="/gita-giochi-medievali-2026/privacy" target="_blank" class="text-[#8a6215] underline">informativa sul trattamento dei dati</a> per l'iscrizione e il pagamento. <span class="text-[#a33]">*</span></span>
+        </label>
+
+        <p class="mt-5 mb-3 text-sm text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">3 · Versa l'anticipo con PayPal o carta per fermare il posto:</p>
+        <div id="g-paypal" class="min-h-[45px]"></div>
+        <div id="g-esito" class="hidden mt-4 rounded px-4 py-3 text-sm border-l-4" style="font-family: 'Inter', sans-serif;"></div>
+
+        <p class="mt-4 text-xs text-[#1E2E26]/50" style="font-family: 'Inter', sans-serif;">
+          L'anticipo conferma la prenotazione. In caso di annullamento della gita da parte di El Brenz è rimborsato per intero; in caso di rinuncia del partecipante non è rimborsabile (copre i costi già impegnati).
+        </p>
+      </section>
+
+      <p class="mt-6 text-center text-sm text-[#1E2E26]/55" style="font-family: 'Inter', sans-serif;">
+        Tutti i dettagli della gita sono nella <a href="/gita-giochi-medievali-2026" class="text-[#8a6215] underline">pagina dedicata</a>.
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<script define:vars={{ VERIFICA_URL, CREATE_URL, CAPTURE_URL, PAYPAL_CLIENT_ID }}>
+  (function () {
+    const box = document.getElementById('gita-box');
+    if (!box) return;
+    const $ = (id) => document.getElementById(id);
+    const esitoSocio = $('g-esito-socio');
+    const upsell = $('g-upsell');
+    const modulo = $('g-modulo');
+    const totale = $('g-totale');
+    let paypalRendered = false;
+
+    function sbloccaModulo() {
+      modulo.classList.remove('hidden');
+      modulo.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      renderPaypal();
+    }
+    function box3(el, msg, ok) {
+      el.classList.remove('hidden');
+      el.style.background = ok ? '#eaf3ee' : '#fbecec';
+      el.style.color = '#1E2E26';
+      el.textContent = msg;
+    }
+    function aggiornaTotale() {
+      const posti = parseInt($('g-posti').value || '1', 10);
+      const val = (30 * posti).toFixed(2).replace('.', ',');
+      totale.textContent = val + ' €';
+    }
+    $('g-posti')?.addEventListener('change', aggiornaTotale);
+
+    // STEP 1 — verifica socio
+    $('g-verifica')?.addEventListener('click', async () => {
+      const email = ($('g-email').value || '').trim();
+      const codice = ($('g-tessera').value || '').trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        box3(esitoSocio, 'Scrivi un indirizzo email valido.', false);
+        return;
+      }
+      upsell.classList.add('hidden');
+      box3(esitoSocio, 'Verifico…', true);
+      try {
+        const r = await fetch(VERIFICA_URL, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, codice }),
+        });
+        const out = await r.json();
+        if (out.socio) {
+          box3(esitoSocio, `Bentornato/a${out.nome ? ' ' + out.nome : ''}! Socio confermato: hai la tariffa agevolata. Prosegui con l'iscrizione.`, true);
+          // precompila email nel modulo
+          $('g-email').setAttribute('data-verificato', '1');
+          sbloccaModulo();
+        } else {
+          esitoSocio.classList.add('hidden');
+          upsell.classList.remove('hidden');
+          upsell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      } catch {
+        box3(esitoSocio, 'Verifica non riuscita, riprova tra poco.', false);
+      }
+    });
+
+    $('g-prosegui-nonsocio')?.addEventListener('click', () => {
+      upsell.classList.add('hidden');
+      sbloccaModulo();
+    });
+
+    // STEP 3 — PayPal
+    function renderPaypal() {
+      if (paypalRendered) return;
+      paypalRendered = true;
+      aggiornaTotale();
+      const sdk = document.createElement('script');
+      sdk.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(PAYPAL_CLIENT_ID) +
+        '&currency=EUR&intent=capture&components=buttons&enable-funding=card&locale=it_IT';
+      sdk.onload = () => {
+        if (!window.paypal) return;
+        window.paypal.Buttons({
+          onClick: (data, actions) => {
+            const consenso = $('g-consenso');
+            const nome = ($('g-nome').value || '').trim();
+            const cognome = ($('g-cognome').value || '').trim();
+            const email = ($('g-email').value || '').trim();
+            if (!nome || !cognome || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+              box3($('g-esito'), 'Compila nome, cognome ed email prima di pagare.', false);
+              return actions.reject();
+            }
+            if (!consenso || !consenso.checked) {
+              box3($('g-esito'), 'Serve il consenso al trattamento dei dati per proseguire.', false);
+              return actions.reject();
+            }
+            return actions.resolve();
+          },
+          createOrder: async () => {
+            const resp = await fetch(CREATE_URL, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                nome: ($('g-nome').value || '').trim(),
+                cognome: ($('g-cognome').value || '').trim(),
+                email: ($('g-email').value || '').trim(),
+                telefono: ($('g-telefono').value || '').trim(),
+                posti: parseInt($('g-posti').value || '1', 10),
+                codice_tessera: ($('g-tessera').value || '').trim(),
+                consenso_privacy: !!($('g-consenso') && $('g-consenso').checked),
+              }),
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.id) {
+              box3($('g-esito'), data.error || 'Errore nella preparazione del pagamento.', false);
+              throw new Error(data.error || 'createOrder failed');
+            }
+            return data.id;
+          },
+          onApprove: async (data) => {
+            const resp = await fetch(CAPTURE_URL, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderID: data.orderID }),
+            });
+            const out = await resp.json();
+            if (resp.ok && out.success) {
+              modulo.innerHTML = '<div class="text-center py-8"><p style="font-family:Playfair Display,serif;font-size:1.6rem;color:#1E2E26;margin:0 0 10px;">Il tuo posto è fermato 🛡️</p><p style="font-family:Inter,sans-serif;color:#1E2E26;opacity:.8;max-width:34rem;margin:0 auto;">Grazie! Ti abbiamo inviato una email di conferma. Il saldo ti sarà comunicato appena definito, con le istruzioni per pagarlo. A presto, insieme, nel Medioevo.</p></div>';
+              modulo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+              box3($('g-esito'), out.error || 'Il pagamento non risulta completato. Scrivici a info@elbrenz.eu.', false);
+            }
+          },
+          onError: () => {
+            box3($('g-esito'), 'Si è verificato un errore col pagamento. Riprova tra poco.', false);
+          },
+        }).render('#g-paypal');
+      };
+      document.head.appendChild(sdk);
+    }
+  })();
+</script>

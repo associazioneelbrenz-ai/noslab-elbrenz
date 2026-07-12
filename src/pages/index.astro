@@ -81,6 +81,11 @@ const eventiFuturi = (
   .sort((a, b) => a.data.data.getTime() - b.data.data.getTime())
   .slice(0, 3);
 
+// Countdown posti gita: la barra è popolata a runtime (client) leggendo la
+// vista pubblica aggregata v_posti_gita (solo conteggi, nessun dato personale).
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SB_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+
 /** Data compatta per il riquadro della card evento, es. { giorno: "12", mese: "SET", anno: "2026" }. */
 function dataCompattaEvento(data: Date): { giorno: string; mese: string; anno: string } {
   return {
@@ -390,6 +395,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
         <ul class="list-none m-0 p-0 flex flex-col gap-6">
           {eventiFuturi.map((e) => {
             const dc = dataCompattaEvento(e.data.data);
+            const isGita = !!e.data.link && e.data.link.includes('gita-giochi-medievali-2026');
             return (
               <li class="flex items-stretch gap-6 bg-white border border-[#E5DFCF] p-6">
                 {e.data.immagine && (
@@ -430,7 +436,21 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
                       {e.data.descrizioneBreve}
                     </p>
                   )}
-                  {e.data.link && (
+                  {isGita ? (
+                    <div class="mt-4" data-gita-countdown style="font-family: 'Inter', sans-serif;">
+                      <div class="flex items-baseline justify-between text-[13px] mb-1.5">
+                        <span class="text-[#1E2E26]/70">Posti disponibili</span>
+                        <span class="tabular-nums font-semibold text-[#1E2E26]" data-gita-testo>— di 54</span>
+                      </div>
+                      <div class="h-2.5 w-full bg-[#E5DFCF] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#C8923E] rounded-full transition-[width] duration-500" data-gita-barra style="width:0%"></div>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+                        <a href="/gita-giochi-medievali-2026/iscrizione" class="inline-block bg-[#C8923E] text-[#1E2E26] px-5 py-2 text-sm font-semibold no-underline rounded hover:bg-[#D9A94E] transition-colors">Iscriviti e blocca il posto →</a>
+                        <a href={e.data.link} class="text-sm text-[#8a6215] no-underline hover:underline">Tutti i dettagli</a>
+                      </div>
+                    </div>
+                  ) : e.data.link && (
                     <a
                       href={e.data.link}
                       target="_blank"
@@ -1067,3 +1087,34 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
   </section>
 
 </Layout>
+
+<script define:vars={{ SB_URL, SB_ANON }}>
+  // Countdown posti gita: legge la vista aggregata v_posti_gita (solo numeri).
+  (function () {
+    const wrap = document.querySelector('[data-gita-countdown]');
+    if (!wrap || !SB_URL || !SB_ANON) return;
+    const testo = wrap.querySelector('[data-gita-testo]');
+    const barra = wrap.querySelector('[data-gita-barra]');
+    fetch(`${SB_URL}/rest/v1/v_posti_gita?select=posti_totali,posti_occupati`, {
+      headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
+    })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((rows) => {
+        const row = Array.isArray(rows) ? rows[0] : null;
+        if (!row) return;
+        const totali = Number(row.posti_totali) || 54;
+        const occupati = Math.min(Number(row.posti_occupati) || 0, totali);
+        const disponibili = Math.max(totali - occupati, 0);
+        if (testo) testo.textContent = `${disponibili} di ${totali}`;
+        if (barra) barra.style.width = `${Math.round((occupati / totali) * 100)}%`;
+        if (disponibili <= 10 && disponibili > 0 && testo) {
+          testo.textContent = `Ultimi ${disponibili} posti!`;
+          testo.style.color = '#a33';
+        } else if (disponibili === 0 && testo) {
+          testo.textContent = 'Posti esauriti';
+          testo.style.color = '#a33';
+        }
+      })
+      .catch(() => {});
+  })();
+</script>
