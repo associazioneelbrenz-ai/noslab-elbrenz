@@ -170,21 +170,30 @@ serve(async (req: Request) => {
     await tgApi(token, 'sendChatAction', { chat_id: chatId, action: 'typing' });
 
     const anon = Deno.env.get('SUPABASE_ANON_KEY')!;
+    // IMPORTANTE: NIENTE 'Authorization: Bearer' qui. La publishable key come
+    // Bearer farebbe scattare in andreas-chat il ramo JWT (hasJwt=true) ->
+    // getUser fallisce (invalid_jwt) e, soprattutto, isTrustedBot (= !hasJwt)
+    // non si attiverebbe. Solo apikey + X-Bot-Secret: così il branch bot
+    // salta il rate-limit IP e risponde col RAG.
     const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/andreas-chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': anon,
-        'Authorization': `Bearer ${anon}`,
         'X-Bot-Secret': botSecret ?? '',
       },
       body: JSON.stringify({ query: text.slice(0, 600), external_id: chatHash }),
     });
     const out = await resp.json().catch(() => ({}));
+    if (!(resp.ok && out.ok)) {
+      console.error('[telegram-bot] andreas-chat non ok:', resp.status, JSON.stringify(out).slice(0, 300));
+    }
     if (resp.ok && out.ok && out.answer) {
       await sendMessage(token, chatId, toTelegramHtml(String(out.answer)));
     } else if (out.error === 'query_too_long') {
       await sendMessage(token, chatId, 'La domanda è un po\' lunga: prova a sintetizzarla in poche righe.');
+    } else if (out.error === 'rate_limit_daily') {
+      await sendMessage(token, chatId, out.messaggio || 'Per oggi ho risposto a molte domande. Riprova domani 🙏');
     } else {
       await sendMessage(token, chatId, 'Scusa, in questo momento non riesco a risponderti. Riprova tra poco o scrivici a info@elbrenz.eu.');
     }
