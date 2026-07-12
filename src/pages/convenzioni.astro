@@ -272,6 +272,11 @@ const perCategoria = CATEGORIE
             <span class="block text-sm text-[#F5EEDD]/80 mb-1">Sito web</span>
             <input name="url" type="url" maxlength="300" placeholder="https://…" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
           </label>
+          <label class="block md:col-span-2">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Indirizzo <span class="text-[#F5EEDD]/50">(facoltativo)</span></span>
+            <input name="indirizzo" maxlength="150" placeholder="es. via Nazionale 10 (per apparire sulla mappa)" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
+            <span class="block text-xs text-[#F5EEDD]/50 mt-1">Via e numero civico: serve solo per mostrare l'attività sulla mappa delle Valli.</span>
+          </label>
         </div>
 
         <label class="block">
@@ -390,6 +395,7 @@ const perCategoria = CATEGORIE
         nome_attivita: ((fd.get('nome_attivita') as string) || '').trim(),
         categoria: ((fd.get('categoria') as string) || '').trim(),
         localita: ((fd.get('localita') as string) || '').trim(),
+        indirizzo: ((fd.get('indirizzo') as string) || '').trim(),
         beneficio: ((fd.get('beneficio') as string) || '').trim(),
         dettagli: ((fd.get('dettagli') as string) || '').trim(),
         url: ((fd.get('url') as string) || '').trim(),

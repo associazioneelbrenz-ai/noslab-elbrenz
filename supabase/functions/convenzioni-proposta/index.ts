@@ -46,9 +46,28 @@ const FIELD_LIMITS = {
   email: { min: 5, max: 200 },
   url: { min: 0, max: 300 },
   telefono: { min: 0, max: 40 },
+  indirizzo: { min: 2, max: 150 },
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Geocoding indirizzo -> coordinate via Nominatim/OSM (zero costi, zero key).
+// User-Agent identificativo obbligatorio; timeout breve; best-effort.
+async function geocodifica(indirizzo: string, localita: string): Promise<{ lat: number; lng: number } | null> {
+  const q = [indirizzo, localita, 'Trentino', 'Italia'].filter(Boolean).join(', ')
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(q)}`
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'El Brenz - Associazione culturale (info@elbrenz.eu)', 'Accept-Language': 'it' },
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!res.ok) return null
+    const arr = await res.json()
+    if (!Array.isArray(arr) || arr.length === 0) return null
+    const lat = parseFloat(arr[0].lat), lng = parseFloat(arr[0].lon)
+    return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null
+  } catch { return null }
+}
 const CATEGORIE = ['rifugi', 'locali', 'servizi', 'cultura', 'benessere', 'altro']
 
 // Logo del proponente (facoltativo): resta nel bucket PRIVATO
@@ -238,12 +257,34 @@ async function gestisciAzione(req: Request, url: URL): Promise<Response> {
   // GET: pagina di conferma (evita che gli scanner email mutino lo stato).
   if (req.method === 'GET') {
     const { data } = await supabase.from('convenzioni')
-      .select('nome_attivita, categoria, localita, beneficio, stato').eq('id', id).maybeSingle()
+      .select('nome_attivita, categoria, localita, indirizzo, lat, lng, geo_stato, beneficio, stato').eq('id', id).maybeSingle()
     if (!data) return htmlResponse(`<h1>Proposta non trovata</h1>`, 404)
     const verbo = azione === 'approva' ? 'APPROVARE' : 'RIFIUTARE'
     const cls = azione === 'approva' ? 'approva' : 'rifiuta'
     const statoNota = data.stato !== 'proposta'
       ? `<p class="meta">⚠ Questa proposta è già in stato «${escapeHtml(data.stato)}»: l'azione non avrà effetto.</p>` : ''
+
+    // Blocco mappa (solo per APPROVA): parte informativa nel dl (read-only)
+    // + input coordinate/checkbox DENTRO il form (curatela, come da brief).
+    let geoInfo = ''
+    let geoForm = ''
+    if (azione === 'approva') {
+      const hasCoord = data.lat != null && data.lng != null
+      const gmaps = hasCoord ? `https://www.google.com/maps?q=${data.lat},${data.lng}` : ''
+      const avvisoGeo = data.geo_stato === 'non_trovato'
+        ? `<p class="meta">⚠ Geocodifica non riuscita per «${escapeHtml(data.indirizzo ?? '')}»: inserisci le coordinate a mano (lat, lng) per mostrarla in mappa.</p>`
+        : (data.indirizzo ? `<p class="meta">Coordinate proposte automaticamente dall'indirizzo. Verifica e correggi se serve.</p>` : `<p class="meta">Nessun indirizzo indicato: la convenzione non comparirà in mappa (puoi comunque inserire le coordinate a mano).</p>`)
+      geoInfo = `<dt>Indirizzo</dt><dd>${escapeHtml(data.indirizzo ?? '—')}</dd>`
+      geoForm = `
+        ${avvisoGeo}
+        <div style="margin:12px 0;padding:12px;background:#FDF9F0;border-left:3px solid #C8923E;text-align:left;">
+          <label style="display:inline-block;font-size:13px;color:#666;">Lat <input type="text" name="lat" value="${hasCoord ? data.lat : ''}" style="width:130px;padding:6px;border:1px solid #E5DFCF;border-radius:4px;"/></label>
+          <label style="display:inline-block;font-size:13px;color:#666;margin-left:8px;">Lng <input type="text" name="lng" value="${hasCoord ? data.lng : ''}" style="width:130px;padding:6px;border:1px solid #E5DFCF;border-radius:4px;"/></label>
+          ${gmaps ? `<p style="margin:8px 0 0;"><a href="${gmaps}" target="_blank" rel="noopener" style="color:#8a6215;font-size:13px;">Verifica su Google Maps ↗</a></p>` : ''}
+          <label style="display:block;margin-top:10px;font-size:14px;color:#1E2E26;"><input type="checkbox" name="mostra_in_mappa" value="1" ${data.geo_stato === 'auto' ? 'checked' : ''}/> Mostra questa convenzione sulla mappa pubblica</label>
+        </div>`
+    }
+
     return htmlResponse(`
       <h1>Confermi di ${verbo} questa proposta?</h1>
       <dl>
@@ -251,9 +292,11 @@ async function gestisciAzione(req: Request, url: URL): Promise<Response> {
         <dt>Categoria</dt><dd>${escapeHtml(data.categoria)}</dd>
         <dt>Località</dt><dd>${escapeHtml(data.localita ?? '—')}</dd>
         <dt>Beneficio</dt><dd>${escapeHtml(data.beneficio)}</dd>
+        ${geoInfo}
       </dl>
       ${statoNota}
       <form method="POST" action="${escapeHtml(url.pathname)}">
+        ${geoForm}
         <button type="submit" class="b ${cls}">${azione === 'approva' ? 'Sì, approva e pubblica' : 'Sì, rifiuta'}</button>
       </form>
       <p class="meta">${azione === 'approva' ? 'Approvando, la convenzione diventa visibile sul sito.' : 'Rifiutando, la proposta resta archiviata e non viene pubblicata. Nessuna email automatica al proponente.'}</p>`)
@@ -262,7 +305,29 @@ async function gestisciAzione(req: Request, url: URL): Promise<Response> {
   // POST: esegue l'azione (idempotente: solo se ancora 'proposta').
   const nuovoStato = azione === 'approva' ? 'attiva' : 'rifiutata'
   const patch: Record<string, unknown> = { stato: nuovoStato, updated_at: new Date().toISOString() }
-  if (azione === 'approva') patch.approvata_il = new Date().toISOString()
+  if (azione === 'approva') {
+    patch.approvata_il = new Date().toISOString()
+    // Coordinate + mostra_in_mappa dal form della scheda (curatela): il
+    // segretario conferma o corregge il geocoding prima che diventi pubblico.
+    try {
+      const fd = await req.formData()
+      const latN = parseFloat(String(fd.get('lat') ?? '').trim())
+      const lngN = parseFloat(String(fd.get('lng') ?? '').trim())
+      const mostra = fd.get('mostra_in_mappa') === '1'
+      if (Number.isFinite(latN) && Number.isFinite(lngN)) {
+        const { data: prev } = await supabase.from('convenzioni')
+          .select('lat, lng, geo_stato').eq('id', id).maybeSingle()
+        const cambiate = !prev || prev.lat == null || prev.lng == null
+          || Math.abs((prev.lat as number) - latN) > 1e-7 || Math.abs((prev.lng as number) - lngN) > 1e-7
+        patch.lat = latN
+        patch.lng = lngN
+        patch.geo_stato = cambiate ? 'manuale' : (prev?.geo_stato ?? 'manuale')
+        patch.mostra_in_mappa = mostra
+      } else {
+        patch.mostra_in_mappa = false // niente coordinate valide: fuori mappa
+      }
+    } catch { /* form senza body: approvazione senza tocco geo */ }
+  }
 
   const { data: updated } = await supabase.from('convenzioni')
     .update(patch).eq('id', id).eq('stato', 'proposta').select('id, logo_staging_path').maybeSingle()
@@ -342,6 +407,7 @@ serve(async (req) => {
   const nome_attivita = str('nome_attivita')
   const categoria = str('categoria')
   const localita = str('localita')
+  const indirizzo = str('indirizzo')
   const beneficio = str('beneficio')
   const dettagli = str('dettagli')
   const rawUrl = str('url')
@@ -365,6 +431,7 @@ serve(async (req) => {
   if (!tra(nome_attivita, L.nome_attivita)) return jsonResponse({ error: `Il nome dell'attività deve avere tra ${L.nome_attivita.min} e ${L.nome_attivita.max} caratteri.` }, 400, cors)
   if (!CATEGORIE.includes(categoria)) return jsonResponse({ error: 'Categoria non valida.' }, 400, cors)
   if (localita && !tra(localita, L.localita)) return jsonResponse({ error: 'Località non valida.' }, 400, cors)
+  if (indirizzo && !tra(indirizzo, L.indirizzo)) return jsonResponse({ error: 'Indirizzo non valido.' }, 400, cors)
   if (!tra(beneficio, L.beneficio)) return jsonResponse({ error: `Il beneficio deve avere tra ${L.beneficio.min} e ${L.beneficio.max} caratteri.` }, 400, cors)
   if (dettagli.length > L.dettagli.max) return jsonResponse({ error: `I dettagli non possono superare ${L.dettagli.max} caratteri.` }, 400, cors)
   if (rawUrl.length > L.url.max) return jsonResponse({ error: 'URL troppo lungo.' }, 400, cors)
@@ -391,11 +458,20 @@ serve(async (req) => {
     if (!logoTipo) return jsonResponse({ error: 'Formato logo non supportato: usa PNG, JPG o WebP.' }, 400, cors)
   }
 
+  // Geocoding (best-effort): solo se c'è un indirizzo. mostra_in_mappa resta
+  // false: si accende solo dopo la conferma del segretario nella scheda.
+  const geo = indirizzo ? await geocodifica(indirizzo, localita) : null
+
   // INSERT (service role) — PRIMA della mail (lezione A2). Il client è già
   // stato creato in cima per il rate limit.
   const { data: inserted, error: insErr } = await supabase.from('convenzioni').insert({
     nome_attivita, categoria,
     localita: localita || null,
+    indirizzo: indirizzo || null,
+    lat: geo?.lat ?? null,
+    lng: geo?.lng ?? null,
+    geo_stato: geo ? 'auto' : (indirizzo ? 'non_trovato' : null),
+    mostra_in_mappa: false,
     beneficio,
     dettagli: dettagli || null,
     url: rawUrl || null,
