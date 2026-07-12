@@ -67,29 +67,46 @@ try {
       <p class="mt-5">Per noi è più di una curiosità accademica. È la prova, documentata con rigore scientifico, che la <em>nosa parlada</em> vive dentro un continuum alpino antico e ricchissimo, in dialogo con il ladino dolomitico dei vicini di Fassa, Gardena e Badia.</p>
       <p class="mt-5">Oggi l'intero atlante è consultabile online (<em>digitALD</em>, Università di Monaco) e — cosa rara per un'opera di questa mole — è rilasciato con licenza aperta <strong>CC BY-SA 4.0</strong>: le sue carte si possono studiare, condividere e riutilizzare citando la fonte. Qui sotto ne presentiamo alcune; l'atlante completo è esplorabile sul sito dell'ALD.</p>
 
-      {/* CARTE SELEZIONATE */}
+      {/* CARTE SELEZIONATE — viewer con switcher (una carta alla volta,
+          menu a tendina + precedente/successiva). Senza JS le carte restano
+          tutte visibili in colonna (fallback). */}
       {carte.length > 0 ? (
-        <div class="mt-10 space-y-10">
-          {carte.map((c) => (
-            <figure class="m-0">
-              <a href={c.numero ? ALD_MAP(c.numero) : ALD_HOME} target="_blank" rel="noopener">
-                <img src={`${CARTE_BASE}/${c.file}`} alt={`Carta ALD${c.numero ? ` n. ${c.numero}` : ''}${c.tema ? `: ${c.tema}` : ''} — Valli del Noce`} class="w-full rounded-md border border-[#C8923E]/40" loading="lazy" decoding="async" />
-              </a>
-              <figcaption class="text-sm text-[#1E2E26]/65 mt-2" style="font-family: 'Inter', sans-serif;">
-                {c.numero ? `Carta ALD n. ${c.numero}` : 'Carta ALD'}{c.tema ? ` · ${c.tema}` : ''} ·
-                <a href={c.numero ? ALD_MAP(c.numero) : ALD_HOME} target="_blank" rel="noopener" class="text-[#8a6215] underline"> ALD (dir. H. Goebl, Univ. Salisburgo) · digitALD, LMU München · CC BY-SA 4.0</a>
-              </figcaption>
-            </figure>
-          ))}
+        <div id="ald-viewer" class="mt-10">
+          <div id="ald-controls" class="hidden flex-wrap items-center justify-center gap-3 mb-5" style="font-family: 'Inter', sans-serif;">
+            <button type="button" id="ald-prev" class="px-3 py-2 rounded border border-[#C8923E]/50 text-sm text-[#1E2E26] hover:border-[#C8923E] bg-white" aria-label="Carta precedente">←</button>
+            <select id="ald-select" class="px-3 py-2 rounded bg-white border border-[#C8923E]/50 text-sm text-[#1E2E26] max-w-xs focus:outline-none focus:border-[#C8923E]">
+              {carte.map((c, i) => (
+                <option value={String(i)}>{c.numero ? `Carta ${c.numero}` : `Carta ${i + 1}`}{c.tema ? ` · ${c.tema}` : ''}</option>
+              ))}
+            </select>
+            <button type="button" id="ald-next" class="px-3 py-2 rounded border border-[#C8923E]/50 text-sm text-[#1E2E26] hover:border-[#C8923E] bg-white" aria-label="Carta successiva">→</button>
+            <span id="ald-pos" class="text-xs text-[#1E2E26]/55"></span>
+          </div>
+          <div class="space-y-10">
+            {carte.map((c, i) => (
+              <figure class="ald-carta m-0" data-idx={String(i)}>
+                <a href={c.numero ? ALD_MAP(c.numero) : ALD_HOME} target="_blank" rel="noopener">
+                  <img src={`${CARTE_BASE}/${c.file}`} alt={`Carta ALD${c.numero ? ` n. ${c.numero}` : ''}${c.tema ? `: ${c.tema}` : ''} — Valli del Noce`} class="w-full rounded-md border border-[#C8923E]/40 bg-white" loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+                </a>
+                <figcaption class="text-sm text-[#1E2E26]/65 mt-2" style="font-family: 'Inter', sans-serif;">
+                  {c.numero ? `Carta ALD n. ${c.numero}` : 'Carta ALD'}{c.tema ? ` · ${c.tema}` : ''} ·
+                  <a href={c.numero ? ALD_MAP(c.numero) : ALD_HOME} target="_blank" rel="noopener" class="text-[#8a6215] underline"> ALD (dir. H. Goebl, Univ. Salisburgo) · digitALD, LMU München · CC BY-SA 4.0</a>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
         </div>
       ) : (
         <div class="mt-10 bg-[#FDF9F0] border-l-4 border-[#C8923E] px-5 py-4 rounded">
-          <p class="m-0 text-[#1E2E26]/80">Le carte selezionate delle Valli del Noce sono in preparazione. Nel frattempo puoi esplorare l'intero atlante direttamente sul sito dell'ALD.</p>
+          <p class="m-0 text-[#1E2E26]/80">Le carte selezionate delle Valli del Noce sono in preparazione. Nel frattempo puoi esplorare l'intero atlante, con tutte le sue carte, direttamente sul sito dell'ALD.</p>
         </div>
       )}
 
       <p class="mt-10 text-center">
         <a href={ALD_HOME} target="_blank" rel="noopener" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">Esplora l'ALD →</a>
+      </p>
+      <p class="mt-4 text-center text-sm text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">
+        Cerchi invece luoghi e attività sul territorio? Vai alla <a href="/mappa" class="text-[#8a6215] underline">Mappa delle Valli</a>.
       </p>
 
       <hr class="my-10 border-0 border-t border-[#C8923E]/30" />
@@ -103,3 +120,27 @@ try {
     </div>
   </article>
 </Layout>
+
+<script>
+  // Switcher carte ALD: mostra una carta alla volta (menu + prev/next).
+  // Progressive enhancement: senza JS restano tutte visibili in colonna.
+  const carte = Array.from(document.querySelectorAll<HTMLElement>('.ald-carta'));
+  const controls = document.getElementById('ald-controls');
+  const select = document.getElementById('ald-select') as HTMLSelectElement | null;
+  const pos = document.getElementById('ald-pos');
+  if (carte.length > 1 && controls && select) {
+    controls.classList.remove('hidden');
+    controls.classList.add('flex');
+    let i = 0;
+    const mostra = (n: number) => {
+      i = (n + carte.length) % carte.length;
+      carte.forEach((c, k) => { c.style.display = k === i ? '' : 'none'; });
+      select.value = String(i);
+      if (pos) pos.textContent = `${i + 1} di ${carte.length}`;
+    };
+    document.getElementById('ald-prev')?.addEventListener('click', () => mostra(i - 1));
+    document.getElementById('ald-next')?.addEventListener('click', () => mostra(i + 1));
+    select.addEventListener('change', () => mostra(parseInt(select.value, 10)));
+    mostra(0);
+  }
+</script>
