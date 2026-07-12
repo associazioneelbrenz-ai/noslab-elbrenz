@@ -88,6 +88,27 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // 2-bis. Provisioning ruolo 'socio' (additivo): se l'email corrisponde a un
+  // socio approvato (domanda_tesseramento stato 'approvata'), assegna il ruolo
+  // socio, sia al signup sia ai login successivi. Non rimuove 'ospite'. Il
+  // ruolo editor/admin resta assegnazione manuale del segretario.
+  try {
+    const { data: socio } = await supabase
+      .from("domande_tesseramento")
+      .select("id").ilike("email", email).eq("stato", "approvata").limit(1).maybeSingle();
+    if (socio && userId) {
+      const { data: ruoloSocio } = await supabase.from("ruolo").select("id").eq("nome", "socio").single();
+      if (ruoloSocio) {
+        await supabase.from("utente_ruolo").upsert(
+          { utente_id: userId, ruolo_id: ruoloSocio.id },
+          { onConflict: "utente_id,ruolo_id" },
+        );
+      }
+    }
+  } catch (e) {
+    console.error("[otp-verify] provisioning socio fallito:", e);
+  }
+
   // 3. Genera session Supabase via magiclink admin + verify chain
   const { data: linkData, error: linkErr } = await supabase.auth.admin.generateLink({
     type: "magiclink", email,

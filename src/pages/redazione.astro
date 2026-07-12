@@ -1,0 +1,350 @@
+---
+/**
+ * /redazione — area redazionale (Editor). Isola client-side: auth OTP
+ * (riusa otp-request/otp-verify + sessione Supabase in localStorage), poi
+ * gating per ruolo (>= collaboratore) e CRUD sugli articoli via RLS +
+ * edge articolo-azione (invia/approva/rifiuta). Nessuna logica sensibile
+ * lato client: la sicurezza sta nelle RLS e nel controllo ruolo server-side.
+ */
+import Layout from '../layouts/Layout.astro';
+
+const PILASTRI: Record<string, string> = {
+  storia: 'Storia',
+  lingua: 'Lingua e ladinità',
+  'cultura-materiale': 'Cultura materiale',
+  rievocazioni: 'Rievocazioni ed eventi',
+  identita: 'Identità e appartenenza',
+  'vita-associativa': 'Vita associativa',
+};
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Redazione · El Brenz" description="Area redazionale riservata di El Brenz." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8" style="font-family: 'Playfair Display', serif; font-weight: 500;">Redazione</h1>
+
+      {/* stato caricamento */}
+      <p id="rz-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* LOGIN */}
+      <section id="rz-login" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 max-w-md">
+        <div id="rz-login-1">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti invieremo un codice di verifica.</p>
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="rz-email">Email</label>
+          <input class={inputCls} type="email" id="rz-email" autocomplete="email" placeholder="nome@esempio.it" />
+          <button type="button" id="rz-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors">Invia codice</button>
+        </div>
+        <div id="rz-login-2" class="hidden">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice a 6 cifre inviato a <strong id="rz-email-echo"></strong>.</p>
+          <input class={`${inputCls} tracking-[0.4em] text-center text-xl`} type="text" id="rz-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+          <button type="button" id="rz-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Verifica e accedi</button>
+          <button type="button" id="rz-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        </div>
+        <div id="rz-login-err" class="hidden mt-3 text-sm rounded px-3 py-2" style="background:#fbecec;color:#1E2E26;"></div>
+      </section>
+
+      {/* NO ACCESS */}
+      <section id="rz-noaccess" class="hidden bg-white border border-[#E5DFCF] rounded p-6 max-w-md">
+        <p class="m-0 text-[#1E2E26]/80">Il tuo account non ha ancora accesso alla redazione. Se sei un collaboratore, chiedi al segretario di abilitarti.</p>
+        <button type="button" id="rz-logout-2" class="mt-4 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+      </section>
+
+      {/* APP */}
+      <section id="rz-app" class="hidden">
+        <div class="flex items-center justify-between mb-6">
+          <p class="text-sm text-[#1E2E26]/70 m-0">Ciao <strong id="rz-utente"></strong> · <span id="rz-ruolo" class="text-[#8a6215]"></span></p>
+          <button type="button" id="rz-logout" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+        </div>
+
+        {/* CODA ADMIN (solo segretario) */}
+        <div id="rz-coda-wrap" class="hidden mb-10">
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif;">In approvazione</h2>
+          <div id="rz-coda" class="space-y-3"></div>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif;">I miei articoli</h2>
+          <button type="button" id="rz-nuovo" class="bg-[#C8923E] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold hover:bg-[#D9A94E] transition-colors">+ Nuovo articolo</button>
+        </div>
+        <div id="rz-lista" class="space-y-3"></div>
+
+        {/* EDITOR FORM */}
+        <div id="rz-form-wrap" class="hidden mt-8 bg-white border border-[#E5DFCF] rounded p-6 md:p-8">
+          <h3 id="rz-form-titolo" class="text-lg text-[#1E2E26] m-0 mb-5" style="font-family: 'Playfair Display', serif;">Nuovo articolo</h3>
+          <div class="grid gap-4">
+            <div>
+              <label class="block text-sm text-[#1E2E26]/75 mb-1" for="rz-f-titolo">Titolo</label>
+              <input class={inputCls} type="text" id="rz-f-titolo" />
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="rz-f-pilastro">Pilastro</label>
+                <select class={inputCls} id="rz-f-pilastro">
+                  <option value="">— scegli —</option>
+                  {Object.entries(PILASTRI).map(([v, l]) => (<option value={v}>{l}</option>))}
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="rz-f-tags">Tag <span class="text-[#1E2E26]/45">(separati da virgola)</span></label>
+                <input class={inputCls} type="text" id="rz-f-tags" placeholder="storia, lingua" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-[#1E2E26]/75 mb-1" for="rz-f-estratto">Estratto <span class="text-[#1E2E26]/45">(breve)</span></label>
+              <textarea class={inputCls} id="rz-f-estratto" rows="2"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm text-[#1E2E26]/75 mb-1">Copertina</label>
+              <input type="file" id="rz-f-cover" accept="image/*" class="text-sm" />
+              <img id="rz-f-cover-prev" class="hidden mt-2 max-h-40 rounded border border-[#E5DFCF]" alt="Anteprima copertina" />
+            </div>
+            <div>
+              <label class="block text-sm text-[#1E2E26]/75 mb-1">Corpo</label>
+              <div class="flex flex-wrap gap-1 mb-1" id="rz-toolbar">
+                <button type="button" data-cmd="bold" class="px-2.5 py-1 border border-[#E5DFCF] rounded text-sm font-bold bg-white">B</button>
+                <button type="button" data-cmd="italic" class="px-2.5 py-1 border border-[#E5DFCF] rounded text-sm italic bg-white">I</button>
+                <button type="button" data-block="H2" class="px-2.5 py-1 border border-[#E5DFCF] rounded text-sm bg-white">Titolo</button>
+                <button type="button" data-block="H3" class="px-2.5 py-1 border border-[#E5DFCF] rounded text-sm bg-white">Sottotitolo</button>
+                <button type="button" data-cmd="insertUnorderedList" class="px-2.5 py-1 border border-[#E5DFCF] rounded text-sm bg-white">• Elenco</button>
+                <button type="button" data-block="BLOCKQUOTE" class="px-2.5 py-1 border border-[#E5DFCF] rounded text-sm bg-white">Citazione</button>
+                <button type="button" data-link="1" class="px-2.5 py-1 border border-[#E5DFCF] rounded text-sm bg-white">Link</button>
+              </div>
+              <div id="rz-f-corpo" contenteditable="true" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-3 rounded min-h-[240px] focus:outline-none focus:border-[#C8923E] leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;"></div>
+            </div>
+            <div id="rz-form-esito" class="hidden text-sm rounded px-3 py-2"></div>
+            <div class="flex flex-wrap gap-3">
+              <button type="button" id="rz-salva" class="bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded font-medium hover:bg-[#2a3f34] transition-colors">Salva bozza</button>
+              <button type="button" id="rz-invia" class="bg-[#C8923E] text-[#1E2E26] px-5 py-2.5 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Invia per approvazione</button>
+              <button type="button" id="rz-annulla" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Chiudi</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const PILASTRI: Record<string, string> = {
+    storia: 'Storia', lingua: 'Lingua e ladinità', 'cultura-materiale': 'Cultura materiale',
+    rievocazioni: 'Rievocazioni ed eventi', identita: 'Identità e appartenenza', 'vita-associativa': 'Vita associativa',
+  };
+  const STATI: Record<string, string> = {
+    bozza: 'Bozza', in_revisione: 'In revisione', in_approvazione: 'In approvazione',
+    pubblicato: 'Pubblicato', rifiutato: 'Da correggere',
+  };
+  const $ = (id: string) => document.getElementById(id);
+  const show = (id: string) => $(id)?.classList.remove('hidden');
+  const hide = (id: string) => $(id)?.classList.add('hidden');
+
+  let livello = 0;
+  let userId = '';
+  let editingId: string | null = null;
+  let coverUrl: string | null = null;
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    hide('rz-loading');
+    if (!session) { show('rz-login'); return; }
+    userId = session.user.id;
+    // ruolo massimo
+    const { data: ruoli } = await supabase
+      .from('utente_ruolo').select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', userId);
+    livello = (ruoli ?? []).reduce((m: number, r: any) => Math.max(m, r?.ruolo?.livello ?? 0), 0);
+    const nomeRuolo = (ruoli ?? []).map((r: any) => r?.ruolo?.nome).sort().pop() ?? 'ospite';
+    if (livello < 25) { show('rz-noaccess'); return; }
+    const nome = session.user.user_metadata?.nome || session.user.email;
+    ($('rz-utente') as HTMLElement).textContent = nome;
+    ($('rz-ruolo') as HTMLElement).textContent = nomeRuolo;
+    show('rz-app');
+    if (livello >= 50) { show('rz-coda-wrap'); caricaCoda(); }
+    caricaLista();
+  }
+
+  // ---- LOGIN ----
+  const loginErr = (t: string) => { const e = $('rz-login-err')!; e.classList.remove('hidden'); e.textContent = t; };
+  $('rz-send')?.addEventListener('click', async () => {
+    const email = ($('rz-email') as HTMLInputElement).value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('Email non valida.'); return; }
+    $('rz-login-err')?.classList.add('hidden');
+    const btn = $('rz-send') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    btn.disabled = false; btn.textContent = 'Invia codice';
+    if (error || !data?.ok) { loginErr('Impossibile inviare il codice. Riprova.'); return; }
+    (window as any)._rzEmail = email;
+    ($('rz-email-echo') as HTMLElement).textContent = email;
+    hide('rz-login-1'); show('rz-login-2');
+    setTimeout(() => ($('rz-code') as HTMLInputElement)?.focus(), 100);
+  });
+  $('rz-back')?.addEventListener('click', () => { hide('rz-login-2'); show('rz-login-1'); });
+  $('rz-verify')?.addEventListener('click', async () => {
+    const codice = ($('rz-code') as HTMLInputElement).value.replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) { loginErr('Il codice deve essere di 6 cifre.'); return; }
+    $('rz-login-err')?.classList.add('hidden');
+    const btn = $('rz-verify') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Verifica…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._rzEmail, codice, scope: 'login' } });
+    if (error || !data?.ok || !data?.session) { btn.disabled = false; btn.textContent = 'Verifica e accedi'; loginErr('Codice errato o scaduto.'); return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+  const logout = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  $('rz-logout')?.addEventListener('click', logout);
+  $('rz-logout-2')?.addEventListener('click', logout);
+
+  // ---- LISTA ----
+  function badge(stato: string) {
+    const col: Record<string, string> = { bozza: '#6b5a3a', in_approvazione: '#8a6215', pubblicato: '#2d8659', rifiutato: '#a33', in_revisione: '#8a6215' };
+    return `<span style="background:${col[stato] ?? '#6b5a3a'}1a;color:${col[stato] ?? '#6b5a3a'};padding:2px 10px;border-radius:999px;font-size:12px;">${STATI[stato] ?? stato}</span>`;
+  }
+  async function caricaLista() {
+    const { data } = await supabase.from('articolo')
+      .select('id,titolo,stato,pilastro,updated_at,motivo_rifiuto,autore_id')
+      .order('updated_at', { ascending: false }).limit(100);
+    const miei = (data ?? []).filter((a: any) => a.autore_id === userId);
+    const box = $('rz-lista')!;
+    if (miei.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessun articolo. Creane uno nuovo.</p>'; return; }
+    box.innerHTML = miei.map((a: any) => `
+      <div class="bg-white border border-[#E5DFCF] rounded p-4 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="m-0 text-[#1E2E26] font-medium truncate">${escapeHtml(a.titolo || '(senza titolo)')}</p>
+          <p class="m-0 text-xs text-[#1E2E26]/55 mt-1">${badge(a.stato)} ${a.pilastro ? '· ' + (PILASTRI[a.pilastro] ?? a.pilastro) : ''}</p>
+          ${a.stato === 'rifiutato' && a.motivo_rifiuto ? `<p class="m-0 text-xs text-[#a33] mt-1">Motivo: ${escapeHtml(a.motivo_rifiuto)}</p>` : ''}
+        </div>
+        <div class="flex gap-2 flex-shrink-0">
+          ${['bozza', 'rifiutato'].includes(a.stato) ? `<button data-edit="${a.id}" class="text-sm text-[#8a6215] underline">Modifica</button>` : ''}
+        </div>
+      </div>`).join('');
+    box.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => apriEditor((b as HTMLElement).dataset.edit!)));
+  }
+
+  // ---- EDITOR ----
+  function resetForm() {
+    editingId = null; coverUrl = null;
+    ($('rz-f-titolo') as HTMLInputElement).value = '';
+    ($('rz-f-pilastro') as HTMLSelectElement).value = '';
+    ($('rz-f-tags') as HTMLInputElement).value = '';
+    ($('rz-f-estratto') as HTMLTextAreaElement).value = '';
+    ($('rz-f-corpo') as HTMLElement).innerHTML = '';
+    ($('rz-f-cover-prev') as HTMLElement).classList.add('hidden');
+    ($('rz-form-esito') as HTMLElement).classList.add('hidden');
+  }
+  $('rz-nuovo')?.addEventListener('click', () => { resetForm(); ($('rz-form-titolo') as HTMLElement).textContent = 'Nuovo articolo'; show('rz-form-wrap'); $('rz-form-wrap')?.scrollIntoView({ behavior: 'smooth' }); });
+  $('rz-annulla')?.addEventListener('click', () => hide('rz-form-wrap'));
+
+  async function apriEditor(id: string) {
+    const { data: a } = await supabase.from('articolo').select('*').eq('id', id).maybeSingle();
+    if (!a) return;
+    editingId = id; coverUrl = a.immagine_copertina_url ?? null;
+    ($('rz-f-titolo') as HTMLInputElement).value = a.titolo ?? '';
+    ($('rz-f-pilastro') as HTMLSelectElement).value = a.pilastro ?? '';
+    ($('rz-f-tags') as HTMLInputElement).value = Array.isArray(a.tags) ? a.tags.join(', ') : (a.tags ?? '');
+    ($('rz-f-estratto') as HTMLTextAreaElement).value = a.estratto ?? '';
+    ($('rz-f-corpo') as HTMLElement).innerHTML = a.corpo_html ?? '';
+    const prev = $('rz-f-cover-prev') as HTMLImageElement;
+    if (coverUrl) { prev.src = coverUrl; prev.classList.remove('hidden'); } else prev.classList.add('hidden');
+    ($('rz-form-titolo') as HTMLElement).textContent = 'Modifica articolo';
+    ($('rz-form-esito') as HTMLElement).classList.add('hidden');
+    show('rz-form-wrap'); $('rz-form-wrap')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // toolbar contenteditable
+  $('rz-toolbar')?.addEventListener('click', (e) => {
+    const b = (e.target as HTMLElement).closest('button'); if (!b) return;
+    ($('rz-f-corpo') as HTMLElement).focus();
+    if (b.dataset.cmd) document.execCommand(b.dataset.cmd, false);
+    else if (b.dataset.block) document.execCommand('formatBlock', false, b.dataset.block);
+    else if (b.dataset.link) { const url = prompt('URL del link (https://…)'); if (url) document.execCommand('createLink', false, url); }
+  });
+
+  // cover upload
+  $('rz-f-cover')?.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0]; if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { formEsito('La copertina supera i 5 MB.', false); return; }
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `articoli/${userId}/${Date.now()}.${ext}`;
+    formEsito('Carico la copertina…', true);
+    const { error } = await supabase.storage.from('assets-pubblici').upload(path, file, { upsert: true, contentType: file.type });
+    if (error) { formEsito('Caricamento copertina non riuscito.', false); return; }
+    const { data } = supabase.storage.from('assets-pubblici').getPublicUrl(path);
+    coverUrl = data.publicUrl;
+    const prev = $('rz-f-cover-prev') as HTMLImageElement; prev.src = coverUrl; prev.classList.remove('hidden');
+    formEsito('Copertina caricata.', true);
+  });
+
+  const formEsito = (t: string, ok: boolean) => {
+    const el = $('rz-form-esito')!; el.classList.remove('hidden');
+    el.style.background = ok ? '#eaf3ee' : '#fbecec'; el.style.color = '#1E2E26'; el.textContent = t;
+  };
+
+  function raccogli() {
+    const titolo = ($('rz-f-titolo') as HTMLInputElement).value.trim();
+    const pilastro = ($('rz-f-pilastro') as HTMLSelectElement).value || null;
+    const tags = ($('rz-f-tags') as HTMLInputElement).value.split(',').map((s) => s.trim()).filter(Boolean);
+    const estratto = ($('rz-f-estratto') as HTMLTextAreaElement).value.trim();
+    const corpo_html = ($('rz-f-corpo') as HTMLElement).innerHTML.trim();
+    return { titolo, pilastro, tags, estratto, corpo_html };
+  }
+
+  async function salva(): Promise<string | null> {
+    const f = raccogli();
+    if (!f.titolo) { formEsito('Il titolo è obbligatorio.', false); return null; }
+    const slug = f.titolo.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || ('bozza-' + Date.now());
+    const record: any = {
+      titolo: f.titolo, pilastro: f.pilastro, tags: f.tags, estratto: f.estratto,
+      corpo_html: f.corpo_html, immagine_copertina_url: coverUrl, autore_id: userId,
+      updated_at: new Date().toISOString(),
+    };
+    if (editingId) {
+      const { error } = await supabase.from('articolo').update(record).eq('id', editingId);
+      if (error) { formEsito('Salvataggio non riuscito: ' + error.message, false); return null; }
+      return editingId;
+    } else {
+      record.slug = slug + '-' + Date.now().toString(36);
+      record.stato = 'bozza'; record.pubblicato = false; record.tipo_contenuto = 'articolo';
+      const { data, error } = await supabase.from('articolo').insert(record).select('id').single();
+      if (error || !data) { formEsito('Creazione non riuscita: ' + (error?.message ?? ''), false); return null; }
+      editingId = data.id; return data.id;
+    }
+  }
+
+  $('rz-salva')?.addEventListener('click', async () => { const id = await salva(); if (id) { formEsito('Bozza salvata.', true); caricaLista(); } });
+  $('rz-invia')?.addEventListener('click', async () => {
+    const id = await salva(); if (!id) return;
+    const { data, error } = await supabase.functions.invoke('articolo-azione', { body: { azione: 'invia', articolo_id: id } });
+    if (error || !data?.ok) { formEsito('Invio non riuscito: ' + (data?.error ?? error?.message ?? ''), false); return; }
+    formEsito('Inviato per approvazione. Grazie!', true);
+    hide('rz-form-wrap'); caricaLista();
+  });
+
+  // ---- CODA ADMIN ----
+  async function caricaCoda() {
+    const { data } = await supabase.from('articolo')
+      .select('id,titolo,pilastro,inviato_at,autore_id').eq('stato', 'in_approvazione')
+      .order('inviato_at', { ascending: true });
+    const box = $('rz-coda')!;
+    if (!data || data.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessun articolo in attesa.</p>'; return; }
+    box.innerHTML = data.map((a: any) => `
+      <div class="bg-white border border-[#E5DFCF] rounded p-4 flex items-center justify-between gap-3">
+        <p class="m-0 text-[#1E2E26] font-medium truncate">${escapeHtml(a.titolo || '(senza titolo)')}</p>
+        <div class="flex gap-2 flex-shrink-0">
+          <button data-appr="${a.id}" class="bg-[#2d8659] text-white px-3 py-1.5 rounded text-sm">Approva</button>
+          <button data-rif="${a.id}" class="border border-[#a33] text-[#a33] px-3 py-1.5 rounded text-sm">Rifiuta</button>
+        </div>
+      </div>`).join('');
+    box.querySelectorAll('[data-appr]').forEach((b) => b.addEventListener('click', () => azione('approva', (b as HTMLElement).dataset.appr!)));
+    box.querySelectorAll('[data-rif]').forEach((b) => b.addEventListener('click', () => { const m = prompt('Motivo del rifiuto (visibile all\'autore):') ?? ''; azione('rifiuta', (b as HTMLElement).dataset.rif!, m); }));
+  }
+  async function azione(az: string, id: string, motivo?: string) {
+    const { data, error } = await supabase.functions.invoke('articolo-azione', { body: { azione: az, articolo_id: id, motivo } });
+    if (error || !data?.ok) { alert('Azione non riuscita: ' + (data?.error ?? error?.message ?? '')); return; }
+    caricaCoda(); caricaLista();
+  }
+
+  function escapeHtml(s: string) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  init();
+</script>
