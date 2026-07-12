@@ -5,64 +5,15 @@
  * Mediateca.
  *
  * HERO col video (facade privacy-first click-to-load, youtube-nocookie).
- * Corpo dello studio: `corpo_html` dell'articolo DB id d0d8d684, letto a
- * BUILD TIME via anon REST e ripulito dagli stili WP inline (maroon, book
- * antiqua, JUSTIFY) per la resa brand. I riferimenti organizzativi nel testo
- * (soci, Direttivo) sono del 2015: lo studio è inquadrato come storico.
+ * Corpo: versione curata e strutturata dello studio (src/data/
+ * fioi-dal-nos-studio.md), depurata dagli artefatti WP e dagli em-dash; il
+ * testo si inquadra da sé come studio del 2015. Sommario dalle sezioni h2.
  * Redirect 301 dal vecchio slug in astro.config.mjs.
  */
 import Layout from '../layouts/Layout.astro';
+import { Content, getHeadings } from '../data/fioi-dal-nos-studio.md';
 
-const VIDEO_ID = 'IDmC7WiPNwo';
-const ARTICOLO_ID = 'd0d8d684-8c08-474a-b56d-bbb415328149';
-const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
-const SB_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
-
-// slug per le ancore del sommario
-function slugify(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
-}
-
-// Pulizia del corpo_html WP: taglia la parte iniziale ridondante (titolo/
-// copertina/H1 video) partendo da MOTIVAZIONE; neutralizza gli stili inline;
-// mette https alle immagini legacy; inietta gli id nei titoli e ricava il TOC.
-function preparaStudio(raw: string): { html: string; toc: { id: string; testo: string }[] } {
-  if (!raw) return { html: '', toc: [] };
-  let h = raw;
-  const idx = h.search(/<h2[^>]*>(?:(?!<\/h2>)[\s\S])*MOTIVAZIONE/i);
-  if (idx > 0) h = h.slice(idx);
-  // neutralizza WP: via attributi di stile, unwrap span/font
-  h = h.replace(/\s(style|align|color|bgcolor|class|width|height|face|lang|dir)="[^"]*"/gi, '');
-  h = h.replace(/<\/?(span|font)[^>]*>/gi, '');
-  // immagini/link legacy http -> https (evita mixed content sul sito https)
-  h = h.replace(/http:\/\/(www\.)?elbrenz\.eu/gi, 'https://www.elbrenz.eu');
-  // ripulisci nbsp multipli e paragrafi vuoti
-  h = h.replace(/(&nbsp;\s*)+/g, ' ').replace(/<p>\s*<\/p>/gi, '');
-  // inietta id nei titoli di sezione (h2) e costruisci il sommario
-  const toc: { id: string; testo: string }[] = [];
-  h = h.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (_m, inner) => {
-    const testo = String(inner).replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-    if (!testo) return `<h2>${inner}</h2>`;
-    const id = slugify(testo) || `sez-${toc.length + 1}`;
-    toc.push({ id, testo });
-    return `<h2 id="${id}">${inner}</h2>`;
-  });
-  return { html: h, toc };
-}
-
-let studio = { html: '', toc: [] as { id: string; testo: string }[] };
-try {
-  const r = await fetch(`${SB_URL}/rest/v1/articolo?id=eq.${ARTICOLO_ID}&select=corpo_html`, {
-    headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
-  });
-  if (r.ok) {
-    const rows = await r.json();
-    studio = preparaStudio(rows?.[0]?.corpo_html ?? '');
-  }
-} catch (e) {
-  console.error('[fioi-dal-nos] lettura studio fallita:', e);
-}
+const headings = getHeadings().filter((h) => h.depth === 2);
 ---
 
 <Layout
@@ -74,8 +25,10 @@ try {
     <div class="max-w-3xl mx-auto px-6 pt-16 pb-10 md:pt-24 md:pb-12 text-center">
       <p class="text-[11px] tracking-[0.24em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Documentario · Identità e memoria</p>
       <h1 class="text-5xl md:text-6xl leading-[1.05] m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">Fiöi dal Nos</h1>
-      <p class="text-lg md:text-xl text-[#F5EEDD]/85 m-0 mb-5" style="font-family: 'Source Serif 4', Georgia, serif; font-style: italic;">Ladinità nonesa e solandra: cultura e lingua</p>
-      <p class="text-base text-[#F5EEDD]/70 max-w-xl mx-auto m-0" style="font-family: 'Source Serif 4', Georgia, serif;">Due anni di lavoro per riscoprire le antiche radici storiche, culturali e linguistiche delle Valli del Noce.</p>
+      <p class="text-lg md:text-xl text-[#F5EEDD]/85 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif; font-style: italic;">Ladinità nonesa e solandra: cultura e lingua</p>
+      <p class="text-base md:text-lg text-[#F5EEDD]/75 max-w-2xl mx-auto m-0 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Due anni di ricerca, un documentario, una domanda che ci portiamo dentro da sempre: chi siamo, noi delle Valli del Noce? <em>Fiöi dal Nos</em> è il racconto per immagini delle nostre radici (retiche, latine, ladine) e resta, a più di un decennio dalla sua nascita, la pietra di fondazione dell'Associazione.
+      </p>
     </div>
 
     <div class="max-w-4xl mx-auto px-6 pb-16 md:pb-20">
@@ -98,55 +51,48 @@ try {
 
   <article class="bg-[#F8F1E4]">
     <div class="max-w-2xl mx-auto px-6 py-12 md:py-16">
-      <h2 class="text-3xl md:text-4xl text-[#1E2E26] leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">La ricerca dietro il documentario</h2>
-      <p class="text-[#1E2E26]/70 m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">Lo studio che fonda il film: le radici retiche, la lingua, le testimonianze. Un testo denso, scientifico, da leggere con calma.</p>
-
-      {studio.html ? (
-        <>
-          <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded px-5 py-4 mb-8 text-sm text-[#1E2E26]/80" style="font-family: 'Inter', sans-serif;">
-            Nota: lo studio qui riprodotto accompagna il documentario alla sua realizzazione (2015). I riferimenti a soci e al Direttivo fotografano l'Associazione di allora; per i riferimenti attuali vedi le pagine <a href="/direttivo" class="text-[#8a6215] underline">Direttivo</a> e <a href="/chi-siamo" class="text-[#8a6215] underline">Chi siamo</a>.
-          </div>
-
-          {studio.toc.length > 2 && (
-            <nav class="mb-10 bg-white border border-[#E5DFCF] rounded p-5" style="font-family: 'Inter', sans-serif;" aria-label="Sommario dello studio">
-              <p class="text-[11px] tracking-[0.18em] uppercase text-[#8a6215] font-semibold m-0 mb-3">In questo studio</p>
-              <ol class="list-none m-0 p-0 space-y-1.5">
-                {studio.toc.map((s, i) => (
-                  <li class="text-sm"><a href={`#${s.id}`} class="text-[#1E2E26]/80 no-underline hover:text-[#8a6215]"><span class="text-[#C8923E] tabular-nums mr-2">{String(i + 1).padStart(2, '0')}</span>{s.testo}</a></li>
-                ))}
-              </ol>
-            </nav>
-          )}
-
-          <div class="studio-fioi" set:html={studio.html}></div>
-        </>
-      ) : (
-        <div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded px-5 py-4 text-[#1E2E26]/80">
-          Lo studio completo è in aggiornamento. Nel frattempo, guarda il documentario qui sopra.
-        </div>
+      {headings.length > 3 && (
+        <nav class="mb-12 bg-white border border-[#E5DFCF] rounded p-5 md:p-6" style="font-family: 'Inter', sans-serif;" aria-label="Sommario">
+          <p class="text-[11px] tracking-[0.18em] uppercase text-[#8a6215] font-semibold m-0 mb-3">In questa pagina</p>
+          <ol class="list-none m-0 p-0 grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
+            {headings.map((h, i) => (
+              <li class="text-sm leading-snug"><a href={`#${h.slug}`} class="text-[#1E2E26]/80 no-underline hover:text-[#8a6215]"><span class="text-[#C8923E] tabular-nums mr-2">{String(i + 1).padStart(2, '0')}</span>{h.text}</a></li>
+            ))}
+          </ol>
+        </nav>
       )}
+
+      <div class="studio-fioi">
+        <Content />
+      </div>
 
       <hr class="my-12 border-0 border-t border-[#C8923E]/30" />
       <p class="text-sm text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">
-        «Fiöi dal Nos. Ladinità nonesa e solandra: cultura e lingua» · documentario dell'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce (2015). Video sul canale YouTube ufficiale di El Brenz.
+        «Fiöi dal Nos. Ladinità nonesa e solandra: cultura e lingua» · documentario dell'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce (2015). Video sul canale YouTube ufficiale di El Brenz. Le testimonianze cartografiche citate nello studio saranno riproposte nella pagina man mano che ne verificheremo le licenze.
       </p>
     </div>
   </article>
 </Layout>
 
 <style is:global>
-  .studio-fioi { font-family: 'Source Serif 4', Georgia, serif; color: #1E2E26; line-height: 1.78; font-size: 1.02rem; }
-  .studio-fioi h2 { font-family: 'Playfair Display', serif; color: #1E2E26; font-size: 1.55rem; line-height: 1.2; font-weight: 500; margin: 2.6rem 0 1rem; scroll-margin-top: 1rem; }
+  .studio-fioi { font-family: 'Source Serif 4', Georgia, serif; color: #1E2E26; line-height: 1.8; font-size: 1.03rem; }
+  .studio-fioi h2 { font-family: 'Playfair Display', serif; color: #1E2E26; font-size: 1.55rem; line-height: 1.2; font-weight: 500; margin: 2.8rem 0 1rem; scroll-margin-top: 1.5rem; }
+  .studio-fioi h2:first-child { margin-top: 0; }
   .studio-fioi h3 { font-family: 'Playfair Display', serif; color: #8a6215; font-size: 1.2rem; font-weight: 500; margin: 2rem 0 .7rem; }
-  .studio-fioi h4 { font-weight: 600; color: #1E2E26; margin: 1.6rem 0 .5rem; }
-  .studio-fioi p { margin: 0 0 1.05rem; }
+  .studio-fioi p { margin: 0 0 1.1rem; }
+  .studio-fioi em { font-style: italic; }
+  .studio-fioi strong, .studio-fioi b { color: #1E2E26; font-weight: 700; }
   .studio-fioi a { color: #8a6215; text-decoration: underline; }
-  .studio-fioi img { max-width: 100%; height: auto; border-radius: 6px; margin: 1.2rem 0; border: 1px solid rgba(200,146,62,0.25); }
   .studio-fioi ul, .studio-fioi ol { margin: 1rem 0; padding-left: 1.4rem; }
   .studio-fioi ul { list-style: disc; }
-  .studio-fioi li { margin: .3rem 0; }
-  .studio-fioi strong, .studio-fioi b { color: #1E2E26; }
-  .studio-fioi blockquote { border-left: 3px solid #C8923E; padding-left: 1rem; margin: 1.2rem 0; font-style: italic; }
+  .studio-fioi ol { list-style: decimal; }
+  .studio-fioi li { margin: .45rem 0; }
+  .studio-fioi hr { border: 0; border-top: 1px solid rgba(200,146,62,0.3); margin: 2.5rem 0; }
+  .studio-fioi blockquote { border-left: 3px solid #C8923E; background: #FDF9F0; padding: .8rem 1.1rem; margin: 1.6rem 0; font-style: italic; border-radius: 0 6px 6px 0; }
+  .studio-fioi blockquote p { margin: 0; }
+  .studio-fioi img { display: block; max-width: 100%; height: auto; border-radius: 8px; margin: 1.8rem auto .5rem; border: 1px solid rgba(200,146,62,0.3); box-shadow: 0 6px 20px rgba(30,46,38,0.12); }
+  /* didascalia: paragrafo in corsivo subito dopo l'immagine */
+  .studio-fioi p:has(> img) + p { text-align: center; font-size: .85rem; color: rgba(30,46,38,0.6); margin-top: 0; }
 </style>
 
 <script>
@@ -156,7 +102,7 @@ try {
     if (!facade) return;
     const carica = () => {
       const iframe = document.createElement('iframe');
-      iframe.src = 'https://www.youtube-nocookie.com/embed/IDmC7WiPNwo?autoplay=1&rel=0';
+      iframe.src = 'https://www.youtube-nocookie.com/embed/JjYKr7hCRz0?autoplay=1&rel=0';
       iframe.title = 'Fiöi dal Nos, documentario El Brenz';
       iframe.loading = 'lazy';
       iframe.allow = 'accelerated-motion; autoplay; encrypted-media; picture-in-picture; fullscreen';
