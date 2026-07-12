@@ -1,5 +1,5 @@
 ---
-title: "Tiroler Landlibell 1511 — bozza"
+title: "Tiroler Landlibell 1511, bozza"
 data_pubblicazione: 2013-10-07
 pilastro: 1_storia_valli
 tags: []

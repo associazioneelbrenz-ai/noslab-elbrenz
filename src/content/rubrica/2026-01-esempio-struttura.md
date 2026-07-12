@@ -1,7 +1,7 @@
 ---
-titolo_lad: "Esempi de struttura — no publicar"
-titolo_it: "Esempio di struttura — non pubblicare"
-titolo_de: "Strukturbeispiel — nicht veröffentlichen"
+titolo_lad: "Esempi de struttura, no publicar"
+titolo_it: "Esempio di struttura, non pubblicare"
+titolo_de: "Strukturbeispiel, nicht veröffentlichen"
 data: 2026-01-01
 link_ut24: "https://www.unsertirol24.com/"
 estratto_it: "File di esempio che documenta la struttura di un'uscita della rubrica trilingue. Duplicarlo e compilare per creare uscite reali."

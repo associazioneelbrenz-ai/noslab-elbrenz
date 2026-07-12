@@ -333,7 +333,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
   {/* AGGIUNTA M2.4 — blocco "Ultimi articoli": i 4 più recenti di produzione.
       Card sul pattern di ElencoArticoliPerAnno (bianche, bordo E5DFCF, hover
       oro) su sfondo avorio brand. Nessun link "tutti gli articoli": non esiste
-      (ancora) una rotta indice unica — mai link rotti. */}
+      (ancora) una rotta indice unica, mai link rotti. */}
   <section class="bg-[#F5EEDD] py-24">
     <div class="max-w-7xl mx-auto px-6">
       <h2
@@ -440,7 +440,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
                     <div class="mt-4" data-gita-countdown style="font-family: 'Inter', sans-serif;">
                       <div class="flex items-baseline justify-between text-[13px] mb-1.5">
                         <span class="text-[#1E2E26]/70">Posti disponibili</span>
-                        <span class="tabular-nums font-semibold text-[#1E2E26]" data-gita-testo>— di 54</span>
+                        <span class="tabular-nums font-semibold text-[#1E2E26]" data-gita-testo>… di 54</span>
                       </div>
                       <div class="h-2.5 w-full bg-[#E5DFCF] rounded-full overflow-hidden">
                         <div class="h-full bg-[#C8923E] rounded-full transition-[width] duration-500" data-gita-barra style="width:0%"></div>
@@ -488,7 +488,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
     <div class="max-w-2xl mx-auto px-6">
       <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors overflow-hidden text-center">
         {/* Foto dello Sportello al posto dell'icona (richiesta Cristian 11/7:
-            "cattura di più") — stessa immagine dell'hero /contatti, lazy
+            "cattura di più"), stessa immagine dell'hero /contatti, lazy
             perche' sotto la piega. */}
         <picture>
           <source srcset={`${import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co'}/storage/v1/object/public/assets-pubblici/sportello/card.webp`} type="image/webp" />
@@ -615,9 +615,9 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
           style="font-family: 'Source Serif 4', Georgia, serif;"
         >
           Ogni mese raccontiamo le nostre valli in <em lang="lld-anau">ladin
-          anaunic</em>, italiano e tedesco — perché una terra plurilingue si
+          anaunic</em>, italiano e tedesco, perché una terra plurilingue si
           capisce solo nelle sue lingue. In collaborazione con
-          <strong>UT24 — Unser Tirol 24</strong>.
+          <strong>UT24, Unser Tirol 24</strong>.
         </p>
         <p class="m-0 flex flex-wrap gap-2" style="font-family: 'Inter', sans-serif;">
           <span lang="lld-anau" class="text-[11px] tracking-[0.14em] uppercase border border-[#C8923E]/50 text-[#D9A94E] px-3 py-1">Ladin anaunic</span>
@@ -639,7 +639,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
           href="https://www.unsertirol24.com/"
           target="_blank"
           rel="noopener"
-          aria-label="UnserTirol24 — portale partner della rubrica"
+          aria-label="UnserTirol24 · portale partner della rubrica"
           class="mt-5 flex w-max items-center gap-3 bg-white rounded px-3 py-2 shadow-sm no-underline"
         >
           <img src="/partner/ut24-logo.jpg" alt="UnserTirol24" width="40" height="40" loading="lazy" decoding="async" class="block w-10 h-10 object-contain" />
@@ -898,7 +898,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 
   {/* AGGIUNTA M2.4 — card "Community": blocco statico con CTA tesseramento.
       Nessun link alla futura app soci (non esiste ancora): solo menzione
-      testuale dell'area soci in arrivo — mai link rotti o placeholder #. */}
+      testuale dell'area soci in arrivo, mai link rotti o placeholder #. */}
   <section class="bg-[#1E2E26] text-[#F5EEDD] py-24">
     <div class="max-w-3xl mx-auto px-6 text-center">
       <h2

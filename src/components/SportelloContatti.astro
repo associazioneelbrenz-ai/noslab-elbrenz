@@ -68,7 +68,7 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
 
 <section id="sportello" class="mt-14 scroll-mt-20">
   {/* HERO fotografico (file forniti da Cristian, generati con AI su direzione
-      creativa dell'Associazione — credito in /crediti-e-licenze). Above the
+      creativa dell'Associazione, credito in /crediti-e-licenze). Above the
       fold della sezione: eager. object-position center 60%: protagonisti
       foto e quaderno, non il soffitto. */}
   <div class="relative rounded-md overflow-hidden mb-10 h-[200px] md:h-[320px]" id="porta">
@@ -135,7 +135,7 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
     {/* nota Andreas per ricerca_storica */}
     <div id="sportello-nota-andreas" class="hidden bg-[#FDF9F0] border-l-4 border-[#C8923E] px-4 py-3 mb-6 text-sm text-[#1E2E26]/80">
       💡 Forse <strong>Andreas</strong>, il nostro assistente storico, sa già rispondere:
-      <button type="button" id="sportello-apri-andreas" class="text-[#8a6215] underline bg-transparent border-0 cursor-pointer p-0 text-sm">chiediglielo subito</button> — è gratis e risponde in un minuto.
+      <button type="button" id="sportello-apri-andreas" class="text-[#8a6215] underline bg-transparent border-0 cursor-pointer p-0 text-sm">chiediglielo subito</button>, è gratis e risponde in un minuto.
     </div>
 
     {/* campi condizionali per categoria */}
@@ -171,7 +171,7 @@ const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border
         )}
         {cat.upload && (
           <div>
-            <label for={`sp-${cat.chiave}-allegati`} class="block text-sm mb-1 text-[#1E2E26]/80">Fotografie o scansioni (fino a 3 file, 5 MB l'uno — JPG, PNG, WebP o PDF)</label>
+            <label for={`sp-${cat.chiave}-allegati`} class="block text-sm mb-1 text-[#1E2E26]/80">Fotografie o scansioni (fino a 3 file, 5 MB l'uno, JPG, PNG, WebP o PDF)</label>
             <input id={`sp-${cat.chiave}-allegati`} type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf" class="sportello-allegati block w-full text-sm text-[#1E2E26]/80 file:mr-3 file:px-4 file:py-2 file:rounded file:border-0 file:bg-[#C8923E] file:text-[#1E2E26] file:text-sm file:font-medium file:cursor-pointer" />
             <p class="text-xs text-[#1E2E26]/50 m-0 mt-1">Restano riservati: li vede solo il Direttivo.</p>
           </div>

@@ -1,5 +1,5 @@
 ---
-titolo: "Evento di esempio — non pubblicare"
+titolo: "Evento di esempio, non pubblicare"
 data: 2026-12-31
 luogo: "Malè"
 descrizioneBreve: "File di esempio per la struttura della collection eventi."
@@ -17,7 +17,7 @@ Campi disponibili nel frontmatter:
 - `link` (opzionale, URL a pagina o locandina)
 - `immagine` (opzionale)
 - `annullato` (default false)
-- `bozza` (default false — questo file resta true apposta)
+- `bozza` (default false, questo file resta true apposta)
 
 Il corpo del file è la descrizione estesa dell'evento: per ora non è
 renderizzata in home, servirà per le future pagine evento.

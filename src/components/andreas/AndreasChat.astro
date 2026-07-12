@@ -50,7 +50,7 @@ const { compatto = false } = Astro.props;
   )}
 
   <!-- =========================================================================
-       CHAT — area messaggi (popolata via JS)
+       CHAT, area messaggi (popolata via JS)
        ========================================================================= -->
   <div
     id="andreas-messages"
@@ -62,7 +62,7 @@ const { compatto = false } = Astro.props;
   ></div>
 
   <!-- =========================================================================
-       COMPOSER — area input
+       COMPOSER, area input
        ========================================================================= -->
   <form id="andreas-composer" class="andreas-chat__composer" autocomplete="off">
     <div class="andreas-chat__composer-row">
@@ -142,7 +142,7 @@ const { compatto = false } = Astro.props;
 <!-- =========================================================================
      SCRIPT client-side (vanilla, type=module)
      Carica DOPO il blocco config sopra. Legge window.ANDREAS_CONFIG.
-     M3.0: in modalità compatta (widget) lo script NON viene emesso qui —
+     M3.0: in modalità compatta (widget) lo script NON viene emesso qui, 
      lo inietta FabAndreas alla PRIMA APERTURA del pannello, così le pagine
      non contattano cdn.jsdelivr.net (marked/DOMPurify di ensureLibs) al
      load ma solo dopo un'azione esplicita, coerente col click-to-load.

@@ -209,7 +209,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
               >
                 <p class="text-base text-[#0F0F0F]/80 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">
                   Oppure paga subito qui i 20 € con <strong>PayPal o carta di
-                  credito/debito</strong> — non serve avere un conto PayPal:
+                  credito/debito</strong>, non serve avere un conto PayPal:
                 </p>
                 <div id="paypal-quota-buttons"></div>
                 <div
@@ -235,7 +235,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
                 La tua domanda viene esaminata dal Consiglio Direttivo, come
                 previsto dallo <a href="/statuto" class="text-[#C8923E] no-underline hover:underline">Statuto</a>.
                 Riceverai la conferma via email da
-                <strong>info@elbrenz.eu</strong> — non devi fare altro.
+                <strong>info@elbrenz.eu</strong>, non devi fare altro.
               </p>
               {/* AGGIUNTA go-live pagamenti (8/7/2026): link a /dona. */}
               {PAGAMENTI_LIVE && (
@@ -403,7 +403,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           class="w-full bg-[#C8923E] text-[#1E2E26] px-6 py-3.5 text-sm font-medium tracking-wider uppercase hover:bg-[#D9A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           style="font-family: 'Inter', sans-serif;"
         >
-          Invia la domanda — passo 1 di 3
+          Invia la domanda, passo 1 di 3
         </button>
 
         <div
@@ -426,7 +426,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           class="text-2xl text-[#F5EEDD] font-medium leading-tight m-0 mb-2 text-center"
           style="font-family: 'Playfair Display', serif;"
         >
-          Passo 2 — versa la quota di 20 €
+          Passo 2, versa la quota di 20 €
         </h3>
         <p class="text-sm text-[#F5EEDD]/70 text-center m-0 mb-6" style="font-family: 'Inter', sans-serif;">
           Scegli come preferisci pagare:
@@ -466,7 +466,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           <div class="bg-[#1E2E26] border-l-4 border-[#C8923E] p-4 mb-3">
             <p class="text-[11px] tracking-[0.15em] uppercase text-[#D9A94E] m-0 mb-1.5">IBAN</p>
             <p class="font-mono text-sm text-[#F5EEDD] m-0 tracking-wider break-all">IT84U0816335010000190116255</p>
-            <p class="text-xs text-[#F5EEDD]/70 m-0 mt-2">Cassa Rurale Val di Sole — intestato ad Associazione El Brenz</p>
+            <p class="text-xs text-[#F5EEDD]/70 m-0 mt-2">Cassa Rurale Val di Sole, intestato ad Associazione El Brenz</p>
           </div>
           <div class="bg-[#1E2E26] border-l-4 border-[#C8923E] p-4 mb-5">
             <p class="text-[11px] tracking-[0.15em] uppercase text-[#D9A94E] m-0 mb-1.5">Causale (scrivila così)</p>
@@ -630,7 +630,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             if (btnBonifico) setAttivo(btnBonifico, false);
             boxPaypal.scrollIntoView({ behavior: 'smooth', block: 'center' });
           } else if (notaPaypal) {
-            notaPaypal.textContent = 'in attivazione — intanto usa il bonifico';
+            notaPaypal.textContent = 'in attivazione, intanto usa il bonifico';
           }
         });
       }
@@ -844,7 +844,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         showFeedback('Errore di connessione. Riprova o scrivi direttamente a info@elbrenz.eu.', 'error');
       } finally {
         submit.disabled = false;
-        submit.textContent = 'Invia la domanda — passo 1 di 3';
+        submit.textContent = 'Invia la domanda, passo 1 di 3';
       }
     });
   }

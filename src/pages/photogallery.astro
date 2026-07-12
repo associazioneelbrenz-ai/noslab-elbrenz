@@ -23,21 +23,21 @@ const albums = [
     slug: 'nossa-storia-2013',
     titolo: "La nossa storia 'n Piaza",
     contesto:
-      'Malè, 21 luglio 2013 — la rievocazione in piazza: costumi storici, Schützen, la statua lignea scolpita da Serafino Panizza. Foto: archivio El Brenz.',
+      'Malè, 21 luglio 2013, la rievocazione in piazza: costumi storici, Schützen, la statua lignea scolpita da Serafino Panizza. Foto: archivio El Brenz.',
     altBase: "Rievocazione La nossa storia 'n Piaza, Malè 2013",
   },
   {
     slug: 'beato-carlo-2012',
     titolo: "Commemorazione del Beato Carlo d'Asburgo",
     contesto:
-      'Malè, 9 settembre 2012 — la commemorazione con le Schützenkompanien delle valli. Foto: Silvano Dalla Serra.',
+      'Malè, 9 settembre 2012, la commemorazione con le Schützenkompanien delle valli. Foto: Silvano Dalla Serra.',
     altBase: "Commemorazione del Beato Carlo d'Asburgo, Malè 2012",
   },
   {
     slug: 'presepio-2012',
     titolo: 'Presepio "El Brenz"',
     contesto:
-      'Malè, Natale 2012 — il presepio allestito dall\'associazione. Foto: Silvano Dalla Serra.',
+      'Malè, Natale 2012, il presepio allestito dall\'associazione. Foto: Silvano Dalla Serra.',
     altBase: 'Presepio El Brenz, Natale 2012 a Malè',
   },
 ] as const;
@@ -76,11 +76,11 @@ const fotoDi = (slug: string): Foto[] =>
                   href={`/gallery/${album.slug}/${f.id}.webp`}
                   class="gallery-item block border border-[#E5DFCF] hover:border-[#C8923E] transition-colors"
                   data-full={`/gallery/${album.slug}/${f.id}.webp`}
-                  data-alt={`${album.altBase} — fotografia ${i + 1} di ${foto.length}`}
+                  data-alt={`${album.altBase} · fotografia ${i + 1} di ${foto.length}`}
                 >
                   <img
                     src={`/gallery/${album.slug}/${f.id}-thumb.webp`}
-                    alt={`${album.altBase} — fotografia ${i + 1} di ${foto.length}`}
+                    alt={`${album.altBase} · fotografia ${i + 1} di ${foto.length}`}
                     width={f.tw}
                     height={f.th}
                     loading="lazy"

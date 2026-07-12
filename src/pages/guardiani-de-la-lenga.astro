@@ -147,7 +147,7 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
                 <span class="text-[10px] uppercase tracking-wider text-[#C8923E] ml-2" style="font-family: 'Inter', sans-serif;">{v.variante ? VARIANTE_LABEL[v.variante]?.split(' · ')[0] : ''}{v.comune ? ` · ${v.comune}` : ''}</span>
                 <p class="text-sm text-[#1E2E26]/80 m-0 mt-1">{v.significato_it}</p>
                 {v.esempio_uso && <p class="text-xs text-[#1E2E26]/55 italic m-0 mt-1">« {v.esempio_uso} »</p>}
-                {v.contributore_firma && <p class="text-[11px] text-[#8a6215] m-0 mt-1">— {v.contributore_firma}</p>}
+                {v.contributore_firma && <p class="text-[11px] text-[#8a6215] m-0 mt-1">· {v.contributore_firma}</p>}
               </li>
             ))}
           </ul>
