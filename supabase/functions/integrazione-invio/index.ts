@@ -127,5 +127,10 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, numero, error: 'send-email irraggiungibile' }, 502);
   }
 
+  // registra il momento della richiesta (serve ai solleciti +10/+24 giorni)
+  await supabase.from('domande_tesseramento')
+    .update({ integrazione_richiesta_il: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', socio.id);
+
   return json({ ok: true, numero, url_integrazione: urlIntegrazione, inviato_a: destinatario });
 });
