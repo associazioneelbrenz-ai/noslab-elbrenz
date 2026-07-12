@@ -173,6 +173,15 @@ Deno.serve(async (req: Request) => {
     let isPubblico = true;
     let nomeRuolo = "pubblico";
 
+    // AGGIUNTA additiva (bot Telegram): un chiamante fidato (edge telegram-bot)
+    // presenta X-Bot-Secret == BOT_ANDREAS_SECRET. In tal caso salta il
+    // rate-limit per IP e il Turnstile (il rate-limit è per utente Telegram,
+    // gestito dal bot) e non persiste nulla. Tutto il resto (RAG, prompt
+    // pubblico, Claude) resta invariato. Solo se NON è autenticato via JWT.
+    const botSecret = Deno.env.get("BOT_ANDREAS_SECRET");
+    const isTrustedBot = !hasJwt && !!botSecret &&
+      (req.headers.get("x-bot-secret") ?? "") === botSecret;
+
     if (hasJwt) {
       const supabaseAnon = createClient(
         Deno.env.get("SUPABASE_URL")!,
@@ -217,7 +226,10 @@ Deno.serve(async (req: Request) => {
     let msgOggi = 0;
     let tokensOggi = 0;
 
-    if (isPubblico) {
+    if (isTrustedBot) {
+      // Bot fidato: nessun rate-limit IP né Turnstile qui (li fa il bot per
+      // utente Telegram). ipHash resta null, nessuna persistenza più sotto.
+    } else if (isPubblico) {
       const ip = extractClientIp(req);
       // Hash SHA256 + giorno per deterministico-stesso-giorno (privacy: niente IP in chiaro)
       ipHash = await sha256Hex(`${ip}:${oggi}`);
@@ -446,8 +458,9 @@ Deno.serve(async (req: Request) => {
       await supabase.from("ai_conversazione")
         .update({ ultima_attivita_at: new Date().toISOString() })
         .eq("id", conversazioneId);
-    } else {
-      // Pubblico: aggiorna solo ai_rate_limit_pubblico, niente persistenza messaggi
+    } else if (!isTrustedBot) {
+      // Pubblico: aggiorna solo ai_rate_limit_pubblico, niente persistenza messaggi.
+      // Il bot fidato non scrive qui (rate-limit per utente Telegram, lato bot).
       await supabase.from("ai_rate_limit_pubblico").upsert({
         ip_hash: ipHash!, giorno: oggi,
         messaggi: msgOggi + 1,
