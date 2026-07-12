@@ -29,8 +29,11 @@ const LIM = { nome: 100, email: 200, telefono: 40, risorsa: 60 };
 function pdfUrl(base: string): string {
   return `${base}/storage/v1/object/public/assets-pubblici/biblioteca/altmayer-a-proposito-di-tirolo-2024.pdf`;
 }
-const RISORSE: Record<string, { titolo: string }> = {
-  'libro-altmayer': { titolo: 'A proposito di Tirolo fino al Lago di Garda' },
+// pdf: true -> risorsa scaricabile (ritorna url); false -> lead "soft" senza
+// download (es. invito di fine pagina sul documentario), ritorna solo { ok }.
+const RISORSE: Record<string, { titolo: string; pdf: boolean }> = {
+  'libro-altmayer': { titolo: 'A proposito di Tirolo fino al Lago di Garda', pdf: true },
+  'documentario-fioi-dal-nos': { titolo: 'Fiöi dal Nos', pdf: false },
 };
 
 function cors(origin: string | null): Record<string, string> {
@@ -89,11 +92,12 @@ serve(async (req: Request) => {
     return json({ error: 'Non è stato possibile registrare la richiesta. Riprova.' }, 500, c);
   }
 
-  const url = pdfUrl(base);
+  const haPdf = RISORSE[risorsa].pdf;
+  const url = haPdf ? pdfUrl(base) : null;
 
-  // email di ringraziamento (best-effort, non blocca il download)
+  // email di ringraziamento SOLO per le risorse scaricabili (col link)
   const secret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
-  if (secret) {
+  if (secret && haPdf && url) {
     const titolo = RISORSE[risorsa].titolo;
     const html = `<!DOCTYPE html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;color:#1E2E26;">
 <h2 style="font-family:Georgia,serif;">Grazie, ${nome}!</h2>
@@ -113,17 +117,18 @@ serve(async (req: Request) => {
   // notifica al gruppo Telegram del direttivo (best-effort)
   const botSecret = Deno.env.get('BOT_ANDREAS_SECRET');
   if (botSecret) {
+    const etichetta = haPdf ? '📖 **Nuovo download del libro**' : '💬 **Nuovo contatto dal documentario**';
     try {
       await fetch(`${base}/functions/v1/telegram-bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Bot-Secret': botSecret },
         body: JSON.stringify({
           notify: true,
-          text: `📖 **Nuovo download del libro**\n${nome} · ${email}` + (newsletter ? '\nHa dato consenso newsletter ✅' : ''),
+          text: `${etichetta}\n${nome} · ${email}` + (newsletter ? '\nHa dato consenso newsletter ✅' : ''),
         }),
       });
     } catch (e) { console.error('[download-lead] notificaTelegram:', e); }
   }
 
-  return json({ url }, 200, c);
+  return json({ ok: true, url }, 200, c);
 });
