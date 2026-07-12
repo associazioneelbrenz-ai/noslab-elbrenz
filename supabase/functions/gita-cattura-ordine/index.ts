@@ -23,6 +23,20 @@ function euro(v: unknown): string {
   return Number.isFinite(n) ? n.toFixed(2).replace('.', ',') : String(v ?? '');
 }
 
+// Notifica al gruppo Telegram del direttivo (best-effort). Il testo può usare
+// **grassetto**: telegram-bot lo converte in HTML.
+async function notificaTelegram(text: string): Promise<void> {
+  const secret = Deno.env.get('BOT_ANDREAS_SECRET');
+  if (!secret) return;
+  try {
+    await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-bot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Bot-Secret': secret },
+      body: JSON.stringify({ notify: true, text }),
+    });
+  } catch (e) { console.error('[gita-cattura] notificaTelegram', e); }
+}
+
 async function inviaEmail(to: string | string[], subject: string, html: string): Promise<void> {
   const secret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
   if (!secret) { console.error('[gita-cattura] SEND_EMAIL_SHARED_SECRET mancante'); return; }
@@ -119,6 +133,12 @@ Posti: <strong>${riga.posti}</strong> · Socio: <strong>${riga.is_socio ? 'sì' 
 Anticipo: <strong>${euro(importoMostra)} €</strong> · Bonus preorder: <strong>${euro(riga.bonus_preorder)} €</strong><br/>
 Capture: ${captureId ?? 'n/d'}</p></body></html>`;
       await inviaEmail(DIRETTIVO, `Gita: nuova iscrizione — ${riga.nome} ${riga.cognome} (${riga.posti} posti)`, notifica);
+
+      await notificaTelegram(
+        `🏰 **Nuova iscrizione alla gita**\n${riga.nome} ${riga.cognome} · ${riga.posti} posto/i\n` +
+        `Socio: ${riga.is_socio ? 'sì' : 'no'} · anticipo ${euro(importoMostra)} €` +
+        (Number(riga.bonus_preorder) > 0 ? ` · bonus preorder ${euro(riga.bonus_preorder)} €` : ''),
+      );
     }
 
     return jsonResponse({ success: true, stato: 'anticipo_pagato' }, 200, cors);

@@ -128,6 +128,24 @@ serve(async (req: Request) => {
   const webhookSecret = Deno.env.get('TELEGRAM_WEBHOOK_SECRET');
   const botSecret = Deno.env.get('BOT_ANDREAS_SECRET');
 
+  // ── NOTIFICA INTERNA (server-to-server da altre edge) ──────────────────
+  // Chiamata con header X-Bot-Secret == BOT_ANDREAS_SECRET e body { text }.
+  // Invia il messaggio al gruppo direttivo registrato (telegram_config).
+  // NON è un update Telegram: gestita PRIMA del gate webhook.
+  const botHdr = req.headers.get('x-bot-secret') ?? '';
+  if (botSecret && botHdr === botSecret) {
+    const jsonResp = (o: unknown) => new Response(JSON.stringify(o), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    if (!token) return jsonResp({ ok: false, error: 'no_token' });
+    let b: Record<string, any> = {};
+    try { b = await req.json(); } catch { /* body vuoto */ }
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data } = await supabase.from('telegram_config').select('valore').eq('chiave', 'direttivo_chat_id').maybeSingle();
+    const dest = data?.valore;
+    if (!dest) return jsonResp({ ok: false, error: 'gruppo_non_registrato' });
+    await sendMessage(token, dest, toTelegramHtml(String(b.text ?? '')));
+    return jsonResp({ ok: true });
+  }
+
   // Protezione webhook: se il secret header non combacia → 200 vuoto (silenzio).
   // Log diagnostici (senza esporre i valori) per capire un eventuale silenzio.
   const provided = req.headers.get('x-telegram-bot-api-secret-token') ?? '';
@@ -174,6 +192,34 @@ serve(async (req: Request) => {
     if (cmd === '/chatid' || cmd.startsWith('/chatid')) {
       const tipo = message?.chat?.type ?? 'sconosciuto';
       await sendMessage(token, chatId, `Chat id: <code>${chatId}</code>\nTipo: ${tipo}`);
+      return new Response('', { status: 200 });
+    }
+    // Registrazione del gruppo direttivo per le notifiche. Va usato DENTRO il
+    // gruppo, e solo da un suo amministratore (anti-dirottamento notifiche).
+    if (cmd.startsWith('/attiva_notifiche') || cmd.startsWith('/disattiva_notifiche')) {
+      const tipo = message?.chat?.type;
+      if (tipo !== 'group' && tipo !== 'supergroup') {
+        await sendMessage(token, chatId, 'Usa questo comando <b>dentro il gruppo</b> del direttivo che deve ricevere le notifiche.');
+        return new Response('', { status: 200 });
+      }
+      const fromId = message?.from?.id;
+      const cm = await tgApi(token, 'getChatMember', { chat_id: chatId, user_id: fromId }).then((r) => r.json()).catch(() => null);
+      const status = cm?.result?.status;
+      if (status !== 'creator' && status !== 'administrator') {
+        await sendMessage(token, chatId, 'Solo un <b>amministratore</b> del gruppo può gestire le notifiche.');
+        return new Response('', { status: 200 });
+      }
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (cmd.startsWith('/disattiva_notifiche')) {
+        await supabase.from('telegram_config').delete().eq('chiave', 'direttivo_chat_id');
+        await sendMessage(token, chatId, '🔕 Notifiche disattivate: questo gruppo non riceverà più gli avvisi.');
+      } else {
+        await supabase.from('telegram_config').upsert(
+          { chiave: 'direttivo_chat_id', valore: String(chatId), updated_at: new Date().toISOString() },
+          { onConflict: 'chiave' },
+        );
+        await sendMessage(token, chatId, '✅ Notifiche attivate: questo gruppo riceverà gli avvisi del direttivo (nuove iscrizioni alla gita, nuovi download del libro, e i prossimi eventi che aggancerò).');
+      }
       return new Response('', { status: 200 });
     }
     // altri comandi non riconosciuti → trattali come domanda? No: guida.

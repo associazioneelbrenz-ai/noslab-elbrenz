@@ -110,5 +110,20 @@ serve(async (req: Request) => {
     } catch (e) { console.error('[download-lead] send-email:', e); }
   }
 
+  // notifica al gruppo Telegram del direttivo (best-effort)
+  const botSecret = Deno.env.get('BOT_ANDREAS_SECRET');
+  if (botSecret) {
+    try {
+      await fetch(`${base}/functions/v1/telegram-bot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Bot-Secret': botSecret },
+        body: JSON.stringify({
+          notify: true,
+          text: `📖 **Nuovo download del libro**\n${nome} · ${email}` + (newsletter ? '\nHa dato consenso newsletter ✅' : ''),
+        }),
+      });
+    } catch (e) { console.error('[download-lead] notificaTelegram:', e); }
+  }
+
   return json({ url }, 200, c);
 });
