@@ -180,6 +180,8 @@ const eventi = defineCollection({
 
     /** Eventuale immagine (path in /public/ o URL). */
     immagine: z.string().optional(),
+    /** Testo alternativo dell'immagine (accessibilità). */
+    imageAlt: z.string().optional(),
 
     /** true = evento annullato: non compare in home. */
     annullato: z.boolean().default(false),

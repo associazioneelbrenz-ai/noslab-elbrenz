@@ -1,0 +1,57 @@
+---
+/**
+ * /a-proposito-di-tirolo — pagina del libro dono del prof. Everton Altmayer,
+ * «A proposito di Tirolo fino al Lago di Garda (una storia cancellata?)»
+ * (Treze Tílias, 2024). PDF su Storage, distribuzione gratuita autorizzata
+ * dall'autore. Pilastro Identità e appartenenza.
+ */
+
+import Layout from '../layouts/Layout.astro';
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const PDF_URL = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/biblioteca/altmayer-a-proposito-di-tirolo-2024.pdf`;
+const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-semibold tracking-wider uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]';
+---
+
+<Layout
+  title="A proposito di Tirolo fino al Lago di Garda — il libro di Everton Altmayer"
+  description="Il dono del prof. Everton Altmayer, voce del Tirolo brasiliano di Treze Tílias: «A proposito di Tirolo fino al Lago di Garda (una storia cancellata?)», Treze Tílias 2024. Oltre 300 pagine sul Tirolo storico, da scaricare gratis."
+  ogImage="/og/og-a-proposito-di-tirolo.jpg"
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-14 md:py-20">
+      <div class="grid md:grid-cols-[220px_1fr] gap-8 items-center">
+        <picture>
+          <source srcset="/biblioteca/altmayer-copertina.webp" type="image/webp" />
+          <img src="/biblioteca/altmayer-copertina.jpg" alt="Copertina del libro «A proposito di Tirolo fino al Lago di Garda» di Everton Altmayer" width="220" height="311" class="w-full max-w-[220px] mx-auto rounded shadow-2xl border border-[#C8923E]/30" loading="eager" decoding="async" />
+        </picture>
+        <div>
+          <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Identità e appartenenza</p>
+          <h1 class="text-3xl md:text-4xl leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+            A proposito di <em class="text-[#C8923E]" style="font-style: italic;">Tirolo</em> fino al Lago di Garda
+          </h1>
+          <p class="text-lg text-[#F5EEDD]/85 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Un dono del prof. Everton Altmayer, voce del Tirolo brasiliano di Treze Tílias.
+          </p>
+          <a href={PDF_URL} target="_blank" rel="noopener" class={CTA}>Scarica il libro (PDF) →</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <article class="bg-[#F8F1E4]">
+    <div class="max-w-3xl mx-auto px-6 py-12 text-[#1E2E26]/90 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem;">
+      <p>C'è un filo che lega le nostre valli a una cittadina dall'altra parte dell'oceano: <em>Treze Tílias</em> — <em>Dreizehnlinden</em> — in Santa Catarina, fondata nel 1933 da famiglie tirolesi. È da lì che ci arriva questo dono.</p>
+      <p class="mt-5">Everton Altmayer è docente universitario e ricercatore all'Università di San Paolo, filologo del <em>«dialèt tirolés»</em> ancora vivo nelle colonie brasiliane, presidente del Centro Culturale Dona Leopoldina di Treze Tílias, e discendente egli stesso di primierotti e meranesi. Da vent'anni studia l'emigrazione tirolese in Brasile e la memoria di un Tirolo che quaggiù rischia di essere dimenticato — e che laggiù, tra i nipoti degli emigrati, è ancora custodito.</p>
+      <p class="mt-5">La sua opera, <em>«A proposito di Tirolo fino al Lago di Garda (una storia cancellata?)»</em> (Treze Tílias, 2024), ricostruisce in oltre trecento pagine, con mappe e documenti, le origini del <strong>Tirolo storico</strong> e la sua estensione meridionale: quel Tirolo che comprendeva il Trentino e le Valli del Noce, fino alle rive del Garda, dal 1363 al 1919. Il sottotitolo è una domanda che ci riguarda da vicino — <em>una storia cancellata?</em> — ed è la stessa che El Brenz si pone da sempre.</p>
+      <p class="mt-5">Il prof. Altmayer, amico dell'Associazione, ci ha concesso di mettere la sua opera a disposizione di tutti, gratuitamente: un gesto di amicizia tra le due sponde della stessa memoria tirolese. A lui va la <em>nosa</em> gratitudine.</p>
+
+      <div class="mt-10 text-center">
+        <a href={PDF_URL} target="_blank" rel="noopener" class={CTA}>Scarica il libro (PDF)</a>
+        <p class="text-xs text-[#1E2E26]/55 mt-4" style="font-family: 'Inter', sans-serif;">
+          Opera di Everton Altmayer · Treze Tílias, 2024 · pubblicata per gentile concessione dell'autore. Tutti i diritti restano dell'autore.
+        </p>
+      </div>
+    </div>
+  </article>
+</Layout>
