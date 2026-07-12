@@ -1,0 +1,105 @@
+---
+/**
+ * /le-valli-nell-atlante-del-ladino — pagina editoriale (pilastro Lingua):
+ * le Valli del Noce nell'ALD, l'Atlante linguistico del ladino dolomitico e
+ * dei dialetti limitrofi (dir. Hans Goebl, Univ. Salisburgo; versione
+ * digitale digitALD, LMU München). Carte con licenza CC BY-SA 4.0.
+ *
+ * Le carte (assets-pubblici/atlante-ladino/) sono usate NON modificate
+ * (conversione PDF→immagine ammessa dalla licenza); credito + link + licenza
+ * sotto ciascuna, e voce dedicata in /crediti-e-licenze.
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+const CARTE_BASE = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/atlante-ladino`;
+const ALD_HOME = 'https://www.ald.gwi.uni-muenchen.de/it/';
+const ALD_MAP = (n: number) => `https://www.ald.gwi.uni-muenchen.de/projects/ald2/data/maps/${n}.pdf`;
+
+// Carte selezionate e ri-ospitate (verificate a vista). Vuoto finché non
+// sono confermate; la pagina resta valida col testo e la CTA all'ALD.
+type Carta = { file: string; numero: number; tema: string };
+let carte: Carta[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.storage.from('assets-pubblici').list('atlante-ladino', { limit: 50 });
+  // manifest opzionale: se esiste atlante-ladino/manifest.json lo usiamo per
+  // temi/numeri; altrimenti mostriamo solo le immagini trovate.
+  const files = (data ?? []).filter((f) => /\.(webp|png|jpe?g)$/i.test(f.name)).map((f) => f.name);
+  try {
+    const m = await fetch(`${CARTE_BASE}/manifest.json`);
+    if (m.ok) carte = (await m.json()) as Carta[];
+  } catch { /* nessun manifest */ }
+  if (carte.length === 0 && files.length > 0) {
+    carte = files.sort().map((file) => ({ file, numero: 0, tema: '' }));
+  }
+} catch (e) {
+  console.error('[atlante] lettura carte fallita:', e);
+}
+---
+
+<Layout
+  title="Le nostre valli nell'Atlante del Ladino"
+  description="Il noneso e il solander delle Valli del Noce documentati nell'ALD, l'Atlante linguistico del ladino dolomitico e dei dialetti limitrofi di Hans Goebl: quasi 2.000 carte, 217 punti d'inchiesta, licenza aperta CC BY-SA 4.0."
+  ogImage="/og/og-atlante-ladino.jpg"
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-3xl mx-auto px-6 py-16 md:py-24">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Lingua e ladinità</p>
+      <h1 class="text-4xl md:text-5xl leading-tight m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Le nostre valli nell'<em class="text-[#C8923E]" style="font-style: italic;">Atlante del Ladino</em>
+      </h1>
+      <p class="text-lg text-[#F5EEDD]/85 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Il noneso e il solander, ascoltati e messi su carta accanto al ladino dolomitico.
+      </p>
+    </div>
+  </header>
+
+  <article class="bg-[#F8F1E4]">
+    <div class="max-w-3xl mx-auto px-6 py-12 text-[#1E2E26]/90 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem;">
+      <p>C'è un'opera monumentale in cui le parlate delle nostre valli sono state ascoltate, trascritte e riportate su carta: l'<strong>ALD</strong>, l'<em>Atlante linguistico del ladino dolomitico e dei dialetti limitrofi</em>.</p>
+      <p class="mt-5">Frutto di decenni di lavoro (1985–2012) del romanista <strong>Hans Goebl</strong> e della sua équipe all'Università di Salisburgo — con Lois Craffonara tra gli ideatori — l'ALD ha documentato le competenze dialettali di parlanti in <strong>217 punti d'inchiesta</strong>, dall'Engadina al Friuli, con una maglia fittissima (un rilevamento ogni ~10 km). Tra questi punti ci sono le <strong>Valli del Noce</strong>: il <em>noneso</em> e il <em>solander</em> sono stati raccolti sul campo, dalla viva voce dei parlanti, e riportati su quasi <strong>2.000 carte linguistiche</strong>.</p>
+      <p class="mt-5">Per noi è più di una curiosità accademica. È la prova, documentata con rigore scientifico, che la <em>nosa parlada</em> vive dentro un continuum alpino antico e ricchissimo, in dialogo con il ladino dolomitico dei vicini di Fassa, Gardena e Badia.</p>
+      <p class="mt-5">Oggi l'intero atlante è consultabile online (<em>digitALD</em>, Università di Monaco) e — cosa rara per un'opera di questa mole — è rilasciato con licenza aperta <strong>CC BY-SA 4.0</strong>: le sue carte si possono studiare, condividere e riutilizzare citando la fonte. Qui sotto ne presentiamo alcune; l'atlante completo è esplorabile sul sito dell'ALD.</p>
+
+      {/* CARTE SELEZIONATE */}
+      {carte.length > 0 ? (
+        <div class="mt-10 space-y-10">
+          {carte.map((c) => (
+            <figure class="m-0">
+              <a href={c.numero ? ALD_MAP(c.numero) : ALD_HOME} target="_blank" rel="noopener">
+                <img src={`${CARTE_BASE}/${c.file}`} alt={`Carta ALD${c.numero ? ` n. ${c.numero}` : ''}${c.tema ? `: ${c.tema}` : ''} — Valli del Noce`} class="w-full rounded-md border border-[#C8923E]/40" loading="lazy" decoding="async" />
+              </a>
+              <figcaption class="text-sm text-[#1E2E26]/65 mt-2" style="font-family: 'Inter', sans-serif;">
+                {c.numero ? `Carta ALD n. ${c.numero}` : 'Carta ALD'}{c.tema ? ` · ${c.tema}` : ''} ·
+                <a href={c.numero ? ALD_MAP(c.numero) : ALD_HOME} target="_blank" rel="noopener" class="text-[#8a6215] underline"> ALD (dir. H. Goebl, Univ. Salisburgo) · digitALD, LMU München · CC BY-SA 4.0</a>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      ) : (
+        <div class="mt-10 bg-[#FDF9F0] border-l-4 border-[#C8923E] px-5 py-4 rounded">
+          <p class="m-0 text-[#1E2E26]/80">Le carte selezionate delle Valli del Noce sono in preparazione. Nel frattempo puoi esplorare l'intero atlante direttamente sul sito dell'ALD.</p>
+        </div>
+      )}
+
+      <p class="mt-10 text-center">
+        <a href={ALD_HOME} target="_blank" rel="noopener" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">Esplora l'ALD →</a>
+      </p>
+
+      <hr class="my-10 border-0 border-t border-[#C8923E]/30" />
+      <p class="text-sm text-[#1E2E26]/60">
+        <em>Carte tratte da:</em> <strong>ALD – Atlante linguistico del ladino dolomitico e dei dialetti limitrofi</strong>,
+        a cura di Hans Goebl (Università di Salisburgo, con Lois Craffonara); versione digitale <em>digitALD</em>,
+        Ludwig-Maximilians-Universität München (D. &amp; T. Englmeier), con il sostegno del FWF.
+        Licenza <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" class="text-[#8a6215] underline">CC BY-SA 4.0</a>.
+        Fonte: <a href="https://www.ald.gwi.uni-muenchen.de" target="_blank" rel="noopener" class="text-[#8a6215] underline">ald.gwi.uni-muenchen.de</a>.
+      </p>
+    </div>
+  </article>
+</Layout>
