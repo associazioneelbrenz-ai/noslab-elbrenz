@@ -1,0 +1,191 @@
+---
+/**
+ * /gita-giochi-medievali-2026 — landing della gita sociale ai Giochi
+ * Medievali di Sluderno (22/08/2026). Standalone, full-width, orientata
+ * alla conversione in tessere. Copy fornito (impaginato, non riscritto).
+ *
+ * Video: facade CLICK-TO-LOAD (copertina brand + play) → iframe
+ * youtube-nocookie solo al gesto dell'utente (nessun dato a terzi prima del
+ * click, coerente col principio già usato per mappa/embed). Foto di
+ * Ritterspiele/Churburg NON usate (off-limits): la pagina si regge su brand,
+ * tipografia e decori propri.
+ */
+
+import Layout from '../layouts/Layout.astro';
+
+const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]';
+---
+
+<Layout
+  title="Un giorno nel Medioevo — Gita ai Giochi Medievali, 22 agosto 2026"
+  description="Gita sociale El Brenz ai Giochi Medievali dell'Alto Adige, 22 agosto 2026. Posti limitati, soci a tariffa agevolata."
+  ogImage="/og/og-gita-giochi-medievali.jpg"
+>
+  {/* ===================== HERO ===================== */}
+  <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
+    <div class="absolute inset-0 opacity-[0.06] pointer-events-none" aria-hidden="true"
+      style="background-image:url('/decoro/aquila-oro-filigrana.png');background-repeat:no-repeat;background-position:right -80px center;background-size:520px auto;"></div>
+    <div class="relative max-w-4xl mx-auto px-6 py-20 md:py-28 text-center">
+      <p class="text-xs md:text-sm tracking-[0.24em] uppercase text-[#D9A94E] font-semibold m-0 mb-5" style="font-family: 'Inter', sans-serif;">Gita sociale · 22 agosto 2026</p>
+      <h1 class="text-4xl md:text-6xl leading-[1.05] m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Un giorno nel <em class="text-[#C8923E]" style="font-style: italic;">Medioevo</em>, insieme.
+      </h1>
+      <p class="text-lg md:text-xl text-[#F5EEDD]/85 max-w-2xl mx-auto m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Ai piedi di Castel Coira, in Val Venosta, va in scena la più grande rievocazione storica
+        dell'arco alpino. El Brenz vi porta là dove il Tirolo torna a vivere.
+      </p>
+      <a href="/tesseramento" class={CTA}>Diventa socio e ferma il tuo posto →</a>
+      <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">Solo 54 posti · soci a tariffa agevolata</p>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 1 — VIDEO ===================== */}
+  <section class="bg-[#F5EEDD] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Un assaggio in un minuto</h2>
+      <div class="w-16 h-[2px] bg-[#C8923E] mx-auto mb-8" aria-hidden="true"></div>
+      <div id="video-facade" class="relative rounded-xl overflow-hidden shadow-lg cursor-pointer group" style="aspect-ratio:16/9;" role="button" tabindex="0" aria-label="Guarda il video dei Giochi Medievali">
+        <div class="absolute inset-0 bg-[#1E2E26]" aria-hidden="true"></div>
+        <div class="absolute inset-0 opacity-[0.12] pointer-events-none" aria-hidden="true"
+          style="background-image:url('/decoro/aquila-oro-filigrana.png');background-repeat:no-repeat;background-position:center;background-size:340px auto;"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-[#F5EEDD]">
+          <span class="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-[#C8923E] text-[#1E2E26] shadow-xl group-hover:scale-105 transition-transform" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+          <span class="mt-4 text-lg md:text-xl" style="font-family: 'Playfair Display', serif;">Guarda i Giochi Medievali</span>
+        </div>
+      </div>
+      <p class="text-xs text-[#1E2E26]/55 mt-3" style="font-family: 'Inter', sans-serif;">
+        Video © <a href="https://www.ritterspiele.it" target="_blank" rel="noopener" class="text-[#8a6215] underline">Südtiroler Ritterspiele</a> · si carica solo quando premi play (nessun dato a YouTube prima del tuo clic).
+      </p>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 2 — COSA VIVRAI ===================== */}
+  <section class="bg-[#F8F1E4] py-16 md:py-20">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">Duemila cavalieri, un salto di otto secoli</h2>
+        <p class="text-lg text-[#1E2E26]/80 max-w-2xl mx-auto m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Per un giorno la piana di Sluderno torna indietro nel tempo: <strong>2.000 rievocatori da 11 nazioni</strong>,
+          tornei cavallereschi con cavalli bardati e lance che si spezzano, cortei e combattimenti, un grande mercato
+          medievale e accampamenti dove si vive e si cucina per davvero.
+        </p>
+      </div>
+      <ul class="grid sm:grid-cols-2 gap-4 list-none p-0 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+        {[
+          ['⚔️', 'Tornei e giostre cavalleresche'],
+          ['🏰', 'Grande mercato medievale'],
+          ['🔥', 'Accampamenti e artigiani all\'opera'],
+          ['🎯', 'Tiro con l\'arco e animazione per bambini'],
+          ['🎶', 'Musica, giocolieri, spettacoli'],
+          ['🎪', 'Gran parte delle attrazioni gratuita dentro l\'area'],
+        ].map(([icona, testo]) => (
+          <li class="flex items-start gap-3 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md px-5 py-4">
+            <span class="text-2xl leading-none" aria-hidden="true">{icona}</span>
+            <span class="text-[#1E2E26]/90">{testo}</span>
+          </li>
+        ))}
+      </ul>
+      <div class="text-center mt-10">
+        <a href="/tesseramento" class={CTA}>Diventa socio e prenota →</a>
+      </div>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 3 — CASTEL COIRA ===================== */}
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4 text-center" style="font-family: 'Inter', sans-serif;">Lo sfondo</p>
+      <h2 class="text-3xl md:text-4xl m-0 mb-6 text-center" style="font-family: 'Playfair Display', serif; font-weight: 500;">All'ombra dello scrigno d'armi del Tirolo</h2>
+      <p class="text-lg text-[#F5EEDD]/85 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+        A vegliare sull'evento c'è uno dei castelli meglio conservati dell'Alto Adige. <strong>Castel Coira</strong>
+        (<em>Churburg</em>), edificato a metà del <strong>XIII secolo</strong> dal principe-vescovo di Coira Enrico di
+        Montfort, passato ai signori di Mazia e poi, dal Cinquecento, ai <strong>conti Trapp</strong> — ancora oggi
+        proprietari. Mai distrutto in otto secoli, custodisce la <strong>più grande armeria privata del mondo</strong>:
+        una cinquantina di corazze complete dalle officine di Milano e Innsbruck.
+      </p>
+      <p class="text-[#D9A94E] italic font-serif text-lg mt-6 text-center">
+        Per noi non è un fondale qualunque: è il Tirolo storico che ritorna, la stessa storia che ha attraversato anche le <span class="not-italic">nose</span> valli.
+      </p>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 4 — PERCHÉ CON NOI ===================== */}
+  <section class="bg-[#F8F1E4] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Non una gita qualunque</h2>
+      <p class="text-lg text-[#1E2E26]/85 leading-relaxed max-w-2xl mx-auto" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Una gita sociale è vivere la storia gomito a gomito, riconoscerci in un'eredità comune, far crescere la nostra
+        comunità. Diventando socio non prenoti solo un posto: sostieni la cultura, la lingua e la memoria delle Valli del Noce.
+      </p>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 5 — INFO PRATICHE ===================== */}
+  <section class="bg-[#F5EEDD] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8 text-center" style="font-family: 'Playfair Display', serif; font-weight: 500;">Info pratiche</h2>
+      <dl class="grid gap-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+        <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
+          <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Quando</dt>
+          <dd class="m-0 text-[#1E2E26]/90">Sabato 22 agosto 2026 <span class="text-[#1E2E26]/60">(manifestazione aperta 10.00–24.00)</span></dd>
+        </div>
+        <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
+          <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Dove</dt>
+          <dd class="m-0 text-[#1E2E26]/90">Sluderno, Val Venosta (Alto Adige), ai piedi di Castel Coira</dd>
+        </div>
+        <div class="flex gap-4 bg-white border-l-4 border-[#C8923E]/50 px-5 py-4 rounded">
+          <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Programma</dt>
+          <dd class="m-0 text-[#1E2E26]/70 italic">Partenza, punto di ritrovo, costo e programma della giornata: in arrivo a breve.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 6 — CTA FINALE ===================== */}
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20 md:py-24">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <p class="text-sm tracking-[0.2em] uppercase text-[#D9A94E] font-semibold m-0 mb-4" style="font-family: 'Inter', sans-serif;">54 posti. Non aspettare.</p>
+      <h2 class="text-3xl md:text-5xl m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Assicurati il tuo posto</h2>
+      <p class="text-lg text-[#F5EEDD]/85 max-w-2xl mx-auto m-0 mb-9" style="font-family: 'Source Serif 4', Georgia, serif;">
+        I soci El Brenz partono a <strong>tariffa agevolata</strong>; per i non soci è previsto il prezzo pieno.
+        Il modo più semplice — e conveniente — per assicurarti il posto è <strong>tesserarti</strong>.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/tesseramento" class={CTA}>Diventa socio e prenota →</a>
+        <a href="mailto:info@elbrenz.eu" class="inline-block border-2 border-[#C8923E] text-[#F5EEDD] px-7 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors" style="font-family: 'Inter', sans-serif;">Hai domande? Scrivici</a>
+      </div>
+      <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">
+        <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a> · <a href="tel:+393471077636" class="text-[#D9A94E] no-underline hover:underline">+39 347 107 7636</a>
+      </p>
+      <p class="text-[#D9A94E] italic font-serif mt-10 m-0">Raìs fonde no le 'nglacia</p>
+    </div>
+  </section>
+
+  {/* CTA sticky su mobile */}
+  <div class="md:hidden fixed inset-x-0 bottom-0 z-30 bg-[#1E2E26]/95 backdrop-blur border-t border-[#C8923E]/40 px-4 py-3" style="padding-bottom:max(0.75rem,env(safe-area-inset-bottom));">
+    <a href="/tesseramento" class="block text-center bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold uppercase tracking-wide text-sm no-underline" style="font-family: 'Inter', sans-serif;">Diventa socio e prenota →</a>
+  </div>
+</Layout>
+
+<script>
+  // Video facade click-to-load: nessuna richiesta a YouTube prima del gesto.
+  const facade = document.getElementById('video-facade');
+  function caricaVideo() {
+    if (!facade) return;
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.youtube-nocookie.com/embed/J9hMH4Cadoo?autoplay=1&rel=0';
+    iframe.title = "Giochi Medievali dell'Alto Adige";
+    iframe.loading = 'lazy';
+    iframe.allow = 'accelerated-motion; autoplay; encrypted-media; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.style.cssText = 'width:100%;height:100%;border:0;border-radius:12px;position:absolute;inset:0;';
+    facade.innerHTML = '';
+    facade.appendChild(iframe);
+  }
+  facade?.addEventListener('click', caricaVideo);
+  facade?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') { e.preventDefault(); caricaVideo(); }
+  });
+</script>
