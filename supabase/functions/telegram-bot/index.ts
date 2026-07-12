@@ -44,9 +44,12 @@ function toTelegramHtml(text: string): string {
 async function sendMessage(token: string, chatId: number | string, html: string): Promise<void> {
   // Telegram limita a 4096 caratteri per messaggio.
   const testo = html.length > 4000 ? html.slice(0, 3990) + '…' : html;
-  await tgApi(token, 'sendMessage', {
+  const r = await tgApi(token, 'sendMessage', {
     chat_id: chatId, text: testo, parse_mode: 'HTML', disable_web_page_preview: false,
   });
+  if (!r.ok) {
+    console.error('[telegram-bot] sendMessage fallita:', r.status, (await r.text()).slice(0, 200));
+  }
 }
 
 const BENVENUTO =
@@ -92,8 +95,16 @@ serve(async (req: Request) => {
   const botSecret = Deno.env.get('BOT_ANDREAS_SECRET');
 
   // Protezione webhook: se il secret header non combacia → 200 vuoto (silenzio).
+  // Log diagnostici (senza esporre i valori) per capire un eventuale silenzio.
   const provided = req.headers.get('x-telegram-bot-api-secret-token') ?? '';
-  if (!token || !webhookSecret || provided !== webhookSecret) {
+  if (!token || !webhookSecret) {
+    console.error('[telegram-bot] secret non configurati nei Supabase Secrets:',
+      JSON.stringify({ hasToken: !!token, hasWebhookSecret: !!webhookSecret, hasBotSecret: !!botSecret }));
+    return new Response('', { status: 200 });
+  }
+  if (provided !== webhookSecret) {
+    console.warn('[telegram-bot] secret header non combacia col setWebhook:',
+      JSON.stringify({ headerPresente: provided.length > 0 }));
     return new Response('', { status: 200 });
   }
 
@@ -103,6 +114,8 @@ serve(async (req: Request) => {
   const message = update.message ?? update.edited_message;
   const text: string = message?.text ?? '';
   const chatId = message?.chat?.id;
+  console.log('[telegram-bot] update ricevuto:',
+    JSON.stringify({ chatType: message?.chat?.type ?? null, hasText: !!text, cmd: text.slice(0, 20) }));
   if (!chatId || !text) return new Response('', { status: 200 });
 
   try {
