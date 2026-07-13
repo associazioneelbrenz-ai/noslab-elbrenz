@@ -34,7 +34,10 @@ const LEAD_URL = `${import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxl
 
     <div class="max-w-4xl mx-auto px-6 pb-16 md:pb-20">
       <div id="video-facade" class="relative rounded-xl overflow-hidden shadow-2xl cursor-pointer group border border-[#C8923E]/30" style="aspect-ratio:16/9;" role="button" tabindex="0" aria-label="Guarda il documentario Fiöi dal Nos">
-        <div class="absolute inset-0 bg-[#16231d]" aria-hidden="true"></div>
+        {/* AGGIORNAMENTO 13/7/2026: copertina reale del video incorporato (IDmC7WiPNwo),
+            self-hosted WebP (nessuna richiesta a Google prima del clic) + velo verde. */}
+        <img src="/fioi/fioi-dal-nos-cover.webp" alt="Documentario Fiöi dal Nos: veduta invernale di un paese delle Valli del Noce sotto la neve" width="1280" height="720" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover" />
+        <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26]/80 via-[#1E2E26]/45 to-[#1E2E26]/40 pointer-events-none" aria-hidden="true"></div>
         <div class="absolute inset-0 opacity-[0.14] pointer-events-none" aria-hidden="true"
           style="background-image:url('/decoro/aquila-oro-filigrana.png');background-repeat:no-repeat;background-position:center;background-size:360px auto;"></div>
         <div class="absolute inset-0 flex flex-col items-center justify-center text-[#F5EEDD]">
@@ -130,7 +133,7 @@ const LEAD_URL = `${import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxl
     if (!facade) return;
     const carica = () => {
       const iframe = document.createElement('iframe');
-      iframe.src = 'https://www.youtube-nocookie.com/embed/JjYKr7hCRz0?autoplay=1&rel=0';
+      iframe.src = 'https://www.youtube-nocookie.com/embed/IDmC7WiPNwo?autoplay=1&rel=0';
       iframe.title = 'Fiöi dal Nos, documentario El Brenz';
       iframe.loading = 'lazy';
       iframe.allow = 'accelerated-motion; autoplay; encrypted-media; picture-in-picture; fullscreen';
