@@ -154,7 +154,24 @@ const currentPath = Astro.url.pathname;
 
       </div>
 
-      <div class="max-w-7xl mx-auto px-6 mt-14 pt-6 border-t border-[#F5EEDD]/15 flex flex-wrap items-center justify-between gap-4" style="font-family: 'Inter', sans-serif;">
+      {/* AGGIUNTA 13/7/2026 (brief compliance B.2): riga link legali globale.
+          Discoverability policy (raccomandazione Grok/GDPR). "Preferenze cookie"
+          riapre il banner via vanilla-cookieconsent v3 (data-cc auto-bind).
+          NOTA: "Termini di servizio" verrà aggiunto qui quando la pagina
+          /termini sarà approvata (bozza legale in revisione, B.1). */}
+      <nav aria-label="Documenti e informative" class="max-w-7xl mx-auto px-6 mt-14 pt-6 border-t border-[#F5EEDD]/15 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" style="font-family: 'Inter', sans-serif;">
+        <a href="/privacy" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Privacy</a>
+        <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
+        <a href="/cookie-policy" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Cookie policy</a>
+        <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
+        <button type="button" data-cc="show-preferencesModal" class="text-[#F5EEDD]/70 bg-transparent border-0 p-0 cursor-pointer hover:text-[#D9A94E] transition-colors" style="font: inherit;">Preferenze cookie</button>
+        <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
+        <a href="/statuto" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Statuto</a>
+        <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
+        <a href="/crediti-e-licenze" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Crediti e licenze</a>
+      </nav>
+
+      <div class="max-w-7xl mx-auto px-6 mt-6 flex flex-wrap items-center justify-between gap-4" style="font-family: 'Inter', sans-serif;">
         <p class="text-xs text-[#F5EEDD]/55 m-0">
           © 2026 Associazione Storico Culturale Linguistica El Brenz · Tutti i diritti riservati
           <br class="hidden sm:block" /><span class="text-[#F5EEDD]/40">Decorazione: <em>Aquila Tirolensis</em> di Matthias Burgklechner (XVII sec.), opera in pubblico dominio.</span>
