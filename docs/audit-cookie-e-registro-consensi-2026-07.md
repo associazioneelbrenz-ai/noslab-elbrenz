@@ -32,8 +32,8 @@ Il registro dei consensi richiede di poter dimostrare **chi** ha consentito, a *
 |---|---|---|---|---|---|
 | **Tesseramento** (`domande_tesseramento`, edge `contact-form`) | Sì, `gdpr` obbligatorio server-side (rifiuta senza) | **non persistito come colonna** (citato nell'email di notifica) | `created_at` | nome, email | no |
 | **Sportello "Porta la tua Storia"** | da verificare | migration **vuota nel repo** (tabella creata direttamente in DB) → verificare colonne in dashboard | presumid. `created_at` | sì | no |
-| **Download libro/documentario** (`download_lead`) | Sì, `consenso_privacy` obbligatorio | `consenso_privacy`, `consenso_newsletter` (separati) | `created_at` | nome, email | no (jsonb `sorgente` presente) |
-| **Guardiani** (`guardiani_contributori`) | Sì | `consenso_glossario`, `consenso_marketing`, `marketing_double_optin`, `marketing_confermato_il`, `consenso_firma`, `licenza_accettata`, `licenza_tipo` | `created_at`, `updated_at` | nome, email | no (jsonb `sorgente_utm` presente) |
+| **Download libro/documentario** (`download_lead`) | Sì, `consenso_privacy` obbligatorio | `consenso_privacy`, `consenso_newsletter` (separati) | `created_at` | nome, email | ✅ **sì, in `sorgente` jsonb (live 13/7)** |
+| **Guardiani** (`guardiani_contributori`) | Sì | `consenso_glossario`, `consenso_marketing`, `marketing_double_optin`, `marketing_confermato_il`, `consenso_firma`, `licenza_accettata`, `licenza_tipo` | `created_at`, `updated_at` | nome, email | ✅ **sì, in `sorgente_utm` jsonb (live 13/7)** |
 | **Iscrizione gita** (`iscrizioni_gita`) | Sì, `consenso_privacy` | `consenso_privacy` | `created_at` | dati partecipante | no (jsonb `sorgente_utm`) |
 | **Convenzioni** (`convenzioni`) | Sì | `accettazione_schema_tipo`, `accettazione_privacy` | `created_at` | referente | no |
 
@@ -48,16 +48,17 @@ Il registro dei consensi richiede di poter dimostrare **chi** ha consentito, a *
 2. **Versione dell'informativa non registrata** in nessuna tabella. La conformità è comunque sostenibile per correlazione: l'informativa è versionata per data (attuale: 13/7/2026) e ogni consenso ha `created_at`, quindi si può determinare quale versione era vigente. Ma un campo esplicito è preferibile.
 3. **Sportello**: schema non nel repo (migration vuota) → verificare in dashboard che registri il consenso.
 
-### Rimedio proposto (migration pronta, NON applicata)
-File: **`docs/migration-registro-consensi-DA-APPLICARE.sql`**. Additivo, non distruttivo:
-- aggiunge `consenso_privacy boolean not null default false` a `domande_tesseramento`;
-- aggiunge `informativa_versione text` (default `'2026-07-13'`) a `domande_tesseramento`, `download_lead`, `guardiani_contributori`, `iscrizioni_gita`, `convenzioni`.
+### Rimedi
 
-Va **applicata al DB da Cristian** (disciplina del repo: le migration in `supabase/migrations/` sono già applicate; questa resta in `docs/` finché non eseguita, poi spostarla). **Dopo l'applicazione**, wiring lato edge (follow-up di Code):
-- `contact-form`: scrivere `consenso_privacy: true` e `informativa_versione` nell'insert;
-- `download-lead`, `guardiani-contributo`, edge gita, edge convenzioni: scrivere `informativa_versione` (costante `INFORMATIVA_VERSIONE`) nell'insert/upsert.
+**FATTO E LIVE (13/7)** — versione informativa nei flussi newsletter: `download-lead` e `guardiani-contributo` scrivono `informativa_versione` ('2026-07-13', costante `_shared/consenso.ts`) nel jsonb di provenienza (`sorgente` / `sorgente_utm`). Nessuna DDL, non-breaking. Sono i due flussi che alimentano il broadcast, quindi ogni iscritto newsletter porta con sé la versione dell'informativa vista.
 
-Finché la migration non è applicata, la conformità regge per correlazione (consenso obbligatorio + `created_at` + data dell'informativa).
+**STAGED (migration DA APPLICARE da Cristian)** — `docs/migration-registro-consensi-DA-APPLICARE.sql`, additiva:
+- `consenso_privacy` a `domande_tesseramento` (persiste il consenso oggi non salvato);
+- `informativa_versione` (default '2026-07-13') alle tabelle senza jsonb: `domande_tesseramento`, `iscrizioni_gita`, `convenzioni`.
+
+**Follow-up dopo l'applicazione (Code, ~15 min):** `contact-form` deve scrivere `consenso_privacy: true` nell'insert (altrimenti le righe restano `false` di default). Aggiornare i default/le edge alla prossima revisione dell'informativa.
+
+Fino all'applicazione, per tesseramento/gita/convenzioni la conformità regge per correlazione (consenso obbligatorio + `created_at` + data dell'informativa).
 
 ---
 

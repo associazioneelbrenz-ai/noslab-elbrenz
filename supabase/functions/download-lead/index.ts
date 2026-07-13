@@ -12,6 +12,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { INFORMATIVA_VERSIONE } from '../_shared/consenso.ts';
 
 const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app',
@@ -85,7 +86,8 @@ serve(async (req: Request) => {
     risorsa, nome, email, telefono,
     consenso_privacy: true,
     consenso_newsletter: newsletter,
-    sorgente: body.sorgente && typeof body.sorgente === 'object' ? body.sorgente : null,
+    // registro consensi (B.7): provenienza + versione informativa vigente
+    sorgente: { ...(body.sorgente && typeof body.sorgente === 'object' ? body.sorgente as Record<string, unknown> : {}), informativa_versione: INFORMATIVA_VERSIONE },
   });
   if (dbErr) {
     console.error('[download-lead] insert fallita:', dbErr);

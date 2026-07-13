@@ -14,6 +14,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { firmaToken, verificaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
+import { INFORMATIVA_VERSIONE } from '../_shared/consenso.ts';
 
 const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app', 'https://elbrenz.eu', 'https://www.elbrenz.eu',
@@ -202,7 +203,7 @@ Deno.serve(async (req: Request) => {
       nome, email, consenso_glossario: true, consenso_marketing: consensoMarketing,
       consenso_firma: consensoFirma, licenza_accettata: true, licenza_tipo: 'CC BY 4.0',
       ...(marketingToken ? { marketing_token: marketingToken } : {}),
-      sorgente_utm: utm, updated_at: new Date().toISOString(),
+      sorgente_utm: { ...(utm || {}), informativa_versione: INFORMATIVA_VERSIONE }, updated_at: new Date().toISOString(),
     }, { onConflict: 'email' })
     .select('id, marketing_double_optin, marketing_token').single();
   if (errC || !contrib) { console.error('[guardiani] upsert contributore:', errC); return json({ error: 'Errore interno, riprova.' }, 500, c); }
