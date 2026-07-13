@@ -1,0 +1,97 @@
+---
+/**
+ * /newsletter/disiscrizione/{emailSeg}/{exp}/{token} — disiscrizione dalle
+ * comunicazioni. Rende la conferma sul NOSTRO dominio (la piattaforma Supabase
+ * forza text/plain sull'HTML delle edge) e chiama l'edge newsletter-unsubscribe
+ * in JSON. Token HMAC nel path (mai query: quoted-printable). SSR.
+ *
+ * Tono voluto: legalmente pieno (disiscrizione a un clic, senza login) ma
+ * discreto e poco invitante. "Resta" in evidenza, "disiscriviti" piccolo.
+ * Il peek (GET) NON disiscrive: la revoca avviene solo col clic esplicito.
+ */
+import Layout from '../../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+const [emailSeg, exp, token] = seg;
+const valido = /^[A-Za-z0-9_-]+$/.test(emailSeg ?? '') && /^\d+$/.test(exp ?? '') && /^[0-9a-f]+$/i.test(token ?? '');
+const EDGE = `${SB_URL}/functions/v1/newsletter-unsubscribe/${emailSeg}/${exp}/${token}`;
+---
+
+<Layout title="Le tue comunicazioni · El Brenz" description="Gestisci le comunicazioni di El Brenz." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
+    <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9 text-center" style="font-family: 'Inter', sans-serif;" data-edge={valido ? EDGE : ''} id="unsub-card">
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · comunicazioni</p>
+      <div id="unsub-body">
+        <p id="unsub-loading" class="text-[#1E2E26]/70 m-0">Un momento…</p>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const card = document.getElementById('unsub-card')!;
+    const body = document.getElementById('unsub-body')!;
+    const edge = card.getAttribute('data-edge') || '';
+
+    const H = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const titolo = (t: string) => `<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 10px;">${t}</h1>`;
+    const testo = (t: string) => `<p style="color:#1E2E26;opacity:.85;margin:0 0 8px;line-height:1.65;">${t}</p>`;
+
+    if (!edge) {
+      body.innerHTML = titolo('Link non valido') + testo('Questo link non è valido. Apri la nostra email più recente.');
+      return;
+    }
+
+    // "Resta" ben visibile (bottone oro); "disiscriviti" piccolo e sobrio.
+    const restaBtn = `<a href="/" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 28px;border-radius:4px;font-weight:600;font-size:15px;text-decoration:none;">Resta con noi</a>`;
+    const disLink = `<button id="unsub-go" style="background:none;border:0;color:#a99f8c;font-size:12px;text-decoration:underline;cursor:pointer;padding:6px;font-family:inherit;">Confermo la disiscrizione</button>`;
+
+    async function peek() {
+      try {
+        const r = await fetch(edge, { headers: { Accept: 'application/json' } });
+        const d = await r.json();
+        if (!d.ok) {
+          body.innerHTML = titolo('Link non più valido') + testo('Questo link è scaduto o non è valido. Apri la nostra email più recente, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.');
+          return;
+        }
+        render(d.email || '');
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Non riesco a caricare la pagina. Riprova tra poco.');
+      }
+    }
+
+    function render(emailMasch: string) {
+      body.innerHTML =
+        titolo('Davvero ci lasci?')
+        + testo(`Fai parte della comunità delle nostre valli${emailMasch ? ` (<strong>${H(emailMasch)}</strong>)` : ''}. Le nostre email sono poche e raccontano storia, lingua ed eventi delle Valli del Noce: sarebbe un peccato perderle.`)
+        + `<div style="margin:22px 0 14px;">${restaBtn}</div>`
+        + `<div style="margin-top:4px;">${disLink}</div>`;
+      document.getElementById('unsub-go')!.addEventListener('click', esegui);
+    }
+
+    async function esegui() {
+      const go = document.getElementById('unsub-go') as HTMLButtonElement | null;
+      if (go) { go.disabled = true; go.textContent = 'Attendi…'; }
+      try {
+        const r = await fetch(edge, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        const d = await r.json();
+        if (d.ok) {
+          body.innerHTML =
+            titolo('Fatto.')
+            + testo('Non riceverai più le nostre comunicazioni. Ci dispiace vederti andare: la porta resta aperta, puoi tornare quando vuoi.')
+            + `<div style="margin-top:18px;"><a href="/" style="color:#8a6215;text-decoration:underline;font-size:14px;">Torna al sito di El Brenz</a></div>`;
+        } else {
+          body.innerHTML = titolo('Non riuscito') + testo('Riprova aprendo di nuovo il link, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a> e ti togliamo noi dalla lista.');
+        }
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Errore di connessione. Riprova tra poco.');
+      }
+    }
+
+    peek();
+  })();
+</script>
