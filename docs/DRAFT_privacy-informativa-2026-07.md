@@ -20,12 +20,14 @@
 | §4 Resend region | eu-west-1? | Non verificabile dal codice (config di account, non nel repo). Per l'audit interno = **eu-west-1 (UE)**. Da confermare nella dashboard Resend. |
 | §5 Conservazione | periodi | Ricevuta bonifico: **max 12 mesi** (già dichiarato nel modulo tesseramento). Contatti/download senza adesione: la bozza propone 24 mesi → **scelta di Cristian**. |
 
-**Da decidere/fare prima della pubblicazione (Cristian):**
-1. Periodi di conservazione (§5): confermare i mesi per i lead senza adesione.
-2. Region Resend (§4): confermare UE in dashboard.
-3. Unsubscribe (§2d): implementare il link di disiscrizione automatico in ogni email PRIMA di dichiararlo, oppure attenuare la frase.
-4. Correggere §2(a): togliere il telefono (non raccolto), aggiungere l'upload ricevuta bonifico; §2(e): email è obbligatoria, non eventuale.
-5. Rimuovere Firebase da §4 (non attivo).
+**Risolti il 13/7 (già recepiti nel testo sotto):**
+1. Conservazione lead senza adesione (§5): **12 mesi**. ✓
+2. Region Resend (§4): **UE eu-west-1**. ✓
+3. Unsubscribe (§2d): **implementato** (`/newsletter/disiscrizione`, edge `newsletter-unsubscribe`, commit efdab32). ✓
+4. §2(a) telefono tolto + upload ricevuta aggiunto; §2(e) email obbligatoria. ✓
+5. Firebase rimosso da §4 (non attivo). ✓
+
+**Resta a Cristian:** OK finale sul testo + eventuale revisione legale competente; poi Code sostituisce `/privacy` con `.bak` e data reale.
 
 ---
 
@@ -49,7 +51,7 @@ Raccogliamo il minimo indispensabile, e solo per le finalità qui indicate. I da
 
 **c) Download del libro e del documentario (modulo).** Per scaricare l'opera "A proposito di Tirolo" e per il documentario "Fiöi dal Nos" raccogliamo nome, indirizzo email e, facoltativamente, il numero di telefono. Finalità: fornire la risorsa richiesta e, se acconsentito separatamente, inviare aggiornamenti dell'Associazione. Base giuridica: consenso (art. 6.1.a).
 
-**d) Newsletter e comunicazioni.** Il consenso a ricevere le comunicazioni è raccolto, in modo separato e facoltativo, nei moduli di download e nella proposta ai "Guardiani de la lenga" (con conferma via email, double opt-in). Trattiamo nome e indirizzo email. Finalità: inviare la newsletter e le comunicazioni dell'Associazione. Base giuridica: consenso (art. 6.1.a), revocabile in qualsiasi momento. *(DA IMPLEMENTARE prima di dichiararlo: link di disiscrizione automatico in ogni messaggio; gestione invii tramite Resend.)*
+**d) Newsletter e comunicazioni.** Il consenso a ricevere le comunicazioni è raccolto, in modo separato e facoltativo, nei moduli di download e nella proposta ai "Guardiani de la lenga" (con conferma via email, double opt-in). Trattiamo nome e indirizzo email. Finalità: inviare la newsletter e le comunicazioni dell'Associazione. Base giuridica: consenso (art. 6.1.a), revocabile in qualsiasi momento tramite l'apposito link di disiscrizione presente in ogni comunicazione. Gli invii sono gestiti tramite il fornitore Resend. *(VERIFICATO: meccanismo di disiscrizione implementato, `/newsletter/disiscrizione`.)*
 
 **e) "Guardiani de la lenga" (glossario collaborativo).** Chi propone un termine invia la parola, il significato e le informazioni linguistiche correlate, il proprio nome e il proprio indirizzo email; se presenti, registriamo i parametri della campagna (UTM) del link di provenienza. Finalità: raccogliere, validare e conservare il patrimonio linguistico proposto, con eventuale attribuzione, e dare riscontro. Il nome del contributore compare pubblicamente **solo se l'interessato sceglie di renderlo visibile**. Base giuridica: consenso (art. 6.1.a). *(VERIFICATO: l'email è obbligatoria.)*
 
@@ -72,7 +74,7 @@ I dati sono trattati con strumenti informatici, nel rispetto dei principi di lic
 Per erogare i propri servizi l'Associazione si avvale di fornitori che agiscono come responsabili del trattamento (art. 28 GDPR):
 
 - **Supabase**: banca dati, autenticazione e archiviazione. Dati ospitati nell'Unione Europea.
-- **Resend**: invio delle email transazionali e della newsletter. *(Da confermare: account su regione europea, eu-west-1 → indicare UE.)*
+- **Resend**: invio delle email transazionali e della newsletter. Dati ospitati nell'Unione Europea (regione eu-west-1).
 - **Netlify**: hosting del sito. Il fornitore ha sede negli Stati Uniti: il trasferimento avviene sulla base di garanzie adeguate (clausole contrattuali standard della Commissione europea o meccanismi equivalenti).
 - **PayPal**: gestione dei pagamenti. Fornitore con sede negli Stati Uniti, che tratta i dati secondo la propria informativa e con garanzie adeguate.
 - **Anthropic e OpenAI**: elaborazione delle domande poste ad Andreas per generare la risposta (OpenAI per la ricerca semantica nella base di conoscenza, Anthropic per la generazione del testo). Fornitori con sede negli Stati Uniti: il trasferimento avviene sulla base di garanzie adeguate. Non è prevista conservazione delle conversazioni da parte dell'Associazione.
@@ -87,7 +89,7 @@ I dati non sono diffusi né ceduti a terzi per finalità commerciali. I trasferi
 Conserviamo i dati per il tempo necessario alle finalità indicate:
 
 - dati relativi ad adesione, tesseramento e pagamenti: per la durata del rapporto associativo e, successivamente, per il tempo richiesto dagli obblighi di legge, inclusi quelli contabili e fiscali; la ricevuta di bonifico eventualmente caricata è conservata non oltre 12 mesi;
-- dati raccolti tramite i moduli di contatto e di download, in assenza di adesione: [DA CONFERMARE: periodo, ad esempio 24 mesi] o fino a richiesta di cancellazione;
+- dati raccolti tramite i moduli di contatto e di download, in assenza di adesione: 12 mesi, o fino a richiesta di cancellazione;
 - iscritti alla newsletter: fino alla revoca del consenso o alla disiscrizione;
 - dati tecnici e di sicurezza: per il tempo strettamente necessario alla finalità di protezione.
 
