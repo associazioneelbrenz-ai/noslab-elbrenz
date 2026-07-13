@@ -1,12 +1,14 @@
 ---
 /**
- * Privacy — Informativa privacy ai sensi del GDPR (Reg. UE 2016/679)
+ * Privacy — Informativa sul trattamento dei dati personali (GDPR, Reg. UE 2016/679).
  *
- * Pagina informativa minima conforme per APS che raccoglie dati anagrafici
- * tramite form pubblico /tesseramento.
+ * Aggiornamento 13/7/2026 (brief compliance B.3): copre TUTTI i trattamenti
+ * attuali (tesseramento, contatti/Sportello, lead-gen libro/documentario,
+ * newsletter, Guardiani, convenzioni, eventi/pagamenti PayPal+bonifico, area
+ * editor, assistente Andreas con Anthropic+OpenAI, dati tecnici). Dati tecnici
+ * verificati sul codice reale. Testo rivisto con Cristian.
  *
- * M.A.2.5 — versione iniziale; da rivedere con consulente legale in M.A.3
- * quando partirà il sistema di iscrizione formale.
+ * Versione precedente (3/5/2026, solo tesseramento) in privacy.astro.bak.
  */
 
 import Layout from '../layouts/Layout.astro';
@@ -36,92 +38,107 @@ import Layout from '../layouts/Layout.astro';
   <section class="bg-[#F8F1E4] py-16">
     <div class="max-w-3xl mx-auto px-6" style="font-family: 'Source Serif 4', Georgia, serif;">
 
+      <p class="text-sm text-[#0F0F0F]/55 mb-2" style="font-family: 'Inter', sans-serif;">
+        Ai sensi degli articoli 13 e 14 del Regolamento (UE) 2016/679 (GDPR).
+      </p>
       <p class="text-sm text-[#0F0F0F]/55 mb-12" style="font-family: 'Inter', sans-serif;">
-        Ultimo aggiornamento: 3 maggio 2026
+        Ultimo aggiornamento: 13 luglio 2026
       </p>
 
       <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1. Titolare del trattamento</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-2">
-        <strong>Associazione Storico Culturale Linguistica "El Brenz" delle Valli del Noce</strong>
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-2">
-        Sede: Via Trento 40, II piano, 38027 Malè (TN)
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-2">
-        Codice fiscale: 92019480224
+        Il Titolare del trattamento è l'<strong>Associazione Storico Culturale Linguistica "El Brenz" delle Valli del Noce</strong>, con sede in Via Trento 40, 38027 Malè (TN), Codice Fiscale 92019480224.
       </p>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Contatti: <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a> · <a href="tel:+393471077636" class="text-[#C8923E] no-underline hover:underline">+39 347 107 7636</a>
+        Per ogni questione relativa alla presente informativa e per l'esercizio dei diritti è possibile scrivere a: <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">2. Tipi di dati raccolti</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        Tramite il form pubblico <a href="/tesseramento" class="text-[#C8923E] no-underline hover:underline">/tesseramento</a> raccogliamo:
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">2. Quali dati raccogliamo, per quali finalità e con quale base giuridica</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        Raccogliamo il minimo indispensabile, e solo per le finalità qui indicate. I dati provengono dai moduli e dalle funzioni del sito. Di seguito il dettaglio per ciascun trattamento.
       </p>
-      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
-        <li>Nome e cognome</li>
-        <li>Indirizzo email</li>
-        <li>Data di nascita</li>
-        <li>Comune (o stato) di nascita</li>
-        <li>Sesso</li>
-        <li>Messaggio di richiesta informazioni</li>
-        <li>Indirizzo IP del dispositivo (per sicurezza anti-abuso)</li>
-      </ul>
-
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">3. Finalità del trattamento</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        I dati raccolti sono utilizzati esclusivamente per:
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>a) Adesione e tesseramento.</strong> Raccogliamo nome, cognome, indirizzo email, data e luogo di nascita e sesso, oltre a un eventuale messaggio facoltativo. Finalità: gestire la richiesta di adesione, il tesseramento e le comunicazioni relative alla vita associativa. Base giuridica: esecuzione del rapporto associativo e adempimento degli obblighi connessi (art. 6.1.b e 6.1.c GDPR); per l'eventuale iscrizione futura in assenza di adesione formale, il consenso (art. 6.1.a). La data di nascita, qualora venga attivato l'invio di auguri ai soci, sarà trattata anche per tale finalità.
       </p>
-      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
-        <li>Rispondere alla richiesta di informazioni inviata dall'interessato.</li>
-        <li>Pre-compilare la futura domanda di iscrizione formale all'Associazione, qualora l'interessato decida di aderire.</li>
-        <li>Gestire la sicurezza del sistema (rate limiting, anti-abuso).</li>
-      </ul>
-
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">4. Base giuridica</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        Il trattamento avviene sulla base del <strong>consenso esplicito</strong> dell'interessato (art. 6.1.a GDPR), prestato spuntando l'apposita casella nel form di contatto. Il consenso è revocabile in qualsiasi momento.
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>b) Contatti e "Sportello El Brenz. Porta la tua Storia".</strong> Raccogliamo nome, indirizzo email e il contenuto del messaggio o della testimonianza inviata. Finalità: rispondere alle richieste e gestire i contributi proposti. Base giuridica: consenso e riscontro alla richiesta dell'interessato (art. 6.1.a e 6.1.b).
       </p>
-
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">5. Modalità e luogo di conservazione</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        I dati sono trasmessi via canale criptato (HTTPS/TLS) e archiviati nella casella email <code class="text-sm bg-[#FDF9F0] px-1.5 py-0.5">info@elbrenz.eu</code>. Non sono pubblicati né condivisi con soggetti esterni all'Associazione.
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>c) Download del libro e del documentario (modulo).</strong> Per scaricare l'opera "A proposito di Tirolo" e per il documentario "Fiöi dal Nos" raccogliamo nome, indirizzo email e, facoltativamente, il numero di telefono. Finalità: fornire la risorsa richiesta e, se acconsentito separatamente, inviare aggiornamenti dell'Associazione. Base giuridica: consenso (art. 6.1.a).
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>d) Newsletter e comunicazioni.</strong> Chi si iscrive fornisce nome e indirizzo email. Finalità: inviare la newsletter e le comunicazioni dell'Associazione. Base giuridica: consenso (art. 6.1.a), revocabile in qualsiasi momento tramite il link di disiscrizione presente in ogni messaggio. La gestione degli invii e delle disiscrizioni avviene tramite Resend.
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>e) "Guardiani de la lenga" (glossario collaborativo).</strong> Chi propone un termine invia la parola, il significato e le informazioni linguistiche correlate, oltre a un indirizzo email; può indicare il proprio nome. Finalità: raccogliere, validare e conservare il patrimonio linguistico proposto, gestire il riscontro sulla proposta e l'eventuale attribuzione. L'email è utilizzata per la gestione del contributo e non è resa pubblica; il nome del contributore compare pubblicamente <strong>solo se l'interessato sceglie di renderlo visibile</strong>. Base giuridica: consenso (art. 6.1.a).
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>f) Proposte di convenzione (esercenti e partner).</strong> Raccogliamo i dati dell'attività e del referente che propone la convenzione. Finalità: valutare e gestire le convenzioni riservate ai soci. Base giuridica: consenso e legittimo interesse alla gestione dei rapporti convenzionali (art. 6.1.a e 6.1.f).
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>g) Iscrizione a eventi e gite, pagamenti e donazioni.</strong> Per l'iscrizione a eventi e gite raccogliamo i dati del partecipante necessari alla partecipazione. I pagamenti (quota associativa, anticipo per le gite, donazioni) sono effettuati tramite PayPal oppure tramite bonifico bancario sull'IBAN dell'Associazione. Finalità: gestire l'iscrizione, il pagamento e la relativa ricevuta. Base giuridica: esecuzione del servizio richiesto e adempimenti connessi, inclusi quelli contabili (art. 6.1.b e 6.1.c). I dati di pagamento effettuati tramite PayPal sono trattati direttamente da PayPal secondo la sua informativa; per i bonifici, i dati risultano dalla contabile bancaria.
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>h) Area riservata e redazione (soci e collaboratori).</strong> Per l'accesso all'area riservata e alla redazione utilizziamo l'autenticazione tramite codice inviato via email (OTP). Per i collaboratori editoriali trattiamo i dati dell'account e i contenuti prodotti. Finalità: consentire l'accesso riservato e l'attività editoriale. Base giuridica: esecuzione del rapporto associativo o di collaborazione e consenso (art. 6.1.b e 6.1.a).
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>i) Assistente digitale "Andreas".</strong> Le domande poste ad Andreas, sul sito e tramite il canale Telegram, vengono elaborate da fornitori di servizi di intelligenza artificiale per generare la risposta (vedi sezione 4). Non conserviamo le conversazioni. Per il funzionamento del canale Telegram trattiamo un identificativo tecnico della chat, in forma cifrata, al solo fine di limitare gli abusi. L'interazione tramite Telegram è inoltre soggetta all'informativa di Telegram. Base giuridica: legittimo interesse al funzionamento del servizio e alla prevenzione degli abusi (art. 6.1.f). Si invita a non inserire dati personali non necessari nelle domande.
       </p>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Periodo di conservazione: fino a registrazione formale come socio (con sostituzione dell'archivio email da parte del registro soci) <strong>oppure</strong> fino a richiesta di cancellazione da parte dell'interessato. In assenza di entrambe, i dati sono cancellati dopo 24 mesi.
+        <strong>l) Dati tecnici e di sicurezza.</strong> Per proteggere i moduli da abusi registriamo in modo temporaneo l'indirizzo IP e dati tecnici minimi (ad esempio limiti di frequenza delle richieste). Finalità: sicurezza del sistema e prevenzione di invii automatizzati o abusivi. Base giuridica: legittimo interesse (art. 6.1.f).
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">6. Soggetti che trattano i dati</h2>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">3. Modalità del trattamento</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        I dati sono trattati con strumenti informatici, nel rispetto dei principi di liceità, minimizzazione e limitazione delle finalità. La trasmissione avviene tramite connessione cifrata (HTTPS/TLS). L'accesso ai dati è riservato alle persone autorizzate dell'Associazione. Non è previsto alcun processo decisionale automatizzato che produca effetti giuridici sulle persone.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">4. Responsabili esterni e trasferimenti di dati</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        I dati sono accessibili al solo direttivo dell'Associazione. I servizi tecnici esterni utilizzati per la trasmissione e archiviazione (hosting, email transazionale) operano in qualità di responsabili del trattamento ai sensi dell'art. 28 GDPR e sono:
+        Per erogare i propri servizi l'Associazione si avvale di fornitori che agiscono come responsabili del trattamento (art. 28 GDPR):
       </p>
       <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
-        <li><strong>Supabase</strong> (hosting backend, gestione richieste form)</li>
-        <li><strong>Resend</strong> (invio email transazionale)</li>
-        <li><strong>Netlify</strong> (hosting sito web)</li>
+        <li><strong>Supabase</strong>: banca dati, autenticazione e archiviazione. Dati ospitati nell'Unione Europea.</li>
+        <li><strong>Resend</strong>: invio delle email transazionali e della newsletter. Dati trattati su infrastruttura nell'Unione Europea (regione eu-west-1).</li>
+        <li><strong>Netlify</strong>: hosting del sito. Il fornitore ha sede negli Stati Uniti: il trasferimento avviene sulla base di garanzie adeguate (clausole contrattuali standard della Commissione europea o meccanismi equivalenti).</li>
+        <li><strong>PayPal</strong>: gestione dei pagamenti. Fornitore con sede negli Stati Uniti, che tratta i dati secondo la propria informativa e con garanzie adeguate.</li>
+        <li><strong>Anthropic e OpenAI</strong>: elaborazione delle domande poste ad Andreas per generare la risposta. Fornitori con sede negli Stati Uniti: il trasferimento avviene sulla base di garanzie adeguate. Non è prevista conservazione delle conversazioni da parte dell'Associazione.</li>
+        <li><strong>Telegram</strong>: canale di messaggistica dell'assistente Andreas, soggetto alla propria informativa.</li>
       </ul>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        I dati non sono diffusi né ceduti a terzi per finalità commerciali. I trasferimenti verso Paesi al di fuori dell'Unione Europea avvengono, ove presenti, sulla base delle garanzie previste dagli articoli 44 e seguenti del GDPR.
+      </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">7. Diritti dell'interessato</h2>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">5. Periodo di conservazione</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        Ai sensi degli articoli 15-22 del GDPR, l'interessato ha diritto di:
+        Conserviamo i dati per il tempo necessario alle finalità indicate:
       </p>
       <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
-        <li>Accedere ai propri dati personali</li>
-        <li>Rettificare dati inesatti</li>
-        <li>Cancellare i dati ("diritto all'oblio")</li>
-        <li>Limitare il trattamento</li>
-        <li>Ricevere una copia dei propri dati (portabilità)</li>
-        <li>Opporsi al trattamento</li>
-        <li>Revocare il consenso in qualsiasi momento</li>
-        <li>Proporre reclamo al Garante per la protezione dei dati personali (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">garanteprivacy.it</a>)</li>
+        <li>dati relativi ad adesione, tesseramento e pagamenti: per la durata del rapporto associativo e, successivamente, per il tempo richiesto dagli obblighi di legge, inclusi quelli contabili e fiscali;</li>
+        <li>dati raccolti tramite i moduli di contatto e di download, in assenza di adesione: fino a 12 mesi, o fino a richiesta di cancellazione se anteriore;</li>
+        <li>iscritti alla newsletter: fino alla revoca del consenso o alla disiscrizione;</li>
+        <li>dati tecnici e di sicurezza: per il tempo strettamente necessario alla finalità di protezione.</li>
       </ul>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Per esercitare i propri diritti scrivere a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
+        Al termine dei periodi indicati i dati sono cancellati o resi anonimi.
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">8. Cookies</h2>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">6. Diritti dell'interessato</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        In qualsiasi momento è possibile esercitare i diritti previsti dagli articoli 15 e seguenti del GDPR: accesso ai propri dati, rettifica, cancellazione, limitazione del trattamento, portabilità, opposizione, nonché revoca del consenso prestato, senza che ciò pregiudichi la liceità del trattamento effettuato prima della revoca.
+      </p>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Il sito utilizza esclusivamente cookies tecnici necessari al funzionamento (es. registrazione del Service Worker per la modalità offline). Non utilizza cookies di profilazione o tracking di terze parti.
+        Le richieste vanno inviate a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>. È inoltre possibile proporre reclamo all'Autorità di controllo competente, ossia il <strong>Garante per la protezione dei dati personali</strong> (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">garanteprivacy.it</a>).
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">7. Cookie</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Il sito utilizza esclusivamente cookie tecnici e strumenti necessari al funzionamento, e adotta un meccanismo di caricamento su richiesta per i contenuti di terze parti (video, mappa, social), così da non trasmettere dati prima di un'azione esplicita dell'utente. Il dettaglio è riportato nella <a href="/cookie-policy" class="text-[#C8923E] no-underline hover:underline">Cookie Policy</a>, richiamabile anche dal piè di pagina insieme al <button type="button" data-cc="show-preferencesModal" class="text-[#C8923E] bg-transparent border-0 p-0 cursor-pointer hover:underline" style="font: inherit;">pannello delle preferenze</button>.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">8. Modifiche alla presente informativa</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        L'Associazione può aggiornare la presente informativa per adeguarla a modifiche normative o dei servizi. La versione vigente è sempre pubblicata su questa pagina, con l'indicazione della data di ultimo aggiornamento.
       </p>
 
       <div class="border-t border-[#E5DFCF] mt-16 pt-8">
