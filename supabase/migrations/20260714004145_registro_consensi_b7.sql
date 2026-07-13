@@ -1,6 +1,8 @@
 -- Registro dei consensi (B.7) — migration ADDITIVA, non distruttiva.
 --
--- STATO: DA APPLICARE al DB (project wacknihvdjxltiqvxtqr) da Cristian.
+-- STATO: APPLICATA il 2026-07-13 al DB (project wacknihvdjxltiqvxtqr) via
+-- Management API SQL endpoint (idempotente: add column if not exists).
+-- Spostata qui da docs/ dopo l'applicazione, come da disciplina repo.
 -- Disciplina repo: le migration in supabase/migrations/ sono gia applicate;
 -- questa resta in docs/ finche non eseguita. Dopo l'applicazione, spostarla in
 -- supabase/migrations/ con timestamp.

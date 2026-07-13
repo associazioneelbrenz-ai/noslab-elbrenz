@@ -397,6 +397,10 @@ serve(async (req) => {
         data_nascita: dataNascita,
         comune_nascita: comuneNascita,
         sesso,
+        // B.7 registro consensi: il consenso privacy e' gia' obbligatorio e
+        // validato server-side sopra (step 8a, blocca con 400 se !gdpr), qui lo
+        // persistiamo nella colonna strutturata. Additivo, migration 13/07.
+        consenso_privacy: true,
         sorgente_utm: sorgenteUtm,
       })
       .select('id')
