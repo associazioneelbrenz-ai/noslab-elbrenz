@@ -75,15 +75,18 @@ function toTelegramHtml(md: string): string {
   return t;
 }
 
-async function sendMessage(token: string, chatId: number | string, html: string): Promise<void> {
+async function sendMessage(token: string, chatId: number | string, html: string): Promise<{ ok: boolean; error?: string }> {
   // Telegram limita a 4096 caratteri per messaggio.
   const testo = html.length > 4000 ? html.slice(0, 3990) + '…' : html;
   const r = await tgApi(token, 'sendMessage', {
     chat_id: chatId, text: testo, parse_mode: 'HTML', disable_web_page_preview: false,
   });
   if (!r.ok) {
-    console.error('[telegram-bot] sendMessage fallita:', r.status, (await r.text()).slice(0, 200));
+    const body = (await r.text()).slice(0, 300);
+    console.error('[telegram-bot] sendMessage fallita:', r.status, body);
+    return { ok: false, error: `HTTP ${r.status} ${body}` };
   }
+  return { ok: true };
 }
 
 const BENVENUTO =
@@ -220,6 +223,40 @@ serve(async (req: Request) => {
     if (cmd === '/chatid' || cmd.startsWith('/chatid')) {
       const tipo = message?.chat?.type ?? 'sconosciuto';
       await sendMessage(token, chatId, `Chat id: <code>${chatId}</code>\nTipo: ${tipo}`);
+      return new Response('', { status: 200 });
+    }
+    // Diagnostica canale notifiche direttivo (14/7): invia una notifica di
+    // PROVA al gruppo registrato e RIPORTA l'esito reale (se fallisce, l'errore
+    // Telegram — es. chat_id stale dopo migrazione a supergruppo). Solo admin,
+    // dentro un gruppo.
+    if (cmd === '/test_notifica' || cmd.startsWith('/test_notifica')) {
+      const tipoChat = message?.chat?.type;
+      if (tipoChat !== 'group' && tipoChat !== 'supergroup') {
+        await sendMessage(token, chatId, 'Usa <b>/test_notifica</b> dentro il gruppo del direttivo.');
+        return new Response('', { status: 200 });
+      }
+      const cm = await tgApi(token, 'getChatMember', { chat_id: chatId, user_id: message?.from?.id }).then((r) => r.json()).catch(() => null);
+      const st = cm?.result?.status;
+      if (st !== 'creator' && st !== 'administrator') {
+        await sendMessage(token, chatId, 'Solo un <b>amministratore</b> del gruppo può usare /test_notifica.');
+        return new Response('', { status: 200 });
+      }
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const { data } = await supabase.from('telegram_config').select('valore').eq('chiave', 'direttivo_chat_id').maybeSingle();
+      const dest = data?.valore;
+      if (!dest) {
+        await sendMessage(token, chatId, 'Nessun gruppo registrato per le notifiche. Esegui <b>/attiva_notifiche</b> qui dentro.');
+        return new Response('', { status: 200 });
+      }
+      const res = await sendMessage(token, dest, '✅ <b>Test notifica direttivo</b>\nSe leggi questo messaggio, il canale delle notifiche funziona.');
+      if (res.ok) {
+        const diff = String(dest) !== String(chatId)
+          ? `\n⚠ L'id registrato (<code>${dest}</code>) è diverso da quello di questo gruppo (<code>${chatId}</code>): se le notifiche non arrivano qui, ri-esegui /attiva_notifiche.`
+          : '';
+        await sendMessage(token, chatId, `Notifica di prova inviata al gruppo registrato (<code>${dest}</code>). ✓${diff}`);
+      } else {
+        await sendMessage(token, chatId, `❌ Invio FALLITO al chat <code>${dest}</code>:\n<code>${String(res.error ?? '').replace(/</g, '&lt;')}</code>\n\nProbabile id cambiato (supergruppo): esegui <b>/attiva_notifiche</b> qui dentro per registrare l'id corretto di questo gruppo (<code>${chatId}</code>).`);
+      }
       return new Response('', { status: 200 });
     }
     // Registrazione del gruppo direttivo per le notifiche. Va usato DENTRO il
