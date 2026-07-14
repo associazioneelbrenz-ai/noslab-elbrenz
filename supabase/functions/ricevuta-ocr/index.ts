@@ -147,6 +147,11 @@ Deno.serve(async (req: Request) => {
   const tipo = form.get('tipo') === 'donazione' ? 'donazione' : 'quota';
   const nome = String(form.get('nome') ?? '').trim().slice(0, 100) || null;
   const email = String(form.get('email') ?? '').trim().slice(0, 200) || null;
+  // 14/7: binding ricevuta bonifico <-> domanda_tesseramento (come custom_id
+  // in paypal-create-order): la ricevuta non deve restare orfana. Facoltativo
+  // (upload possibile anche senza domanda), validato come UUID.
+  const domandaRaw = String(form.get('domanda_id') ?? '').trim();
+  const domandaId = /^[0-9a-f-]{36}$/i.test(domandaRaw) ? domandaRaw : null;
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -196,6 +201,7 @@ Deno.serve(async (req: Request) => {
     anomalia,
     nome,
     email,
+    domanda_id: domandaId,
     importo: estratto?.importo ? parseFloat(estratto.importo.replace(',', '.')) || null : null,
     ricevuta_path: path,
     ricevuta_dati: estratto,

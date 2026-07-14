@@ -675,6 +675,9 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             fd.append('tipo', 'quota');
             fd.append('nome', scelta.dataset.nome || '');
             fd.append('email', scelta.dataset.email || '');
+            // 14/7: lega la ricevuta bonifico alla domanda (come il ramo PayPal),
+            // così il pagamento non resta orfano dall'anagrafica.
+            if (scelta.dataset.domandaId) fd.append('domanda_id', scelta.dataset.domandaId);
             const resp = await fetch(scelta.dataset.ricevutaUrl, { method: 'POST', body: fd });
             const out = await resp.json().catch(() => ({}));
             if (resp.ok && out.success) {
