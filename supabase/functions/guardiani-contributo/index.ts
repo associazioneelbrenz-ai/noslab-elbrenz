@@ -106,52 +106,66 @@ Deno.serve(async (req: Request) => {
   // ---- ramo CURATELA (valida / rifiuta) ----------------------------------
   const mAz = url.pathname.match(/\/azione\/(valida|rifiuta)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
   if (mAz) {
-    // Risposte in JSON (la piattaforma Supabase forza text/plain sull'HTML
-    // servito dalle edge: la conferma renderizzata la fa la pagina
-    // /guardiani-curatela su elbrenz.eu, che chiama questo endpoint).
-    if (!adminSecret) return json({ ok: false, error: 'config_mancante' }, 500, c);
+    // Curatela via email (bottoni "valida/rifiuta" nella mail al curatore).
+    // FIX 14/7/2026: serviamo HTML DIRETTAMENTE dall'edge con html(), come
+    // convenzioni-proposta e scheda-domanda (che funzionano sulla stessa
+    // piattaforma). L'assunzione "Supabase forza text/plain sull'HTML delle
+    // edge" era falsa (anche il ramo conferma-newsletter qui sopra serve HTML
+    // con html() e va). Pattern: GET = pagina di conferma con <form method=POST
+    // action=stesso-path>; POST = esito. Token HMAC nel path invariato.
+    if (!adminSecret) return html('<p class="occhiello">Guardiani de la lenga</p><h1>Configurazione mancante</h1><p>ADMIN_ACTION_SECRET non impostato.</p>', 500);
     const azione = mAz[1] as 'valida' | 'rifiuta';
     const id = mAz[2]; const exp = parseInt(mAz[3], 10); const t = mAz[4];
     const ok = await verificaToken(adminSecret, `guardiani-${azione}`, id, exp, t);
-    if (!ok) return json({ ok: false, error: 'link_non_valido' }, 403, c);
+    if (!ok) return html('<p class="occhiello">Guardiani de la lenga</p><h1>Link non valido o scaduto</h1><p>Il link potrebbe essere scaduto (validità 30 giorni) o già usato. Scrivi a info@elbrenz.eu.</p>', 403);
 
     const { data: lemma } = await supabase.from('dizionario_lemma')
       .select('id, lemma, parlata, stato').eq('id', id).maybeSingle();
-    if (!lemma) return json({ ok: false, error: 'non_trovato' }, 404, c);
+    if (!lemma) return html('<p class="occhiello">Guardiani de la lenga</p><h1>Contributo non trovato</h1>', 404);
 
+    const variante = VARIANTE_LABEL[lemma.parlata] ?? lemma.parlata;
+
+    // GET: pagina di conferma (evita che i prefetcher/scanner email mutino lo stato).
     if (req.method === 'GET') {
-      // peek: dà alla pagina i dati del lemma + un token fresco per il POST
       if (lemma.stato === 'pubblicato' || lemma.stato === 'rifiutato') {
-        return json({ ok: false, error: 'gia_gestito', stato: lemma.stato, lemma: lemma.lemma }, 200, c);
+        return html(`<p class="occhiello">Guardiani de la lenga</p><h1>Già gestito</h1><p>«${esc(lemma.lemma)}» è già in stato «${esc(lemma.stato)}»: nessuna altra azione necessaria.</p>`);
       }
-      const expAz = Date.now() + TOKEN_TTL_MS;
-      const tAz = await firmaToken(adminSecret, `guardiani-${azione}`, id, expAz);
-      return json({
-        ok: true, azione, lemma: lemma.lemma,
-        variante: VARIANTE_LABEL[lemma.parlata] ?? lemma.parlata, stato: lemma.stato,
-        post: { id, exp: expAz, t: tAz },
-      }, 200, c);
+      const verbo = azione === 'valida' ? 'VALIDARE e pubblicare' : 'RIFIUTARE';
+      const cls = azione === 'valida' ? 'ok' : 'no';
+      const campoMotivo = azione === 'rifiuta'
+        ? '<p style="margin:14px 0 6px;font-size:13px;color:#666;">Motivo (facoltativo, uso interno):</p><textarea name="motivo" rows="3" placeholder="Perché non entra nel glossario…"></textarea>'
+        : '';
+      return html(`
+        <p class="occhiello">Guardiani de la lenga</p>
+        <h1>Confermi di ${verbo} questo contributo?</h1>
+        <dl style="margin:0 0 8px;">
+          <dt style="color:#C8923E;font-size:11px;text-transform:uppercase;letter-spacing:.12em;">Lemma</dt><dd style="margin:2px 0 12px;font-size:18px;font-family:Georgia,serif;">${esc(lemma.lemma)}</dd>
+          <dt style="color:#C8923E;font-size:11px;text-transform:uppercase;letter-spacing:.12em;">Variante</dt><dd style="margin:2px 0 0;">${esc(variante)}</dd>
+        </dl>
+        <form method="POST" action="${esc(url.pathname)}">
+          ${campoMotivo}
+          <p style="margin-top:18px;"><button type="submit" class="btn ${cls}">${azione === 'valida' ? 'Sì, valida e pubblica' : 'Sì, rifiuta'}</button></p>
+        </form>
+        <p class="nota">${azione === 'valida' ? 'Validando, il lemma entra subito nel glossario pubblico.' : 'Rifiutando, il contributo resta archiviato e non viene pubblicato. Nessuna email automatica al proponente.'}</p>`);
     }
 
-    // POST: esegue la transizione
+    // POST: esegue la transizione (idempotente: solo se ancora 'in_revisione').
     if (lemma.stato === 'pubblicato' || lemma.stato === 'rifiutato') {
-      return json({ ok: false, error: 'gia_gestito', stato: lemma.stato }, 200, c);
+      return html(`<p class="occhiello">Guardiani de la lenga</p><h1>Già gestito</h1><p>«${esc(lemma.lemma)}» era già in stato «${esc(lemma.stato)}»: nessuna modifica.</p>`);
     }
     if (azione === 'valida') {
       await supabase.from('dizionario_lemma').update({
         stato: 'pubblicato', validato_da: 'Commissione Linguistica El Brenz (via email)',
         validato_il: new Date().toISOString(), updated_at: new Date().toISOString(),
       }).eq('id', id).eq('stato', 'in_revisione');
-      return json({ ok: true, azione: 'valida', stato: 'pubblicato', lemma: lemma.lemma,
-        message: `«${lemma.lemma}» è ora nel glossario pubblico.` }, 200, c);
+      return html(`<p class="occhiello">Guardiani de la lenga</p><h1>«${esc(lemma.lemma)}» è ora nel glossario ✓</h1><p>Il contributo è pubblicato nel glossario pubblico dei Guardiani. <em>Raìs fonde no le ’nglacia.</em></p>`);
     }
     let motivo = '';
-    try { const b = await req.json(); motivo = String((b as Record<string, unknown>)?.motivo ?? '').trim().slice(0, 500); } catch { /**/ }
+    try { const fd = await req.formData(); motivo = String(fd.get('motivo') ?? '').trim().slice(0, 500); } catch { /**/ }
     await supabase.from('dizionario_lemma').update({
       stato: 'rifiutato', motivo_rifiuto: motivo || null, updated_at: new Date().toISOString(),
     }).eq('id', id).eq('stato', 'in_revisione');
-    return json({ ok: true, azione: 'rifiuta', stato: 'rifiutato', lemma: lemma.lemma,
-      message: `«${lemma.lemma}» non entrerà nel glossario.` }, 200, c);
+    return html(`<p class="occhiello">Guardiani de la lenga</p><h1>«${esc(lemma.lemma)}» rifiutato</h1><p>Il contributo è stato archiviato e non entra nel glossario.</p>`);
   }
 
   // ---- ramo INVIO CONTRIBUTO (POST dal form) -----------------------------
@@ -221,10 +235,10 @@ Deno.serve(async (req: Request) => {
     const exp = Date.now() + TOKEN_TTL_MS;
     const tV = await firmaToken(adminSecret, 'guardiani-valida', lemma.id, exp);
     const tR = await firmaToken(adminSecret, 'guardiani-rifiuta', lemma.id, exp);
-    // Link alla pagina di curatela su elbrenz.eu (renderizza HTML; chiama
-    // l'edge in JSON). Token HMAC nel PATH (non in query: si corrompe in
+    // FIX 14/7/2026: i bottoni vanno DRITTI all'edge, che ora serve HTML
+    // (conferma in pagina). Token HMAC nel PATH (non in query: si corrompe in
     // quoted-printable delle email).
-    const base = 'https://elbrenz.eu/guardiani-curatela';
+    const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/guardiani-contributo/azione`;
     await inviaEmail(RECIPIENT, `[GUARDIANI] «${termine}» (${variante}) da ${nome}`,
       `<!DOCTYPE html><html><body style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;">
         <div style="background:#fff;padding:28px;border-radius:8px;border-top:4px solid #C8923E;">
