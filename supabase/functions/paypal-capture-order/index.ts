@@ -69,11 +69,15 @@ Deno.serve(async (req: Request) => {
     const captureId: string | null = capture?.id ?? null;
     const importo: string | null = capture?.amount?.value ?? null;
     const payerEmail: string | null = data?.payer?.email_address ?? null;
+    // Nome del pagante da PayPal (safety net 14/7): serve a non avere mai orfani
+    // "sconosciuto". Usato solo se la riga non ha gia' un nome (non lo sovrascrive).
+    const payerName: string | null =
+      [data?.payer?.name?.given_name, data?.payer?.name?.surname].filter(Boolean).join(' ').trim() || null;
 
     // riga esistente (creata da paypal-create-order)
     const { data: riga } = await supabase
       .from('pagamenti_tesseramento')
-      .select('id, anonimo')
+      .select('id, anonimo, nome')
       .eq('order_id', orderID)
       .maybeSingle();
 
@@ -86,6 +90,7 @@ Deno.serve(async (req: Request) => {
 
     if (riga) {
       if (!riga.anonimo && payerEmail) aggiorna.payer_email = payerEmail;
+      if (!riga.anonimo && payerName && !riga.nome) aggiorna.nome = payerName;
       await supabase.from('pagamenti_tesseramento').update(aggiorna).eq('id', riga.id);
     } else {
       // rete di sicurezza: riga mancante (non dovrebbe accadere) — creala.
