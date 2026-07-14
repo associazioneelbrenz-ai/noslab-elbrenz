@@ -1,0 +1,161 @@
+---
+/**
+ * /collega-telegram — Area socio: collega il proprio Telegram ad Andreas.
+ *
+ * Andreas Fondazione, 2o mattone (ponte Telegram). Pagina auth-gated: login
+ * OTP (riusa otp-request/otp-verify + sessione Supabase, come /redazione), poi
+ * genera un token monouso via l'edge `telegram-link-token`, mostra il deep-link
+ * ("Apri in Telegram") e il codice di fallback, lo stato del collegamento e lo
+ * "Scollega". In attesa della futura area soci, vive come pagina dedicata.
+ *
+ * GDPR: il collegamento (telegram_user_id <-> socio) e' un dato personale, con
+ * consenso al momento del collegamento e revocabile da qui (vedi /privacy).
+ */
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Collega Telegram" description="Collega il tuo account Telegram ad Andreas, l'assistente di El Brenz." noindex={true}>
+  <section class="max-w-xl mx-auto px-6 py-16">
+    <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2" style="font-family:'Inter',sans-serif;">Area soci</p>
+    <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family:'Playfair Display',serif;font-weight:500;">Collega Telegram</h1>
+    <p class="text-[#1E2E26]/75 leading-relaxed m-0 mb-8" style="font-family:'Source Serif 4',Georgia,serif;">
+      Collega una volta il tuo account Telegram per farti riconoscere da Andreas anche sul bot. Puoi scollegarlo quando vuoi.
+    </p>
+
+    <div id="tg-loading" class="text-[#1E2E26]/60" style="font-family:'Inter',sans-serif;">Carico…</div>
+
+    {/* ---- LOGIN OTP ---- */}
+    <div id="tg-login" class="hidden">
+      <div id="tg-login-1">
+        <label class="block text-sm text-[#1E2E26]/80 mb-2" style="font-family:'Inter',sans-serif;">Accedi con la tua email socio</label>
+        <input id="tg-email" type="email" inputmode="email" placeholder="nome@esempio.it" class="w-full border border-[#E5DFCF] rounded px-4 py-3 mb-3" style="font-family:'Inter',sans-serif;" />
+        <button id="tg-send" class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-semibold rounded hover:bg-[#D9A94E] transition-colors" style="font-family:'Inter',sans-serif;">Invia codice</button>
+      </div>
+      <div id="tg-login-2" class="hidden">
+        <p class="text-sm text-[#1E2E26]/70 mb-2" style="font-family:'Inter',sans-serif;">Codice inviato a <strong id="tg-email-echo"></strong></p>
+        <input id="tg-code" type="text" inputmode="numeric" maxlength="6" placeholder="123456" class="w-full border border-[#E5DFCF] rounded px-4 py-3 mb-3 tracking-[0.3em] text-center" style="font-family:'Inter',sans-serif;" />
+        <div class="flex gap-3">
+          <button id="tg-verify" class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-semibold rounded hover:bg-[#D9A94E] transition-colors" style="font-family:'Inter',sans-serif;">Verifica e accedi</button>
+          <button id="tg-back" class="text-[#1E2E26]/60 px-4 py-3 text-sm" style="font-family:'Inter',sans-serif;">Indietro</button>
+        </div>
+      </div>
+      <p id="tg-login-err" class="hidden text-sm text-[#a33] mt-3" style="font-family:'Inter',sans-serif;"></p>
+    </div>
+
+    {/* ---- APP: stato + azioni ---- */}
+    <div id="tg-app" class="hidden">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-[#E5DFCF]">
+        <span class="text-sm text-[#1E2E26]/70" style="font-family:'Inter',sans-serif;">Accesso: <strong id="tg-utente"></strong></span>
+        <button id="tg-logout" class="text-xs text-[#1E2E26]/50 hover:text-[#C8923E]" style="font-family:'Inter',sans-serif;">Esci</button>
+      </div>
+
+      {/* Stato NON collegato */}
+      <div id="tg-nolink" class="hidden">
+        <div class="bg-[#FDF9F0] border border-[#E5DFCF] rounded p-5 mb-5">
+          <p class="text-sm text-[#1E2E26]/80 m-0" style="font-family:'Inter',sans-serif;">Stato: <strong>non collegato</strong></p>
+        </div>
+        <button id="tg-genera" class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-semibold rounded hover:bg-[#D9A94E] transition-colors" style="font-family:'Inter',sans-serif;">Collega Telegram</button>
+
+        <div id="tg-deeplink-box" class="hidden mt-6 bg-[#F5EEDD] border border-[#C8923E]/50 rounded p-5">
+          <p class="text-sm text-[#1E2E26]/80 m-0 mb-3" style="font-family:'Inter',sans-serif;">Apri Telegram e conferma il collegamento (valido 10 minuti):</p>
+          <a id="tg-deeplink" href="#" target="_blank" rel="noopener" class="inline-block bg-[#229ED9] text-white px-6 py-3 text-sm font-semibold rounded no-underline hover:opacity-90 transition-opacity" style="font-family:'Inter',sans-serif;">Apri in Telegram →</a>
+          <p class="text-xs text-[#1E2E26]/60 mt-4 mb-1" style="font-family:'Inter',sans-serif;">Non si apre? Scrivi al bot <code>/start</code> seguito da questo codice:</p>
+          <code id="tg-code-fallback" class="block bg-white border border-[#E5DFCF] rounded px-3 py-2 text-xs break-all"></code>
+          <button id="tg-refresh" class="mt-4 text-sm text-[#8a6215] underline" style="font-family:'Inter',sans-serif;">Ho collegato, aggiorna stato</button>
+        </div>
+      </div>
+
+      {/* Stato COLLEGATO */}
+      <div id="tg-linked" class="hidden">
+        <div class="bg-[#f0f7f1] border border-[#2d8659]/40 rounded p-5 mb-5">
+          <p class="text-sm text-[#1E2E26]/80 m-0" style="font-family:'Inter',sans-serif;">Stato: <strong class="text-[#2d8659]">✓ collegato</strong> <span id="tg-since" class="text-[#1E2E26]/55"></span></p>
+        </div>
+        <button id="tg-scollega" class="border border-[#d97a7a] text-[#a33] px-6 py-3 text-sm font-semibold rounded hover:bg-[#a33] hover:text-white transition-colors" style="font-family:'Inter',sans-serif;">Scollega</button>
+      </div>
+
+      <p id="tg-app-err" class="hidden text-sm text-[#a33] mt-4" style="font-family:'Inter',sans-serif;"></p>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const $ = (id: string) => document.getElementById(id);
+  const show = (id: string) => $(id)?.classList.remove('hidden');
+  const hide = (id: string) => $(id)?.classList.add('hidden');
+  const appErr = (t: string) => { const e = $('tg-app-err')!; e.classList.remove('hidden'); e.textContent = t; };
+
+  async function refreshStatus() {
+    $('tg-app-err')?.classList.add('hidden');
+    const { data, error } = await supabase.functions.invoke('telegram-link-token', { body: { action: 'status' } });
+    if (error || !data?.ok) { appErr('Impossibile leggere lo stato. Riprova.'); return; }
+    if (data.linked) {
+      hide('tg-nolink'); show('tg-linked');
+      if (data.since) {
+        const d = new Date(data.since).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+        ($('tg-since') as HTMLElement).textContent = `· dal ${d}`;
+      }
+    } else {
+      hide('tg-linked'); show('tg-nolink');
+    }
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    hide('tg-loading');
+    if (!session) { show('tg-login'); return; }
+    ($('tg-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
+    show('tg-app');
+    await refreshStatus();
+  }
+
+  // ---- azioni linking ----
+  $('tg-genera')?.addEventListener('click', async () => {
+    const btn = $('tg-genera') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Genero…';
+    const { data, error } = await supabase.functions.invoke('telegram-link-token', { body: { action: 'create' } });
+    btn.disabled = false; btn.textContent = 'Collega Telegram';
+    if (error || !data?.ok) { appErr('Impossibile generare il collegamento. Riprova.'); return; }
+    ($('tg-deeplink') as HTMLAnchorElement).href = data.deep_link;
+    ($('tg-code-fallback') as HTMLElement).textContent = `/start ${data.token}`;
+    show('tg-deeplink-box');
+  });
+  $('tg-refresh')?.addEventListener('click', refreshStatus);
+  $('tg-scollega')?.addEventListener('click', async () => {
+    if (!confirm('Scollegare il tuo account Telegram da Andreas?')) return;
+    const btn = $('tg-scollega') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Scollego…';
+    const { data, error } = await supabase.functions.invoke('telegram-link-token', { body: { action: 'revoke' } });
+    btn.disabled = false; btn.textContent = 'Scollega';
+    if (error || !data?.ok) { appErr('Impossibile scollegare. Riprova.'); return; }
+    await refreshStatus();
+  });
+
+  // ---- LOGIN OTP (come /redazione) ----
+  const loginErr = (t: string) => { const e = $('tg-login-err')!; e.classList.remove('hidden'); e.textContent = t; };
+  $('tg-send')?.addEventListener('click', async () => {
+    const email = ($('tg-email') as HTMLInputElement).value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('Email non valida.'); return; }
+    $('tg-login-err')?.classList.add('hidden');
+    const btn = $('tg-send') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    btn.disabled = false; btn.textContent = 'Invia codice';
+    if (error || !data?.ok) { loginErr('Impossibile inviare il codice. Riprova.'); return; }
+    (window as any)._tgEmail = email;
+    ($('tg-email-echo') as HTMLElement).textContent = email;
+    hide('tg-login-1'); show('tg-login-2');
+    setTimeout(() => ($('tg-code') as HTMLInputElement)?.focus(), 100);
+  });
+  $('tg-back')?.addEventListener('click', () => { hide('tg-login-2'); show('tg-login-1'); });
+  $('tg-verify')?.addEventListener('click', async () => {
+    const codice = ($('tg-code') as HTMLInputElement).value.replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) { loginErr('Il codice deve essere di 6 cifre.'); return; }
+    $('tg-login-err')?.classList.add('hidden');
+    const btn = $('tg-verify') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Verifica…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._tgEmail, codice, scope: 'login' } });
+    if (error || !data?.ok || !data?.session) { btn.disabled = false; btn.textContent = 'Verifica e accedi'; loginErr('Codice errato o scaduto.'); return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+  $('tg-logout')?.addEventListener('click', async () => { await supabase.auth.signOut(); window.location.reload(); });
+
+  init();
+</script>

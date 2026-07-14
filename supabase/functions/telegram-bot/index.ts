@@ -173,6 +173,34 @@ serve(async (req: Request) => {
   try {
     const cmd = text.trim().toLowerCase();
 
+    // Andreas Fondazione (ponte Telegram): /start CON parametro = collegamento
+    // account. Il token e' case-sensitive (base64url) quindi lo leggo dal testo
+    // ORIGINALE, non da `cmd` (lowercased). `/start` senza token cade sotto e
+    // mostra il benvenuto INVARIATO.
+    const startTok = text.trim().match(/^\/start(?:@\w+)?\s+(\S+)$/i);
+    if (startTok) {
+      const linkToken = startTok[1];
+      const fromId = message?.from?.id;
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      const { data: tok } = await supabase.from('telegram_link_token')
+        .select('user_id, expires_at, used_at').eq('token', linkToken).maybeSingle();
+      const valido = !!tok && !tok.used_at && new Date(tok.expires_at).getTime() > Date.now();
+      if (!valido || !fromId) {
+        await sendMessage(token, chatId,
+          'Questo link di collegamento non è valido, è scaduto o è già stato usato. Genera un nuovo collegamento dall\'area soci del sito e riprova entro pochi minuti.');
+        return new Response('', { status: 200 });
+      }
+      // upsert del legame (un telegram_user_id -> un socio); riattiva se revocato.
+      await supabase.from('telegram_link').upsert(
+        { telegram_user_id: fromId, user_id: tok!.user_id, revoked_at: null, created_at: new Date().toISOString() },
+        { onConflict: 'telegram_user_id' },
+      );
+      await supabase.from('telegram_link_token').update({ used_at: new Date().toISOString() }).eq('token', linkToken);
+      await sendMessage(token, chatId,
+        '✅ <b>Account collegato!</b>\nOra ti riconosco come socio anche qui su Telegram. Puoi scollegarlo quando vuoi dall\'area soci del sito.');
+      return new Response('', { status: 200 });
+    }
+
     if (cmd === '/start' || cmd === '/help' || cmd.startsWith('/start') || cmd.startsWith('/help')) {
       await sendMessage(token, chatId, BENVENUTO);
       return new Response('', { status: 200 });
@@ -236,9 +264,35 @@ serve(async (req: Request) => {
     const { data: rl } = await supabase.from('telegram_rate_limit')
       .select('messaggi').eq('chat_id_hash', chatHash).eq('giorno', oggi).maybeSingle();
     const usati = rl?.messaggi ?? 0;
-    if (usati >= TETTO_GIORNO) {
+
+    // Andreas Fondazione (ponte Telegram): risoluzione LIVELLO a ogni messaggio.
+    // Se l'utente e' collegato (telegram_link, revoked_at null) e ha ruolo
+    // socio+ (livello>=10), alza il tetto come sul web (ai_config_ruolo).
+    // ADDITIVO: se NON collegato, tettoEffettivo resta TETTO_GIORNO -> comportamento
+    // pubblico INVARIATO. Il tier si legge LIVE: se il socio decade, cade.
+    let tettoEffettivo = TETTO_GIORNO;
+    const fromIdMsg = message?.from?.id;
+    if (fromIdMsg) {
+      const { data: link } = await supabase.from('telegram_link')
+        .select('user_id').eq('telegram_user_id', fromIdMsg).is('revoked_at', null).maybeSingle();
+      if (link?.user_id) {
+        const { data: ruolo } = await supabase.from('utente_ruolo')
+          .select('ruolo:ruolo_id ( nome, livello )')
+          .eq('utente_id', link.user_id).order('ruolo_id', { ascending: false }).limit(1).maybeSingle();
+        const nome = (ruolo as any)?.ruolo?.nome as string | undefined;
+        const livello = Number((ruolo as any)?.ruolo?.livello ?? 0);
+        if (livello >= 10 && nome) {
+          const { data: cfg } = await supabase.from('ai_config_ruolo')
+            .select('limite_giornaliero').eq('ruolo_nome', nome).maybeSingle();
+          const lim = cfg?.limite_giornaliero;
+          tettoEffettivo = (lim === -1) ? Number.POSITIVE_INFINITY : (lim ?? TETTO_GIORNO);
+        }
+      }
+    }
+
+    if (usati >= tettoEffettivo) {
       await sendMessage(token, chatId,
-        `Hai raggiunto il limite di ${TETTO_GIORNO} domande per oggi 🙏 Torna domani, oppure scrivici a info@elbrenz.eu.`);
+        `Hai raggiunto il limite di ${tettoEffettivo} domande per oggi 🙏 Torna domani, oppure scrivici a info@elbrenz.eu.`);
       return new Response('', { status: 200 });
     }
     // incrementa subito (anti-abuso), anche se la risposta poi fallisse
