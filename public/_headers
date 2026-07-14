@@ -10,4 +10,8 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypal.com; frame-src https://www.paypal.com https://www.instagram.com https://www.youtube-nocookie.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
+  # AGGIUNTA 14/7/2026 (Task 5, additivo, ancora Report-Only): host mappa
+  # (tile OSM + WMS SIAT PAT) in img-src; SIAT anche in connect-src (GetCapabilities);
+  # www.facebook.com in frame-src (Page Plugin embed consent-gated). Prepara il
+  # futuro passaggio a enforced senza rompere /mappa e gli embed Facebook.
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com https://tile.openstreetmap.org https://siat.provincia.tn.it; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypal.com https://siat.provincia.tn.it; frame-src https://www.paypal.com https://www.instagram.com https://www.youtube-nocookie.com https://www.facebook.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
