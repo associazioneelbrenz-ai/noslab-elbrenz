@@ -257,7 +257,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 
       <div class="flex flex-wrap items-center justify-center gap-4 mb-16" style="font-family: 'Inter', sans-serif;">
         <a href="/storia" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Scopri El Brenz</a>
-        <a href="/tesseramento" class="eb-cta-socio group relative inline-flex items-center gap-2 bg-[#F5EEDD] text-[#1E2E26] px-8 py-3.5 text-sm font-semibold tracking-wider uppercase no-underline rounded-sm shadow-lg hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-150 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Diventa socio <span aria-hidden="true" class="transition-transform duration-150 group-hover:translate-x-1">→</span></a>
+        <a href="/tesseramento" class="eb-cta-socio group relative inline-flex items-center gap-2 text-[#1E2E26] px-9 py-4 text-[15px] font-bold tracking-wider uppercase no-underline rounded-md overflow-hidden hover:-translate-y-0.5 transition-transform duration-150 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E2E26]"><span class="relative z-10 inline-flex items-center gap-2">Diventa socio <span aria-hidden="true" class="transition-transform duration-150 group-hover:translate-x-1">→</span></span></a>
         {PAGAMENTI_LIVE && (
           <a
             href="/dona"
@@ -1148,14 +1148,38 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 </script>
 
 <style>
-  /* CTA "Diventa socio" (hero): pulse a onda dorata per attrarre l'occhio.
-     Si ferma su hover/focus (subentra il lift) e rispetta reduced-motion. */
-  .eb-cta-socio { animation: ebCtaPulse 2.6s ease-in-out infinite; }
-  .eb-cta-socio:hover,
-  .eb-cta-socio:focus-visible { animation: none; }
-  @keyframes ebCtaPulse {
-    0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.28), 0 0 0 0 rgba(217,169,78,0.60); }
-    50%      { box-shadow: 0 8px 22px rgba(0,0,0,0.32), 0 0 0 10px rgba(217,169,78,0); }
+  /* CTA "Diventa socio" (hero): oro a gradiente + respiro (scala) + alone
+     dorato pulsante + shine che attraversa. Deve attrarre e invogliare.
+     Pausa su hover/focus, reduced-motion safe. */
+  .eb-cta-socio {
+    background: linear-gradient(135deg, #E4B45C 0%, #C8923E 55%, #b07f2f 100%);
+    box-shadow: 0 8px 22px rgba(200,146,62,0.5);
+    animation: ebCtaBreath 1.8s ease-in-out infinite;
+    will-change: transform, box-shadow;
   }
-  @media (prefers-reduced-motion: reduce) { .eb-cta-socio { animation: none; } }
+  /* shine diagonale periodico */
+  .eb-cta-socio::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 32%, rgba(255,255,255,0.6) 50%, transparent 68%);
+    transform: translateX(-130%);
+    animation: ebCtaShine 2.6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .eb-cta-socio:hover,
+  .eb-cta-socio:focus-visible { animation-play-state: paused; }
+  .eb-cta-socio:hover { box-shadow: 0 12px 30px rgba(200,146,62,0.65); }
+  @keyframes ebCtaBreath {
+    0%, 100% { transform: scale(1);     box-shadow: 0 8px 22px rgba(200,146,62,0.45), 0 0 0 0 rgba(217,169,78,0.6); }
+    50%      { transform: scale(1.05);  box-shadow: 0 12px 30px rgba(200,146,62,0.6), 0 0 0 14px rgba(217,169,78,0); }
+  }
+  @keyframes ebCtaShine {
+    0%       { transform: translateX(-130%); }
+    55%, 100% { transform: translateX(130%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .eb-cta-socio { animation: none; }
+    .eb-cta-socio::after { display: none; }
+  }
 </style>
