@@ -257,7 +257,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 
       <div class="flex flex-wrap items-center justify-center gap-4 mb-16" style="font-family: 'Inter', sans-serif;">
         <a href="/storia" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Scopri El Brenz</a>
-        <a href="/tesseramento" class="group inline-flex items-center gap-2 bg-[#F5EEDD] text-[#1E2E26] px-8 py-3.5 text-sm font-semibold tracking-wider uppercase no-underline rounded-sm shadow-lg hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-150 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Diventa socio <span aria-hidden="true" class="transition-transform duration-150 group-hover:translate-x-0.5">→</span></a>
+        <a href="/tesseramento" class="eb-cta-socio group relative inline-flex items-center gap-2 bg-[#F5EEDD] text-[#1E2E26] px-8 py-3.5 text-sm font-semibold tracking-wider uppercase no-underline rounded-sm shadow-lg hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-150 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Diventa socio <span aria-hidden="true" class="transition-transform duration-150 group-hover:translate-x-1">→</span></a>
         {PAGAMENTI_LIVE && (
           <a
             href="/dona"
@@ -1146,3 +1146,16 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
       .catch(() => {});
   })();
 </script>
+
+<style>
+  /* CTA "Diventa socio" (hero): pulse a onda dorata per attrarre l'occhio.
+     Si ferma su hover/focus (subentra il lift) e rispetta reduced-motion. */
+  .eb-cta-socio { animation: ebCtaPulse 2.6s ease-in-out infinite; }
+  .eb-cta-socio:hover,
+  .eb-cta-socio:focus-visible { animation: none; }
+  @keyframes ebCtaPulse {
+    0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.28), 0 0 0 0 rgba(217,169,78,0.60); }
+    50%      { box-shadow: 0 8px 22px rgba(0,0,0,0.32), 0 0 0 10px rgba(217,169,78,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .eb-cta-socio { animation: none; } }
+</style>
