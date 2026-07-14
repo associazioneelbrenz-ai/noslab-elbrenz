@@ -106,10 +106,12 @@ Deno.serve(async (req: Request) => {
   if (uerr || !ud?.user) return json({ error: 'Sessione non valida' }, 401, c);
   const userId = ud.user.id;
 
-  const { data: ruolo } = await service.from('utente_ruolo')
-    .select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', userId)
-    .order('ruolo_id', { ascending: false }).limit(1).maybeSingle();
-  const livello = (ruolo as any)?.ruolo?.livello ?? 0;
+  // Livello MASSIMO tra i ruoli dell'utente (audit 14/7: prima si ordinava per
+  // ruolo_id, che non implica il livello piu' alto -> un admin con anche 'socio'
+  // poteva ricevere 403 e non poter pubblicare).
+  const { data: ruoli } = await service.from('utente_ruolo')
+    .select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', userId);
+  const livello = (ruoli ?? []).reduce((m: number, r: any) => Math.max(m, Number(r?.ruolo?.livello ?? 0)), 0);
   if (livello < 25) return json({ error: 'Non autorizzato (serve ruolo redazione).' }, 403, c);
 
   let body: Record<string, any>;

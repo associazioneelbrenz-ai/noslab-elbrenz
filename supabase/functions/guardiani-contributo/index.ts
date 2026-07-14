@@ -180,7 +180,7 @@ Deno.serve(async (req: Request) => {
   const comune = str('comune', 100);
   const esempio = str('esempio', 1000);
   const nome = str('nome', 100);
-  const email = str('email', 200);
+  const email = str('email', 200).toLowerCase();  // audit 14/7: lowercase per coerenza con unsubscribe/broadcast (GDPR opt-out)
   const consensoGlossario = body.consenso_glossario === true;
   const consensoMarketing = body.consenso_marketing === true;
   const consensoFirma = body.consenso_firma === true;

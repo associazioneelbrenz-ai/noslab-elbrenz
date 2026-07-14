@@ -197,14 +197,18 @@ Deno.serve(async (req: Request) => {
       userId = userData.user.id;
       isPubblico = false;
 
-      const { data: ruolo } = await supabase
+      // Un utente puo' avere PIU' ruoli: si prende quello a LIVELLO massimo
+      // (audit 14/7: prima si ordinava per ruolo_id, che non implica il livello
+      // piu' alto -> un admin con anche 'socio' poteva risultare socio).
+      const { data: ruoli } = await supabase
         .from("utente_ruolo")
         .select("ruolo:ruolo_id ( nome, livello )")
-        .eq("utente_id", userId)
-        .order("ruolo_id", { ascending: false })
-        .limit(1).maybeSingle();
-      nomeRuolo = (ruolo as any)?.ruolo?.nome ?? "ospite";
-      livelloRuolo = Number((ruolo as any)?.ruolo?.livello ?? 0);
+        .eq("utente_id", userId);
+      const top = (ruoli ?? [])
+        .map((r: any) => ({ nome: r?.ruolo?.nome as string | undefined, livello: Number(r?.ruolo?.livello ?? 0) }))
+        .reduce((m, x) => (x.livello > m.livello ? x : m), { nome: "ospite" as string | undefined, livello: 0 });
+      nomeRuolo = top.nome ?? "ospite";
+      livelloRuolo = top.livello;
     }
 
     // Andreas Fondazione (ponte web): risoluzione del LIVELLO (tier) con cui

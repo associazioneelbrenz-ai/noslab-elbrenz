@@ -60,9 +60,10 @@ async function embedBatch(texts: string[], apiKey: string): Promise<number[][]> 
 
 Deno.serve(async (req: Request) => {
   // Auth via INGEST_TOKEN (secret custom impostato nei secrets della function)
-  const expectedToken = Deno.env.get("INGEST_TOKEN") ?? "elbrenz-ingest-2026-temp";
+  // SICUREZZA (audit 14/7): fail-closed, niente token di fallback in chiaro.
+  const expectedToken = Deno.env.get("INGEST_TOKEN");
   const providedToken = req.headers.get("x-ingest-token") ?? "";
-  if (providedToken !== expectedToken) {
+  if (!expectedToken || providedToken !== expectedToken) {
     return new Response(JSON.stringify({ error: "forbidden" }), { status: 403 });
   }
 

@@ -58,14 +58,12 @@ function isAuthenticated(req: Request): { ok: boolean; method: string } {
     return { ok: true, method: 'shared-secret' }
   }
 
-  const authHeader = req.headers.get('authorization')
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7).trim()
-    if (token.startsWith('eyJ') && token.length > 100) {
-      return { ok: true, method: 'jwt-bearer-legacy' }
-    }
-  }
-
+  // SICUREZZA (audit 14/7): rimosso il ramo "jwt-bearer-legacy" che accettava
+  // QUALSIASI bearer che iniziasse per 'eyJ' e lungo >100 char SENZA verificare
+  // la firma -> con verify_jwt=false era un open relay (chiunque avesse la anon
+  // key pubblica poteva inviare email spoofate da @elbrenz.eu via Resend).
+  // Tutti i chiamanti legittimi usano lo shared secret (X-Send-Email-Secret);
+  // nessuno usava questo ramo. Auth ora = solo shared secret.
   return { ok: false, method: 'none' }
 }
 

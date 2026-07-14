@@ -54,7 +54,8 @@ async function embedBatch(texts: string[], apiKey: string): Promise<number[][]> 
 
 Deno.serve(async (req: Request) => {
   const token = req.headers.get("x-ingest-token") ?? "";
-  if (token !== (Deno.env.get("INGEST_TOKEN") ?? "elbrenz-ingest-2026-temp")) {
+  // SICUREZZA (audit 14/7): fail-closed, niente token di fallback in chiaro.
+  if (!Deno.env.get("INGEST_TOKEN") || token !== Deno.env.get("INGEST_TOKEN")) {
     return new Response(JSON.stringify({ error: "forbidden" }), { status: 403 });
   }
 

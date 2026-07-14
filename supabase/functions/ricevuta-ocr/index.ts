@@ -178,6 +178,7 @@ Deno.serve(async (req: Request) => {
   const { error: dbErr } = await supabase.from('pagamenti_tesseramento').insert({
     tipo,
     metodo: 'bonifico',
+    anno: new Date().getFullYear(),  // audit 14/7: coerenza con paypal-create-order (riconciliazione per anno)
     stato: 'in_verifica',
     anomalia,
     nome,

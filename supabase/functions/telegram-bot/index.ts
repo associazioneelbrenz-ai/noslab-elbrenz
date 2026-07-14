@@ -276,11 +276,16 @@ serve(async (req: Request) => {
       const { data: link } = await supabase.from('telegram_link')
         .select('user_id').eq('telegram_user_id', fromIdMsg).is('revoked_at', null).maybeSingle();
       if (link?.user_id) {
-        const { data: ruolo } = await supabase.from('utente_ruolo')
+        // ruolo a LIVELLO massimo tra quelli dell'utente (audit 14/7: non
+        // ordinare per ruolo_id, che non implica il livello piu' alto).
+        const { data: ruoli } = await supabase.from('utente_ruolo')
           .select('ruolo:ruolo_id ( nome, livello )')
-          .eq('utente_id', link.user_id).order('ruolo_id', { ascending: false }).limit(1).maybeSingle();
-        const nome = (ruolo as any)?.ruolo?.nome as string | undefined;
-        const livello = Number((ruolo as any)?.ruolo?.livello ?? 0);
+          .eq('utente_id', link.user_id);
+        const top = (ruoli ?? [])
+          .map((r: any) => ({ nome: r?.ruolo?.nome as string | undefined, livello: Number(r?.ruolo?.livello ?? 0) }))
+          .reduce((m, x) => (x.livello > m.livello ? x : m), { nome: undefined as string | undefined, livello: 0 });
+        const nome = top.nome;
+        const livello = top.livello;
         if (livello >= 10 && nome) {
           const { data: cfg } = await supabase.from('ai_config_ruolo')
             .select('limite_giornaliero').eq('ruolo_nome', nome).maybeSingle();

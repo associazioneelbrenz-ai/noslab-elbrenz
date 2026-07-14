@@ -3,7 +3,10 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 Deno.serve(async (req: Request) => {
   const token = req.headers.get("x-ingest-token") ?? "";
-  if (token !== (Deno.env.get("INGEST_TOKEN") ?? "elbrenz-ingest-2026-temp")) {
+  // SICUREZZA (audit 14/7): fail-closed. Nessun token di fallback in chiaro:
+  // se INGEST_TOKEN non e' impostato, si nega (prima il literal committato
+  // apriva l'endpoint a chiunque).
+  if (!Deno.env.get("INGEST_TOKEN") || token !== Deno.env.get("INGEST_TOKEN")) {
     return new Response(JSON.stringify({ error: "forbidden" }), { status: 403 });
   }
   const body = await req.json() as { query: string; match_count?: number; min_similarity?: number };

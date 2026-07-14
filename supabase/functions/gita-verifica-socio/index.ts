@@ -37,7 +37,7 @@ Deno.serve(async (req: Request) => {
 
   let q = supabase.from('domande_tesseramento')
     .select('nome, codice_tessera')
-    .ilike('email', email)
+    .eq('email', email)
     .eq('stato', 'approvata')
     .order('anno', { ascending: false })
     .limit(1);
