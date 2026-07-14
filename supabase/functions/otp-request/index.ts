@@ -53,6 +53,11 @@ function emailText(codice: string): string {
   return `El Brenz · Codice di accesso: ${codice}\n\nIl codice è valido per 10 minuti. Non condividerlo con nessuno.\nSe non hai richiesto questo codice, ignora questa email.\n\n-- \nAssociazione Storico Culturale Linguistica El Brenz\nhttps://www.elbrenz.eu`;
 }
 
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 Deno.serve(async (req: Request) => {
   const CORS = corsFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
@@ -76,6 +81,21 @@ Deno.serve(async (req: Request) => {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
   const ua = req.headers.get("user-agent") ?? null;
 
+  // Rate-limit anti abuso (audit 14/7): per-IP e per-EMAIL contro l'email
+  // bombing (prima nulla limitava quante OTP si potevano spedire a una vittima).
+  // Riusa l'RPC atomica oraria condivisa; prefissi distinti per namespace.
+  try {
+    const ipHash = await sha256Hex(`otp-ip:${ip ?? "unknown"}`);
+    const emailHash = await sha256Hex(`otp-email:${email}`);
+    const [ipRes, emailRes] = await Promise.all([
+      supabase.rpc("convenzioni_rl_hit", { p_ip_hash: ipHash, p_max: 8 }),
+      supabase.rpc("convenzioni_rl_hit", { p_ip_hash: emailHash, p_max: 3 }),
+    ]);
+    if (ipRes.data === false || emailRes.data === false) {
+      return new Response(JSON.stringify({ error: "rate_limited", message: "Troppe richieste di codice. Riprova tra un po'." }), { status: 429, headers: CORS });
+    }
+  } catch { /* fail-open sul limiter: non bloccare il login se l'RPC ha un problema */ }
+
   // Genera OTP via RPC (torna codice in chiaro solo qui, mai al client)
   const { data: otpData, error: otpErr } = await supabase.rpc("genera_otp", {
     p_email: email, p_scope: scope, p_ttl_min: 10, p_max_tentativi: 3,
@@ -94,7 +114,7 @@ Deno.serve(async (req: Request) => {
     body: JSON.stringify({
       from: sender,
       to: email,
-      subject: `El Brenz · Codice di accesso: ${codice_chiaro}`,
+      subject: "El Brenz · Il tuo codice di accesso",
       html: emailHtml(codice_chiaro, scope),
       text: emailText(codice_chiaro),
       headers: { "X-Entity-Ref-ID": otp_id },

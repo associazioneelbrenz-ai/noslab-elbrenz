@@ -50,6 +50,11 @@ function json(body: unknown, status: number, c: Record<string, string>): Respons
   return new Response(JSON.stringify(body), { status, headers: { ...c, 'Content-Type': 'application/json' } });
 }
 
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 serve(async (req: Request) => {
   const origin = req.headers.get('Origin');
   const c = cors(origin);
@@ -82,6 +87,16 @@ serve(async (req: Request) => {
   if (!consenso) return json({ error: 'Serve il consenso al trattamento dei dati.' }, 400, c);
 
   const supabase = createClient(base, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+
+  // Rate-limit anti abuso (audit 14/7): prima solo origin+honeypot; ogni chiamata
+  // invia una email a un indirizzo fornito dal client (amplificatore email-bomb).
+  // Limite orario per IP.
+  try {
+    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'sconosciuto';
+    const { data: entro } = await supabase.rpc('convenzioni_rl_hit', { p_ip_hash: await sha256Hex(`download:${ip}`), p_max: 10 });
+    if (entro === false) return json({ error: 'Troppe richieste: riprova più tardi.' }, 429, c);
+  } catch { /* fail-open sul limiter */ }
+
   const { error: dbErr } = await supabase.from('download_lead').insert({
     risorsa, nome, email, telefono,
     consenso_privacy: true,

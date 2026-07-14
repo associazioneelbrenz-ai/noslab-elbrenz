@@ -106,6 +106,11 @@ async function estraiCampi(bytes: Uint8Array, mime: string): Promise<Estratto | 
   }
 }
 
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('Origin');
   const cors = buildCorsHeaders(origin);
@@ -147,6 +152,14 @@ Deno.serve(async (req: Request) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
+
+  // Rate-limit anti abuso (audit 14/7): ogni chiamata fa OCR Anthropic (costo),
+  // upload storage e insert. Prima solo l'origin gate (spoofabile). Limite orario per IP.
+  try {
+    const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || 'sconosciuto';
+    const { data: entro } = await supabase.rpc('convenzioni_rl_hit', { p_ip_hash: await sha256Hex(`ricevuta:${ip}`), p_max: 6 });
+    if (entro === false) return jsonResponse({ error: 'Troppi invii: riprova più tardi.' }, 429, cors);
+  } catch { /* fail-open sul limiter */ }
 
   // 1. Salva il file nel bucket privato (prima dell'OCR: la ricevuta non
   //    va mai persa anche se l'estrazione fallisce).
