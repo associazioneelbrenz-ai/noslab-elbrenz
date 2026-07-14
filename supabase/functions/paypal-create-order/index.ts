@@ -114,6 +114,18 @@ Deno.serve(async (req: Request) => {
   const email = tipo === 'integrazione' ? emailIntegrazione
     : anonimo ? null : String(body.email ?? '').trim().slice(0, 200) || null;
 
+  // VINCOLO tesseramento (14/7): la QUOTA richiede anagrafica + email valida.
+  // Impedisce i pagamenti orfani "sconosciuto" dal flusso del sito (prima si
+  // poteva creare l'ordine con nome/email vuoti). Le DONAZIONI restano libere
+  // e anonime; l'INTEGRAZIONE ha i dati dal socio (codice tessera). Difesa
+  // server-side oltre al gate client, così vale anche per chiamate dirette.
+  if (tipo === 'quota') {
+    const emailOk = !!email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!nome || nome.length < 2 || !emailOk) {
+      return jsonResponse({ error: 'Per la quota di tesseramento servono nome ed email: compila prima il modulo.' }, 400, cors);
+    }
+  }
+
   // riga a DB prima dell'ordine: custom_id PayPal = id riga
   const { data: riga, error: dbErr } = await supabase
     .from('pagamenti_tesseramento')

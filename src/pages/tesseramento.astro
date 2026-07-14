@@ -546,20 +546,28 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         window.paypal.Buttons({
           createOrder: async () => {
             // tipo 'quota': l'importo (20.00 EUR) lo fissa il server.
-            // Nome/email: dai campi se compilati, altrimenti dal dataset del
-            // selettore (il form si resetta dopo l'invio) — servono per
-            // agganciare il pagamento alla domanda (M2.6-ter).
+            // VINCOLO tesseramento (14/7): NIENTE pagamento quota senza
+            // anagrafica + consenso. I dati arrivano dai campi del modulo o,
+            // se il form è già stato inviato (si resetta), dal dataset del
+            // selettore — in tal caso il consenso è già stato dato all'invio.
             const nomeCampo = document.getElementById('cf-nome');
             const emailCampo = document.getElementById('cf-email');
+            const gdprCampo = document.getElementById('cf-gdpr');
             const scelta = document.getElementById('scelta-pagamento');
+            const daModuloInviato = !!(scelta && scelta.dataset.nome && scelta.dataset.email);
+            const nomeVal = ((nomeCampo && nomeCampo.value) || (scelta && scelta.dataset.nome) || '').trim();
+            const emailVal = ((emailCampo && emailCampo.value) || (scelta && scelta.dataset.email) || '').trim();
+            const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+            const consenso = !!(gdprCampo && gdprCampo.checked) || daModuloInviato;
+            if (nomeVal.length < 2 || !emailValido || !consenso) {
+              mostraEsito('Prima di versare la quota, compila il modulo qui sotto (nome ed email) e accetta l\'informativa privacy.', false);
+              (nomeCampo || document.getElementById('paypal-quota-box'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              throw new Error('anagrafica_mancante');
+            }
             const resp = await fetch(box.dataset.createUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                tipo: 'quota',
-                nome: (nomeCampo && nomeCampo.value) || (scelta && scelta.dataset.nome) || '',
-                email: (emailCampo && emailCampo.value) || (scelta && scelta.dataset.email) || '',
-              }),
+              body: JSON.stringify({ tipo: 'quota', nome: nomeVal, email: emailVal, consenso_privacy: consenso }),
             });
             const data = await resp.json();
             if (!resp.ok || !data.id) {
