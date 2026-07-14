@@ -45,7 +45,16 @@ export default defineConfig({
   integrations: [
     react(),
     // Sitemap con hreflang per-locale (solo lingue con pagine: it/de/en).
+    // Esclude le pagine DE/EN finché le traduzioni non sono "live": restano
+    // noindex, quindi non devono comparire nella sitemap (audit 14/7).
     sitemap({
+      filter: (page) => {
+        const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
+        const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';
+        if (!deLive && page.includes('/de/')) return false;
+        if (!enLive && page.includes('/en/')) return false;
+        return true;
+      },
       i18n: {
         defaultLocale: 'it',
         locales: { it: 'it-IT', de: 'de-DE', en: 'en-US' },

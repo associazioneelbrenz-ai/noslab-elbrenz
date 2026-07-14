@@ -63,17 +63,6 @@ const ogImageURL = new URL(ogImage, Astro.site);
 
 const currentPath = Astro.url.pathname;
 
-// hreflang reciproci: per ogni lingua che ha questa pagina tradotta, più
-// x-default → IT. In Fase 1a solo la home è tradotta (vedi i18n/ui.ts).
-const canonicalPath = toCanonicalPath(currentPath);
-const alternates = publicLocales
-  .filter((loc) => hasTranslation(canonicalPath, loc))
-  .map((loc) => ({
-    hreflang: htmlLang[loc],
-    href: new URL(localizedUrl(canonicalPath, loc), Astro.site).href,
-  }));
-const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href;
-
 // Gate traduzioni: finché la lingua non è "live" (DE rivisto da Brunella, EN
 // dal revisore), le pagine di quella lingua restano `noindex` (SEO protetta
 // da testi non ancora approvati), pur essendo raggiungibili e nello switcher.
@@ -83,6 +72,20 @@ const localeLive: Record<PublicLocale, boolean> = {
   en: import.meta.env.TRADUZIONI_EN_LIVE === 'true',
 };
 const effectiveNoindex = noindex || (pl !== 'it' && !localeLive[pl]);
+
+// hreflang reciproci: solo per le lingue che hanno questa pagina tradotta E
+// sono "live" (indicizzabili). Advertising di un alternate verso una pagina
+// noindex darebbe segnali contraddittori (audit 14/7). x-default → IT (sempre
+// live). In Fase 1a solo la home è tradotta (vedi i18n/ui.ts) e DE/EN sono
+// noindex finché non revisionate, quindi di norma resta il solo self it.
+const canonicalPath = toCanonicalPath(currentPath);
+const alternates = publicLocales
+  .filter((loc) => hasTranslation(canonicalPath, loc) && localeLive[loc])
+  .map((loc) => ({
+    hreflang: htmlLang[loc],
+    href: new URL(localizedUrl(canonicalPath, loc), Astro.site).href,
+  }));
+const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href;
 ---
 <!DOCTYPE html>
 <html lang={htmlLang[pl]}>
