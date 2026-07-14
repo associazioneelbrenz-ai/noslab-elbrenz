@@ -172,6 +172,7 @@ Deno.serve(async (req: Request) => {
     let userId: string | null = null;
     let isPubblico = true;
     let nomeRuolo = "pubblico";
+    let livelloRuolo = 0;   // livello del ruolo (ruolo.livello); 0 = pubblico
 
     // AGGIUNTA additiva (bot Telegram): un chiamante fidato (edge telegram-bot)
     // presenta X-Bot-Secret == BOT_ANDREAS_SECRET. In tal caso salta il
@@ -203,7 +204,24 @@ Deno.serve(async (req: Request) => {
         .order("ruolo_id", { ascending: false })
         .limit(1).maybeSingle();
       nomeRuolo = (ruolo as any)?.ruolo?.nome ?? "ospite";
+      livelloRuolo = Number((ruolo as any)?.ruolo?.livello ?? 0);
     }
+
+    // Andreas Fondazione (ponte web): risoluzione del LIVELLO (tier) con cui
+    // Andreas sta parlando. Deriva dal ruolo GIA' risolto sopra (utente_ruolo),
+    // niente query aggiuntive, nessun dato sensibile: solo la stringa livello.
+    // Mappa per LIVELLO del ruolo (robusta a ruoli futuri; ruolo.livello):
+    //   livello >= 50 (admin, super_admin)      -> direttivo
+    //   livello >= 10 (socio, collaboratore)    -> socio
+    //   resto (ospite, pubblico, bot, no-JWT)   -> pubblico
+    // NB brief: prevedeva solo socio->socio / admin->direttivo. Qui il
+    // "collaboratore" (livello 25, insider sopra il socio) ricade in `socio`
+    // per non declassarlo a pubblico. Se Cristian vuole un tier dedicato o
+    // un ruolo "direttivo" separato da admin, si aggiusta la soglia qui.
+    const tier: "pubblico" | "socio" | "direttivo" =
+      livelloRuolo >= 50 ? "direttivo"
+        : livelloRuolo >= 10 ? "socio"
+          : "pubblico";
 
     // ------------------------------------------------------------------------
     // Config AI per il ruolo
@@ -247,6 +265,7 @@ Deno.serve(async (req: Request) => {
           messaggio: `Hai raggiunto il limite di ${limitGiorno} domande gratuite per oggi. Iscriviti gratuitamente sul sito per averne di pi\u00f9 — basta una mail su info@elbrenz.eu.`,
           usage: { today: msgOggi, limit: limitGiorno },
           is_pubblico: true,
+          tier,
         }), { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } });
       }
 
@@ -286,6 +305,7 @@ Deno.serve(async (req: Request) => {
           messaggio: `Hai raggiunto il limite di ${limitGiorno} domande per oggi. Riprova domani.`,
           usage: { today: msgOggi, limit: limitGiorno },
           is_pubblico: false,
+          tier,
         }), { status: 429, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } });
       }
     }
@@ -487,6 +507,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({
       ok: true,
       is_pubblico: isPubblico,
+      tier,
       conversazione_id: conversazioneId,
       messaggio_id: assistantMsgId,
       answer,
