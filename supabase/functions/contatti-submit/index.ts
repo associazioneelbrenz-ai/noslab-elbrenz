@@ -174,6 +174,18 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Errore interno, riprova o scrivi a info@elbrenz.eu.' }, 500, c);
   }
 
+  // Notifica direttivo (14/7, fire-and-forget): nuova domanda/richiesta dal sito.
+  {
+    const testo = (messaggio || '').trim();
+    const troncato = testo.length > 200 ? testo.slice(0, 197) + '…' : testo;
+    const etichetta = def.tipo === 'richiesta' ? 'Chiedi a El Brenz' : 'Porta la tua Storia';
+    fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-bot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '', 'X-Bot-Secret': Deno.env.get('BOT_ANDREAS_SECRET') ?? '' },
+      body: JSON.stringify({ text: `✉️ **Nuova domanda dal sito** (${etichetta})\nDa ${nome} (${email})${troncato ? `\n"${troncato}"` : ''}` }),
+    }).catch(() => {});
+  }
+
   // upload allegati in staging PRIVATO (best-effort, pratica già salvata)
   const paths: string[] = [];
   for (let i = 0; i < allegatiValidati.length; i++) {

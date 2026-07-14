@@ -211,6 +211,15 @@ Deno.serve(async (req: Request) => {
     }
 
     const socio = agg[0];
+
+    // Notifica direttivo (14/7, fire-and-forget): nuovo socio approvato/tesserato.
+    // Non blocca il flusso di approvazione se fallisce.
+    fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-bot`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '', 'X-Bot-Secret': Deno.env.get('BOT_ANDREAS_SECRET') ?? '' },
+      body: JSON.stringify({ text: `🎉 **Nuovo socio**\n${socio.nome} è ora socio/a (tessera n. ${numero}).` }),
+    }).catch(() => {});
+
     let linkTessera = '';
     const tessereLive = Deno.env.get('TESSERE_LIVE') === 'true';
     let esitoInvio = `<p class="nota">⚠ Invio email tessera DISATTIVATO (flag TESSERE_LIVE spento: Resend senza dominio autenticato). La tessera n. ${numero} è assegnata: inviala dopo l'attivazione.</p>`;

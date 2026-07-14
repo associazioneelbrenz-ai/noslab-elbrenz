@@ -485,6 +485,13 @@ serve(async (req) => {
     return jsonResponse({ error: 'Non è stato possibile registrare la proposta. Riprova o scrivi a info@elbrenz.eu.' }, 500, cors)
   }
 
+  // Notifica direttivo (14/7, fire-and-forget): nuova convenzione da validare.
+  fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-bot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '', 'X-Bot-Secret': Deno.env.get('BOT_ANDREAS_SECRET') ?? '' },
+    body: JSON.stringify({ text: `🤝 **Nuova convenzione proposta**\n${nome_attivita}${localita ? ` (${localita})` : ''}\nDa validare nello sportello segretario.` }),
+  }).catch(() => {})
+
   // Upload logo in staging PRIVATO (best-effort: la proposta è già salvata)
   let logoCaricato = false
   if (logoBytes && logoTipo) {
