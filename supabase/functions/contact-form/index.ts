@@ -385,6 +385,7 @@ serve(async (req) => {
   // (il flusso storico resta il paracadute).
   let pagamentoHtml = ''
   let schedaHtml = ''
+  let domandaIdCreated: string | null = null   // 14/7: ritornato al client per legare il pagamento quota
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -406,6 +407,7 @@ serve(async (req) => {
       .select('id')
       .single()
     if (insErr) console.error('[contact-form] insert domanda fallita:', insErr)
+    if (domanda) domandaIdCreated = domanda.id
 
     // Stato pagamento quota al momento dell'invio (match per email)
     const { data: pag } = await supabase
@@ -504,7 +506,7 @@ serve(async (req) => {
     }
 
     console.log(`[contact-form] sent id=${sendResult.id} ip=${ip}`)
-    return jsonResponse({ success: true }, 200, cors)
+    return jsonResponse({ success: true, domanda_id: domandaIdCreated }, 200, cors)
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error(`[contact-form] error: ${msg}`)

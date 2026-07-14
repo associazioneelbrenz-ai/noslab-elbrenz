@@ -567,7 +567,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             const resp = await fetch(box.dataset.createUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ tipo: 'quota', nome: nomeVal, email: emailVal, consenso_privacy: consenso }),
+              body: JSON.stringify({ tipo: 'quota', nome: nomeVal, email: emailVal, consenso_privacy: consenso, domanda_id: (scelta && scelta.dataset.domandaId) || undefined }),
             });
             const data = await resp.json();
             if (!resp.ok || !data.id) {
@@ -839,6 +839,9 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           if (scelta) {
             scelta.dataset.nome = payload.nome;
             scelta.dataset.email = payload.email;
+            // 14/7: id della domanda appena creata -> lega il pagamento quota
+            // (custom_id) alla domanda con consenso gia' raccolto.
+            if (data.domanda_id) scelta.dataset.domandaId = data.domanda_id;
             scelta.classList.remove('hidden');
           }
           form.reset();

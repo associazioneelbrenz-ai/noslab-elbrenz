@@ -124,9 +124,31 @@ Deno.serve(async (req: Request) => {
     if (!nome || nome.length < 2 || !emailOk) {
       return jsonResponse({ error: 'Per la quota di tesseramento servono nome ed email: compila prima il modulo.' }, 400, cors);
     }
+    // BINDING FORTE (14/7): la quota si lega a una domanda_tesseramento reale
+    // (con consenso) FIN DALLA creazione dell'ordine; custom_id PayPal = id
+    // domanda. Priorita': domanda_id dal client (modulo gia' inviato) -> match
+    // per email su domanda in attesa -> creazione nuova. Mai orfano.
+    const consenso = body.consenso_privacy === true;
+    const bodyDomandaId = typeof body.domanda_id === 'string' && /^[0-9a-f-]{36}$/i.test(body.domanda_id) ? body.domanda_id : null;
+    if (bodyDomandaId) {
+      const { data: d } = await supabase.from('domande_tesseramento').select('id').eq('id', bodyDomandaId).maybeSingle();
+      if (d) domandaId = d.id;
+    }
+    if (!domandaId) {
+      const { data: d } = await supabase.from('domande_tesseramento')
+        .select('id').ilike('email', email!).eq('stato', 'in_attesa')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (d) domandaId = d.id;
+    }
+    if (!domandaId) {
+      const { data: d } = await supabase.from('domande_tesseramento')
+        .insert({ nome, email, consenso_privacy: consenso, messaggio: 'Domanda creata dal flusso di pagamento quota (dati dal modulo tesseramento).' })
+        .select('id').single();
+      domandaId = d?.id ?? null;
+    }
   }
 
-  // riga a DB prima dell'ordine: custom_id PayPal = id riga
+  // riga a DB prima dell'ordine: custom_id PayPal = id domanda (quota) o id riga
   const { data: riga, error: dbErr } = await supabase
     .from('pagamenti_tesseramento')
     .insert({ tipo, anonimo, nome, cognome, email, anno: ANNO_QUOTA, importo, stato: 'creato', domanda_id: domandaId })
@@ -150,7 +172,7 @@ Deno.serve(async (req: Request) => {
         purchase_units: [{
           amount: { currency_code: 'EUR', value: importo },
           description: descrizione,
-          custom_id: riga.id,
+          custom_id: domandaId ?? riga.id,
         }],
       }),
     });
