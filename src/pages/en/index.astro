@@ -1,0 +1,76 @@
+---
+/**
+ * Home /en/ — pagina PILOTA i18n (Fase 1a).
+ *
+ * Chrome (header/footer/switcher) tradotto via Layout+Header con lang="en".
+ * Corpo: hero tradotto + nota di cortesia. I contenuti completi arrivano nella
+ * passata 1b (gate TRADUZIONI_EN_LIVE → finché è false: raggiungibile ma
+ * `noindex`).
+ *
+ * Il motto «Raìs fonde no le 'nglacia» NON si traduce (solo la glossa sotto).
+ */
+import Layout from '../../layouts/Layout.astro';
+import { useTranslations } from '../../i18n/ui';
+
+const t = useTranslations('en');
+---
+<Layout
+  lang="en"
+  ogImage="/og/og-home.jpg"
+  title="El Brenz dle Val del Nos"
+  description={t('hero.subtitle')}
+>
+  <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
+    <picture>
+      <source media="(max-width: 767px)" srcset="/hero-lago-mobile.webp" type="image/webp" />
+      <source srcset="/hero-lago.webp" type="image/webp" />
+      <img
+        src="/hero-lago.jpg" alt="" aria-hidden="true"
+        class="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        width="2048" height="1536" loading="eager" fetchpriority="high" decoding="async"
+      />
+    </picture>
+    <div class="absolute inset-0 pointer-events-none bg-gradient-to-b from-[#1E2E26]/65 via-[#1E2E26]/75 to-[#1E2E26]/90" aria-hidden="true"></div>
+
+    <div class="relative max-w-4xl mx-auto px-6 py-28 md:py-40 text-center">
+      <span
+        class="inline-block bg-[#C8923E]/15 border border-[#C8923E] text-[#C8923E] px-4 py-1.5 text-[11px] font-medium tracking-[0.2em] uppercase mb-10"
+        style="font-family: 'Inter', sans-serif;"
+      >{t('hero.badge')}</span>
+
+      <h1 class="text-5xl md:text-7xl font-medium leading-[1.05] tracking-tight mb-10" style="font-family: 'Playfair Display', serif;">
+        {t('hero.title1')}<br/>
+        <em class="text-[#C8923E]" style="font-style: italic;" lang="en">{t('hero.titleEm')}</em>.
+      </h1>
+
+      <p class="text-lg md:text-xl text-[#F5EEDD]/90 max-w-2xl mx-auto leading-relaxed mb-12" style="font-family: 'Source Serif 4', Georgia, serif;">
+        {t('hero.subtitle')}
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4 mb-16" style="font-family: 'Inter', sans-serif;">
+        <a href="/tesseramento" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">{t('cta.join')}</a>
+        <a href="/" class="inline-block border border-[#F5EEDD]/40 text-[#F5EEDD] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:border-[#C8923E] hover:text-[#C8923E] transition-colors">{t('pilot.toIt')}</a>
+      </div>
+
+      <div class="pt-10 border-t border-[#F5EEDD]/15 max-w-md mx-auto">
+        <p class="text-2xl md:text-3xl italic text-[#C8923E] mb-2" style="font-family: 'Playfair Display', serif;" lang="lld-anau">
+          Raìs fonde no le 'nglacia
+        </p>
+        <p class="text-xs tracking-[0.15em] uppercase text-[#F5EEDD]/55" style="font-family: 'Inter', sans-serif;">
+          {t('hero.mottoGloss')}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-[#FDF9F0] py-16">
+    <div class="max-w-2xl mx-auto px-6 text-center">
+      <p class="text-base text-[#1E2E26]/80 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+        {t('pilot.note')}
+      </p>
+      <p class="mt-6 m-0">
+        <a href="/" class="text-sm text-[#8a6215] no-underline hover:underline" style="font-family: 'Inter', sans-serif;">{t('pilot.toIt')}</a>
+      </p>
+    </div>
+  </section>
+</Layout>

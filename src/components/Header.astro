@@ -49,6 +49,21 @@
  */
 
 import Wordmark from '../components/Wordmark.astro';
+import LanguageSwitcher from '../components/LanguageSwitcher.astro';
+import { useTranslations, localeHome, type Locale, type PublicLocale } from '../i18n/ui';
+
+// i18n (Fase 1a): `lang` opzionale, default 'it' → render IT invariato (le
+// stringhe IT del dizionario riproducono esattamente quelle già in pagina).
+// Gli href delle voci restano i percorsi IT (contenuto reale) finché le
+// pagine tradotte non esistono (passata 1b): cambiano solo le ETICHETTE.
+interface Props { lang?: Locale }
+const { lang = 'it' } = Astro.props;
+const t = useTranslations(lang);
+const pl: PublicLocale = (['it', 'de', 'en'] as const).includes(lang as PublicLocale)
+  ? (lang as PublicLocale)
+  : 'it';
+const homeHref = localeHome[pl];
+const homeLabel = ({ it: 'Torna alla home', de: 'Zur Startseite', en: 'Back to home' } as Record<string, string>)[pl] ?? 'Torna alla home';
 
 // Tipi espliciti: href/highlight opzionali così il ramo di rendering per
 // eventuali voci dirette (senza children) resta valido anche ora che tutte
@@ -59,46 +74,46 @@ type NavItem = { label: string; href?: string; highlight?: boolean; children?: N
 const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 const navItems: NavItem[] = [
   {
-    label: "L'Associazione",
+    label: t('nav.assoc'),
     children: [
-      { href: '/chi-siamo', label: 'Chi siamo' },
-      { href: '/direttivo', label: 'Il Direttivo' },
-      { href: '/statuto', label: 'Lo Statuto' },
-      { href: '/convenzioni', label: 'Convenzioni' },
-      { href: '/contatti', label: 'Contatti' },
+      { href: '/chi-siamo', label: t('nav.chisiamo') },
+      { href: '/direttivo', label: t('nav.direttivo') },
+      { href: '/statuto', label: t('nav.statuto') },
+      { href: '/convenzioni', label: t('nav.convenzioni') },
+      { href: '/contatti', label: t('nav.contatti') },
     ],
   },
   {
-    label: 'Temi',
+    label: t('nav.temi'),
     children: [
-      { href: '/storia', label: 'Storia' },
-      { href: '/lingua', label: 'Lingua' },
-      { href: '/le-valli-nell-atlante-del-ladino', label: 'Le valli nell’Atlante del Ladino' },
-      { href: '/cultura-materiale', label: 'Cultura materiale' },
-      { href: '/rievocazioni', label: 'Rievocazioni ed eventi' },
-      { href: '/mappa', label: 'Mappa delle Valli' },
-      { href: '/identita', label: 'Identità' },
-      { href: '/a-proposito-di-tirolo', label: 'Il libro: A proposito di Tirolo' },
-      { href: '/vita-associativa', label: 'Vita associativa' },
+      { href: '/storia', label: t('nav.storia') },
+      { href: '/lingua', label: t('nav.lingua') },
+      { href: '/le-valli-nell-atlante-del-ladino', label: t('nav.atlante') },
+      { href: '/cultura-materiale', label: t('nav.cultura') },
+      { href: '/rievocazioni', label: t('nav.rievocazioni') },
+      { href: '/mappa', label: t('nav.mappa') },
+      { href: '/identita', label: t('nav.identita') },
+      { href: '/a-proposito-di-tirolo', label: t('nav.libro') },
+      { href: '/vita-associativa', label: t('nav.vita') },
     ],
   },
   {
-    label: 'Progetti',
+    label: t('nav.progetti'),
     children: [
-      { href: '/os-dal-nos', label: 'Os dal Nos' },
-      { href: '/lunari-dal-nos', label: 'Lunari dal Nos' },
-      { href: '/portale-memoria', label: 'Portale Memoria' },
-      { href: '/una-terra-cinque-lingue', label: 'Una terra, cinque lingue' },
-      { href: '/fioi-dal-nos', label: 'Fiöi dal Nos' },
-      ...(GUARDIANI_LIVE ? [{ href: '/guardiani-de-la-lenga', label: 'Guardiani de la lenga' }] : []),
+      { href: '/os-dal-nos', label: t('nav.osdalnos') },
+      { href: '/lunari-dal-nos', label: t('nav.lunari') },
+      { href: '/portale-memoria', label: t('nav.portale') },
+      { href: '/una-terra-cinque-lingue', label: t('nav.unaterra') },
+      { href: '/fioi-dal-nos', label: t('nav.fioi') },
+      ...(GUARDIANI_LIVE ? [{ href: '/guardiani-de-la-lenga', label: t('nav.guardiani') }] : []),
     ],
   },
   {
-    label: 'Archivio',
+    label: t('nav.archivio'),
     children: [
-      { href: '/archivio-storico', label: 'Archivio storico' },
-      { href: '/archivio', label: 'Archivio digitale' },
-      { href: '/photogallery', label: 'Photogallery' },
+      { href: '/archivio-storico', label: t('nav.archiviostorico') },
+      { href: '/archivio', label: t('nav.archiviodigitale') },
+      { href: '/photogallery', label: t('nav.photogallery') },
     ],
   },
 ];
@@ -108,7 +123,7 @@ const navItems: NavItem[] = [
   <div class="max-w-7xl mx-auto px-6 py-7 flex items-center justify-between gap-8">
 
     <div class="flex items-center gap-3 flex-shrink-0">
-      <a href="/" class="flex-shrink-0 leading-none" aria-label="Torna alla home">
+      <a href={homeHref} class="flex-shrink-0 leading-none" aria-label={homeLabel}>
         <img
           src="/logo-eb-header.png"
           srcset="/logo-eb-header.png 1x, /logo-eb-header@2x.png 2x"
@@ -179,6 +194,12 @@ const navItems: NavItem[] = [
         ))}
       </ul>
     </nav>
+
+    {/* i18n (Fase 1a): selettore lingua desktop. Nascosto su mobile (va nel
+        drawer). Solo lingue con contenuti (IT/DE/EN). */}
+    <div class="hidden md:flex items-center flex-shrink-0">
+      <LanguageSwitcher variant="desktop" />
+    </div>
 
     <button
       id="menu-toggle"
@@ -287,6 +308,10 @@ const navItems: NavItem[] = [
   </nav>
 
   <div class="px-6 py-6 mt-4 border-t border-[#F5EEDD]/15">
+    {/* i18n (Fase 1a): selettore lingua nel drawer mobile. */}
+    <div class="mb-5 pb-5 border-b border-[#F5EEDD]/10">
+      <LanguageSwitcher variant="drawer" />
+    </div>
     <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E]/80 font-medium m-0" style="font-family: 'Inter', sans-serif;">El Brenz dle Val del Nos</p>
     <p class="text-xs text-[#F5EEDD]/55 m-0 mt-2" style="font-family: 'Inter', sans-serif; font-style: italic;">Raìs fonde no le 'nglacia</p>
   </div>

@@ -23,6 +23,11 @@ import BandieraLadina from '../components/BandieraLadina.astro';
 import Header from '../components/Header.astro';
 import FabAndreas from '../components/FabAndreas.astro';
 import CookieConsent from '../components/CookieConsent.astro';
+import {
+  useTranslations, htmlLang, ogLocale,
+  publicLocales, toCanonicalPath, hasTranslation, localizedUrl,
+  type Locale, type PublicLocale,
+} from '../i18n/ui';
 
 interface Props {
   title?: string;
@@ -30,6 +35,8 @@ interface Props {
   ogImage?: string;
   ogType?: 'website' | 'article';
   noindex?: boolean;
+  /** i18n (Fase 1a): lingua della pagina. Default 'it' → render IT invariato. */
+  lang?: Locale;
 }
 
 const {
@@ -38,7 +45,14 @@ const {
   ogImage = '/og-image.png',
   ogType = 'website',
   noindex = false,
+  lang = 'it',
 } = Astro.props;
+
+// i18n: lingua pubblica effettiva (it/de/en) e helper di traduzione chrome.
+const pl: PublicLocale = (['it', 'de', 'en'] as const).includes(lang as PublicLocale)
+  ? (lang as PublicLocale)
+  : 'it';
+const t = useTranslations(lang);
 
 const fullTitle = title === 'El Brenz dle Val del Nos'
   ? `${title} · Associazione Storico Culturale Linguistica`
@@ -48,15 +62,36 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = new URL(ogImage, Astro.site);
 
 const currentPath = Astro.url.pathname;
+
+// hreflang reciproci: per ogni lingua che ha questa pagina tradotta, più
+// x-default → IT. In Fase 1a solo la home è tradotta (vedi i18n/ui.ts).
+const canonicalPath = toCanonicalPath(currentPath);
+const alternates = publicLocales
+  .filter((loc) => hasTranslation(canonicalPath, loc))
+  .map((loc) => ({
+    hreflang: htmlLang[loc],
+    href: new URL(localizedUrl(canonicalPath, loc), Astro.site).href,
+  }));
+const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href;
+
+// Gate traduzioni: finché la lingua non è "live" (DE rivisto da Brunella, EN
+// dal revisore), le pagine di quella lingua restano `noindex` (SEO protetta
+// da testi non ancora approvati), pur essendo raggiungibili e nello switcher.
+const localeLive: Record<PublicLocale, boolean> = {
+  it: true,
+  de: import.meta.env.TRADUZIONI_DE_LIVE === 'true',
+  en: import.meta.env.TRADUZIONI_EN_LIVE === 'true',
+};
+const effectiveNoindex = noindex || (pl !== 'it' && !localeLive[pl]);
 ---
 <!DOCTYPE html>
-<html lang="it">
+<html lang={htmlLang[pl]}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {effectiveNoindex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="generator" content={Astro.generator} />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
@@ -69,6 +104,12 @@ const currentPath = Astro.url.pathname;
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="El Brenz" />
     <link rel="canonical" href={canonicalURL} />
+    {/* hreflang reciproci (i18n Fase 1a) + x-default → IT. In 1a solo la home
+        ha versioni DE/EN; le altre pagine restano solo IT (nessun alternate). */}
+    {alternates.map((alt) => (
+      <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={xDefaultHref} />
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
@@ -77,7 +118,7 @@ const currentPath = Astro.url.pathname;
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="El Brenz · Associazione Storico Culturale" />
-    <meta property="og:locale" content="it_IT" />
+    <meta property="og:locale" content={ogLocale[pl]} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
@@ -90,7 +131,7 @@ const currentPath = Astro.url.pathname;
   </head>
   <body class="bg-[#F8F1E4] text-[#0F0F0F] min-h-screen flex flex-col">
 
-    <Header />
+    <Header lang={lang} />
 
     <main class="flex-1">
       <slot />
@@ -137,19 +178,19 @@ const currentPath = Astro.url.pathname;
         </div>
 
         <div style="font-family: 'Inter', sans-serif;">
-          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-4">Associazione</h2>
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-4">{t('footer.assoc')}</h2>
           <p class="text-sm text-[#F5EEDD]/85 leading-relaxed mb-2">Via Trento 40, II piano<br/>38027 Malè (TN)</p>
           <p class="text-sm text-[#F5EEDD]/85 mb-2">C.F. 92019480224</p>
           <a href="mailto:info@elbrenz.eu" class="text-sm text-[#F5EEDD]/85 no-underline hover:text-[#D9A94E] block mb-1">info@elbrenz.eu</a>
           <a href="tel:+393471077636" class="text-sm text-[#F5EEDD]/85 no-underline hover:text-[#D9A94E] block">+39 347 107 7636</a>
-          <a href="/custodi-della-memoria" class="text-sm text-[#D9A94E] no-underline hover:underline block mt-3">I Custodi della Memoria →</a>
+          <a href="/custodi-della-memoria" class="text-sm text-[#D9A94E] no-underline hover:underline block mt-3">{t('footer.custodi')}</a>
         </div>
 
         <div style="font-family: 'Inter', sans-serif;">
-          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-4">Sostienici</h2>
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-4">{t('footer.sostienici')}</h2>
           <p class="text-sm text-[#F5EEDD]/85 mb-2">Cassa Rurale Val di Sole<br/>filiale Mezzana</p>
           <p class="text-xs font-mono text-[#F5EEDD]/75 tracking-wider mb-3">IT84U0816335010000190116255</p>
-          <a href="/tesseramento" class="text-sm text-[#D9A94E] no-underline hover:underline">Diventa socio →</a>
+          <a href="/tesseramento" class="text-sm text-[#D9A94E] no-underline hover:underline">{t('footer.diventasocio')}</a>
         </div>
 
       </div>
@@ -159,17 +200,17 @@ const currentPath = Astro.url.pathname;
           riapre il banner via vanilla-cookieconsent v3 (data-cc auto-bind).
           13/7: aggiunto "Termini di servizio" (/termini pubblicata, B.1). */}
       <nav aria-label="Documenti e informative" class="max-w-7xl mx-auto px-6 mt-14 pt-6 border-t border-[#F5EEDD]/15 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs" style="font-family: 'Inter', sans-serif;">
-        <a href="/privacy" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Privacy</a>
+        <a href="/privacy" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">{t('footer.privacy')}</a>
         <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
-        <a href="/cookie-policy" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Cookie policy</a>
+        <a href="/cookie-policy" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">{t('footer.cookie')}</a>
         <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
-        <button type="button" data-cc="show-preferencesModal" class="text-[#F5EEDD]/70 bg-transparent border-0 p-0 cursor-pointer hover:text-[#D9A94E] transition-colors" style="font: inherit;">Preferenze cookie</button>
+        <button type="button" data-cc="show-preferencesModal" class="text-[#F5EEDD]/70 bg-transparent border-0 p-0 cursor-pointer hover:text-[#D9A94E] transition-colors" style="font: inherit;">{t('footer.cookieprefs')}</button>
         <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
-        <a href="/statuto" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Statuto</a>
+        <a href="/statuto" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">{t('footer.statuto')}</a>
         <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
-        <a href="/termini" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Termini di servizio</a>
+        <a href="/termini" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">{t('footer.termini')}</a>
         <span class="text-[#F5EEDD]/30" aria-hidden="true">·</span>
-        <a href="/crediti-e-licenze" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">Crediti e licenze</a>
+        <a href="/crediti-e-licenze" class="text-[#F5EEDD]/70 no-underline hover:text-[#D9A94E] transition-colors">{t('footer.crediti')}</a>
       </nav>
 
       <div class="max-w-7xl mx-auto px-6 mt-6 flex flex-wrap items-center justify-between gap-4" style="font-family: 'Inter', sans-serif;">

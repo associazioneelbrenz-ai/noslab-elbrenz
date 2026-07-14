@@ -33,9 +33,24 @@ export default defineConfig({
     },
   },
 
+  // i18n (Fase 1a): IT alla radice, DE/EN sotto /de/ e /en/. pt/es predisposte
+  // solo qui (nessuna pagina, nessuna voce nel selettore). prefixDefaultLocale
+  // false → l'IT non prende prefisso: le rotte esistenti restano invariate.
+  i18n: {
+    defaultLocale: 'it',
+    locales: ['it', 'de', 'en', 'pt', 'es'],
+    routing: { prefixDefaultLocale: false },
+  },
+
   integrations: [
     react(),
-    sitemap(),
+    // Sitemap con hreflang per-locale (solo lingue con pagine: it/de/en).
+    sitemap({
+      i18n: {
+        defaultLocale: 'it',
+        locales: { it: 'it-IT', de: 'de-DE', en: 'en-US' },
+      },
+    }),
   ],
 
   vite: {

@@ -1,0 +1,84 @@
+---
+/**
+ * LanguageSwitcher — selettore lingua del sito (Fase 1a i18n).
+ *
+ * Mostra SOLO le lingue con contenuti (IT/DE/EN; pt/es nascoste). Regola di
+ * fallback: porta alla stessa pagina nella lingua scelta se esiste, altrimenti
+ * alla home di quella lingua (mai una pagina mezza tradotta).
+ *
+ * Zero JS: riga di codici lingua (link semplici). La lingua corrente è marcata
+ * con aria-current e non è cliccabile.
+ *
+ * variant:
+ *   - "desktop": inline nell'header (accanto alla nav)
+ *   - "drawer":  in fondo al drawer mobile (colori chiari su verde scuro)
+ */
+import {
+  publicLocales,
+  languages,
+  switchLabel,
+  toCanonicalPath,
+  localizedUrl,
+  getLocaleFromPath,
+  type PublicLocale,
+} from '../i18n/ui';
+
+interface Props {
+  variant?: 'desktop' | 'drawer';
+}
+const { variant = 'desktop' } = Astro.props;
+
+const pathname = Astro.url.pathname;
+const current: PublicLocale = getLocaleFromPath(pathname);
+const canonical = toCanonicalPath(pathname);
+
+const items = publicLocales.map((loc) => ({
+  loc,
+  label: languages[loc],
+  code: loc.toUpperCase(),
+  href: localizedUrl(canonical, loc),
+  active: loc === current,
+}));
+
+const isDrawer = variant === 'drawer';
+const base = isDrawer
+  ? { on: 'text-[#D9A94E]', off: 'text-[#F5EEDD]/70 hover:text-[#D9A94E]', sep: 'text-[#F5EEDD]/25' }
+  : { on: 'text-[#C8923E]', off: 'text-[#0F0F0F]/60 hover:text-[#C8923E]', sep: 'text-[#0F0F0F]/25' };
+---
+
+<nav
+  class={`flex items-center gap-2 ${isDrawer ? '' : 'flex-shrink-0'}`}
+  aria-label={switchLabel[current]}
+  style="font-family: 'Inter', sans-serif;"
+>
+  {/* Icona globo (decorativa) */}
+  <svg
+    class={isDrawer ? 'w-4 h-4 text-[#D9A94E]/80' : 'w-4 h-4 text-[#0F0F0F]/45'}
+    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+    aria-hidden="true"
+  >
+    <circle cx="12" cy="12" r="9" />
+    <path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18" />
+  </svg>
+  <ul class="flex items-center gap-2 list-none m-0 p-0">
+    {items.map((it, i) => (
+      <li class="flex items-center gap-2">
+        {i > 0 && <span class={base.sep} aria-hidden="true">·</span>}
+        {it.active ? (
+          <span
+            class={`text-[13px] font-semibold ${base.on}`}
+            aria-current="true"
+            title={it.label}
+          >{it.code}</span>
+        ) : (
+          <a
+            href={it.href}
+            class={`text-[13px] font-medium no-underline transition-colors ${base.off}`}
+            hreflang={it.loc}
+            title={it.label}
+          >{it.code}</a>
+        )}
+      </li>
+    ))}
+  </ul>
+</nav>
