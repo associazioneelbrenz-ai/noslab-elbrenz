@@ -599,15 +599,18 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
   {GUARDIANI_LIVE && (
     <section class="bg-[#F8F1E4] py-14">
       <div class="max-w-2xl mx-auto px-6">
-        <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors py-10 px-8 md:py-12 md:px-12 text-center">
-          <svg viewBox="0 0 120 80" fill="none" class="mx-auto mb-5 w-[84px] md:w-[104px] h-auto" aria-hidden="true" role="presentation">
-            <g stroke="#C8923E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M60 22 C50 15, 32 15, 22 20 L22 60 C32 55, 50 55, 60 62 C70 55, 88 55, 98 60 L98 20 C88 15, 70 15, 60 22 Z" />
-              <path d="M60 22 V62" />
-              <path d="M30 30 H50 M30 38 H50 M70 30 H90 M70 38 H90" stroke-width="1.7" />
-            </g>
-            <circle cx="60" cy="12" r="3.5" fill="#1E2E26" />
-          </svg>
+        <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors overflow-hidden text-center">
+          {/* AGGIUNTA 15/7: foto teaser (696x383) al posto del segnaposto SVG,
+              come le altre sezioni home con immagine reale (Mappa, Libro). */}
+          <img
+            src="/img/home/guardiani-de-la-lenga-card.webp"
+            alt="Un'anziana e un ragazzo si parlano sul poggiolo di una casa alpina delle Valli del Noce, i monti sullo sfondo"
+            class="w-full h-auto object-cover"
+            width="696" height="383"
+            loading="lazy"
+            decoding="async"
+          />
+          <div class="py-10 px-8 md:py-12 md:px-12">
           <h2 class="text-2xl md:text-3xl m-0 mb-3 text-[#1E2E26]" style="font-family: 'Playfair Display', serif; font-weight: 500;">Guardiani de la lenga</h2>
           <div class="w-14 h-[2px] bg-[#C8923E] mx-auto mb-5" aria-hidden="true"></div>
           <p class="text-base text-[#1E2E26]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
@@ -615,6 +618,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
             proponi le parole della <em>nosa lenga</em> e falle entrare nel glossario vivo delle valli.
           </p>
           <a href="/guardiani-de-la-lenga" class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">Diventa Guardian de la lenga</a>
+          </div>
         </div>
       </div>
     </section>
@@ -684,20 +688,18 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
       documentata". Pagina editoriale pilastro Lingua, non nella mappa. */}
   <section class="bg-[#F8F1E4] py-14">
     <div class="max-w-2xl mx-auto px-6">
-      <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors py-10 px-8 md:py-12 md:px-12 text-center">
-        <svg viewBox="0 0 120 80" fill="none" class="mx-auto mb-5 w-[84px] md:w-[104px] h-auto" aria-hidden="true" role="presentation">
-          <g stroke="#C8923E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 20 L44 13 L76 20 L102 13 V60 L76 67 L44 60 L18 67 Z" />
-            <path d="M44 13 V60 M76 20 V67" />
-          </g>
-          <g stroke="#1E2E26" stroke-width="1.7" stroke-linecap="round">
-            <circle cx="31" cy="34" r="2" fill="#1E2E26" stroke="none" />
-            <circle cx="60" cy="30" r="2" fill="#1E2E26" stroke="none" />
-            <circle cx="60" cy="44" r="2" fill="#1E2E26" stroke="none" />
-            <circle cx="89" cy="40" r="2" fill="#1E2E26" stroke="none" />
-            <path d="M31 34 Q45 26 60 30 M60 44 Q75 48 89 40" stroke-dasharray="1 3" />
-          </g>
-        </svg>
+      <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors overflow-hidden text-center">
+        {/* AGGIUNTA 15/7: mappa illustrata teaser (696x383) al posto del
+            segnaposto SVG, coerente con le altre sezioni home con immagine. */}
+        <img
+          src="/img/home/atlante-ladino-card.webp"
+          alt="Mappa illustrata in stile antico delle valli del fiume Noce"
+          class="w-full h-auto object-cover"
+          width="696" height="383"
+          loading="lazy"
+          decoding="async"
+        />
+        <div class="py-10 px-8 md:py-12 md:px-12">
         <h2 class="text-2xl md:text-3xl m-0 mb-3 text-[#1E2E26]" style="font-family: 'Playfair Display', serif; font-weight: 500;">Le valli nell'Atlante del Ladino</h2>
         <div class="w-14 h-[2px] bg-[#C8923E] mx-auto mb-5" aria-hidden="true"></div>
         <p class="text-base text-[#1E2E26]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
@@ -705,6 +707,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
           accanto al ladino dolomitico: quasi 2.000 carte linguistiche, con licenza aperta.
         </p>
         <a href="/le-valli-nell-atlante-del-ladino" class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">Scopri l'Atlante del Ladino</a>
+        </div>
       </div>
     </div>
   </section>
