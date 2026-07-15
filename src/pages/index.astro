@@ -182,6 +182,14 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
   description="Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Custodiamo la lingua ladino-anaunica e la storia di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo."
 >
 
+  {/* PROVA (14/7): richiamo laterale — logo El Brenz dorato che pulsa, porta al
+      tesseramento. Fisso a sinistra, si espande in "Diventa socio" all'hover.
+      Nascosto su mobile per non coprire i contenuti; reduced-motion safe. */}
+  <a href="/tesseramento" class="eb-side-cta hidden md:flex" aria-label="Diventa socio di El Brenz" title="Diventa socio">
+    <img src="/logo-eb-header@2x.png" alt="" width="44" height="44" decoding="async" />
+    <span class="eb-side-cta__label">Diventa socio</span>
+  </a>
+
   <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
 
     {/* AGGIUNTA hero foto (M2.5): lago alpino come sfondo, sotto un overlay
@@ -1185,4 +1193,37 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
     .eb-cta-socio { animation: none; }
     .eb-cta-socio::after { display: none; }
   }
+</style>
+
+<style>
+  /* PROVA — richiamo laterale "Diventa socio": logo El Brenz su badge oro che
+     pulsa (lampeggio soft), si espande in etichetta all'hover. Solo desktop. */
+  .eb-side-cta {
+    position: fixed; left: 16px; top: 50%; transform: translateY(-50%); z-index: 40;
+    align-items: center; height: 64px; width: 64px; border-radius: 999px;
+    background: linear-gradient(135deg, #E4B45C 0%, #C8923E 55%, #b07f2f 100%);
+    box-shadow: 0 6px 20px rgba(200,146,62,0.5); text-decoration: none;
+    overflow: hidden; white-space: nowrap;
+    transition: width .28s ease, box-shadow .2s ease;
+    animation: ebSideBlink 1.5s ease-in-out infinite; will-change: box-shadow;
+  }
+  .eb-side-cta img {
+    width: 44px; height: 44px; border-radius: 50%; background: #F8F1E4;
+    padding: 5px; box-sizing: border-box; flex: 0 0 auto; margin-left: 10px;
+  }
+  .eb-side-cta__label {
+    color: #1E2E26; font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+    opacity: 0; padding: 0 10px 0 8px; transition: opacity .2s ease .05s;
+  }
+  .eb-side-cta:hover, .eb-side-cta:focus-visible {
+    width: 214px; animation-play-state: paused; box-shadow: 0 10px 28px rgba(200,146,62,0.65);
+  }
+  .eb-side-cta:hover .eb-side-cta__label,
+  .eb-side-cta:focus-visible .eb-side-cta__label { opacity: 1; }
+  @keyframes ebSideBlink {
+    0%,100% { box-shadow: 0 6px 20px rgba(200,146,62,0.45), 0 0 0 0 rgba(217,169,78,0.7); }
+    50%     { box-shadow: 0 8px 26px rgba(200,146,62,0.6),  0 0 0 12px rgba(217,169,78,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .eb-side-cta { animation: none; } }
 </style>
