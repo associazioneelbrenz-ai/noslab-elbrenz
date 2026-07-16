@@ -1,9 +1,11 @@
 ---
 /**
- * /non-e-sole-grande-guerra — sezione autonoma «Non e Sole Grande Guerra».
- * Riusa l'infrastruttura Custodi (custodi_memoria) tramite sezione='grande_guerra'.
- * SSR: legge la vista pubblica v_custodi_memoria (visibile=true) filtrata per
- * sezione. Immagine d'apertura con didascalia/crediti d'archivio (obbligatoria).
+ * /non-e-sole-grande-guerra — Museo digitale della Grande Guerra.
+ * Archivio AUTONOMO (tabella museo_gg_pezzo), staccato dai Custodi.
+ * SSR: legge i pezzi con stato='pubblicato' (policy di lettura pubblica) e ne
+ * rende una galleria da museo; ogni pezzo apre il suo "cartellino" (fonte,
+ * elaborazione, donatore). Immagine d'apertura con didascalia/crediti d'archivio.
+ * Fase B: upload/pubblicazione solo admin via /museo-gg-curatela.
  * Referente: Michele Corradini · Supervisione: Cristian Bresadola.
  */
 import Layout from '../layouts/Layout.astro';
@@ -19,34 +21,37 @@ const IMG = '/img/home/grande-guerra-card.webp';
 const IMG_ALT = 'Soldati in divisa austro-ungarica salutano dai vagoni di un treno affollato mentre la folla li accompagna, stazione ferroviaria, 1914.';
 const DIDASCALIA = 'Partenza per il fronte della Galizia, 1914. Foto d’epoca, Tiroler Landesarchiv (Landesarchiv Innsbruck). Elaborazione digitale di Michele Corradini.';
 
-type Riga = {
-  nome_pubblico: string; paese: string | null; descrizione_contributo: string;
-  anno: number; anonimo: boolean; valle: string | null; epoca: string | null; tipo_materiale: string | null;
+type Pezzo = {
+  id: string; titolo: string; descrizione: string | null; tipo: string;
+  anno: number | null; periodo: string | null; luogo: string | null; valle: string | null;
+  fonte: string; elaborazione: string | null; donatore: string | null; immagini_urls: string[];
 };
-let contributi: Riga[] = [];
+let pezzi: Pezzo[] = [];
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
-  const { data } = await sb.from('v_custodi_memoria').select('*')
-    .eq('sezione', 'grande_guerra')
-    .order('anno', { ascending: false }).order('nome_pubblico');
-  contributi = (data as Riga[]) ?? [];
+  // Solo colonne pubbliche del cartellino; niente caricato_da/validato_da.
+  const { data } = await sb.from('museo_gg_pezzo')
+    .select('id, titolo, descrizione, tipo, anno, periodo, luogo, valle, fonte, elaborazione, donatore, immagini_urls')
+    .eq('stato', 'pubblicato')
+    .order('ordine', { ascending: true }).order('anno', { ascending: true });
+  pezzi = (data as Pezzo[]) ?? [];
 } catch (e) {
-  console.error('[grande-guerra] lettura vista fallita:', e);
+  console.error('[museo-gg] lettura pezzi fallita:', e);
 }
 
 const VALLE: Record<string, string> = {
   val_di_non: 'Val di Non', val_di_sole: 'Val di Sole', val_di_rabbi: 'Val di Rabbi',
   val_di_pejo: 'Val di Pejo', piu_valli: 'Più valli',
 };
-const EPOCA: Record<string, string> = {
-  pre_ottocento: 'Prima dell’Ottocento', ottocento: 'Ottocento',
-  tirolo_asburgico: 'Tirolo asburgico (fino al 1918)', tra_le_due_guerre: 'Tra le due guerre',
-  novecento: 'Novecento', contemporaneo: 'Contemporaneo',
-};
 const TIPO: Record<string, string> = {
-  fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto', cartolina: 'Cartolina',
-  audio: 'Registrazione audio', racconto_orale: 'Racconto orale', video: 'Video',
+  foto: 'Fotografia', fotografia: 'Fotografia', cartolina: 'Cartolina',
+  lettera: 'Lettera', documento: 'Documento', oggetto: 'Oggetto',
 };
+const etichettaTipo = (t: string) => TIPO[t] ?? t;
+const etichettaValle = (v: string | null) => (v && VALLE[v]) ? VALLE[v] : (v ?? '');
+// Opzioni filtro presenti fra i pezzi pubblicati.
+const tipiPresenti = [...new Set(pezzi.map((p) => p.tipo).filter(Boolean))];
+const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is string => !!v))];
 ---
 
 <Layout title={`${TITOLO} · El Brenz`} description="La Grande Guerra vissuta nelle Valli del Noce: soldati trentini nell'esercito austro-ungarico, il fronte della Galizia dal 1914, i profughi, le famiglie. Sezione a cura di Michele Corradini." ogImage="/og/og-grande-guerra.jpg">
@@ -103,36 +108,148 @@ const TIPO: Record<string, string> = {
 
       <section class="mt-10">
         <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">La collezione</h2>
-        {contributi.length === 0 ? (
-          <div class="text-center py-6">
-            <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
-              Questa collezione nasce ora. Una fotografia, una cartolina dal fronte, una lettera,
-              il racconto di un nonno: ogni testimonianza accende un pezzo della nosa storia.
-            </p>
-            <a href="/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors" style="font-family: 'Inter', sans-serif;">
-              Porta la tua testimonianza
-            </a>
-          </div>
+
+        {pezzi.length === 0 ? (
+          <p class="text-[#1E2E26]/70 text-lg py-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+            L'archivio sta prendendo forma. I primi pezzi (fotografie, cartoline dal fronte, lettere e
+            documenti) saranno presto qui, ciascuno con la sua fonte e la sua storia.
+          </p>
         ) : (
-          <ul class="list-none p-0 m-0 space-y-4">
-            {contributi.map((c) => (
-              <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span class="text-xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{c.anonimo ? 'Anonimo' : c.nome_pubblico}</span>
-                {c.paese && <span class="text-[11px] tracking-[0.14em] uppercase text-[#C8923E]" style="font-family: 'Inter', sans-serif;">{c.paese}</span>}
-                <span class="text-[11px] tracking-[0.14em] uppercase text-[#1E2E26]/45" style="font-family: 'Inter', sans-serif;">{c.anno}</span>
-                <span class="text-[#1E2E26]/70 text-sm w-full md:w-auto" style="font-family: 'Source Serif 4', Georgia, serif;">{c.descrizione_contributo}</span>
-                {(c.valle || c.epoca || c.tipo_materiale) && (
-                  <span class="w-full flex flex-wrap gap-1.5 mt-0.5">
-                    {c.valle && VALLE[c.valle] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#C8923E]/40 text-[#8a6215] px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{VALLE[c.valle]}</span>}
-                    {c.epoca && EPOCA[c.epoca] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{EPOCA[c.epoca]}</span>}
-                    {c.tipo_materiale && TIPO[c.tipo_materiale] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{TIPO[c.tipo_materiale]}</span>}
+          <>
+            <div class="flex flex-wrap gap-2 mb-6" style="font-family: 'Inter', sans-serif;">
+              {tipiPresenti.length > 1 && (
+                <select id="museo-f-tipo" class="text-sm border border-[#C8923E]/40 bg-white text-[#1E2E26] px-3 py-1.5 rounded">
+                  <option value="">Tutti i tipi</option>
+                  {tipiPresenti.map((t) => <option value={t}>{etichettaTipo(t)}</option>)}
+                </select>
+              )}
+              {valliPresenti.length > 1 && (
+                <select id="museo-f-valle" class="text-sm border border-[#C8923E]/40 bg-white text-[#1E2E26] px-3 py-1.5 rounded">
+                  <option value="">Tutte le valli</option>
+                  {valliPresenti.map((v) => <option value={v}>{etichettaValle(v)}</option>)}
+                </select>
+              )}
+            </div>
+
+            <div id="museo-griglia" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {pezzi.map((p) => (
+                <button
+                  type="button"
+                  class="museo-tile group text-left m-0 p-0 border border-[#C8923E]/25 bg-[#F5EEDD] overflow-hidden cursor-pointer"
+                  data-tipo={p.tipo}
+                  data-valle={p.valle ?? ''}
+                  data-pezzo={JSON.stringify(p)}
+                >
+                  <span class="block aspect-[4/3] overflow-hidden bg-[#e8dcc4]">
+                    {p.immagini_urls[0] && (
+                      <img src={p.immagini_urls[0]} alt={p.titolo} loading="lazy" decoding="async"
+                        class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300" />
+                    )}
                   </span>
-                )}
-              </li>
-            ))}
-          </ul>
+                  <span class="block p-2.5">
+                    <span class="block text-[13px] leading-snug text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{p.titolo}</span>
+                    <span class="block text-[10px] tracking-[0.12em] uppercase text-[#8a6215] mt-1" style="font-family: 'Inter', sans-serif;">
+                      {etichettaTipo(p.tipo)}{p.periodo ? ` · ${p.periodo}` : (p.anno ? ` · ${p.anno}` : '')}
+                    </span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p id="museo-vuoto" class="hidden text-[#1E2E26]/60 text-sm py-4" style="font-family: 'Inter', sans-serif;">Nessun pezzo per questo filtro.</p>
+          </>
         )}
+
+        <p class="mt-8 text-sm text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">
+          Hai una fotografia, una cartolina, una lettera o un documento della Grande Guerra?
+          <a href="/contatti" class="text-[#8a6215] underline">Scrivici</a>: può entrare a far parte di questo archivio.
+        </p>
       </section>
     </div>
+
+    {/* Cartellino del pezzo (overlay), popolato lato client */}
+    <div id="museo-overlay" class="fixed inset-0 z-50 hidden items-start justify-center overflow-y-auto bg-[#1E2E26]/80 p-4" style="font-family: 'Inter', sans-serif;">
+      <div class="relative bg-[#F8F1E4] max-w-2xl w-full my-6 rounded-md shadow-xl">
+        <button id="museo-chiudi" type="button" aria-label="Chiudi" class="absolute top-2 right-3 text-2xl leading-none text-[#1E2E26]/60 hover:text-[#1E2E26]">×</button>
+        <div id="museo-immagini" class="p-4 pt-10 space-y-3"></div>
+        <div class="px-6 pb-6">
+          <h3 id="museo-titolo" class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;"></h3>
+          <p id="museo-descrizione" class="text-[#1E2E26]/85 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;"></p>
+          <dl id="museo-cartellino" class="text-sm text-[#1E2E26]/80 space-y-1.5 border-t border-[#C8923E]/30 pt-4"></dl>
+        </div>
+      </div>
+    </div>
   </main>
+
+  <script>
+    const overlay = document.getElementById('museo-overlay');
+    const griglia = document.getElementById('museo-griglia');
+    if (overlay && griglia) {
+      const elImg = document.getElementById('museo-immagini')!;
+      const elTit = document.getElementById('museo-titolo')!;
+      const elDes = document.getElementById('museo-descrizione')!;
+      const elCar = document.getElementById('museo-cartellino')!;
+      const VALLE_L: Record<string, string> = {
+        val_di_non: 'Val di Non', val_di_sole: 'Val di Sole', val_di_rabbi: 'Val di Rabbi',
+        val_di_pejo: 'Val di Pejo', piu_valli: 'Più valli',
+      };
+      const TIPO_L: Record<string, string> = {
+        foto: 'Fotografia', fotografia: 'Fotografia', cartolina: 'Cartolina',
+        lettera: 'Lettera', documento: 'Documento', oggetto: 'Oggetto',
+      };
+      const riga = (k: string, v: string | null) =>
+        v ? `<div><dt class="inline font-semibold text-[#8a6215]">${k}:</dt> <dd class="inline m-0">${v}</dd></div>` : '';
+
+      function apri(p: any) {
+        elImg.innerHTML = (p.immagini_urls || [])
+          .map((u: string) => `<img src="${u}" alt="${(p.titolo || '').replace(/"/g, '&quot;')}" class="w-full h-auto rounded" loading="lazy" />`)
+          .join('');
+        elTit.textContent = p.titolo || '';
+        elDes.textContent = p.descrizione || '';
+        elCar.innerHTML = [
+          riga('Tipo', TIPO_L[p.tipo] || p.tipo),
+          riga('Anno', p.anno ? String(p.anno) : (p.periodo || null)),
+          riga('Luogo', p.luogo),
+          riga('Valle', p.valle ? (VALLE_L[p.valle] || p.valle) : null),
+          riga('Fonte', p.fonte),
+          riga('Elaborazione', p.elaborazione),
+          riga('Donatore', p.donatore),
+        ].join('');
+        overlay!.classList.remove('hidden');
+        overlay!.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+      }
+      function chiudi() {
+        overlay!.classList.add('hidden');
+        overlay!.classList.remove('flex');
+        document.body.style.overflow = '';
+      }
+
+      griglia.querySelectorAll<HTMLButtonElement>('.museo-tile').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          try { apri(JSON.parse(btn.dataset.pezzo || '{}')); } catch {}
+        });
+      });
+      document.getElementById('museo-chiudi')?.addEventListener('click', chiudi);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) chiudi(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') chiudi(); });
+
+      // Filtri
+      const fTipo = document.getElementById('museo-f-tipo') as HTMLSelectElement | null;
+      const fValle = document.getElementById('museo-f-valle') as HTMLSelectElement | null;
+      const vuoto = document.getElementById('museo-vuoto');
+      function filtra() {
+        const t = fTipo?.value || '';
+        const v = fValle?.value || '';
+        let visibili = 0;
+        griglia!.querySelectorAll<HTMLElement>('.museo-tile').forEach((tile) => {
+          const ok = (!t || tile.dataset.tipo === t) && (!v || tile.dataset.valle === v);
+          tile.style.display = ok ? '' : 'none';
+          if (ok) visibili++;
+        });
+        if (vuoto) vuoto.classList.toggle('hidden', visibili > 0);
+      }
+      fTipo?.addEventListener('change', filtra);
+      fValle?.addEventListener('change', filtra);
+    }
+  </script>
 </Layout>
