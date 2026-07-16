@@ -135,13 +135,17 @@ serve(async (req: Request) => {
   const botSecret = Deno.env.get('BOT_ANDREAS_SECRET');
   if (botSecret) {
     const etichetta = haPdf ? '📖 **Nuovo download del libro**' : '💬 **Nuovo contatto dal documentario**';
+    // PII minima (16/7): iniziali + risorsa, mai nome+email nel gruppo. I dati
+    // completi restano in download_lead dietro autenticazione.
+    const iniziali = nome.split(/\s+/).filter(Boolean).map((p) => `${p[0].toUpperCase()}.`).join('') || '—';
+    const risorsaLabel = RISORSE[risorsa]?.titolo ?? risorsa;
     try {
       await fetch(`${base}/functions/v1/telegram-bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Bot-Secret': botSecret },
         body: JSON.stringify({
           notify: true,
-          text: `${etichetta}\n${nome} · ${email}` + (newsletter ? '\nHa dato consenso newsletter ✅' : ''),
+          text: `${etichetta}\n${iniziali} · ${risorsaLabel}` + (newsletter ? '\nHa dato consenso newsletter ✅' : ''),
         }),
       });
     } catch (e) { console.error('[download-lead] notificaTelegram:', e); }
