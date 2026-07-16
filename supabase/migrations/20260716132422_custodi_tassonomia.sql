@@ -30,13 +30,13 @@ alter table public.custodi_memoria
 -- 3) Seed categorie. titolo_it = canonico; titolo_lenga = BOZZA (validare in Commissione).
 insert into public.custodi_categoria (slug, titolo_it, titolo_lenga, ordine) values
  ('terra-e-stagioni',   'La terra e le stagioni',   'La tèra e le stagión',     10),
- ('grande-guerra',      'La Grande Guerra',         'La Gran Guèra',            20),
+ ('grande-guerra',      'La Grande Guerra',         'La Grant Gèra',            20),
  ('partire-e-restare',  'Partire e restare',        'Partìr e restàr',          30),
  ('mani-e-mestieri',    'Mani e mestieri',          'Man e mistèri',            40),
  ('fede-e-devozione',   'Fede e devozione',         'Fè e dovozion',            50),
  ('feste-e-filo',       'Feste, maschere e filò',   'Feste, màschere e filò',   60),
  ('la-nosa-lenga',      'La nostra lingua',         'La nosa lenga',            70),
- ('case-masi-paesi',    'Case, masi e paesi',       'Ciase, masi e paìsi',      80),
+ ('case-masi-paesi',    'Case, masi e paesi',       'Chjase, masi e paìsi',     80),
  ('signori-e-castelli', 'Signori e castelli',       'Signóri e castèi',         90),
  ('acque-boschi-monti', 'Acque, boschi e montagne', 'Aque, bòschi e montagne', 100),
  ('volti-e-famiglie',   'Volti e famiglie',         'Faze e famèè',            110),

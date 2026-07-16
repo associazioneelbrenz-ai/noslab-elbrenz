@@ -14,13 +14,13 @@ italiano), **senza toccare il codice**.
 | # | slug (stabile) | Titolo italiano (canonico) | Titolo in lenga (BOZZA) | Note |
 |---|---|---|---|---|
 | 1 | `terra-e-stagioni` | La terra e le stagioni | La tèra e le stagión | |
-| 2 | `grande-guerra` | La Grande Guerra | La Gran Guèra | |
+| 2 | `grande-guerra` | La Grande Guerra | La Grant Gèra | ✅ validato Cristian 16/7 (era «La Gran Guèra») |
 | 3 | `partire-e-restare` | Partire e restare | Partìr e restàr | |
 | 4 | `mani-e-mestieri` | Mani e mestieri | Man e mistèri | |
 | 5 | `fede-e-devozione` | Fede e devozione | Fè e dovozion | |
 | 6 | `feste-e-filo` | Feste, maschere e filò | Feste, màschere e filò | |
 | 7 | `la-nosa-lenga` | La nostra lingua | La nosa lenga | |
-| 8 | `case-masi-paesi` | Case, masi e paesi | **Ciase**, masi e paìsi | **DA SCIOGLIERE**: Cristian ha indicato «Chjase/ciase». Nel seed è provvisorio `Ciase`. Scegliere `Chjase` vs `Ciase`. |
+| 8 | `case-masi-paesi` | Case, masi e paesi | Chjase, masi e paìsi | ✅ sciolto Cristian 16/7: **Chjase** (non Ciase) |
 | 9 | `signori-e-castelli` | Signori e castelli | Signóri e castèi | |
 | 10 | `acque-boschi-monti` | Acque, boschi e montagne | Aque, bòschi e montagne | |
 | 11 | `volti-e-famiglie` | Volti e famiglie | Faze e famèè | |
