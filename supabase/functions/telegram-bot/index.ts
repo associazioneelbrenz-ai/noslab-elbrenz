@@ -152,25 +152,6 @@ async function gateAdmin(
   return true;
 }
 
-// Variante DM-only del gate (Fase 2, dati più sensibili: soci, pagamenti, ecc.):
-// ammessa SOLO in chat privata — mai nei gruppi, nemmeno la Sala comando, per non
-// esporre PII nel gruppo. Gate sul mittente identico (ruolo El Brenz livello>=50).
-// In qualsiasi gruppo/canale: silenzio (return false senza messaggio).
-async function gateAdminDM(
-  supabase: any,
-  token: string,
-  message: any,
-  chatId: number | string,
-): Promise<boolean> {
-  if (message?.chat?.type !== 'private') return false; // gruppi/canali → silenzio
-  const r = await risolviRuolo(supabase, message?.from?.id);
-  if (!r || r.livello < 50) {
-    await sendMessage(token, chatId, 'Non ti riconosco come <b>amministratore</b> di El Brenz. Se dovresti esserlo, collega il tuo account dall\'area soci del sito.');
-    return false;
-  }
-  return true;
-}
-
 const BENVENUTO =
   'Ciao! Sono <i>Andreas</i>, l\'assistente di El Brenz. Chiedimi di storia, ' +
   'lingua ladino-anaunica e cultura delle Valli del Noce.\n\n' +
@@ -459,13 +440,16 @@ serve(async (req: Request) => {
       return new Response('', { status: 200 });
     }
 
-    // ── FASE 2 — comandi read-only su dati sensibili, DM-only (gateAdminDM) ──
-    // Stati/colonne verificati nel DB (16/7). PII minima: aggregati + piccole
-    // liste (nomi/importi, "Anonimo" dove previsto), mai email/telefono. Query
-    // strutturate, mai RAG. Silenzio nei gruppi (anche Sala comando).
+    // ── FASE 2 — comandi read-only su dati gestionali (gateAdmin) ──
+    // 16/7: su richiesta di Cristian ammessi ANCHE in Sala comando (gate esteso
+    // come la Fase 1), non più solo in DM: la risposta è visibile a tutto il
+    // gruppo direttivo. Gate sempre sul mittente (ruolo>=50); altri gruppi e
+    // non-admin nel gruppo → silenzio. Stati/colonne verificati nel DB. PII
+    // minima: aggregati + piccole liste (nomi/importi, "Anonimo" dove previsto),
+    // mai email/telefono. Query strutturate, mai RAG.
     if (cmd === '/soci' || cmd.startsWith('/soci')) {
       const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
 
       const anno = new Date().getFullYear();
       const cnt = async (q: any): Promise<number> => (await q).count ?? 0;
@@ -491,7 +475,7 @@ serve(async (req: Request) => {
 
     if (cmd === '/pagamenti' || cmd.startsWith('/pagamenti')) {
       const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
 
       const anno = new Date().getFullYear();
       const cnt = async (q: any): Promise<number> => (await q).count ?? 0;
@@ -528,7 +512,7 @@ serve(async (req: Request) => {
 
     if (cmd === '/convenzioni' || cmd.startsWith('/convenzioni')) {
       const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
 
       const { data: proposte, count } = await supabase.from('convenzioni')
         .select('nome_attivita, categoria, localita', { count: 'exact' })
@@ -551,7 +535,7 @@ serve(async (req: Request) => {
     // e la vetrina Custodi della Memoria (custodi_memoria da pubblicare).
     if (cmd === '/custodi' || cmd.startsWith('/custodi')) {
       const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
 
       const { data: sportello, count: nNuove } = await supabase.from('richieste_contatto')
         .select('codice_pratica, tipo, categoria, nome', { count: 'exact' })
@@ -577,7 +561,7 @@ serve(async (req: Request) => {
     // valore reale del flusso editor; in_revisione è dei lemmi Guardiani).
     if (cmd === '/redazione' || cmd.startsWith('/redazione')) {
       const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
-      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
 
       const { data: coda, count } = await supabase.from('articolo')
         .select('titolo', { count: 'exact' })
