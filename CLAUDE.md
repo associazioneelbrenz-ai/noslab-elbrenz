@@ -24,7 +24,7 @@ Sito pubblico in produzione: **`https://elbrenz.eu`** (apex, dominio primario; c
 - **Feature Convenzioni (M5.0 v2)** live: tabella `convenzioni` + vista `convenzioni_pubbliche` + edge `convenzioni-proposta` + pagine `/convenzioni` e `/convenzioni/schema-tipo`.
 - **KB Andreas**: sorgente Baratter (Athesia 2017), 30 chunk, via nuova edge `ingest-chunks`. `andreas-chat` resta INTOCCABILE.
 - **Link HMAC nelle email**: SEMPRE nel PATH, mai in query string (`=`+2 hex si corrompe in quoted-printable). Vale per scheda-domanda e convenzioni-proposta.
-- Handoff corrente: **`docs/HANDOFF_2026-07-10.md`**.
+- Handoff corrente: **`docs/HANDOFF_2026-07-16.md`**.
 
 ---
 
