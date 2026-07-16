@@ -1,0 +1,156 @@
+---
+/**
+ * /scheda-domanda/{vista|email-azione}/… — pagina di curatela del tesseramento
+ * per il Direttivo. Rende l'HTML su elbrenz.eu (la piattaforma Supabase forza
+ * text/plain sull'HTML delle edge → il bottone scaricava un .txt) e chiama
+ * l'edge scheda-domanda in JSON (ramo /json/…). Token HMAC nel path. SSR, noindex.
+ * Gemella di /guardiani-curatela.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+const uuid = /^[0-9a-f-]{36}$/i, num = /^\d+$/, hex = /^[0-9a-f]+$/i;
+
+let modo = '';       // 'vista' | 'email-azione'
+let peekUrl = '';    // GET peek in JSON
+let postBase = '';   // base per il POST azione: .../json/azione
+let azioneEmail = '';
+
+if (seg[0] === 'vista' && uuid.test(seg[1] ?? '') && num.test(seg[2] ?? '') && hex.test(seg[3] ?? '')) {
+  modo = 'vista';
+  peekUrl = `${SB_URL}/functions/v1/scheda-domanda/json/vista/${seg[1]}/${seg[2]}/${seg[3]}`;
+  postBase = `${SB_URL}/functions/v1/scheda-domanda/json/azione`;
+} else if (seg[0] === 'email-azione' && (seg[1] === 'approva' || seg[1] === 'respingi')
+  && uuid.test(seg[2] ?? '') && num.test(seg[3] ?? '') && hex.test(seg[4] ?? '')) {
+  modo = 'email-azione';
+  azioneEmail = seg[1];
+  peekUrl = `${SB_URL}/functions/v1/scheda-domanda/json/email-azione/${seg[1]}/${seg[2]}/${seg[3]}/${seg[4]}`;
+  postBase = `${SB_URL}/functions/v1/scheda-domanda/json/azione`;
+}
+---
+
+<Layout title="Curatela · Tesseramento" description="Scheda domanda di tesseramento riservata al Direttivo El Brenz." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen flex items-start justify-center px-4 py-12">
+    <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-2xl p-7 md:p-9" style="font-family: 'Inter', sans-serif;"
+         data-peek={peekUrl} data-postbase={postBase} data-modo={modo} data-azione-email={azioneEmail} id="cur-card">
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · Tesseramento · curatela</p>
+      <div id="cur-body"><p class="text-[#1E2E26]/70 m-0">Carico…</p></div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const card = document.getElementById('cur-card')!;
+    const body = document.getElementById('cur-body')!;
+    const peekUrl = card.getAttribute('data-peek') || '';
+    const postBase = card.getAttribute('data-postbase') || '';
+    const modo = card.getAttribute('data-modo') || '';
+
+    const H = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const titolo = (t: string) => `<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 8px;">${t}</h1>`;
+    const testo = (t: string) => `<p style="color:#1E2E26;opacity:.85;margin:0 0 8px;line-height:1.6;">${t}</p>`;
+    const btnCss = (extra: string) => `padding:12px 26px;border-radius:4px;border:0;font-weight:600;font-size:14px;cursor:pointer;${extra}`;
+    const dataIt = (s: string) => { try { return new Date(s).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }); } catch { return s; } };
+
+    if (!peekUrl) { body.innerHTML = titolo('Link non valido') + testo('Il link non è valido. Apri la mail più recente della domanda.'); return; }
+
+    async function esegui(azione: string, post: { id: string; exp: number; t: string }, motivo?: string) {
+      const go = document.getElementById('cur-go') as HTMLButtonElement | null;
+      if (go) { go.disabled = true; go.textContent = 'Attendi…'; }
+      try {
+        const r = await fetch(`${postBase}/${azione}/${post.id}/${post.exp}/${post.t}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(motivo != null ? { motivo } : {}),
+        });
+        const d = await r.json();
+        if (d.ok) {
+          body.innerHTML = titolo(azione === 'approva' ? 'Domanda approvata ✓' : 'Domanda respinta') + testo(H(d.message || 'Fatto.'))
+            + (d.urlVerifica ? `<p style="margin-top:12px;"><a href="${H(d.urlVerifica)}" style="color:#2d8659;font-weight:600;">Vedi la tessera pubblica →</a></p>` : '');
+        } else if (d.error === 'gia_gestito') {
+          body.innerHTML = titolo('Già gestita') + testo(`La domanda risulta già <strong>${H(d.stato || 'gestita')}</strong>${d.numero_tessera ? ` (tessera n. ${H(d.numero_tessera)})` : ''}. Nessun numero bruciato.`);
+        } else {
+          body.innerHTML = titolo('Non riuscito') + testo(H(d.message || 'Riprova aprendo di nuovo il link dalla mail.'));
+        }
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Errore di connessione. Riprova tra poco.');
+      }
+    }
+
+    function bottoniVista(d: any) {
+      if (d.domanda.stato !== 'in_attesa') {
+        return testo(`Domanda già <strong>${H(d.domanda.stato)}</strong>${d.domanda.numero_tessera ? ` — tessera n. <strong>${H(d.domanda.numero_tessera)}</strong>` : ''}${d.domanda.approvata_il ? `<br/><span style="color:#999;font-size:12px;">il ${H(dataIt(d.domanda.approvata_il))} (${H(d.domanda.approvata_da || '')})</span>` : ''}.`);
+      }
+      const avviso = d.tessereLive ? '' : `<p style="color:#8a6215;font-size:12px;margin-top:10px;">⚠ TESSERE_LIVE spento: approvando si assegna il numero ma l'email tessera NON parte.</p>`;
+      return `<div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;">
+          <button id="cur-approva" style="${btnCss('background:#C8923E;color:#1E2E26;')}">Approva e invia tessera</button>
+          <button id="cur-respingi" style="${btnCss('background:#fff;color:#a33;border:2px solid #d97a7a;')}">Segna respinta</button>
+        </div>${avviso}`;
+    }
+
+    function renderVista(d: any) {
+      const dom = d.domanda;
+      const pag = (d.pagamenti && d.pagamenti.length)
+        ? d.pagamenti.map((p: any) => `<div style="background:${p.stato === 'completato' ? '#eaf3ee' : '#FDF9F0'};border-left:3px solid ${p.stato === 'completato' ? '#2d8659' : '#C8923E'};padding:10px 14px;margin-bottom:6px;font-size:14px;">${p.stato === 'completato' ? '✓' : '⏳'} <strong>${H(p.stato)}</strong> — ${H(p.importo ?? '?')} € via ${p.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico'}${p.anomalia ? ' · <strong style="color:#a33">ANOMALIA</strong>' : ''} <span style="color:#999;font-size:12px;">· ${H(dataIt(p.created_at))}</span></div>`).join('')
+        : `<div style="background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;font-size:14px;">Nessun pagamento quota trovato per questa email (può arrivare più tardi).</div>`;
+      body.innerHTML = titolo(H(dom.nome))
+        + `<p style="margin:0 0 12px;"><span style="display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#fdf3df;color:#8a6215;">${H(dom.stato)}</span></p>`
+        + `<table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px;">
+             <tr><td style="color:#666;padding:7px 0;width:150px;">Email</td><td><a href="mailto:${H(dom.email)}">${H(dom.email)}</a></td></tr>
+             <tr><td style="color:#666;padding:7px 0;">Data di nascita</td><td>${dom.data_nascita ? H(new Date(dom.data_nascita).toLocaleDateString('it-IT')) : '—'}</td></tr>
+             <tr><td style="color:#666;padding:7px 0;">Comune di nascita</td><td>${H(dom.comune_nascita || '—')}</td></tr>
+             <tr><td style="color:#666;padding:7px 0;">Sesso</td><td>${dom.sesso === 'M' ? 'Maschile' : dom.sesso === 'F' ? 'Femminile' : '—'}</td></tr>
+             <tr><td style="color:#666;padding:7px 0;">Messaggio</td><td>${H(dom.messaggio || '—')}</td></tr>
+             <tr><td style="color:#666;padding:7px 0;">Domanda inviata</td><td>${H(dataIt(dom.created_at))}</td></tr>
+           </table>
+           <p style="font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#8a6215;border-bottom:2px solid #C8923E;padding-bottom:6px;margin:0 0 8px;">Pagamento quota</p>${pag}`
+        + bottoniVista(d);
+      const a = document.getElementById('cur-approva');
+      const rj = document.getElementById('cur-respingi');
+      if (a) a.addEventListener('click', () => { (a as HTMLButtonElement).id = 'cur-go'; esegui('approva', d.postApprova); });
+      if (rj) rj.addEventListener('click', () => {
+        if (!confirm('Segnare la domanda come respinta?')) return;
+        (rj as HTMLButtonElement).id = 'cur-go'; esegui('respingi', d.postRespingi, '');
+      });
+    }
+
+    function renderEmailAzione(d: any) {
+      if (d.azione === 'approva') {
+        body.innerHTML = titolo(`Confermi l'approvazione di ${H(d.nome)}?`)
+          + testo('Verranno assegnati numero di tessera e QR, e partirà l\'email con la tessera digitale.')
+          + `<div style="margin-top:16px;"><button id="cur-go" style="${btnCss('background:#C8923E;color:#1E2E26;')}">Sì, approva e invia la tessera</button></div>`;
+        document.getElementById('cur-go')!.addEventListener('click', () => esegui('approva', d.post));
+      } else {
+        body.innerHTML = titolo(`Confermi il rifiuto della domanda di ${H(d.nome)}?`)
+          + `<label style="display:block;font-size:13px;color:#666;margin:8px 0 6px;">Motivo (facoltativo, resta interno)</label>`
+          + `<textarea id="cur-motivo" rows="3" maxlength="500" style="width:100%;box-sizing:border-box;border:1px solid #E5DFCF;border-radius:4px;padding:10px;font-family:inherit;font-size:14px;"></textarea>`
+          + `<div style="margin-top:14px;"><button id="cur-go" style="${btnCss('background:#fff;color:#a33;border:2px solid #d97a7a;')}">Sì, rifiuta la domanda</button></div>`;
+        document.getElementById('cur-go')!.addEventListener('click', () => {
+          const m = (document.getElementById('cur-motivo') as HTMLTextAreaElement | null)?.value ?? '';
+          esegui('respingi', d.post, m);
+        });
+      }
+    }
+
+    (async function peek() {
+      try {
+        const r = await fetch(peekUrl, { headers: { Accept: 'application/json' } });
+        const d = await r.json();
+        if (d.error === 'gia_gestito') {
+          body.innerHTML = titolo('Nessuna azione necessaria') + testo(`La domanda${d.nome ? ` di <strong>${H(d.nome)}</strong>` : ''} risulta già <strong>${H(d.stato || 'gestita')}</strong>${d.numero_tessera ? ` (tessera n. ${H(d.numero_tessera)})` : ''}.`);
+          return;
+        }
+        if (!d.ok) {
+          body.innerHTML = titolo('Link non valido o scaduto') + testo('I link valgono 7-30 giorni. Apri la mail più recente della domanda.');
+          return;
+        }
+        if (modo === 'vista') renderVista(d); else renderEmailAzione(d);
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Non riesco a caricare la scheda. Riprova tra poco.');
+      }
+    })();
+  })();
+</script>

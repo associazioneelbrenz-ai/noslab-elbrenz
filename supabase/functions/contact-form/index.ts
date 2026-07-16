@@ -435,7 +435,10 @@ serve(async (req) => {
       const t = await firmaToken(adminSecret, 'vista', domanda.id, exp)
       // Parametri nel PATH (non query string): un `=` seguito da due cifre
       // esadecimali verrebbe corrotto dall'encoding quoted-printable dell'email.
-      const url = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda/vista/${domanda.id}/${exp}/${t}`
+      // 16/7: link alla PAGINA Astro (non all'edge): l'edge serve HTML come
+      // text/plain → il browser scaricava un .txt. La pagina rende su elbrenz.eu
+      // e chiama l'edge in JSON (ramo /json/…). Token HMAC invariato nel path.
+      const url = `https://elbrenz.eu/scheda-domanda/vista/${domanda.id}/${exp}/${t}`
       // Azioni in un click (11/7): token dedicati NEL PATH, scadenza 7 giorni,
       // monouso per stato (la domanda gestita non si rigestisce). Il click
       // atterra su una pagina di CONFERMA con bottone: doppio step, zero
@@ -443,7 +446,7 @@ serve(async (req) => {
       const exp7 = Date.now() + 7 * 24 * 60 * 60 * 1000
       const tEA = await firmaToken(adminSecret, 'email-approva', domanda.id, exp7)
       const tER = await firmaToken(adminSecret, 'email-respingi', domanda.id, exp7)
-      const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda`
+      const base = `https://elbrenz.eu/scheda-domanda`
       const urlEA = `${base}/email-azione/approva/${domanda.id}/${exp7}/${tEA}`
       const urlER = `${base}/email-azione/respingi/${domanda.id}/${exp7}/${tER}`
       schedaHtml = `

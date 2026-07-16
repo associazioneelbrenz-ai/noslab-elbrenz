@@ -237,6 +237,101 @@ async function inviaEmail(to: string, subject: string, html: string, replyTo?: s
 
 // Estrae i parametri azione dal PATH: .../azione/{approva|rifiuta}/{id}/{exp}/{t}
 const AZIONE_RE = /\/azione\/(approva|rifiuta)\/([0-9a-fA-F-]{36})\/(\d+)\/([0-9a-f]+)\/?$/
+// Ramo JSON (16/7): .../json/azione/{approva|rifiuta}/{id}/{exp}/{t}
+const AZIONE_JSON_RE = /\/json\/azione\/(approva|rifiuta)\/([0-9a-fA-F-]{36})\/(\d+)\/([0-9a-f]+)\/?$/
+
+// Esecuzione condivisa (HTML + JSON) dell'azione su una proposta. Idempotente:
+// agisce SOLO se ancora 'proposta'. All'approvazione applica il geo dal form e
+// pubblica il logo staging→pubblico. Ritorna esito strutturato (niente HTML).
+type GeoInput = { hasCoord: boolean; lat?: number; lng?: number; mostra?: boolean }
+async function eseguiAzioneConvenzione(
+  supabase: ReturnType<typeof createClient>,
+  azione: 'approva' | 'rifiuta',
+  id: string,
+  geo: GeoInput,
+): Promise<{ modificata: boolean; logo: 'nessuno' | 'pubblicato' | 'fallito' }> {
+  const nuovoStato = azione === 'approva' ? 'attiva' : 'rifiutata'
+  const patch: Record<string, unknown> = { stato: nuovoStato, updated_at: new Date().toISOString() }
+  if (azione === 'approva') {
+    patch.approvata_il = new Date().toISOString()
+    if (geo.hasCoord && Number.isFinite(geo.lat) && Number.isFinite(geo.lng)) {
+      const { data: prev } = await supabase.from('convenzioni').select('lat, lng, geo_stato').eq('id', id).maybeSingle()
+      const cambiate = !prev || prev.lat == null || prev.lng == null
+        || Math.abs((prev.lat as number) - (geo.lat as number)) > 1e-7 || Math.abs((prev.lng as number) - (geo.lng as number)) > 1e-7
+      patch.lat = geo.lat
+      patch.lng = geo.lng
+      patch.geo_stato = cambiate ? 'manuale' : (prev?.geo_stato ?? 'manuale')
+      patch.mostra_in_mappa = !!geo.mostra
+    } else {
+      patch.mostra_in_mappa = false
+    }
+  }
+
+  const { data: updated } = await supabase.from('convenzioni')
+    .update(patch).eq('id', id).eq('stato', 'proposta').select('id, logo_staging_path').maybeSingle()
+  if (!updated) return { modificata: false, logo: 'nessuno' }
+
+  let logo: 'nessuno' | 'pubblicato' | 'fallito' = 'nessuno'
+  if (azione === 'approva' && updated.logo_staging_path) {
+    try {
+      const staging = updated.logo_staging_path as string
+      const ext = staging.split('.').pop() ?? 'png'
+      const { data: file, error: dlErr } = await supabase.storage.from(LOGO_STAGING_BUCKET).download(staging)
+      if (dlErr || !file) throw dlErr ?? new Error('download vuoto')
+      const pubPath = `convenzioni/loghi/proposta-${id}.${ext}`
+      const { error: upErr } = await supabase.storage.from(LOGO_PUBLIC_BUCKET)
+        .upload(pubPath, await file.arrayBuffer(), {
+          contentType: ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg', upsert: true,
+        })
+      if (upErr) throw upErr
+      await supabase.from('convenzioni').update({ logo_path: pubPath, logo_staging_path: null, updated_at: new Date().toISOString() }).eq('id', id)
+      await supabase.storage.from(LOGO_STAGING_BUCKET).remove([staging])
+      logo = 'pubblicato'
+    } catch (e) {
+      console.error('[convenzioni] pubblicazione logo fallita:', e)
+      logo = 'fallito'
+    }
+  }
+  return { modificata: true, logo }
+}
+
+// Ramo JSON consumato dalla pagina Astro /convenzioni-curatela.
+async function gestisciAzioneJson(req: Request, url: URL, cors: Record<string, string>): Promise<Response> {
+  const secret = Deno.env.get('ADMIN_ACTION_SECRET')
+  if (!secret) return jsonResponse({ ok: false, error: 'config' }, 200, cors)
+  const m = url.pathname.match(AZIONE_JSON_RE)
+  if (!m) return jsonResponse({ ok: false, error: 'bad_request' }, 200, cors)
+  const azione = m[1] as 'approva' | 'rifiuta'
+  const id = m[2]; const exp = parseInt(m[3], 10); const t = m[4]
+  if (!(await verificaToken(secret, `azione-${azione}`, id, exp, t))) return jsonResponse({ ok: false, error: 'token' }, 200, cors)
+
+  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+
+  if (req.method === 'GET') {
+    const { data } = await supabase.from('convenzioni')
+      .select('nome_attivita, categoria, localita, indirizzo, lat, lng, geo_stato, beneficio, stato').eq('id', id).maybeSingle()
+    if (!data) return jsonResponse({ ok: false, error: 'not_found' }, 200, cors)
+    return jsonResponse({ ok: true, azione, convenzione: data, gia_gestita: data.stato !== 'proposta' }, 200, cors)
+  }
+
+  // POST esegue
+  let geo: GeoInput = { hasCoord: false }
+  if (azione === 'approva') {
+    try {
+      const b = await req.json()
+      const lat = parseFloat(String(b?.lat ?? '')); const lng = parseFloat(String(b?.lng ?? ''))
+      if (Number.isFinite(lat) && Number.isFinite(lng)) geo = { hasCoord: true, lat, lng, mostra: !!b?.mostra_in_mappa }
+    } catch { /* body vuoto: approvazione senza tocco geo */ }
+  }
+  const res = await eseguiAzioneConvenzione(supabase, azione, id, geo)
+  if (!res.modificata) return jsonResponse({ ok: false, error: 'gia_gestito' }, 200, cors)
+  const notaLogo = res.logo === 'fallito' ? ' Il logo del proponente non è stato pubblicato (errore tecnico): la card usa l\'iniziale.'
+    : res.logo === 'pubblicato' ? ' Logo del proponente pubblicato.' : ''
+  return jsonResponse({
+    ok: true, azione, stato: azione === 'approva' ? 'attiva' : 'rifiutata',
+    message: azione === 'approva' ? `Convenzione approvata: ora è pubblica sul sito.${notaLogo}` : 'Proposta rifiutata e archiviata. Nessuna comunicazione automatica al proponente.',
+  }, 200, cors)
+}
 
 async function gestisciAzione(req: Request, url: URL): Promise<Response> {
   const secret = Deno.env.get('ADMIN_ACTION_SECRET')
@@ -302,67 +397,26 @@ async function gestisciAzione(req: Request, url: URL): Promise<Response> {
       <p class="meta">${azione === 'approva' ? 'Approvando, la convenzione diventa visibile sul sito.' : 'Rifiutando, la proposta resta archiviata e non viene pubblicata. Nessuna email automatica al proponente.'}</p>`)
   }
 
-  // POST: esegue l'azione (idempotente: solo se ancora 'proposta').
-  const nuovoStato = azione === 'approva' ? 'attiva' : 'rifiutata'
-  const patch: Record<string, unknown> = { stato: nuovoStato, updated_at: new Date().toISOString() }
+  // POST: esegue l'azione (logica condivisa col ramo JSON; idempotente).
+  let geo: GeoInput = { hasCoord: false }
   if (azione === 'approva') {
-    patch.approvata_il = new Date().toISOString()
     // Coordinate + mostra_in_mappa dal form della scheda (curatela): il
     // segretario conferma o corregge il geocoding prima che diventi pubblico.
     try {
       const fd = await req.formData()
       const latN = parseFloat(String(fd.get('lat') ?? '').trim())
       const lngN = parseFloat(String(fd.get('lng') ?? '').trim())
-      const mostra = fd.get('mostra_in_mappa') === '1'
-      if (Number.isFinite(latN) && Number.isFinite(lngN)) {
-        const { data: prev } = await supabase.from('convenzioni')
-          .select('lat, lng, geo_stato').eq('id', id).maybeSingle()
-        const cambiate = !prev || prev.lat == null || prev.lng == null
-          || Math.abs((prev.lat as number) - latN) > 1e-7 || Math.abs((prev.lng as number) - lngN) > 1e-7
-        patch.lat = latN
-        patch.lng = lngN
-        patch.geo_stato = cambiate ? 'manuale' : (prev?.geo_stato ?? 'manuale')
-        patch.mostra_in_mappa = mostra
-      } else {
-        patch.mostra_in_mappa = false // niente coordinate valide: fuori mappa
-      }
+      if (Number.isFinite(latN) && Number.isFinite(lngN)) geo = { hasCoord: true, lat: latN, lng: lngN, mostra: fd.get('mostra_in_mappa') === '1' }
     } catch { /* form senza body: approvazione senza tocco geo */ }
   }
 
-  const { data: updated } = await supabase.from('convenzioni')
-    .update(patch).eq('id', id).eq('stato', 'proposta').select('id, logo_staging_path').maybeSingle()
-
-  if (!updated) {
+  const res = await eseguiAzioneConvenzione(supabase, azione, id, geo)
+  if (!res.modificata) {
     return htmlResponse(`<h1>Nessuna modifica</h1><p>La proposta non era più in stato «proposta» (già approvata o rifiutata in precedenza).</p>`)
   }
-
-  // All'approvazione, il logo in staging PRIVATO diventa pubblico
-  // (best-effort: se fallisce, la convenzione resta attiva senza logo e
-  // la card usa il fallback con l'iniziale).
-  let notaLogo = ''
-  if (azione === 'approva' && updated.logo_staging_path) {
-    try {
-      const staging = updated.logo_staging_path as string
-      const ext = staging.split('.').pop() ?? 'png'
-      const { data: file, error: dlErr } = await supabase.storage
-        .from(LOGO_STAGING_BUCKET).download(staging)
-      if (dlErr || !file) throw dlErr ?? new Error('download vuoto')
-      const pubPath = `convenzioni/loghi/proposta-${id}.${ext}`
-      const { error: upErr } = await supabase.storage.from(LOGO_PUBLIC_BUCKET)
-        .upload(pubPath, await file.arrayBuffer(), {
-          contentType: ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg',
-          upsert: true,
-        })
-      if (upErr) throw upErr
-      await supabase.from('convenzioni')
-        .update({ logo_path: pubPath, logo_staging_path: null, updated_at: new Date().toISOString() }).eq('id', id)
-      await supabase.storage.from(LOGO_STAGING_BUCKET).remove([staging])
-      notaLogo = '<p>Logo del proponente pubblicato insieme alla convenzione.</p>'
-    } catch (e) {
-      console.error('[convenzioni] pubblicazione logo fallita:', e)
-      notaLogo = '<p style="color:#8a6215;">⚠ Il logo caricato dal proponente non è stato pubblicato (errore tecnico): la card usa l\'iniziale. Recuperabile dal bucket convenzioni-staging.</p>'
-    }
-  }
+  const notaLogo = res.logo === 'fallito'
+    ? '<p style="color:#8a6215;">⚠ Il logo caricato dal proponente non è stato pubblicato (errore tecnico): la card usa l\'iniziale. Recuperabile dal bucket convenzioni-staging.</p>'
+    : res.logo === 'pubblicato' ? '<p>Logo del proponente pubblicato insieme alla convenzione.</p>' : ''
 
   return htmlResponse(azione === 'approva'
     ? `<h1>Convenzione approvata ✓</h1><p>Ora è pubblica sul sito nella pagina Convenzioni.</p>${notaLogo}`
@@ -379,6 +433,12 @@ serve(async (req) => {
   const url = new URL(req.url)
 
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+
+  // Branch JSON (pagina Astro /convenzioni-curatela): .../json/azione/... — prima
+  // del branch HTML perché contiene /azione/. Ritorna JSON (CORS per elbrenz.eu).
+  if (url.pathname.includes('/json/azione/')) {
+    return await gestisciAzioneJson(req, url, cors)
+  }
 
   // Branch AZIONE (link dalla mail): path .../azione/...
   if (url.pathname.includes('/azione/')) {
@@ -510,7 +570,10 @@ serve(async (req) => {
 
   // Email al Direttivo con link HMAC (best-effort: la proposta è già salvata).
   const adminSecret = Deno.env.get('ADMIN_ACTION_SECRET')
-  const base = `${Deno.env.get('SUPABASE_URL')}/functions/v1/convenzioni-proposta`
+  // 16/7: link alla PAGINA Astro (non all'edge): l'edge serviva HTML come
+  // text/plain → download .txt. La pagina rende su elbrenz.eu e chiama l'edge in
+  // JSON (ramo /json/azione/…). Token HMAC invariato nel path.
+  const base = `https://elbrenz.eu/convenzioni-curatela`
   if (adminSecret) {
     const exp = Date.now() + TOKEN_TTL_MS
     const tA = await firmaToken(adminSecret, 'azione-approva', inserted.id, exp)

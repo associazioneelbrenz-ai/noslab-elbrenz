@@ -74,6 +74,97 @@ function erroreHtml(msg: string): Response {
     <p class="nota">Se il link è scaduto, apri la mail più recente della domanda o scrivi a info@elbrenz.eu.</p>`);
 }
 
+// Ramo JSON (16/7): la pagina Astro /scheda-domanda renderizza nativamente su
+// elbrenz.eu (la piattaforma Supabase forza text/plain sull'HTML delle edge →
+// download .txt). Qui rispondiamo JSON sui path con prefisso /json/…, lasciando
+// i rami HTML e i link email già in circolazione intatti (additività).
+function jsonR(obj: unknown, status = 200): Response {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, accept',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'X-Robots-Tag': 'noindex, nofollow',
+      'Cache-Control': 'no-store',
+    },
+  });
+}
+
+// Esecuzione azioni: logica di business condivisa tra il ramo HTML (POST) e il
+// ramo JSON. Ritorna dati strutturati; il chiamante formatta HTML o JSON.
+type EsitoApprova =
+  | { errore: string }
+  | { ok: false; gia: { stato: string; numero_tessera: number | null } }
+  | { ok: true; nome: string; email: string; numero: number; tessereLive: boolean; invio: 'inviata' | 'off' | 'no-secret' | 'fallita'; urlVerifica: string | null };
+
+async function eseguiApprova(supabase: any, secret: string, d: string): Promise<EsitoApprova> {
+  const seed = parseInt(Deno.env.get('TESSERA_SEED') ?? '', 10);
+  if (!Number.isFinite(seed)) return { errore: 'TESSERA_SEED non configurato: approvazione bloccata per proteggere la numerazione del Libro Soci.' };
+
+  const { data: maxRow } = await supabase.from('domande_tesseramento')
+    .select('numero_tessera').not('numero_tessera', 'is', null)
+    .order('numero_tessera', { ascending: false }).limit(1).maybeSingle();
+  const numero = Math.max(seed, (maxRow?.numero_tessera ?? 0) + 1);
+
+  const { data: agg } = await supabase.from('domande_tesseramento')
+    .update({
+      stato: 'approvata', numero_tessera: numero, scadenza: `${ANNO}-12-31`,
+      approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString(),
+    })
+    .eq('id', d).eq('stato', 'in_attesa')
+    .select('id, nome, email');
+
+  if (!agg || agg.length === 0) {
+    const { data: gia } = await supabase.from('domande_tesseramento').select('stato, numero_tessera').eq('id', d).maybeSingle();
+    return { ok: false, gia: { stato: gia?.stato ?? 'gestita', numero_tessera: gia?.numero_tessera ?? null } };
+  }
+  const socio = agg[0];
+
+  fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-bot`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '', 'X-Bot-Secret': Deno.env.get('BOT_ANDREAS_SECRET') ?? '' },
+    body: JSON.stringify({ text: `🎉 **Nuovo socio**\n${socio.nome} è ora socio/a (tessera n. ${numero}).` }),
+  }).catch(() => {});
+
+  const tessereLive = Deno.env.get('TESSERE_LIVE') === 'true';
+  let invio: 'inviata' | 'off' | 'no-secret' | 'fallita' = 'off';
+  let urlVerifica: string | null = null;
+  if (tessereLive) {
+    const sharedSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
+    if (!sharedSecret) { invio = 'no-secret'; }
+    else {
+      try {
+        const { urlVerifica: uv, qrUrl } = await ensureCodiceEQr(supabase, { id: d, numero_tessera: numero, anno: ANNO, codice_tessera: null }, secret);
+        urlVerifica = uv;
+        const tesseraHtml = tesseraEmailHtml({
+          nome: socio.nome, numero, anno: ANNO, qrUrl, urlVerifica: uv,
+          intro: `Benvenuto nella <em>nosa Sociazion</em>! La tua domanda è stata approvata dal Consiglio Direttivo: questa email vale come tessera digitale per l'anno ${ANNO}.`,
+        });
+        const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },
+          body: JSON.stringify({ to: socio.email, subject: `Benvenuto in El Brenz: tessera n. ${numero} (${ANNO})`, html: tesseraHtml, tags: [{ name: 'source', value: 'tessera' }] }),
+        });
+        if (resp.ok) {
+          await supabase.from('domande_tesseramento').update({ tessera_inviata: true, updated_at: new Date().toISOString() }).eq('id', d);
+          invio = 'inviata';
+        } else { invio = 'fallita'; }
+      } catch { invio = 'fallita'; }
+    }
+  }
+  return { ok: true, nome: socio.nome, email: socio.email, numero, tessereLive, invio, urlVerifica };
+}
+
+async function eseguiRespingi(supabase: any, d: string, motivo: string): Promise<{ fatto: boolean }> {
+  const { data: agg } = await supabase.from('domande_tesseramento')
+    .update({ stato: 'respinta', motivo_rifiuto: motivo || null, approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq('id', d).eq('stato', 'in_attesa')
+    .select('id');
+  return { fatto: !!(agg && agg.length > 0) };
+}
+
 Deno.serve(async (req: Request) => {
   const secret = Deno.env.get('ADMIN_ACTION_SECRET');
   if (!secret) {
@@ -81,6 +172,82 @@ Deno.serve(async (req: Request) => {
   }
 
   const url = new URL(req.url);
+
+  // ── RAMO JSON (/json/…) — consumato dalla pagina Astro /scheda-domanda ──────
+  // La pagina rende su elbrenz.eu (charset ok, niente download .txt) e chiama qui
+  // in JSON. Preflight CORS + peek (GET) + esecuzione (POST). Scope token identici
+  // ai rami HTML. Ritorna PRIMA del flusso HTML sottostante, che resta invariato.
+  if (url.pathname.includes('/json/')) {
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, accept',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      } });
+    }
+    const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const jVista = url.pathname.match(/\/json\/vista\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+    const jEmail = url.pathname.match(/\/json\/email-azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+    const jAz = url.pathname.match(/\/json\/azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+
+    // POST: esecuzione azione (stessa logica business dei rami HTML)
+    if (jAz && req.method === 'POST') {
+      const [, az, id, e, tok] = jAz;
+      if (!(await verificaToken(secret, `azione-${az}`, id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
+      if (az === 'respingi') {
+        let motivo = '';
+        try { const b = await req.json(); motivo = String(b?.motivo ?? '').trim().slice(0, 500); } catch { /* no body */ }
+        const { fatto } = await eseguiRespingi(sb, id, motivo);
+        return jsonR({ ok: true, azione: 'respingi', fatto, message: fatto ? 'Domanda segnata come respinta. Nessuna comunicazione automatica al richiedente.' : 'La domanda non era più in attesa (già gestita).' });
+      }
+      const r = await eseguiApprova(sb, secret, id);
+      if ('errore' in r) return jsonR({ ok: false, error: 'config', message: r.errore });
+      if (!r.ok) return jsonR({ ok: false, error: 'gia_gestito', stato: r.gia.stato, numero_tessera: r.gia.numero_tessera });
+      const message = r.invio === 'inviata' ? `Tessera n. ${r.numero} assegnata e inviata a ${r.email}.`
+        : r.invio === 'fallita' ? `Tessera n. ${r.numero} assegnata, ma l'invio email è fallito: riprovare o inviare a mano.`
+        : `Tessera n. ${r.numero} assegnata. Invio email tessera disattivato (TESSERE_LIVE spento).`;
+      return jsonR({ ok: true, azione: 'approva', stato: 'approvata', nome: r.nome, numero_tessera: r.numero, invio: r.invio, urlVerifica: r.urlVerifica, message });
+    }
+
+    // GET: peek scheda completa (scope 'vista') + token freschi per il POST
+    if (jVista && req.method === 'GET') {
+      const [, id, e, tok] = jVista;
+      if (!(await verificaToken(secret, 'vista', id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
+      const { data: dom } = await sb.from('domande_tesseramento').select('*').eq('id', id).maybeSingle();
+      if (!dom) return jsonR({ ok: false, error: 'not_found' });
+      const { data: pagamenti } = await sb.from('pagamenti_tesseramento')
+        .select('stato, metodo, importo, anomalia, created_at')
+        .or(`domanda_id.eq.${id},email.ilike.${dom.email}`).eq('tipo', 'quota')
+        .order('created_at', { ascending: false }).limit(3);
+      const expAz = Date.now() + TOKEN_TTL_MS;
+      const postApprova = { id, exp: expAz, t: await firmaToken(secret, 'azione-approva', id, expAz) };
+      const postRespingi = { id, exp: expAz, t: await firmaToken(secret, 'azione-respingi', id, expAz) };
+      return jsonR({
+        ok: true, tipo: 'vista',
+        domanda: {
+          nome: dom.nome, email: dom.email, stato: dom.stato, numero_tessera: dom.numero_tessera,
+          data_nascita: dom.data_nascita, comune_nascita: dom.comune_nascita, sesso: dom.sesso,
+          messaggio: dom.messaggio, created_at: dom.created_at, approvata_il: dom.approvata_il, approvata_da: dom.approvata_da,
+        },
+        pagamenti: pagamenti ?? [], tessereLive: Deno.env.get('TESSERE_LIVE') === 'true', postApprova, postRespingi,
+      });
+    }
+
+    // GET: conferma da bottone email (scope 'email-approva'/'email-respingi')
+    if (jEmail && req.method === 'GET') {
+      const [, az, id, e, tok] = jEmail;
+      if (!(await verificaToken(secret, `email-${az}`, id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
+      const { data: dom } = await sb.from('domande_tesseramento').select('nome, stato, numero_tessera').eq('id', id).maybeSingle();
+      if (!dom) return jsonR({ ok: false, error: 'not_found' });
+      if (dom.stato !== 'in_attesa') return jsonR({ ok: false, error: 'gia_gestito', stato: dom.stato, numero_tessera: dom.numero_tessera, nome: dom.nome });
+      const expAz = Date.now() + TOKEN_TTL_MS;
+      const post = { id, exp: expAz, t: await firmaToken(secret, `azione-${az}`, id, expAz) };
+      return jsonR({ ok: true, tipo: 'email-azione', azione: az, nome: dom.nome, post });
+    }
+
+    return jsonR({ ok: false, error: 'bad_request' });
+  }
+
   // Parametri sia nel PATH (nuovo, immune all'encoding quoted-printable delle
   // email: un `=` seguito da due cifre esadecimali viene corrotto) sia in
   // query string (retrocompatibile con i link già inviati).
@@ -162,117 +329,36 @@ Deno.serve(async (req: Request) => {
         const fd = await req.formData();
         motivo = String(fd.get('motivo') ?? '').trim().slice(0, 500);
       } catch { /* form senza body: nessun motivo */ }
-      const { data: agg } = await supabase.from('domande_tesseramento')
-        .update({ stato: 'respinta', motivo_rifiuto: motivo || null, approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString() })
-        .eq('id', d).eq('stato', 'in_attesa')
-        .select('id');
-      const fatto = agg && agg.length > 0;
+      const { fatto } = await eseguiRespingi(supabase, d, motivo);
       return pagina('Domanda respinta', `
         <p class="occhiello">El Brenz · Tesseramento</p>
         <h1>${fatto ? 'Domanda segnata come respinta' : 'Nessuna modifica'}</h1>
         <p>${fatto ? 'La domanda è stata respinta. Nessuna comunicazione automatica è stata inviata al richiedente.' : 'La domanda non era più in attesa (già approvata o respinta in precedenza).'}</p>`);
     }
 
-    // --- APPROVA: idempotente, un solo numero, un solo invio -----------------
-    const seed = parseInt(Deno.env.get('TESSERA_SEED') ?? '', 10);
-    if (!Number.isFinite(seed)) {
-      return erroreHtml('TESSERA_SEED non configurato: approvazione bloccata per proteggere la numerazione del Libro Soci.');
-    }
-
-    // numero = max(seed, max(numero_tessera)+1); UPDATE condizionato su
-    // stato='in_attesa' ⇒ il doppio click non rientra (0 righe aggiornate).
-    const { data: maxRow } = await supabase.from('domande_tesseramento')
-      .select('numero_tessera')
-      .not('numero_tessera', 'is', null)
-      .order('numero_tessera', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const numero = Math.max(seed, (maxRow?.numero_tessera ?? 0) + 1);
-
-    const { data: agg } = await supabase.from('domande_tesseramento')
-      .update({
-        stato: 'approvata',
-        numero_tessera: numero,
-        scadenza: `${ANNO}-12-31`,
-        approvata_da: 'via email-link segretario',
-        approvata_il: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', d).eq('stato', 'in_attesa')
-      .select('id, nome, email');
-
-    if (!agg || agg.length === 0) {
-      const { data: gia } = await supabase.from('domande_tesseramento')
-        .select('stato, numero_tessera').eq('id', d).maybeSingle();
+    // --- APPROVA: idempotente, un solo numero, un solo invio (logica condivisa)
+    const r = await eseguiApprova(supabase, secret, d);
+    if ('errore' in r) return erroreHtml(r.errore);
+    if (!r.ok) {
       return pagina('Già gestita', `
         <p class="occhiello">El Brenz · Tesseramento</p>
         <h1>Nessuna modifica</h1>
-        <p>La domanda risulta già <strong>${esc(gia?.stato ?? 'gestita')}</strong>${gia?.numero_tessera ? ` con tessera n. <strong>${gia.numero_tessera}</strong>` : ''}. Nessuna nuova tessera inviata, nessun numero bruciato.</p>`);
+        <p>La domanda risulta già <strong>${esc(r.gia.stato)}</strong>${r.gia.numero_tessera ? ` con tessera n. <strong>${r.gia.numero_tessera}</strong>` : ''}. Nessuna nuova tessera inviata, nessun numero bruciato.</p>`);
     }
 
-    const socio = agg[0];
-
-    // Notifica direttivo (14/7, fire-and-forget): nuovo socio approvato/tesserato.
-    // Non blocca il flusso di approvazione se fallisce.
-    fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-bot`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '', 'X-Bot-Secret': Deno.env.get('BOT_ANDREAS_SECRET') ?? '' },
-      body: JSON.stringify({ text: `🎉 **Nuovo socio**\n${socio.nome} è ora socio/a (tessera n. ${numero}).` }),
-    }).catch(() => {});
-
-    let linkTessera = '';
-    const tessereLive = Deno.env.get('TESSERE_LIVE') === 'true';
-    let esitoInvio = `<p class="nota">⚠ Invio email tessera DISATTIVATO (flag TESSERE_LIVE spento: Resend senza dominio autenticato). La tessera n. ${numero} è assegnata: inviala dopo l'attivazione.</p>`;
-
-    if (tessereLive) {
-      const sharedSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
-      if (sharedSecret) {
-        // AGGIORNATO 10/7 (autorizzazione puntuale): template allineato al
-        // design tessera QR (M5.5) — card scura, bandiera ladina, filigrana
-        // Aquila, QR di verifica. Rendering condiviso in _shared/tessera.ts
-        // (stesso di tessera-invio). La logica di approvazione è invariata.
-        try {
-          const { urlVerifica, qrUrl } = await ensureCodiceEQr(
-            supabase,
-            { id: d, numero_tessera: numero, anno: ANNO, codice_tessera: null },
-            secret,
-          );
-          linkTessera = `<p><a href="${urlVerifica}" style="color:#2d8659;font-weight:600;">Vedi la tessera pubblica di ${esc(socio.nome)} →</a></p>`;
-          const tesseraHtml = tesseraEmailHtml({
-            nome: socio.nome,
-            numero,
-            anno: ANNO,
-            qrUrl,
-            urlVerifica,
-            intro: `Benvenuto nella <em>nosa Sociazion</em>! La tua domanda è stata approvata dal Consiglio Direttivo: questa email vale come tessera digitale per l'anno ${ANNO}.`,
-          });
-          const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },
-            body: JSON.stringify({
-              to: socio.email,
-              subject: `Benvenuto in El Brenz: tessera n. ${numero} (${ANNO})`,
-              html: tesseraHtml,
-              tags: [{ name: 'source', value: 'tessera' }],
-            }),
-          });
-          if (resp.ok) {
-            await supabase.from('domande_tesseramento')
-              .update({ tessera_inviata: true, updated_at: new Date().toISOString() }).eq('id', d);
-            esitoInvio = `<p style="color:#2d8659;">✓ Tessera digitale inviata a <strong>${esc(socio.email)}</strong>.</p>`;
-          } else {
-            esitoInvio = `<p style="color:#a33;">⚠ Invio email tessera fallito (${resp.status}): riprovare o inviare manualmente.</p>`;
-          }
-        } catch {
-          esitoInvio = `<p style="color:#a33;">⚠ Invio email tessera fallito (rete): riprovare o inviare manualmente.</p>`;
-        }
-      }
-    }
+    const esitoInvio = r.invio === 'inviata'
+      ? `<p style="color:#2d8659;">✓ Tessera digitale inviata a <strong>${esc(r.email)}</strong>.</p>`
+      : r.invio === 'fallita'
+        ? `<p style="color:#a33;">⚠ Invio email tessera fallito: riprovare o inviare manualmente.</p>`
+        : `<p class="nota">⚠ Invio email tessera DISATTIVATO (flag TESSERE_LIVE spento: Resend senza dominio autenticato). La tessera n. ${r.numero} è assegnata: inviala dopo l'attivazione.</p>`;
+    const linkTessera = (r.invio === 'inviata' && r.urlVerifica)
+      ? `<p><a href="${r.urlVerifica}" style="color:#2d8659;font-weight:600;">Vedi la tessera pubblica di ${esc(r.nome)} →</a></p>`
+      : '';
 
     return pagina('Domanda approvata', `
       <p class="occhiello">El Brenz · Tesseramento</p>
       <h1>Domanda approvata ✓</h1>
-      <p><strong>${esc(socio.nome)}</strong> è socio ${ANNO} con tessera <strong>n. ${numero}</strong> (scadenza 31/12/${ANNO}).</p>
+      <p><strong>${esc(r.nome)}</strong> è socio ${ANNO} con tessera <strong>n. ${r.numero}</strong> (scadenza 31/12/${ANNO}).</p>
       ${esitoInvio}
       ${linkTessera}
       <p class="nota">Approvazione registrata: via email-link segretario, ${new Date().toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}. Ricordare la ratifica nel prossimo verbale del CD.</p>`);

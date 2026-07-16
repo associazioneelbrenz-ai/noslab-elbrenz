@@ -115,7 +115,7 @@ async function notificaCompletato(
       const t = await firmaToken(adminSecret, 'vista', domandaId, exp);
       // Parametri nel PATH (non query string): evita la corruzione da encoding
       // quoted-printable delle email (`=` + due cifre esadecimali → byte).
-      aggancio += `<p style="margin-top:14px;"><a href="${Deno.env.get('SUPABASE_URL')}/functions/v1/scheda-domanda/vista/${domandaId}/${exp}/${t}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:10px 22px;text-decoration:none;font-weight:600;font-size:13px;border-radius:4px;">Apri scheda domanda →</a></p>`;
+      aggancio += `<p style="margin-top:14px;"><a href="https://elbrenz.eu/scheda-domanda/vista/${domandaId}/${exp}/${t}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:10px 22px;text-decoration:none;font-weight:600;font-size:13px;border-radius:4px;">Apri scheda domanda →</a></p>`;
     }
   }
   const html = `<!DOCTYPE html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;">

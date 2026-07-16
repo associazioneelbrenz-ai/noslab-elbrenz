@@ -1,0 +1,123 @@
+---
+/**
+ * /convenzioni-curatela/azione/{approva|rifiuta}/{id}/{exp}/{token} — curatela
+ * delle proposte di convenzione per il Direttivo. Rende l'HTML su elbrenz.eu
+ * (la piattaforma Supabase forza text/plain sull'HTML delle edge → download .txt)
+ * e chiama l'edge convenzioni-proposta in JSON (ramo /json/azione/…). Il token
+ * HMAC email vale sia per il peek sia per l'esecuzione. SSR, noindex. Gemella di
+ * /guardiani-curatela.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+// seg atteso: azione/{approva|rifiuta}/{id}/{exp}/{token}
+const azione = seg[0] === 'azione' ? seg[1] : '';
+const _id = seg[2], _exp = seg[3], _token = seg[4];
+const valido = (azione === 'approva' || azione === 'rifiuta')
+  && /^[0-9a-f-]{36}$/i.test(_id ?? '') && /^\d+$/.test(_exp ?? '') && /^[0-9a-f]+$/i.test(_token ?? '');
+const EDGE = valido ? `${SB_URL}/functions/v1/convenzioni-proposta/json/azione/${azione}/${_id}/${_exp}/${_token}` : '';
+---
+
+<Layout title="Curatela · Convenzioni" description="Curatela delle proposte di convenzione, riservata al Direttivo El Brenz." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen flex items-start justify-center px-4 py-12">
+    <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9" style="font-family: 'Inter', sans-serif;"
+         data-edge={EDGE} data-azione={azione} id="cur-card">
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · Convenzioni · curatela</p>
+      <div id="cur-body"><p class="text-[#1E2E26]/70 m-0">Carico…</p></div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const card = document.getElementById('cur-card')!;
+    const body = document.getElementById('cur-body')!;
+    const edge = card.getAttribute('data-edge') || '';
+    const azione = card.getAttribute('data-azione') || '';
+
+    const H = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const titolo = (t: string) => `<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 8px;">${t}</h1>`;
+    const testo = (t: string) => `<p style="color:#1E2E26;opacity:.85;margin:0 0 8px;line-height:1.6;">${t}</p>`;
+    const btnCss = (extra: string) => `padding:12px 26px;border-radius:4px;border:0;font-weight:600;font-size:14px;cursor:pointer;${extra}`;
+
+    if (!edge) { body.innerHTML = titolo('Link non valido') + testo('Il link di curatela non è valido. Apri la mail più recente.'); return; }
+
+    async function esegui(payload: any) {
+      const go = document.getElementById('cur-go') as HTMLButtonElement | null;
+      if (go) { go.disabled = true; go.textContent = 'Attendi…'; }
+      try {
+        const r = await fetch(edge, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload || {}) });
+        const d = await r.json();
+        if (d.ok) {
+          body.innerHTML = titolo(azione === 'approva' ? 'Convenzione approvata ✓' : 'Proposta rifiutata') + testo(H(d.message || 'Fatto.'));
+        } else if (d.error === 'gia_gestito') {
+          body.innerHTML = titolo('Nessuna modifica') + testo('La proposta non era più in stato «proposta» (già gestita).');
+        } else {
+          body.innerHTML = titolo('Non riuscito') + testo('Riprova aprendo di nuovo il link dalla mail.');
+        }
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Errore di connessione. Riprova tra poco.');
+      }
+    }
+
+    function render(c: any, giaGestita: boolean) {
+      const nota = giaGestita ? `<p style="color:#8a6215;font-size:13px;margin:6px 0 0;">⚠ La proposta è già in stato «${H(c.stato)}»: l'azione non avrà effetto.</p>` : '';
+      const dl = `<dl style="margin:14px 0;">
+        <dt style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8a6215;margin-top:10px;">Attività</dt><dd style="margin:2px 0 0;">${H(c.nome_attivita)}</dd>
+        <dt style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8a6215;margin-top:10px;">Categoria</dt><dd style="margin:2px 0 0;">${H(c.categoria)}</dd>
+        <dt style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8a6215;margin-top:10px;">Località</dt><dd style="margin:2px 0 0;">${H(c.localita || '—')}</dd>
+        <dt style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8a6215;margin-top:10px;">Beneficio</dt><dd style="margin:2px 0 0;">${H(c.beneficio)}</dd>
+        ${azione === 'approva' ? `<dt style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:#8a6215;margin-top:10px;">Indirizzo</dt><dd style="margin:2px 0 0;">${H(c.indirizzo || '—')}</dd>` : ''}
+      </dl>`;
+
+      let geoForm = '';
+      if (azione === 'approva') {
+        const hasCoord = c.lat != null && c.lng != null;
+        const gmaps = hasCoord ? `https://www.google.com/maps?q=${c.lat},${c.lng}` : '';
+        const avviso = c.geo_stato === 'non_trovato'
+          ? '⚠ Geocodifica non riuscita: inserisci le coordinate a mano per mostrarla in mappa.'
+          : (c.indirizzo ? 'Coordinate proposte dall\'indirizzo: verifica e correggi se serve.' : 'Nessun indirizzo: la convenzione non comparirà in mappa (puoi inserire le coordinate a mano).');
+        geoForm = `<div style="margin:12px 0;padding:12px;background:#FDF9F0;border-left:3px solid #C8923E;">
+          <p style="font-size:13px;color:#666;margin:0 0 8px;">${avviso}</p>
+          <label style="font-size:13px;color:#666;">Lat <input id="cur-lat" type="text" value="${hasCoord ? H(c.lat) : ''}" style="width:130px;padding:6px;border:1px solid #E5DFCF;border-radius:4px;"/></label>
+          <label style="font-size:13px;color:#666;margin-left:8px;">Lng <input id="cur-lng" type="text" value="${hasCoord ? H(c.lng) : ''}" style="width:130px;padding:6px;border:1px solid #E5DFCF;border-radius:4px;"/></label>
+          ${gmaps ? `<p style="margin:8px 0 0;"><a href="${gmaps}" target="_blank" rel="noopener" style="color:#8a6215;font-size:13px;">Verifica su Google Maps ↗</a></p>` : ''}
+          <label style="display:block;margin-top:10px;font-size:14px;color:#1E2E26;"><input id="cur-mostra" type="checkbox" ${c.geo_stato === 'auto' ? 'checked' : ''}/> Mostra questa convenzione sulla mappa pubblica</label>
+        </div>`;
+      }
+
+      body.innerHTML = titolo(`Confermi di ${azione === 'approva' ? 'APPROVARE' : 'RIFIUTARE'} questa proposta?`)
+        + dl + nota + geoForm
+        + `<div style="margin-top:16px;"><button id="cur-go" style="${btnCss(azione === 'approva' ? 'background:#2d8659;color:#fff;' : 'background:#b23b3b;color:#fff;')}">${azione === 'approva' ? 'Sì, approva e pubblica' : 'Sì, rifiuta'}</button></div>`
+        + testo(azione === 'approva' ? '<span style="font-size:13px;color:#666;">Approvando, la convenzione diventa visibile sul sito.</span>' : '<span style="font-size:13px;color:#666;">Rifiutando, la proposta resta archiviata. Nessuna email automatica al proponente.</span>');
+
+      document.getElementById('cur-go')!.addEventListener('click', () => {
+        if (azione === 'approva') {
+          const lat = (document.getElementById('cur-lat') as HTMLInputElement)?.value ?? '';
+          const lng = (document.getElementById('cur-lng') as HTMLInputElement)?.value ?? '';
+          const mostra = (document.getElementById('cur-mostra') as HTMLInputElement)?.checked ?? false;
+          esegui({ lat, lng, mostra_in_mappa: mostra });
+        } else {
+          esegui({});
+        }
+      });
+    }
+
+    (async function peek() {
+      try {
+        const r = await fetch(edge, { headers: { Accept: 'application/json' } });
+        const d = await r.json();
+        if (!d.ok) {
+          body.innerHTML = titolo('Link non valido o scaduto') + testo('I link di curatela valgono 30 giorni. Apri la mail più recente.');
+          return;
+        }
+        render(d.convenzione, d.gia_gestita);
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Non riesco a caricare la proposta. Riprova tra poco.');
+      }
+    })();
+  })();
+</script>
