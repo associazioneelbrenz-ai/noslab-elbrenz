@@ -19,6 +19,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { paypalAccessToken, paypalApiBase } from '../_shared/paypal.ts';
 import { firmaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
 import { grazieIntegrazioneHtml, avvisoCondivisa } from '../_shared/integrazione.ts';
+import { notificaDirettivo } from '../_shared/notificaDirettivo.ts';
 
 const STATI: Record<string, string> = {
   'PAYMENT.CAPTURE.COMPLETED': 'completato',
@@ -142,6 +143,20 @@ async function notificaCompletato(
         .update({ notificato: true, updated_at: new Date().toISOString() })
         .eq('id', riga.id);
       console.log('[paypal-webhook] notifica inviata per', riga.id);
+
+      // Notifica Telegram al direttivo (16/7): best-effort, gated dalla stessa
+      // idempotenza (dentro il blocco `notificato:true`) → una sola volta per
+      // pagamento. Tipo → toggle in telegram_notifica. PII minima: nome+importo.
+      const tipoNotifica = riga.tipo === 'integrazione' ? 'integrazione_quota'
+        : riga.tipo === 'donazione' ? 'donazione'
+        : 'pagamento_quota';
+      notificaDirettivo(supabase, tipoNotifica, { nome: chi, importo: riga.importo }).catch(() => {});
+      // Alert al direttivo se una quota resta orfana (né agganciata né creabile).
+      if (riga.tipo === 'quota' && !domandaId) {
+        notificaDirettivo(supabase, 'alert_anomalia', {
+          dettaglio: `Pagamento quota orfano (${riga.importo} € da ${chi}): nessuna domanda agganciata o creata, verificare.`,
+        }).catch(() => {});
+      }
 
       // Ringraziamento al socio per l'INTEGRAZIONE completata (11/7): dentro
       // il guard `notificato` (idempotente sui replay). Link alla tessera

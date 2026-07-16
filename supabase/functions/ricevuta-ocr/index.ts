@@ -17,6 +17,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { buildCorsHeaders, isOriginAllowed, jsonResponse } from '../_shared/paypal.ts';
+import { notificaDirettivo } from '../_shared/notificaDirettivo.ts';
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 const MIME_OK: Record<string, string> = {
@@ -210,6 +211,12 @@ Deno.serve(async (req: Request) => {
     console.error('[ricevuta-ocr] insert fallita:', dbErr);
     return jsonResponse({ error: 'Errore interno, riprova più tardi.' }, 500, cors);
   }
+
+  // Notifica Telegram al direttivo (16/7): ricevuta bonifico caricata, da
+  // verificare. Best-effort, non blocca la risposta al socio. PII minima.
+  notificaDirettivo(supabase, 'ricevuta_bonifico', {
+    nome, importo: estratto?.importo ?? null, anomalia,
+  }).catch(() => {});
 
   return jsonResponse(
     { success: true, message: 'Ricevuta caricata! La verificheremo e riceverai conferma via email.' },

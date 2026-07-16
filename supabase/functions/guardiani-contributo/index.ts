@@ -15,6 +15,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { firmaToken, verificaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
 import { INFORMATIVA_VERSIONE } from '../_shared/consenso.ts';
+import { notificaDirettivo } from '../_shared/notificaDirettivo.ts';
 
 const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app', 'https://elbrenz.eu', 'https://www.elbrenz.eu',
@@ -215,6 +216,12 @@ Deno.serve(async (req: Request) => {
       stato: 'in_revisione', contributore_id: contrib.id, sorgente_utm: utm,
     }).select('id').single();
   if (errL || !lemma) { console.error('[guardiani] insert lemma:', errL); return json({ error: 'Errore interno, riprova.' }, 500, c); }
+
+  // Notifica Telegram al direttivo (16/7): nuovo lemma proposto, da validare.
+  // Best-effort, non blocca il flusso. PII minima (lemma + variante, no email).
+  notificaDirettivo(supabase, 'guardiani_lemma', {
+    lemma: termine, variante: VARIANTE_LABEL[variante] ?? variante,
+  }).catch(() => {});
 
   // email al curatore con link HMAC valida/rifiuta (best-effort)
   if (adminSecret) {
