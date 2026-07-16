@@ -114,22 +114,39 @@ async function risolviRuolo(
   return { userId: link.user_id, nome: top.nome, livello: top.livello };
 }
 
-// Gate dei comandi di gestione: SOLO chat privata + ruolo admin (livello>=50,
-// assegnato da Cristian). In caso di rifiuto invia il messaggio e ritorna false.
-// Il rifiuto è generico: non rivela l'esistenza dei comandi a chi non è admin.
+// Gate dei comandi di gestione: ammessi in chat privata OPPURE nella "Sala
+// comando" (il gruppo direttivo registrato in telegram_config.direttivo_chat_id).
+// Gate SEMPRE sul MITTENTE: risponde solo se il ruolo El Brenz ha livello>=50.
+// Ogni altro gruppo/canale → silenzio totale (il bot non spamma gruppi terzi né
+// si rivela). Non-admin: rifiuto generico in privato, muto nel gruppo (no spam).
+// 16/7: esteso alla Sala comando (Fase 1). NB: i comandi Fase 2 (dati sensibili)
+// resteranno DM-only e NON useranno questo gate esteso.
 async function gateAdmin(
   supabase: any,
   token: string,
   message: any,
   chatId: number | string,
 ): Promise<boolean> {
-  if (message?.chat?.type !== 'private') {
-    await sendMessage(token, chatId, 'Questo comando si usa in <b>chat privata</b> con me, non nel gruppo.');
-    return false;
+  const tipo = message?.chat?.type;
+  const inPrivato = tipo === 'private';
+
+  // È la Sala comando (gruppo direttivo registrato in telegram_config)?
+  let inSalaComando = false;
+  if (tipo === 'group' || tipo === 'supergroup') {
+    const { data } = await supabase.from('telegram_config')
+      .select('valore').eq('chiave', 'direttivo_chat_id').maybeSingle();
+    inSalaComando = !!data?.valore && String(data.valore) === String(chatId);
+    if (!inSalaComando) return false; // altro gruppo → silenzio totale
   }
+  if (!inPrivato && !inSalaComando) return false; // canali/altro → silenzio
+
+  // Gate sul MITTENTE, sempre.
   const r = await risolviRuolo(supabase, message?.from?.id);
   if (!r || r.livello < 50) {
-    await sendMessage(token, chatId, 'Non ti riconosco come <b>amministratore</b> di El Brenz. Se dovresti esserlo, collega il tuo account dall\'area soci del sito.');
+    if (inPrivato) {
+      await sendMessage(token, chatId, 'Non ti riconosco come <b>amministratore</b> di El Brenz. Se dovresti esserlo, collega il tuo account dall\'area soci del sito.');
+    }
+    // nella Sala comando: nessun messaggio (niente spam nel gruppo)
     return false;
   }
   return true;
