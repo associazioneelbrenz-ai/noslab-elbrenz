@@ -1,0 +1,118 @@
+---
+/**
+ * /non-e-sole-grande-guerra — sezione autonoma «Non e Sole Grande Guerra».
+ * Riusa l'infrastruttura Custodi (custodi_memoria) tramite sezione='grande_guerra'.
+ * SSR: legge la vista pubblica v_custodi_memoria (visibile=true) filtrata per
+ * sezione. Immagine d'apertura con didascalia/crediti d'archivio (obbligatoria).
+ * Referente: Michele Corradini · Supervisione: Cristian Bresadola.
+ */
+import Layout from '../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+const TITOLO = 'Non e Sole Grande Guerra - Erster Weltkrieg Rayon II - storia e cultura';
+const IMG = '/img/home/grande-guerra-card.webp';
+const IMG_ALT = 'Soldati in divisa austro-ungarica salutano dai vagoni di un treno affollato mentre la folla li accompagna, stazione ferroviaria, 1914.';
+const DIDASCALIA = 'Partenza per il fronte della Galizia, 1914. Foto d’epoca, Tiroler Landesarchiv (Landesarchiv Innsbruck). Elaborazione digitale di Michele Corradini.';
+
+type Riga = {
+  nome_pubblico: string; paese: string | null; descrizione_contributo: string;
+  anno: number; anonimo: boolean; valle: string | null; epoca: string | null; tipo_materiale: string | null;
+};
+let contributi: Riga[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('v_custodi_memoria').select('*')
+    .eq('sezione', 'grande_guerra')
+    .order('anno', { ascending: false }).order('nome_pubblico');
+  contributi = (data as Riga[]) ?? [];
+} catch (e) {
+  console.error('[grande-guerra] lettura vista fallita:', e);
+}
+
+const VALLE: Record<string, string> = {
+  val_di_non: 'Val di Non', val_di_sole: 'Val di Sole', val_di_rabbi: 'Val di Rabbi',
+  val_di_pejo: 'Val di Pejo', piu_valli: 'Più valli',
+};
+const EPOCA: Record<string, string> = {
+  pre_ottocento: 'Prima dell’Ottocento', ottocento: 'Ottocento',
+  tirolo_asburgico: 'Tirolo asburgico (fino al 1918)', tra_le_due_guerre: 'Tra le due guerre',
+  novecento: 'Novecento', contemporaneo: 'Contemporaneo',
+};
+const TIPO: Record<string, string> = {
+  fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto', cartolina: 'Cartolina',
+  audio: 'Registrazione audio', racconto_orale: 'Racconto orale', video: 'Video',
+};
+---
+
+<Layout title={`${TITOLO} · El Brenz`} description="La Grande Guerra vissuta nelle Valli del Noce: soldati trentini nell'esercito austro-ungarico, il fronte della Galizia dal 1914, i profughi, le famiglie. Sezione a cura di Michele Corradini." ogImage="/og/og-grande-guerra.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3" style="font-family: 'Inter', sans-serif;">Una sezione di El Brenz</p>
+      <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">{TITOLO}</h1>
+
+      <figure class="m-0 mb-8">
+        <img src={IMG} alt={IMG_ALT} width="1648" height="927" class="w-full h-auto rounded-md" loading="eager" decoding="async" />
+        <figcaption class="text-[12px] text-[#1E2E26]/60 mt-2 leading-relaxed" style="font-family: 'Inter', sans-serif;">{DIDASCALIA}</figcaption>
+      </figure>
+
+      <div class="prose-eb text-[#1E2E26]/85 leading-relaxed space-y-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+        <p>
+          Nelle nostre valli la Grande Guerra non fu un fronte lontano: fu la partenza dei nostri uomini.
+          I trentini erano sudditi dell'Impero austro-ungarico e, dal 1914, migliaia di loro furono
+          chiamati alle armi e mandati sul fronte orientale, in <em>Galizia</em>, contro l'esercito russo.
+        </p>
+        <p>
+          Dal 1915, con l'ingresso dell'Italia nel conflitto, il confine tagliò in due la nosa terra:
+          famiglie divise, paesi evacuati, i profughi lontani da casa per anni. È una storia di lutti e
+          di ritorni, di lettere e di fotografie conservate nei cassetti: la memoria che questa sezione
+          raccoglie e custodisce.
+        </p>
+        <p class="text-[13px] text-[#1E2E26]/55 italic">
+          (Testo introduttivo provvisorio: la versione definitiva è in preparazione.)
+        </p>
+      </div>
+
+      <div class="mt-8 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5" style="font-family: 'Inter', sans-serif;">
+        <p class="m-0 text-sm text-[#1E2E26]/80"><strong>Referente</strong>: Michele Corradini · <strong>Supervisione</strong>: Cristian Bresadola</p>
+      </div>
+
+      <section class="mt-10">
+        <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">La collezione</h2>
+        {contributi.length === 0 ? (
+          <div class="text-center py-6">
+            <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+              Questa collezione nasce ora. Una fotografia, una cartolina dal fronte, una lettera,
+              il racconto di un nonno: ogni testimonianza accende un pezzo della nosa storia.
+            </p>
+            <a href="/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors" style="font-family: 'Inter', sans-serif;">
+              Porta la tua testimonianza
+            </a>
+          </div>
+        ) : (
+          <ul class="list-none p-0 m-0 space-y-4">
+            {contributi.map((c) => (
+              <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span class="text-xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{c.anonimo ? 'Anonimo' : c.nome_pubblico}</span>
+                {c.paese && <span class="text-[11px] tracking-[0.14em] uppercase text-[#C8923E]" style="font-family: 'Inter', sans-serif;">{c.paese}</span>}
+                <span class="text-[11px] tracking-[0.14em] uppercase text-[#1E2E26]/45" style="font-family: 'Inter', sans-serif;">{c.anno}</span>
+                <span class="text-[#1E2E26]/70 text-sm w-full md:w-auto" style="font-family: 'Source Serif 4', Georgia, serif;">{c.descrizione_contributo}</span>
+                {(c.valle || c.epoca || c.tipo_materiale) && (
+                  <span class="w-full flex flex-wrap gap-1.5 mt-0.5">
+                    {c.valle && VALLE[c.valle] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#C8923E]/40 text-[#8a6215] px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{VALLE[c.valle]}</span>}
+                    {c.epoca && EPOCA[c.epoca] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{EPOCA[c.epoca]}</span>}
+                    {c.tipo_materiale && TIPO[c.tipo_materiale] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{TIPO[c.tipo_materiale]}</span>}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </div>
+  </main>
+</Layout>

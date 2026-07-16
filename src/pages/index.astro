@@ -720,6 +720,34 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
     </div>
   </section>
 
+  {/* AGGIUNTA 16/7 — sezione «Non e Sole Grande Guerra»: card con foto d'epoca
+      (Tiroler Landesarchiv, elaborazione M. Corradini). Stesso pattern immagine
+      delle altre sezioni home. Additiva. */}
+  <section class="bg-[#F8F1E4] py-14">
+    <div class="max-w-2xl mx-auto px-6">
+      <div class="bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 hover:border-[#C8923E] transition-colors overflow-hidden">
+        <img
+          src="/img/home/grande-guerra-card.webp"
+          alt="Soldati in divisa austro-ungarica salutano dai vagoni di un treno affollato mentre la folla li accompagna, stazione ferroviaria, 1914."
+          class="w-full h-auto object-cover"
+          width="1648" height="927"
+          loading="lazy"
+          decoding="async"
+        />
+        <div class="py-10 px-8 md:py-12 md:px-12 text-center">
+          <p class="text-[10px] tracking-[0.18em] uppercase text-[#8a6215] font-semibold m-0 mb-2" style="font-family: 'Inter', sans-serif;">Una sezione di El Brenz</p>
+          <h2 class="text-2xl md:text-[26px] leading-tight m-0 mb-3 text-[#1E2E26]" style="font-family: 'Playfair Display', serif; font-weight: 500;">Non e Sole Grande Guerra</h2>
+          <p class="text-base text-[#1E2E26]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+            La Grande Guerra vissuta nelle <em>nostre valli</em>: i soldati trentini nell'esercito
+            austro-ungarico, il fronte della Galizia dal 1914, i profughi, le famiglie. Foto, cartoline
+            e storie da custodire.
+          </p>
+          <a href="/non-e-sole-grande-guerra" class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">Entra nella sezione</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
   {/* MAPPA (11/7, richiesta Cristian): banda larga con l'ortofoto PAT reale
       delle Valli del Noce e i pin dei luoghi pubblicati; porta a /mappa.
       Immagine statica generata dal WMS (CC BY), niente script. */}

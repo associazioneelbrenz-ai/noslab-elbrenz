@@ -42,6 +42,7 @@ let custodi: Custode[] = [];
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
   const { data } = await sb.from('v_custodi_memoria').select('*')
+    .eq('sezione', 'custodi')  // la Grande Guerra è una sezione a sé (/non-e-sole-grande-guerra)
     .order('categoria_ordine', { ascending: true, nullsFirst: false })
     .order('anno', { ascending: false })
     .order('nome_pubblico');

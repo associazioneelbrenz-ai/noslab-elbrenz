@@ -30,7 +30,8 @@ alter table public.custodi_memoria
 -- 3) Seed categorie. titolo_it = canonico; titolo_lenga = BOZZA (validare in Commissione).
 insert into public.custodi_categoria (slug, titolo_it, titolo_lenga, ordine) values
  ('terra-e-stagioni',   'La terra e le stagioni',   'La tèra e le stagión',     10),
- ('grande-guerra',      'La Grande Guerra',         'La Grant Gèra',            20),
+ -- 'grande-guerra' rimossa 16/7: elevata a SEZIONE autonoma (vedi migration
+ --  20260716174209_grande_guerra_sezione + pagina /non-e-sole-grande-guerra).
  ('partire-e-restare',  'Partire e restare',        'Partìr e restàr',          30),
  ('mani-e-mestieri',    'Mani e mestieri',          'Man e mistèri',            40),
  ('fede-e-devozione',   'Fede e devozione',         'Fè e dovozion',            50),

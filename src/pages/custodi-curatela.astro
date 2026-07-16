@@ -20,9 +20,10 @@ const EPOCA: Record<string, string> = {
   novecento: 'Novecento', contemporaneo: 'Contemporaneo',
 };
 const TIPO: Record<string, string> = {
-  fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto',
+  fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto', cartolina: 'Cartolina',
   audio: 'Registrazione audio', racconto_orale: 'Racconto orale', video: 'Video',
 };
+const SEZIONE: Record<string, string> = { custodi: 'Custodi della Memoria', grande_guerra: 'Non e Sole Grande Guerra' };
 const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
 ---
 
@@ -68,7 +69,15 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <h2 class="text-xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif;">Schede</h2>
           <button type="button" id="cu-nuovo" class="bg-[#C8923E] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold hover:bg-[#D9A94E] transition-colors">+ Nuova scheda</button>
         </div>
-        <p class="text-[13px] text-[#1E2E26]/55 m-0 mb-3">Una scheda diventa pubblica solo quando la spunti come <strong>visibile</strong>. Categoria e filtri si impostano qui.</p>
+        <p class="text-[13px] text-[#1E2E26]/55 m-0 mb-3">Una scheda diventa pubblica solo quando la spunti come <strong>visibile</strong>. Categoria, sezione e filtri si impostano qui.</p>
+        <div class="mb-3">
+          <label class="text-[13px] text-[#1E2E26]/70 mr-2" for="cu-filtro-sezione">Sezione:</label>
+          <select id="cu-filtro-sezione" class="border-2 border-[#E5DFCF] bg-white px-3 py-1.5 text-sm text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]">
+            <option value="">Tutte</option>
+            <option value="custodi">Custodi della Memoria</option>
+            <option value="grande_guerra">Non e Sole Grande Guerra</option>
+          </select>
+        </div>
         <div id="cu-lista" class="space-y-3"></div>
 
         {/* FORM */}
@@ -88,6 +97,12 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
             <div>
               <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-descr">Contributo <span class="text-[#1E2E26]/45">(cosa ha affidato)</span></label>
               <textarea class={inputCls} id="cu-f-descr" rows="2" placeholder="ha affidato fotografie del fronte…"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-sezione">Sezione</label>
+              <select class={inputCls} id="cu-f-sezione">
+                {Object.entries(SEZIONE).map(([v, l]) => (<option value={v}>{l}</option>))}
+              </select>
             </div>
             <div class="grid sm:grid-cols-2 gap-4">
               <div>
@@ -151,9 +166,10 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     novecento: 'Novecento', contemporaneo: 'Contemporaneo',
   };
   const TIPO: Record<string, string> = {
-    fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto',
+    fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto', cartolina: 'Cartolina',
     audio: 'Audio', racconto_orale: 'Racconto orale', video: 'Video',
   };
+  const SEZIONE: Record<string, string> = { custodi: 'Custodi della Memoria', grande_guerra: 'Non e Sole Grande Guerra' };
   const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const $ = (id: string) => document.getElementById(id);
   const show = (id: string) => $(id)?.classList.remove('hidden');
@@ -231,17 +247,22 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       .select('*').order('created_at', { ascending: false });
     const box = $('cu-lista')!;
     if (error) { box.innerHTML = `<p class="text-[#a33] text-sm">Errore di lettura: ${esc(error.message)}</p>`; return; }
-    const righe = (data as any[]) ?? [];
-    if (righe.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessuna scheda. Creane una nuova.</p>'; return; }
+    const filtro = (($('cu-filtro-sezione') as HTMLSelectElement)?.value) || '';
+    const tutte = (data as any[]) ?? [];
+    const righe = filtro ? tutte.filter((r) => (r.sezione ?? 'custodi') === filtro) : tutte;
+    if (righe.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessuna scheda in questa sezione. Creane una nuova.</p>'; return; }
     box.innerHTML = righe.map((r) => {
       const vis = r.visibile
         ? '<span style="background:#2d86591a;color:#2d8659;padding:2px 10px;border-radius:999px;font-size:12px;">Pubblico</span>'
         : '<span style="background:#6b5a3a1a;color:#6b5a3a;padding:2px 10px;border-radius:999px;font-size:12px;">Nascosto</span>';
       const nome = r.anonimo ? 'Anonimo' : esc(r.nome_pubblico);
+      const sez = (r.sezione ?? 'custodi') === 'grande_guerra'
+        ? '<span style="background:#8a62151a;color:#8a6215;padding:1px 8px;border-radius:999px;font-size:11px;">Grande Guerra</span> '
+        : '';
       return `<div class="bg-white border border-[#E5DFCF] rounded p-4 flex items-center justify-between gap-3">
         <div class="min-w-0">
           <p class="m-0 text-[#1E2E26] truncate"><strong>${nome}</strong>${r.paese ? ' · ' + esc(r.paese) : ''}${r.anno ? ' · ' + esc(r.anno) : ''}</p>
-          <p class="m-0 text-[13px] text-[#1E2E26]/60">${esc(catLabel(r.categoria_slug))}</p>
+          <p class="m-0 text-[13px] text-[#1E2E26]/60">${sez}${esc(catLabel(r.categoria_slug))}</p>
         </div>
         <div class="flex items-center gap-3 shrink-0">
           ${vis}
@@ -249,8 +270,9 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         </div>
       </div>`;
     }).join('');
-    box.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => apriForm((b as HTMLElement).dataset.edit!, righe)));
+    box.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => apriForm((b as HTMLElement).dataset.edit!, tutte)));
   }
+  document.getElementById('cu-filtro-sezione')?.addEventListener('change', () => caricaLista());
 
   // ---- FORM ----
   function apriForm(id: string | null, righe?: any[]) {
@@ -261,6 +283,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     ($('cu-f-nome') as HTMLInputElement).value = r?.nome_pubblico ?? '';
     ($('cu-f-paese') as HTMLInputElement).value = r?.paese ?? '';
     ($('cu-f-descr') as HTMLTextAreaElement).value = r?.descrizione_contributo ?? '';
+    ($('cu-f-sezione') as HTMLSelectElement).value = r?.sezione ?? 'custodi';
     ($('cu-f-anno') as HTMLInputElement).value = r?.anno ?? '';
     ($('cu-f-categoria') as HTMLSelectElement).value = r?.categoria_slug ?? '';
     ($('cu-f-valle') as HTMLSelectElement).value = r?.valle ?? '';
@@ -290,6 +313,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       nome_pubblico: anonimo ? (nome || 'Anonimo') : nome,
       paese: val('cu-f-paese').trim() || null,
       descrizione_contributo: descr,
+      sezione: val('cu-f-sezione') || 'custodi',
       anno: annoRaw ? parseInt(annoRaw, 10) : new Date().getFullYear(),
       anonimo,
       categoria_slug: val('cu-f-categoria') || null,
