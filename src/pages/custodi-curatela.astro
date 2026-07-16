@@ -1,0 +1,314 @@
+---
+/**
+ * /custodi-curatela — catalogazione admin dei Custodi della Memoria (16/7).
+ * Isola client-side: auth OTP (riusa otp-request/otp-verify + sessione Supabase),
+ * gating ruolo >= 50 (segretario/admin), poi CRUD su custodi_memoria via RLS
+ * (policy custodi_memoria_admin_*). Nessuna logica sensibile lato client: la
+ * sicurezza sta nelle RLS e nel controllo ruolo. La pagina pubblica
+ * /custodi-della-memoria resta sola lettura sulla vista v_custodi_memoria.
+ */
+import Layout from '../layouts/Layout.astro';
+
+// Vocabolari chiusi dei filtri trasversali (etichette leggibili).
+const VALLE: Record<string, string> = {
+  val_di_non: 'Val di Non', val_di_sole: 'Val di Sole', val_di_rabbi: 'Val di Rabbi',
+  val_di_pejo: 'Val di Pejo', piu_valli: 'Più valli',
+};
+const EPOCA: Record<string, string> = {
+  pre_ottocento: 'Prima dell’Ottocento', ottocento: 'Ottocento',
+  tirolo_asburgico: 'Tirolo asburgico (fino al 1918)', tra_le_due_guerre: 'Tra le due guerre',
+  novecento: 'Novecento', contemporaneo: 'Contemporaneo',
+};
+const TIPO: Record<string, string> = {
+  fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto',
+  audio: 'Registrazione audio', racconto_orale: 'Racconto orale', video: 'Video',
+};
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Curatela Custodi · El Brenz" description="Catalogazione riservata dei Custodi della Memoria." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8" style="font-family: 'Playfair Display', serif; font-weight: 500;">Curatela Custodi della Memoria</h1>
+
+      <p id="cu-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* LOGIN */}
+      <section id="cu-login" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 max-w-md">
+        <div id="cu-login-1">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti invieremo un codice di verifica.</p>
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-email">Email</label>
+          <input class={inputCls} type="email" id="cu-email" autocomplete="email" placeholder="nome@esempio.it" />
+          <button type="button" id="cu-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors">Invia codice</button>
+        </div>
+        <div id="cu-login-2" class="hidden">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice a 6 cifre inviato a <strong id="cu-email-echo"></strong>.</p>
+          <input class={`${inputCls} tracking-[0.4em] text-center text-xl`} type="text" id="cu-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+          <button type="button" id="cu-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Verifica e accedi</button>
+          <button type="button" id="cu-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        </div>
+        <div id="cu-login-err" class="hidden mt-3 text-sm rounded px-3 py-2" style="background:#fbecec;color:#1E2E26;"></div>
+      </section>
+
+      {/* NO ACCESS */}
+      <section id="cu-noaccess" class="hidden bg-white border border-[#E5DFCF] rounded p-6 max-w-md">
+        <p class="m-0 text-[#1E2E26]/80">Questa area è riservata al direttivo (segretario/amministratore). Se pensi di dover avere accesso, chiedi al segretario di abilitarti.</p>
+        <button type="button" id="cu-logout-2" class="mt-4 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+      </section>
+
+      {/* APP */}
+      <section id="cu-app" class="hidden">
+        <div class="flex items-center justify-between mb-6">
+          <p class="text-sm text-[#1E2E26]/70 m-0">Ciao <strong id="cu-utente"></strong> · <span id="cu-ruolo" class="text-[#8a6215]"></span></p>
+          <button type="button" id="cu-logout" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif;">Schede</h2>
+          <button type="button" id="cu-nuovo" class="bg-[#C8923E] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold hover:bg-[#D9A94E] transition-colors">+ Nuova scheda</button>
+        </div>
+        <p class="text-[13px] text-[#1E2E26]/55 m-0 mb-3">Una scheda diventa pubblica solo quando la spunti come <strong>visibile</strong>. Categoria e filtri si impostano qui.</p>
+        <div id="cu-lista" class="space-y-3"></div>
+
+        {/* FORM */}
+        <div id="cu-form-wrap" class="hidden mt-8 bg-white border border-[#E5DFCF] rounded p-6 md:p-8">
+          <h3 id="cu-form-titolo" class="text-lg text-[#1E2E26] m-0 mb-5" style="font-family: 'Playfair Display', serif;">Nuova scheda</h3>
+          <div class="grid gap-4">
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-nome">Nome pubblico <span class="text-[#1E2E26]/45">(credito)</span></label>
+                <input class={inputCls} type="text" id="cu-f-nome" placeholder="Famiglia Rossi" />
+              </div>
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-paese">Paese</label>
+                <input class={inputCls} type="text" id="cu-f-paese" placeholder="Terzolas" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-descr">Contributo <span class="text-[#1E2E26]/45">(cosa ha affidato)</span></label>
+              <textarea class={inputCls} id="cu-f-descr" rows="2" placeholder="ha affidato fotografie del fronte…"></textarea>
+            </div>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-anno">Anno</label>
+                <input class={inputCls} type="number" id="cu-f-anno" placeholder="2026" />
+              </div>
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-categoria">Categoria</label>
+                <select class={inputCls} id="cu-f-categoria"><option value="">scegli…</option></select>
+              </div>
+            </div>
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-valle">Valle</label>
+                <select class={inputCls} id="cu-f-valle">
+                  <option value="">—</option>
+                  {Object.entries(VALLE).map(([v, l]) => (<option value={v}>{l}</option>))}
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-epoca">Epoca</label>
+                <select class={inputCls} id="cu-f-epoca">
+                  <option value="">—</option>
+                  {Object.entries(EPOCA).map(([v, l]) => (<option value={v}>{l}</option>))}
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cu-f-tipo">Materiale</label>
+                <select class={inputCls} id="cu-f-tipo">
+                  <option value="">—</option>
+                  {Object.entries(TIPO).map(([v, l]) => (<option value={v}>{l}</option>))}
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center gap-6">
+              <label class="flex items-center gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" id="cu-f-anonimo" /> Custode anonimo <span class="text-[#1E2E26]/45">(mostra «Anonimo»)</span></label>
+              <label class="flex items-center gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" id="cu-f-visibile" /> <strong>Visibile</strong> in pubblico</label>
+            </div>
+            <div id="cu-form-esito" class="hidden text-sm rounded px-3 py-2"></div>
+            <div class="flex flex-wrap gap-3">
+              <button type="button" id="cu-salva" class="bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded font-medium hover:bg-[#2a3f34] transition-colors">Salva</button>
+              <button type="button" id="cu-annulla" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Chiudi</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const VALLE: Record<string, string> = {
+    val_di_non: 'Val di Non', val_di_sole: 'Val di Sole', val_di_rabbi: 'Val di Rabbi',
+    val_di_pejo: 'Val di Pejo', piu_valli: 'Più valli',
+  };
+  const EPOCA: Record<string, string> = {
+    pre_ottocento: 'Prima dell’Ottocento', ottocento: 'Ottocento',
+    tirolo_asburgico: 'Tirolo asburgico', tra_le_due_guerre: 'Tra le due guerre',
+    novecento: 'Novecento', contemporaneo: 'Contemporaneo',
+  };
+  const TIPO: Record<string, string> = {
+    fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto',
+    audio: 'Audio', racconto_orale: 'Racconto orale', video: 'Video',
+  };
+  const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const $ = (id: string) => document.getElementById(id);
+  const show = (id: string) => $(id)?.classList.remove('hidden');
+  const hide = (id: string) => $(id)?.classList.add('hidden');
+  const val = (id: string) => ($(id) as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)?.value ?? '';
+  const checked = (id: string) => ($(id) as HTMLInputElement)?.checked ?? false;
+
+  let livello = 0;
+  let editingId: string | null = null;
+  let categorie: { slug: string; titolo_it: string }[] = [];
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    hide('cu-loading');
+    if (!session) { show('cu-login'); return; }
+    const userId = session.user.id;
+    const { data: ruoli } = await supabase
+      .from('utente_ruolo').select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', userId);
+    livello = (ruoli ?? []).reduce((m: number, r: any) => Math.max(m, r?.ruolo?.livello ?? 0), 0);
+    const nomeRuolo = (ruoli ?? []).map((r: any) => r?.ruolo?.nome).sort().pop() ?? 'ospite';
+    if (livello < 50) { show('cu-noaccess'); return; }
+    ($('cu-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
+    ($('cu-ruolo') as HTMLElement).textContent = nomeRuolo;
+    show('cu-app');
+    await caricaCategorie();
+    await caricaLista();
+  }
+
+  // ---- LOGIN (riuso pattern redazione) ----
+  const loginErr = (t: string) => { const e = $('cu-login-err')!; e.classList.remove('hidden'); e.textContent = t; };
+  $('cu-send')?.addEventListener('click', async () => {
+    const email = (val('cu-email')).trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('Email non valida.'); return; }
+    $('cu-login-err')?.classList.add('hidden');
+    const btn = $('cu-send') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    btn.disabled = false; btn.textContent = 'Invia codice';
+    if (error || !data?.ok) { loginErr('Impossibile inviare il codice. Riprova.'); return; }
+    (window as any)._cuEmail = email;
+    ($('cu-email-echo') as HTMLElement).textContent = email;
+    hide('cu-login-1'); show('cu-login-2');
+    setTimeout(() => ($('cu-code') as HTMLInputElement)?.focus(), 100);
+  });
+  $('cu-back')?.addEventListener('click', () => { hide('cu-login-2'); show('cu-login-1'); });
+  $('cu-verify')?.addEventListener('click', async () => {
+    const codice = (val('cu-code')).replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) { loginErr('Il codice deve essere di 6 cifre.'); return; }
+    $('cu-login-err')?.classList.add('hidden');
+    const btn = $('cu-verify') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Verifica…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._cuEmail, codice, scope: 'login' } });
+    if (error || !data?.ok || !data?.session) { btn.disabled = false; btn.textContent = 'Verifica e accedi'; loginErr('Codice errato o scaduto.'); return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+  const logout = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  $('cu-logout')?.addEventListener('click', logout);
+  $('cu-logout-2')?.addEventListener('click', logout);
+
+  // ---- DATI ----
+  async function caricaCategorie() {
+    const { data } = await supabase.from('custodi_categoria')
+      .select('slug, titolo_it').eq('attiva', true).order('ordine');
+    categorie = (data as any[]) ?? [];
+    const sel = $('cu-f-categoria') as HTMLSelectElement;
+    sel.innerHTML = '<option value="">scegli…</option>' +
+      categorie.map((c) => `<option value="${esc(c.slug)}">${esc(c.titolo_it)}</option>`).join('');
+  }
+
+  function catLabel(slug: string | null) {
+    return categorie.find((c) => c.slug === slug)?.titolo_it ?? '—';
+  }
+
+  async function caricaLista() {
+    const { data, error } = await supabase.from('custodi_memoria')
+      .select('*').order('created_at', { ascending: false });
+    const box = $('cu-lista')!;
+    if (error) { box.innerHTML = `<p class="text-[#a33] text-sm">Errore di lettura: ${esc(error.message)}</p>`; return; }
+    const righe = (data as any[]) ?? [];
+    if (righe.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessuna scheda. Creane una nuova.</p>'; return; }
+    box.innerHTML = righe.map((r) => {
+      const vis = r.visibile
+        ? '<span style="background:#2d86591a;color:#2d8659;padding:2px 10px;border-radius:999px;font-size:12px;">Pubblico</span>'
+        : '<span style="background:#6b5a3a1a;color:#6b5a3a;padding:2px 10px;border-radius:999px;font-size:12px;">Nascosto</span>';
+      const nome = r.anonimo ? 'Anonimo' : esc(r.nome_pubblico);
+      return `<div class="bg-white border border-[#E5DFCF] rounded p-4 flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="m-0 text-[#1E2E26] truncate"><strong>${nome}</strong>${r.paese ? ' · ' + esc(r.paese) : ''}${r.anno ? ' · ' + esc(r.anno) : ''}</p>
+          <p class="m-0 text-[13px] text-[#1E2E26]/60">${esc(catLabel(r.categoria_slug))}</p>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          ${vis}
+          <button type="button" data-edit="${r.id}" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Modifica</button>
+        </div>
+      </div>`;
+    }).join('');
+    box.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => apriForm((b as HTMLElement).dataset.edit!, righe)));
+  }
+
+  // ---- FORM ----
+  function apriForm(id: string | null, righe?: any[]) {
+    editingId = id;
+    $('cu-form-esito')?.classList.add('hidden');
+    const r = id && righe ? righe.find((x) => x.id === id) : null;
+    ($('cu-form-titolo') as HTMLElement).textContent = r ? 'Modifica scheda' : 'Nuova scheda';
+    ($('cu-f-nome') as HTMLInputElement).value = r?.nome_pubblico ?? '';
+    ($('cu-f-paese') as HTMLInputElement).value = r?.paese ?? '';
+    ($('cu-f-descr') as HTMLTextAreaElement).value = r?.descrizione_contributo ?? '';
+    ($('cu-f-anno') as HTMLInputElement).value = r?.anno ?? '';
+    ($('cu-f-categoria') as HTMLSelectElement).value = r?.categoria_slug ?? '';
+    ($('cu-f-valle') as HTMLSelectElement).value = r?.valle ?? '';
+    ($('cu-f-epoca') as HTMLSelectElement).value = r?.epoca ?? '';
+    ($('cu-f-tipo') as HTMLSelectElement).value = r?.tipo_materiale ?? '';
+    ($('cu-f-anonimo') as HTMLInputElement).checked = !!r?.anonimo;
+    ($('cu-f-visibile') as HTMLInputElement).checked = !!r?.visibile;
+    show('cu-form-wrap');
+    ($('cu-form-wrap') as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  $('cu-nuovo')?.addEventListener('click', () => apriForm(null));
+  $('cu-annulla')?.addEventListener('click', () => hide('cu-form-wrap'));
+
+  const esito = (msg: string, ok: boolean) => {
+    const e = $('cu-form-esito')!; e.classList.remove('hidden');
+    e.style.background = ok ? '#e9f5ee' : '#fbecec'; e.style.color = '#1E2E26'; e.textContent = msg;
+  };
+
+  $('cu-salva')?.addEventListener('click', async () => {
+    const nome = val('cu-f-nome').trim();
+    const anonimo = checked('cu-f-anonimo');
+    const descr = val('cu-f-descr').trim();
+    if (!anonimo && !nome) { esito('Inserisci il nome pubblico, oppure spunta «anonimo».', false); return; }
+    if (!descr) { esito('Descrivi il contributo.', false); return; }
+    const annoRaw = val('cu-f-anno').trim();
+    const payload: Record<string, any> = {
+      nome_pubblico: anonimo ? (nome || 'Anonimo') : nome,
+      paese: val('cu-f-paese').trim() || null,
+      descrizione_contributo: descr,
+      anno: annoRaw ? parseInt(annoRaw, 10) : new Date().getFullYear(),
+      anonimo,
+      categoria_slug: val('cu-f-categoria') || null,
+      valle: val('cu-f-valle') || null,
+      epoca: val('cu-f-epoca') || null,
+      tipo_materiale: val('cu-f-tipo') || null,
+      visibile: checked('cu-f-visibile'),
+    };
+    const btn = $('cu-salva') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Salvo…';
+    const q = editingId
+      ? supabase.from('custodi_memoria').update(payload).eq('id', editingId)
+      : supabase.from('custodi_memoria').insert(payload);
+    const { error } = await q;
+    btn.disabled = false; btn.textContent = 'Salva';
+    if (error) { esito('Salvataggio fallito: ' + error.message, false); return; }
+    esito('Salvato.', true);
+    await caricaLista();
+    setTimeout(() => hide('cu-form-wrap'), 700);
+  });
+
+  init();
+</script>
