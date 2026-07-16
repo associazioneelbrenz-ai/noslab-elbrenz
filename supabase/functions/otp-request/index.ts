@@ -5,8 +5,10 @@ const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app',
   'https://elbrenz.eu',
   'https://www.elbrenz.eu',
+  'https://elbrenz-community.netlify.app',  // PWA soci — staging (16/7)
+  'https://app.elbrenz.eu',                 // PWA soci — dominio previsto
   'http://localhost:4321',  // Astro dev default
-  'http://localhost:3000',  // dev alt
+  'http://localhost:3000',  // dev alt (anche PWA Vite)
 ];
 
 // AUD-B3 (10/7/2026, autorizzazione puntuale): CORS da wildcard a whitelist.
