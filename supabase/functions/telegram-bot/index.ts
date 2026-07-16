@@ -152,6 +152,25 @@ async function gateAdmin(
   return true;
 }
 
+// Variante DM-only del gate (Fase 2, dati più sensibili: soci, pagamenti, ecc.):
+// ammessa SOLO in chat privata — mai nei gruppi, nemmeno la Sala comando, per non
+// esporre PII nel gruppo. Gate sul mittente identico (ruolo El Brenz livello>=50).
+// In qualsiasi gruppo/canale: silenzio (return false senza messaggio).
+async function gateAdminDM(
+  supabase: any,
+  token: string,
+  message: any,
+  chatId: number | string,
+): Promise<boolean> {
+  if (message?.chat?.type !== 'private') return false; // gruppi/canali → silenzio
+  const r = await risolviRuolo(supabase, message?.from?.id);
+  if (!r || r.livello < 50) {
+    await sendMessage(token, chatId, 'Non ti riconosco come <b>amministratore</b> di El Brenz. Se dovresti esserlo, collega il tuo account dall\'area soci del sito.');
+    return false;
+  }
+  return true;
+}
+
 const BENVENUTO =
   'Ciao! Sono <i>Andreas</i>, l\'assistente di El Brenz. Chiedimi di storia, ' +
   'lingua ladino-anaunica e cultura delle Valli del Noce.\n\n' +
@@ -437,6 +456,141 @@ serve(async (req: Request) => {
       await sendMessage(token, chatId,
         '<b>Notifiche direttivo</b>\n\n' + (righe.length ? righe.join('\n') : 'Nessun tipo configurato.') +
         '\n\nPer cambiare: <code>/notifiche off lead_download</code>');
+      return new Response('', { status: 200 });
+    }
+
+    // ── FASE 2 — comandi read-only su dati sensibili, DM-only (gateAdminDM) ──
+    // Stati/colonne verificati nel DB (16/7). PII minima: aggregati + piccole
+    // liste (nomi/importi, "Anonimo" dove previsto), mai email/telefono. Query
+    // strutturate, mai RAG. Silenzio nei gruppi (anche Sala comando).
+    if (cmd === '/soci' || cmd.startsWith('/soci')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const anno = new Date().getFullYear();
+      const cnt = async (q: any): Promise<number> => (await q).count ?? 0;
+      const [sociAnno, sociTot, sospese, daInviare] = await Promise.all([
+        cnt(supabase.from('domande_tesseramento').select('*', { count: 'exact', head: true }).eq('stato', 'approvata').eq('anno', anno)),
+        cnt(supabase.from('domande_tesseramento').select('*', { count: 'exact', head: true }).eq('stato', 'approvata')),
+        cnt(supabase.from('domande_tesseramento').select('*', { count: 'exact', head: true }).eq('stato', 'in_attesa')),
+        cnt(supabase.from('domande_tesseramento').select('*', { count: 'exact', head: true }).eq('stato', 'approvata').eq('tessera_inviata', false)),
+      ]);
+      const { data: recenti } = await supabase.from('domande_tesseramento')
+        .select('nome, numero_tessera').eq('stato', 'approvata')
+        .order('approvata_il', { ascending: false, nullsFirst: false }).limit(5);
+      const righe = (recenti ?? []).map((s: any) => `• ${escHtml(s.nome)}${s.numero_tessera ? ' · n. ' + s.numero_tessera : ''}`);
+      await sendMessage(token, chatId,
+        '👤 <b>Soci El Brenz</b>\n\n' +
+        `Soci ${anno}: <b>${sociAnno}</b>\n` +
+        `Totale approvati: <b>${sociTot}</b>\n` +
+        `📝 Domande in sospeso: <b>${sospese}</b>\n` +
+        `✉️ Tessere da inviare: <b>${daInviare}</b>` +
+        (righe.length ? '\n\n<b>Ultimi approvati</b>\n' + righe.join('\n') : ''));
+      return new Response('', { status: 200 });
+    }
+
+    if (cmd === '/pagamenti' || cmd.startsWith('/pagamenti')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const anno = new Date().getFullYear();
+      const cnt = async (q: any): Promise<number> => (await q).count ?? 0;
+      const eur = (n: number) => n.toFixed(2).replace('.', ',');
+      // Incassato completato dell'anno, split per tipo (somma lato edge: volumi bassi).
+      const { data: compl } = await supabase.from('pagamenti_tesseramento')
+        .select('tipo, importo').eq('stato', 'completato').eq('anno', anno);
+      let tot = 0;
+      const perTipo: Record<string, number> = {};
+      for (const p of (compl ?? [])) {
+        const imp = Number(p.importo) || 0;
+        tot += imp;
+        perTipo[p.tipo] = (perTipo[p.tipo] || 0) + imp;
+      }
+      const [daVerificare, anomalie] = await Promise.all([
+        cnt(supabase.from('pagamenti_tesseramento').select('*', { count: 'exact', head: true }).eq('metodo', 'bonifico').eq('stato', 'in_verifica')),
+        cnt(supabase.from('pagamenti_tesseramento').select('*', { count: 'exact', head: true }).eq('anomalia', true)),
+      ]);
+      const { data: recenti } = await supabase.from('pagamenti_tesseramento')
+        .select('tipo, importo, nome, anonimo').eq('stato', 'completato')
+        .order('created_at', { ascending: false }).limit(5);
+      const splitRighe = Object.entries(perTipo).map(([t, v]) => `· ${t}: ${eur(v)} €`);
+      const recRighe = (recenti ?? []).map((p: any) =>
+        `• ${p.anonimo ? 'Anonimo' : escHtml(p.nome ?? '—')} · ${p.tipo} · ${eur(Number(p.importo) || 0)} €`);
+      await sendMessage(token, chatId,
+        '💳 <b>Pagamenti</b>\n\n' +
+        `Incassato ${anno} (completati): <b>${eur(tot)} €</b>` +
+        (splitRighe.length ? '\n' + splitRighe.join('\n') : '') +
+        `\n\n🧾 Bonifici da verificare: <b>${daVerificare}</b>\n` +
+        `⚠️ Anomalie: <b>${anomalie}</b>` +
+        (recRighe.length ? '\n\n<b>Ultimi completati</b>\n' + recRighe.join('\n') : ''));
+      return new Response('', { status: 200 });
+    }
+
+    if (cmd === '/convenzioni' || cmd.startsWith('/convenzioni')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const { data: proposte, count } = await supabase.from('convenzioni')
+        .select('nome_attivita, categoria, localita', { count: 'exact' })
+        .eq('stato', 'proposta').order('created_at', { ascending: true }).limit(10);
+      const attive = (await supabase.from('convenzioni').select('*', { count: 'exact', head: true }).eq('stato', 'attiva')).count ?? 0;
+      if (!proposte || proposte.length === 0) {
+        await sendMessage(token, chatId, `🤝 <b>Convenzioni</b>\nNessuna proposta da validare.\nAttive: <b>${attive}</b>`);
+        return new Response('', { status: 200 });
+      }
+      const righe = proposte.map((k: any) =>
+        `• <b>${escHtml(k.nome_attivita)}</b>${k.categoria ? ' · ' + escHtml(k.categoria) : ''}${k.localita ? ' · ' + escHtml(k.localita) : ''}`);
+      await sendMessage(token, chatId,
+        `🤝 <b>Convenzioni — ${count} da validare</b>\n\n` + righe.join('\n') +
+        ((count ?? 0) > 10 ? `\n\n…e altre ${(count ?? 0) - 10}.` : '') +
+        `\n\nAttive: <b>${attive}</b>`);
+      return new Response('', { status: 200 });
+    }
+
+    // /custodi mostra DUE code distinte: lo Sportello (richieste_contatto nuove)
+    // e la vetrina Custodi della Memoria (custodi_memoria da pubblicare).
+    if (cmd === '/custodi' || cmd.startsWith('/custodi')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const { data: sportello, count: nNuove } = await supabase.from('richieste_contatto')
+        .select('codice_pratica, tipo, categoria, nome', { count: 'exact' })
+        .eq('stato', 'nuova').order('created_at', { ascending: true }).limit(10);
+      const { data: vetrina, count: nVetrina } = await supabase.from('custodi_memoria')
+        .select('nome_pubblico, paese, anonimo', { count: 'exact' })
+        .eq('visibile', false).order('created_at', { ascending: true }).limit(10);
+
+      const spRighe = (sportello ?? []).map((r: any) =>
+        `• ${escHtml(r.codice_pratica ?? '—')} · ${escHtml(r.tipo ?? '—')}${r.categoria ? ' / ' + escHtml(r.categoria) : ''}${r.nome ? ' · ' + escHtml(r.nome) : ''}`);
+      const vtRighe = (vetrina ?? []).map((r: any) =>
+        `• ${r.anonimo ? 'Anonimo' : escHtml(r.nome_pubblico ?? '—')}${r.paese ? ' · ' + escHtml(r.paese) : ''}`);
+
+      await sendMessage(token, chatId,
+        `📦 <b>Sportello — ${nNuove ?? 0} pratiche nuove</b>` +
+        (spRighe.length ? '\n' + spRighe.join('\n') : '\nNessuna pratica nuova.') +
+        `\n\n📚 <b>Custodi da pubblicare — ${nVetrina ?? 0}</b>` +
+        (vtRighe.length ? '\n' + vtRighe.join('\n') : '\nNessuno in attesa.'));
+      return new Response('', { status: 200 });
+    }
+
+    // /redazione: articoli in coda di approvazione (stato in_approvazione, il
+    // valore reale del flusso editor; in_revisione è dei lemmi Guardiani).
+    if (cmd === '/redazione' || cmd.startsWith('/redazione')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdminDM(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const { data: coda, count } = await supabase.from('articolo')
+        .select('titolo', { count: 'exact' })
+        .eq('stato', 'in_approvazione').order('inviato_at', { ascending: true, nullsFirst: false }).limit(10);
+      if (!coda || coda.length === 0) {
+        await sendMessage(token, chatId, '✍️ <b>Redazione</b>\nNessun articolo in coda di approvazione.');
+        return new Response('', { status: 200 });
+      }
+      const righe = coda.map((a: any) => `• ${escHtml(a.titolo ?? '(senza titolo)')}`);
+      await sendMessage(token, chatId,
+        `✍️ <b>Redazione — ${count} da approvare</b>\n\n` + righe.join('\n') +
+        ((count ?? 0) > 10 ? `\n\n…e altri ${(count ?? 0) - 10}.` : '') +
+        '\n\nGestisci su https://www.elbrenz.eu/redazione');
       return new Response('', { status: 200 });
     }
 
