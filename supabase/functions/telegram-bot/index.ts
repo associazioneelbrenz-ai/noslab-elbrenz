@@ -89,6 +89,52 @@ async function sendMessage(token: string, chatId: number | string, html: string)
   return { ok: true };
 }
 
+// ── Cruscotto direttivo (Fase 1, 16/7) — helper condivisi ────────────────
+// Escape HTML per i valori dinamici nei messaggi parse_mode=HTML.
+function escHtml(s: unknown): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Risoluzione ruolo El Brenz dell'utente Telegram collegato: telegram_link
+// (revoked_at null) → utente_ruolo → ruolo a livello MASSIMO. Stessa logica del
+// ramo testo libero (rate-limit soci), qui riusata per il gate di gestione.
+async function risolviRuolo(
+  supabase: any,
+  fromId: number | undefined,
+): Promise<{ userId: string; nome?: string; livello: number } | null> {
+  if (!fromId) return null;
+  const { data: link } = await supabase.from('telegram_link')
+    .select('user_id').eq('telegram_user_id', fromId).is('revoked_at', null).maybeSingle();
+  if (!link?.user_id) return null;
+  const { data: ruoli } = await supabase.from('utente_ruolo')
+    .select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', link.user_id);
+  const top = (ruoli ?? [])
+    .map((r: any) => ({ nome: r?.ruolo?.nome as string | undefined, livello: Number(r?.ruolo?.livello ?? 0) }))
+    .reduce((m: any, x: any) => (x.livello > m.livello ? x : m), { nome: undefined as string | undefined, livello: 0 });
+  return { userId: link.user_id, nome: top.nome, livello: top.livello };
+}
+
+// Gate dei comandi di gestione: SOLO chat privata + ruolo admin (livello>=50,
+// assegnato da Cristian). In caso di rifiuto invia il messaggio e ritorna false.
+// Il rifiuto è generico: non rivela l'esistenza dei comandi a chi non è admin.
+async function gateAdmin(
+  supabase: any,
+  token: string,
+  message: any,
+  chatId: number | string,
+): Promise<boolean> {
+  if (message?.chat?.type !== 'private') {
+    await sendMessage(token, chatId, 'Questo comando si usa in <b>chat privata</b> con me, non nel gruppo.');
+    return false;
+  }
+  const r = await risolviRuolo(supabase, message?.from?.id);
+  if (!r || r.livello < 50) {
+    await sendMessage(token, chatId, 'Non ti riconosco come <b>amministratore</b> di El Brenz. Se dovresti esserlo, collega il tuo account dall\'area soci del sito.');
+    return false;
+  }
+  return true;
+}
+
 const BENVENUTO =
   'Ciao! Sono <i>Andreas</i>, l\'assistente di El Brenz. Chiedimi di storia, ' +
   'lingua ladino-anaunica e cultura delle Valli del Noce.\n\n' +
@@ -287,6 +333,96 @@ serve(async (req: Request) => {
       }
       return new Response('', { status: 200 });
     }
+    // ── CRUSCOTTO DIRETTIVO (Fase 1) — comandi di gestione DM-only, admin ──
+    // Gate: SOLO chat privata + ruolo El Brenz livello>=50 (via linking). PII
+    // minima: solo conteggi/nomi/stati + link alla vista autenticata. Query
+    // strutturate, mai RAG. Additivi: non toccano i comandi/flussi esistenti.
+    if (cmd === '/cruscotto' || cmd.startsWith('/cruscotto')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const setteGiorniFa = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+      const c = async (q: any): Promise<number> => (await q).count ?? 0;
+      // Stati REALI verificati nel DB (16/7): domande approvata/in_attesa;
+      // convenzioni proposta/attiva; lemmi in_revisione/pubblicato.
+      const [soci, domandeSospese, lemmiDaValidare, convenzioniProposte, leadSettimana] = await Promise.all([
+        c(supabase.from('domande_tesseramento').select('*', { count: 'exact', head: true }).eq('stato', 'approvata')),
+        c(supabase.from('domande_tesseramento').select('*', { count: 'exact', head: true }).eq('stato', 'in_attesa')),
+        c(supabase.from('dizionario_lemma').select('*', { count: 'exact', head: true }).eq('stato', 'in_revisione')),
+        c(supabase.from('convenzioni').select('*', { count: 'exact', head: true }).eq('stato', 'proposta')),
+        c(supabase.from('download_lead').select('*', { count: 'exact', head: true }).gte('created_at', setteGiorniFa)),
+      ]);
+
+      await sendMessage(token, chatId,
+        '📊 <b>Cruscotto El Brenz</b>\n\n' +
+        `👤 Soci: <b>${soci}</b>\n` +
+        `📝 Domande in sospeso: <b>${domandeSospese}</b>\n` +
+        `📖 Lemmi Guardiani da validare: <b>${lemmiDaValidare}</b>\n` +
+        `🤝 Convenzioni proposte: <b>${convenzioniProposte}</b>\n` +
+        `📚 Lead ultimi 7 giorni: <b>${leadSettimana}</b>\n\n` +
+        'Dettagli: /guardiani · /notifiche');
+      return new Response('', { status: 200 });
+    }
+
+    // Lemmi Guardiani da validare (in_revisione). Mostra il NOME del
+    // contributore (mai email), via join contributore_id → guardiani_contributori.
+    if (cmd === '/guardiani' || cmd.startsWith('/guardiani')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const { data: lemmi, count } = await supabase.from('dizionario_lemma')
+        .select('lemma, parlata, contributore:contributore_id ( nome )', { count: 'exact' })
+        .eq('stato', 'in_revisione').order('created_at', { ascending: true }).limit(10);
+
+      if (!lemmi || lemmi.length === 0) {
+        await sendMessage(token, chatId, '📖 <b>Guardiani</b>\nNessun lemma da validare. Ottimo lavoro!');
+        return new Response('', { status: 200 });
+      }
+      const righe = lemmi.map((l: any) =>
+        `• «<b>${escHtml(l.lemma)}</b>» (${escHtml(l.parlata)})${l.contributore?.nome ? ' · ' + escHtml(l.contributore.nome) : ''}`);
+      await sendMessage(token, chatId,
+        `📖 <b>Guardiani — ${count} da validare</b>\n\n` + righe.join('\n') +
+        ((count ?? 0) > 10 ? `\n\n…e altri ${(count ?? 0) - 10}.` : '') +
+        '\n\nValida su https://www.elbrenz.eu/guardiani-curatela');
+      return new Response('', { status: 200 });
+    }
+
+    // Gestione toggle notifiche direttivo da Telegram: /notifiche [on|off <tipo>].
+    if (cmd === '/notifiche' || cmd.startsWith('/notifiche')) {
+      const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      if (!(await gateAdmin(supabase, token, message, chatId))) return new Response('', { status: 200 });
+
+      const parti = text.trim().split(/\s+/);            // /notifiche [on|off] [tipo]
+      const azione = (parti[1] ?? '').toLowerCase();
+      const tipo = parti[2];
+
+      if (azione === 'on' || azione === 'off') {
+        if (!tipo) {
+          await sendMessage(token, chatId, 'Uso: <code>/notifiche on|off &lt;tipo&gt;</code>');
+          return new Response('', { status: 200 });
+        }
+        const { data: esiste } = await supabase.from('telegram_notifica').select('tipo').eq('tipo', tipo).maybeSingle();
+        if (!esiste) {
+          await sendMessage(token, chatId, `Tipo <code>${escHtml(tipo)}</code> inesistente. Scrivi /notifiche per la lista.`);
+          return new Response('', { status: 200 });
+        }
+        await supabase.from('telegram_notifica')
+          .update({ attivo: azione === 'on', updated_at: new Date().toISOString() }).eq('tipo', tipo);
+        await sendMessage(token, chatId,
+          `${azione === 'on' ? '🔔' : '🔕'} Notifica <b>${escHtml(tipo)}</b> ${azione === 'on' ? 'attivata' : 'disattivata'}.`);
+        return new Response('', { status: 200 });
+      }
+
+      // nessun argomento → elenco stato dei toggle
+      const { data: tipi } = await supabase.from('telegram_notifica')
+        .select('tipo, etichetta, categoria, attivo').order('categoria');
+      const righe = (tipi ?? []).map((t: any) => `${t.attivo ? '🔔' : '🔕'} <code>${escHtml(t.tipo)}</code> — ${escHtml(t.etichetta)}`);
+      await sendMessage(token, chatId,
+        '<b>Notifiche direttivo</b>\n\n' + (righe.length ? righe.join('\n') : 'Nessun tipo configurato.') +
+        '\n\nPer cambiare: <code>/notifiche off lead_download</code>');
+      return new Response('', { status: 200 });
+    }
+
     // altri comandi non riconosciuti → trattali come domanda? No: guida.
     if (cmd.startsWith('/')) {
       await sendMessage(token, chatId, 'Comando non riconosciuto. Prova /eventi, /tessera, oppure scrivimi una domanda su storia e lingua delle nostre valli.');
