@@ -1,7 +1,8 @@
 # Security headers (AUD-A1, Ondata 1 — 10/7/2026).
-# CSP in modalità REPORT-ONLY come primo passo (brief M4.0): non blocca nulla,
-# le violazioni compaiono nella console del browser; si irrigidisce a
-# Content-Security-Policy solo dopo un periodo di osservazione.
+# CSP ENFORCED dal 16/7/2026: dopo il periodo di osservazione in Report-Only e la
+# verifica console (nessuna violazione sulle pagine chiave), passata da
+# Content-Security-Policy-Report-Only a Content-Security-Policy. Se emergono
+# blocchi, tornare a Report-Only e aggiungere l'host mancante alla policy.
 # HSTS senza `preload` (scelta prudente: preload è semi-permanente).
 
 /*
@@ -10,8 +11,7 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  # AGGIUNTA 14/7/2026 (Task 5, additivo, ancora Report-Only): host mappa
-  # (tile OSM + WMS SIAT PAT) in img-src; SIAT anche in connect-src (GetCapabilities);
-  # www.facebook.com in frame-src (Page Plugin embed consent-gated). Prepara il
-  # futuro passaggio a enforced senza rompere /mappa e gli embed Facebook.
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com https://tile.openstreetmap.org https://siat.provincia.tn.it; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypal.com https://siat.provincia.tn.it; frame-src https://www.paypal.com https://www.instagram.com https://www.youtube-nocookie.com https://www.facebook.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
+  # Host mappa (tile OSM + WMS SIAT PAT) in img-src; SIAT anche in connect-src
+  # (GetCapabilities); www.facebook.com in frame-src (Page Plugin embed consent-gated).
+  # 16/7: enforced (era Report-Only dal 14/7) dopo verifica console senza violazioni.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com https://tile.openstreetmap.org https://siat.provincia.tn.it; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypal.com https://siat.provincia.tn.it; frame-src https://www.paypal.com https://www.instagram.com https://www.youtube-nocookie.com https://www.facebook.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
