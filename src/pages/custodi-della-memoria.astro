@@ -4,9 +4,15 @@
  * che affidano materiali e memorie a El Brenz (Sportello, 11/07/2026).
  *
  * SSR: legge la vista pubblica v_custodi_memoria (solo visibile=true,
- * curatela MANUALE del Direttivo — mai inserimenti automatici). Elenco per
- * anno dal più recente; gli anonimi sono aggregati in coda a ogni anno.
- * NIENTE numeri, classifiche o foto: righe sobrie. Tabella vuota → invito.
+ * curatela MANUALE del Direttivo — mai inserimenti automatici).
+ *
+ * 16/7: rubrica per CATEGORIA tematica (tassonomia custodi_categoria). La
+ * chiave stabile è il titolo italiano (categoria_titolo_it); il titolo in
+ * lenga (categoria_titolo_lenga) è una BOZZA da validare in Commissione, quindi
+ * resta sottotitolo in corsivo, mai voce unica. Mostra SOLO le categorie che
+ * hanno almeno un contributo visibile (niente griglia di categorie deserte).
+ * Filtri trasversali (valle/epoca/tipo_materiale) = parte B, quando c'è
+ * contenuto da filtrare. Tabella vuota → invito «Porta la tua Storia».
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -17,34 +23,74 @@ export const prerender = false;
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 
-type Custode = { nome_pubblico: string; paese: string | null; descrizione_contributo: string; anno: number; anonimo: boolean };
+type Custode = {
+  nome_pubblico: string;
+  paese: string | null;
+  descrizione_contributo: string;
+  anno: number;
+  anonimo: boolean;
+  categoria_slug: string | null;
+  valle: string | null;
+  epoca: string | null;
+  tipo_materiale: string | null;
+  categoria_titolo_it: string | null;
+  categoria_titolo_lenga: string | null;
+  categoria_ordine: number | null;
+};
+
 let custodi: Custode[] = [];
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
   const { data } = await sb.from('v_custodi_memoria').select('*')
-    .order('anno', { ascending: false }).order('nome_pubblico');
+    .order('categoria_ordine', { ascending: true, nullsFirst: false })
+    .order('anno', { ascending: false })
+    .order('nome_pubblico');
   custodi = (data as Custode[]) ?? [];
 } catch (e) {
   console.error('[custodi] lettura vista fallita:', e);
 }
 
-const perAnno = new Map<number, { nominati: Custode[]; anonimi: number }>();
+// Etichette leggibili dei filtri trasversali (vocabolari chiusi §3 del brief).
+const VALLE: Record<string, string> = {
+  val_di_non: 'Val di Non', val_di_sole: 'Val di Sole', val_di_rabbi: 'Val di Rabbi',
+  val_di_pejo: 'Val di Pejo', piu_valli: 'Più valli',
+};
+const EPOCA: Record<string, string> = {
+  pre_ottocento: 'Prima dell’Ottocento', ottocento: 'Ottocento',
+  tirolo_asburgico: 'Tirolo asburgico (fino al 1918)', tra_le_due_guerre: 'Tra le due guerre',
+  novecento: 'Novecento', contemporaneo: 'Contemporaneo',
+};
+const TIPO: Record<string, string> = {
+  fotografia: 'Fotografia', documento: 'Documento', oggetto: 'Oggetto',
+  audio: 'Registrazione audio', racconto_orale: 'Racconto orale', video: 'Video',
+};
+
+// Raggruppa per categoria (ordinata per `ordine`); i contributi senza categoria
+// finiscono in coda in un gruppo neutro. Solo categorie con contenuto compaiono.
+type Gruppo = { titolo_it: string; titolo_lenga: string | null; ordine: number; schede: Custode[] };
+const mappa = new Map<string, Gruppo>();
 for (const c of custodi) {
-  if (!perAnno.has(c.anno)) perAnno.set(c.anno, { nominati: [], anonimi: 0 });
-  const g = perAnno.get(c.anno)!;
-  if (c.anonimo) g.anonimi += 1;
-  else g.nominati.push(c);
+  const key = c.categoria_slug ?? '__altri__';
+  if (!mappa.has(key)) {
+    mappa.set(key, {
+      titolo_it: c.categoria_titolo_it ?? 'Altri contributi',
+      titolo_lenga: c.categoria_titolo_lenga ?? null,
+      ordine: c.categoria_ordine ?? 9999,
+      schede: [],
+    });
+  }
+  mappa.get(key)!.schede.push(c);
 }
-const anni = [...perAnno.keys()].sort((a, b) => b - a);
+const gruppi = [...mappa.values()].sort((a, b) => a.ordine - b.ordine);
 ---
 
 <PaginaIstituzionale
   occhiello="L'Associazione"
   titolo="I Custodi della Memoria"
   intro="Le famiglie e le persone che hanno affidato a El Brenz un pezzo della nosa storia. A loro il grazie delle valli."
-  metaDescription="I Custodi della Memoria: le famiglie e le persone che hanno donato o prestato a El Brenz fotografie, documenti, oggetti e parole delle Valli del Noce."
+  metaDescription="I Custodi della Memoria: le famiglie e le persone che hanno donato o prestato a El Brenz fotografie, documenti, oggetti e parole delle Valli del Noce, per temi della nosa storia."
 >
-  {anni.length === 0 ? (
+  {gruppi.length === 0 ? (
     <div class="text-center py-10">
       <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
         Il primo custode potresti essere tu: una fotografia, un documento,
@@ -55,29 +101,34 @@ const anni = [...perAnno.keys()].sort((a, b) => b - a);
       </a>
     </div>
   ) : (
-    <div class="space-y-10">
-      {anni.map((anno) => {
-        const g = perAnno.get(anno)!;
-        return (
-          <section>
-            <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">{anno}</h2>
-            <ul class="list-none p-0 m-0 space-y-4">
-              {g.nominati.map((c) => (
-                <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <span class="text-xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{c.nome_pubblico}</span>
-                  {c.paese && <span class="text-[11px] tracking-[0.14em] uppercase text-[#C8923E]" style="font-family: 'Inter', sans-serif;">{c.paese}</span>}
-                  <span class="text-[#1E2E26]/70 text-sm w-full md:w-auto" style="font-family: 'Source Serif 4', Georgia, serif;">{c.descrizione_contributo}</span>
-                </li>
-              ))}
-              {g.anonimi > 0 && (
-                <li class="text-[#1E2E26]/60 italic text-sm pt-1" style="font-family: 'Source Serif 4', Georgia, serif;">
-                  …e {g.anonimi === 1 ? 'un custode che ha scelto' : `${g.anonimi} custodi che hanno scelto`} la riservatezza.
-                </li>
-              )}
-            </ul>
-          </section>
-        );
-      })}
+    <div class="space-y-12">
+      {gruppi.map((g) => (
+        <section>
+          <header class="mb-5 pb-2 border-b border-[#C8923E]/30">
+            <h2 class="text-2xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif; font-weight: 500;">{g.titolo_it}</h2>
+            {g.titolo_lenga && (
+              <p class="text-[#8a6215] text-sm italic mt-1 mb-0" style="font-family: 'Source Serif 4', Georgia, serif;" lang="lld-anau">{g.titolo_lenga}</p>
+            )}
+          </header>
+          <ul class="list-none p-0 m-0 space-y-4">
+            {g.schede.map((c) => (
+              <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span class="text-xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{c.anonimo ? 'Anonimo' : c.nome_pubblico}</span>
+                {c.paese && <span class="text-[11px] tracking-[0.14em] uppercase text-[#C8923E]" style="font-family: 'Inter', sans-serif;">{c.paese}</span>}
+                <span class="text-[11px] tracking-[0.14em] uppercase text-[#1E2E26]/45" style="font-family: 'Inter', sans-serif;">{c.anno}</span>
+                <span class="text-[#1E2E26]/70 text-sm w-full md:w-auto" style="font-family: 'Source Serif 4', Georgia, serif;">{c.descrizione_contributo}</span>
+                {(c.valle || c.epoca || c.tipo_materiale) && (
+                  <span class="w-full flex flex-wrap gap-1.5 mt-0.5">
+                    {c.valle && VALLE[c.valle] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#C8923E]/40 text-[#8a6215] px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{VALLE[c.valle]}</span>}
+                    {c.epoca && EPOCA[c.epoca] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{EPOCA[c.epoca]}</span>}
+                    {c.tipo_materiale && TIPO[c.tipo_materiale] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{TIPO[c.tipo_materiale]}</span>}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
       <p class="pt-4 text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
         Anche la tua famiglia custodisce qualcosa? <a href="/contatti#porta" class="text-[#8a6215] underline">Porta la tua Storia</a>.
       </p>
