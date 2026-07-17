@@ -57,6 +57,16 @@
     -webkit-text-size-adjust: 100%;
   }
 
+  /* Niente scroll orizzontale su mobile: il drawer del menu è un overlay
+     `position: fixed` parcheggiato fuori schermo a destra (translateX(100%)),
+     che altrimenti allarga la pagina e spinge l'hamburger oltre il bordo.
+     `clip` blocca l'overflow SENZA creare un contesto di scroll (così non
+     rompe `position: sticky` dell'header). */
+  html, body {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
   body {
     font-family: var(--font-body);
     color: var(--color-nero-testo);
