@@ -149,6 +149,13 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
             </div>
           </div>
         </div>
+
+        {/* Proposte dal pubblico (segnalazioni dal form della pagina Grande Guerra) */}
+        <div class="mt-12 pt-8 border-t border-[#E5DFCF]">
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif;">Proposte dal pubblico</h2>
+          <p class="text-[13px] text-[#1E2E26]/55 m-0 mb-4">Segnalazioni di materiale arrivate dal form pubblico. Le «nuove» sono in cima: ricontatta il proponente, poi segna «gestita» (o «archiviata»).</p>
+          <div id="mu-prop-lista" class="space-y-3"></div>
+        </div>
       </section>
     </div>
   </main>
@@ -187,6 +194,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     ($('mu-ruolo') as HTMLElement).textContent = nomeRuolo;
     show('mu-app');
     await caricaLista();
+    await caricaProposte();
   }
 
   // ---- LOGIN ----
@@ -362,6 +370,63 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     hide('mu-form-wrap');
     await caricaLista();
   });
+
+  // ---- PROPOSTE DAL PUBBLICO ----
+  const STATO_PROP: Record<string, string> = { nuova: 'Nuova', gestita: 'Gestita', archiviata: 'Archiviata' };
+  async function caricaProposte() {
+    const { data, error } = await supabase.from('museo_gg_proposta')
+      .select('*')
+      // le "nuove" in cima, poi per data discendente
+      .order('stato', { ascending: true }).order('created_at', { ascending: false });
+    const box = $('mu-prop-lista')!;
+    if (error) { box.innerHTML = `<p class="text-[#a33] text-sm">Errore di lettura: ${esc(error.message)}</p>`; return; }
+    const righe = ((data as any[]) ?? []).sort((a, b) => (a.stato === 'nuova' ? -1 : 0) - (b.stato === 'nuova' ? -1 : 0));
+    if (righe.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessuna proposta, per ora.</p>'; return; }
+    box.innerHTML = righe.map((r) => {
+      const nuova = r.stato === 'nuova';
+      const badge = nuova
+        ? '<span style="background:#c8923e1a;color:#8a6215;padding:2px 10px;border-radius:999px;font-size:12px;">Nuova</span>'
+        : `<span style="background:#6b5a3a1a;color:#6b5a3a;padding:2px 10px;border-radius:999px;font-size:12px;">${esc(STATO_PROP[r.stato] || r.stato)}</span>`;
+      const data = new Date(r.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' });
+      return `<div class="bg-white border ${nuova ? 'border-[#C8923E]/60' : 'border-[#E5DFCF]'} rounded p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="m-0 text-[#1E2E26]"><strong>${esc(r.nome)}</strong>${r.tipo ? ` · ${esc(r.tipo)}` : ''} <span class="text-[13px] text-[#1E2E26]/50">· ${esc(data)}</span></p>
+            <p class="m-0 mt-1 text-sm text-[#1E2E26]/80" style="white-space:pre-wrap;">${esc(r.descrizione)}</p>
+            <p class="m-0 mt-2 text-[13px] text-[#1E2E26]/70">Contatto: <strong>${esc(r.contatto)}</strong></p>
+          </div>
+          ${badge}
+        </div>
+        <div class="mt-3">
+          <input type="text" data-nota="${r.id}" value="${esc(r.note_interne ?? '')}" placeholder="Nota interna (facoltativa)" class="w-full border border-[#E5DFCF] rounded px-3 py-1.5 text-sm text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        <div class="mt-2 flex flex-wrap gap-3">
+          ${r.stato !== 'gestita' ? `<button type="button" data-prop-azione="gestita" data-id="${r.id}" class="text-sm text-[#2d8659] underline bg-transparent border-0 cursor-pointer">Segna gestita</button>` : ''}
+          ${r.stato !== 'archiviata' ? `<button type="button" data-prop-azione="archiviata" data-id="${r.id}" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Archivia</button>` : ''}
+          ${r.stato !== 'nuova' ? `<button type="button" data-prop-azione="nuova" data-id="${r.id}" class="text-sm text-[#1E2E26]/50 underline bg-transparent border-0 cursor-pointer">Riporta a nuova</button>` : ''}
+          <button type="button" data-prop-nota="${r.id}" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Salva nota</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const getNota = (id: string) => (box.querySelector(`[data-nota="${id}"]`) as HTMLInputElement)?.value ?? null;
+    async function aggiorna(id: string, patch: Record<string, any>) {
+      const { error } = await supabase.from('museo_gg_proposta').update(patch).eq('id', id);
+      if (error) { alert('Aggiornamento non riuscito: ' + error.message); return; }
+      await caricaProposte();
+    }
+    box.querySelectorAll('[data-prop-azione]').forEach((b) => b.addEventListener('click', () => {
+      const el = b as HTMLElement; const id = el.dataset.id!;
+      const nuovoStato = el.dataset.propAzione!;
+      const patch: Record<string, any> = { stato: nuovoStato, note_interne: getNota(id) };
+      if (nuovoStato !== 'nuova') patch.gestita_da = userId;
+      aggiorna(id, patch);
+    }));
+    box.querySelectorAll('[data-prop-nota]').forEach((b) => b.addEventListener('click', () => {
+      const id = (b as HTMLElement).dataset.propNota!;
+      aggiorna(id, { note_interne: getNota(id) });
+    }));
+  }
 
   init();
 </script>

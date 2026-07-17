@@ -159,10 +159,58 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
           </>
         )}
 
-        <p class="mt-8 text-sm text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">
-          Hai una fotografia, una cartolina, una lettera o un documento della Grande Guerra?
-          <a href="/contatti" class="text-[#8a6215] underline">Scrivici</a>: può entrare a far parte di questo archivio.
-        </p>
+        {/* Proponi materiale — segnalazione pubblica (senza login), V1 senza upload */}
+        <div class="mt-10 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 md:p-6" style="font-family: 'Inter', sans-serif;">
+          <h3 class="text-lg text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Hai materiale sulla Grande Guerra?</h3>
+          <p class="text-sm text-[#1E2E26]/75 leading-relaxed m-0">
+            Le foto in soffitta, le cartoline dal fronte, le lettere di famiglia, un oggetto tramandato:
+            possono entrare in questo archivio. Proponili qui, vi ricontattiamo noi. Non serve caricare
+            nulla adesso, basta una descrizione e un recapito.
+          </p>
+
+          <details id="mgp-details" class="mt-4">
+            <summary class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-2.5 text-sm font-medium tracking-wide uppercase rounded cursor-pointer select-none hover:bg-[#D9A94E] transition-colors list-none">Proponi materiale</summary>
+
+            <form id="mgp-form" data-endpoint={`${SUPABASE_URL}/functions/v1/museo-gg-proposta`} class="mt-5 grid gap-4">
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="mgp-nome">Nome <span class="text-[#a33]">*</span></label>
+                  <input id="mgp-nome" name="nome" type="text" maxlength="100" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+                </div>
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="mgp-contatto">Come ricontattarti <span class="text-[#a33]">*</span></label>
+                  <input id="mgp-contatto" name="contatto" type="text" maxlength="200" placeholder="email o telefono" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="mgp-tipo">Tipo di materiale</label>
+                <select id="mgp-tipo" name="tipo" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]">
+                  <option value="">— facoltativo —</option>
+                  <option value="foto">Fotografia</option>
+                  <option value="cartolina">Cartolina</option>
+                  <option value="lettera">Lettera</option>
+                  <option value="documento">Documento</option>
+                  <option value="oggetto">Oggetto</option>
+                  <option value="altro">Altro</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="mgp-descr">Descrizione <span class="text-[#a33]">*</span></label>
+                <textarea id="mgp-descr" name="descrizione" rows="3" maxlength="2000" placeholder="Cosa hai e, se lo sai, da dove viene (una foto del nonno, una cartolina dal fronte…)" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]"></textarea>
+              </div>
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80">
+                <input id="mgp-consenso" name="accettazione_privacy" type="checkbox" class="mt-1" />
+                <span>Acconsento al trattamento dei miei dati (nome e recapito) per essere ricontattato in merito a questa proposta. <a href="/privacy" class="text-[#8a6215] underline">Informativa privacy</a>. <span class="text-[#a33]">*</span></span>
+              </label>
+              {/* honeypot anti-bot: deve restare vuoto */}
+              <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
+              <div class="flex flex-wrap items-center gap-3">
+                <button id="mgp-submit" type="submit" class="bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded text-sm font-medium hover:bg-[#2a3f34] transition-colors">Invia proposta</button>
+                <span id="mgp-esito" class="hidden text-sm rounded px-3 py-2"></span>
+              </div>
+            </form>
+          </details>
+        </div>
       </section>
     </div>
 
@@ -250,6 +298,63 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
       }
       fTipo?.addEventListener('change', filtra);
       fValle?.addEventListener('change', filtra);
+    }
+  </script>
+
+  <script>
+    // Form "Proponi materiale": invio all'edge museo-gg-proposta (honeypot + time-trap).
+    const form = document.getElementById('mgp-form') as HTMLFormElement | null;
+    if (form) {
+      const aperturaTs = Date.now();
+      const esito = document.getElementById('mgp-esito')!;
+      const submit = document.getElementById('mgp-submit') as HTMLButtonElement;
+      const mostra = (msg: string, ok: boolean) => {
+        esito.classList.remove('hidden');
+        esito.style.background = ok ? '#e9f5ee' : '#fbecec';
+        esito.style.color = '#1E2E26';
+        esito.textContent = msg;
+      };
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(form);
+        const nome = String(fd.get('nome') ?? '').trim();
+        const contatto = String(fd.get('contatto') ?? '').trim();
+        const descrizione = String(fd.get('descrizione') ?? '').trim();
+        const consenso = (document.getElementById('mgp-consenso') as HTMLInputElement).checked;
+        if (nome.length < 2) return mostra('Inserisci il tuo nome.', false);
+        if (contatto.length < 3) return mostra('Lascia un contatto (email o telefono).', false);
+        if (descrizione.length < 5) return mostra('Descrivi il materiale che vuoi proporre.', false);
+        if (!consenso) return mostra('Serve il consenso per poterti ricontattare.', false);
+
+        const payload = {
+          nome, contatto, descrizione,
+          tipo: String(fd.get('tipo') ?? ''),
+          accettazione_privacy: consenso,
+          _honeypot: String(fd.get('_honeypot') ?? ''),
+          _ts: aperturaTs,
+        };
+        submit.disabled = true; submit.textContent = 'Invio…';
+        try {
+          const resp = await fetch(form.dataset.endpoint!, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const data = await resp.json().catch(() => ({}));
+          if (resp.ok && data.success) {
+            form.reset();
+            mostra('Grazie, abbiamo ricevuto la tua proposta: ti ricontatteremo al recapito indicato.', true);
+          } else if (resp.status === 429) {
+            mostra(data.error || 'Hai inviato troppe proposte. Riprova più tardi.', false);
+          } else {
+            mostra(data.error || 'Si è verificato un errore. Riprova o scrivi a info@elbrenz.eu.', false);
+          }
+        } catch {
+          mostra('Errore di rete. Controlla la connessione e riprova.', false);
+        } finally {
+          submit.disabled = false; submit.textContent = 'Invia proposta';
+        }
+      });
     }
   </script>
 </Layout>

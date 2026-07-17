@@ -17,6 +17,7 @@ const EMOJI: Record<string, string> = {
   Pagamenti: '💳', Guardiani: '📝', Alert: '⚠️',
   Soci: '👤', Eventi: '🎟️', Convenzioni: '🤝',
   Contatti: '📩', Sportello: '📦', Lead: '📚', Redazione: '✍️',
+  Museo: '🎖️',
 };
 
 // I template ricevono `dati` e tornano righe brevi. PII minima. Il testo è
@@ -38,6 +39,7 @@ function componiTesto(
     case 'integrazione_quota': r.push(`${d.nome ?? '—'} · ${d.importo ?? '?'} €`); break;
     case 'ricevuta_bonifico':  r.push(`${d.nome ?? '—'} · ricevuta bonifico da verificare${d.anomalia ? ' ⚠ anomalia OCR' : ''}`); break;
     case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/guardiani-curatela`); break;
+    case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto: ${d.contatto ?? '—'}`, `Gestisci su ${site}/museo-gg-curatela`); break;
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
     default:                   r.push(String(d.dettaglio ?? JSON.stringify(dati)).slice(0, 200));
   }
