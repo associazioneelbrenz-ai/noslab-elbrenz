@@ -180,3 +180,24 @@
 .eb-help-scuro  { color: #B9C6BB; }
 .eb-err-scuro   { color: #E8A0A0; }
 .eb-check-scuro { accent-color: #C8923E; width: 18px; height: 18px; }
+
+/* =========================================================================
+   Card "Porta El Brenz sul telefono" (home): telefono inclinato con screenshot
+   reale della home dell'app, alone oro, CTA a community.elbrenz.eu.
+   ========================================================================= */
+.app-card-phone { width: 232px; max-width: 62vw; }
+.app-card-phone .frame {
+  border-radius: 34px; background: #0e1613; padding: 9px; box-shadow: 0 30px 60px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.35);
+  transform: perspective(1400px) rotateY(-14deg) rotateX(5deg) rotateZ(-2deg);
+  transition: transform .5s ease;
+}
+.app-card-phone .screen { position: relative; border-radius: 26px; overflow: hidden; aspect-ratio: 232 / 470; background: #F5EEDD; }
+.app-card-phone .screen img { position: absolute; top: 0; left: 0; width: 100%; height: auto; display: block; }
+/* pillola notch */
+.app-card-phone .notch { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 46px; height: 12px; border-radius: 7px; background: #0e1613; z-index: 2; }
+@media (max-width: 767px) {
+  .app-card-phone { width: 190px; max-width: 56vw; margin: 0 auto; }
+  .app-card-phone .frame { transform: perspective(1400px) rotateY(-8deg) rotateZ(-1deg); }
+}
+@media (hover: hover) { .app-card-phone .frame:hover { transform: perspective(1400px) rotateY(-9deg) rotateX(3deg) rotateZ(-1deg); } }
+@media (prefers-reduced-motion: reduce) { .app-card-phone .frame { transform: none; transition: none; } }
