@@ -163,6 +163,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
 <script>
   import { supabase } from '../lib/supabase';
+  import { proteggiCuratela2fa } from '../lib/curatela2fa';
 
   const TIPO: Record<string, string> = {
     foto: 'Fotografia', cartolina: 'Cartolina', lettera: 'Lettera',
@@ -190,6 +191,8 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     livello = (ruoli ?? []).reduce((m: number, r: any) => Math.max(m, r?.ruolo?.livello ?? 0), 0);
     const nomeRuolo = (ruoli ?? []).map((r: any) => r?.ruolo?.nome).sort().pop() ?? 'ospite';
     if (livello < 50) { show('mu-noaccess'); return; }
+    // Gate AAL2 (2FA) per gli admin che hanno un fattore attivo.
+    if (!(await proteggiCuratela2fa())) { window.location.reload(); return; }
     ($('mu-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
     ($('mu-ruolo') as HTMLElement).textContent = nomeRuolo;
     show('mu-app');
