@@ -50,7 +50,10 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'Body JSON non valido' }, 400);
   }
   const numero = Number(body.numero);
-  if (!Number.isInteger(numero) || numero < 1 || numero > 100000) {
+  // Tessera 0 = account istituzionale (info@elbrenz.eu, super_admin): numero
+  // valido a tutti gli effetti. Limite inferiore a 0, non a 1 (LAVORO E: il
+  // «caso 0 falsy» rifiutava la tessera istituzionale).
+  if (!Number.isInteger(numero) || numero < 0 || numero > 100000) {
     return json({ error: 'numero tessera non valido' }, 400);
   }
   const toOverride = typeof body.to === 'string' && body.to.includes('@') ? body.to.trim() : null;
