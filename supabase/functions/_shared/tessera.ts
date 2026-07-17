@@ -73,6 +73,7 @@ export function tesseraEmailHtml(p: {
   urlVerifica: string;
   intro: string;
   avviso?: string;
+  integrazioneUrl?: string; // se presente: blocco CTA integrazione 10 € (link personale)
 }): string {
   return `<!DOCTYPE html><html><head>
 <meta name="color-scheme" content="light">
@@ -121,6 +122,11 @@ export function tesseraEmailHtml(p: {
     </div>
     <p style="color:#1E2E26;font-size:15px;margin:22px 8px 0;">${p.intro}</p>
     <p style="color:#1E2E26;font-size:14px;margin:12px 8px 0;">📲 <a href="${p.urlVerifica}" style="color:#8a6215;font-weight:600;">Scarica la versione per il telefono</a>: dalla pagina della tessera puoi salvarla in galleria o aggiungerla alla schermata Home.</p>
+    ${p.integrazioneUrl ? `<div style="margin:18px 8px 0;background:#FDF9F0;border:1px solid #E8DFC7;border-radius:8px;padding:16px 18px;">
+      <p style="color:#1E2E26;font-size:15px;line-height:1.6;margin:0;">Per completare la quota ${p.anno} ti manca l'<strong>integrazione di 10 €</strong> (la quota è passata da 10 a 20 €).</p>
+      <p style="text-align:center;margin:14px 0;"><a href="${p.integrazioneUrl}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:13px 26px;text-decoration:none;font-weight:600;font-size:15px;border-radius:4px;">Integra 10 € (tessera n. ${p.numero})</a></p>
+      <p style="color:#666;font-size:13px;line-height:1.6;margin:0;">In alternativa, bonifico su <strong>Cassa Rurale Val di Sole IT84U0816335010000190116255</strong>, causale «Integrazione quota ${p.anno}». Grazie di cuore.</p>
+    </div>` : ''}
     ${p.avviso ? `<p style="color:#8a6215;font-size:13px;margin:12px 8px 0;background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;">${esc(p.avviso)}</p>` : ''}
     <p style="color:#999;font-size:11px;margin:16px 8px 0;">Associazione El Brenz · Via Trento 40, 38027 Malè (TN) · info@elbrenz.eu</p>
   </div></body></html>`;

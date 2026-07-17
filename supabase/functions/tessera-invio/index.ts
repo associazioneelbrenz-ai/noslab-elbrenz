@@ -18,6 +18,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { ensureCodiceEQr, tesseraEmailHtml } from '../_shared/tessera.ts';
 
 const ANNO = 2026;
+const SITO = 'https://elbrenz.eu';
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -42,7 +43,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: 'TESSERE_LIVE spento: invio bloccato' }, 409);
   }
 
-  let body: { numero?: unknown; to?: unknown; avviso?: unknown };
+  let body: { numero?: unknown; to?: unknown; avviso?: unknown; integrazione?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -54,6 +55,9 @@ Deno.serve(async (req: Request) => {
   }
   const toOverride = typeof body.to === 'string' && body.to.includes('@') ? body.to.trim() : null;
   const avviso = typeof body.avviso === 'string' ? body.avviso.trim().slice(0, 300) : '';
+  // integrazione: aggiunge alla tessera il link PERSONALE di pagamento dei 10 €
+  // (generato qui dal codice del socio, mai passato dal runner).
+  const integrazione = body.integrazione === true;
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -82,6 +86,14 @@ Deno.serve(async (req: Request) => {
     return json({ ok: false, numero, error: String(e) }, 500);
   }
 
+  // Link integrazione PERSONALE = /integrazione/{codice} del socio (il codice è
+  // gia' l'HMAC per-socio: nessun token nuovo, nessun segreto passato dal runner).
+  const integrazioneUrl = integrazione ? `${SITO}/integrazione/${codice}` : undefined;
+  // Recapiti condivisi n.13/n.14: nota che chiarisce di chi e' la tessera.
+  const avvisoFinale = (numero === 13 || numero === 14)
+    ? `Nota: questa email riguarda la tessera di ${socio.nome}.`
+    : avviso;
+
   const tesseraHtml = tesseraEmailHtml({
     nome: socio.nome,
     numero,
@@ -89,7 +101,8 @@ Deno.serve(async (req: Request) => {
     qrUrl,
     urlVerifica,
     intro: `Ecco la tua tessera digitale <em>dla nosa Sociazion</em> per l'anno ${anno}. Il codice QR permette a chiunque — ad esempio un esercente convenzionato — di verificarne la validità in tempo reale su <a href="${urlVerifica}" style="color:#8a6215;">elbrenz.eu</a>.`,
-    avviso,
+    avviso: avvisoFinale,
+    integrazioneUrl,
   });
 
   const destinatario = toOverride ?? socio.email;
@@ -115,5 +128,5 @@ Deno.serve(async (req: Request) => {
     .update({ tessera_inviata: true, updated_at: new Date().toISOString() })
     .eq('id', socio.id);
 
-  return json({ ok: true, numero, codice, url_verifica: urlVerifica, qr: qrUrl, inviato_a: destinatario });
+  return json({ ok: true, numero, codice, url_verifica: urlVerifica, qr: qrUrl, inviato_a: destinatario, url_integrazione: integrazioneUrl ?? null });
 });
