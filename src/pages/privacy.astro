@@ -2,11 +2,13 @@
 /**
  * Privacy — Informativa sul trattamento dei dati personali (GDPR, Reg. UE 2016/679).
  *
- * Aggiornamento 13/7/2026 (brief compliance B.3): copre TUTTI i trattamenti
- * attuali (tesseramento, contatti/Sportello, lead-gen libro/documentario,
- * newsletter, Guardiani, convenzioni, eventi/pagamenti PayPal+bonifico, area
- * editor, assistente Andreas con Anthropic+OpenAI, dati tecnici). Dati tecnici
- * verificati sul codice reale. Testo rivisto con Cristian.
+ * Aggiornamento 17/7/2026: aggiunti i trattamenti j) contributi dei soci
+ * nell'app (Storie e Museo, con dichiarazione diritti immagini) e k) proposte
+ * di materiale storico (modulo pubblico Grande Guerra), + relative conservazioni.
+ * Base 13/7/2026 (brief compliance B.3): copre TUTTI i trattamenti attuali
+ * (tesseramento, contatti/Sportello, lead-gen libro/documentario, newsletter,
+ * Guardiani, convenzioni, eventi/pagamenti PayPal+bonifico, area editor,
+ * assistente Andreas con Anthropic+OpenAI, dati tecnici). Testo rivisto con Cristian.
  *
  * Versione precedente (3/5/2026, solo tesseramento) in privacy.astro.bak.
  */
@@ -42,7 +44,7 @@ import Layout from '../layouts/Layout.astro';
         Ai sensi degli articoli 13 e 14 del Regolamento (UE) 2016/679 (GDPR).
       </p>
       <p class="text-sm text-[#0F0F0F]/55 mb-12" style="font-family: 'Inter', sans-serif;">
-        Ultimo aggiornamento: 13 luglio 2026
+        Ultimo aggiornamento: 17 luglio 2026
       </p>
 
       <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1. Titolare del trattamento</h2>
@@ -84,6 +86,12 @@ import Layout from '../layouts/Layout.astro';
       <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
         <strong>i) Assistente digitale "Andreas".</strong> Le domande poste ad Andreas, sul sito e tramite il canale Telegram, vengono elaborate da fornitori di servizi di intelligenza artificiale per generare la risposta (vedi sezione 4). Per gli utenti non autenticati (uso anonimo del widget pubblico e canale Telegram) non conserviamo le conversazioni. Per i soci autenticati sul sito, invece, la cronologia delle conversazioni con Andreas viene conservata nel profilo dell'utente per consentire di riprendere il dialogo; è consultabile e cancellabile su richiesta scrivendo a info@elbrenz.eu. Finalità di quest'ultimo trattamento: continuità del servizio per l'utente autenticato; base giuridica: esecuzione del rapporto associativo e consenso (art. 6.1.b e 6.1.a). Per il funzionamento del canale Telegram trattiamo un identificativo tecnico della chat, in forma cifrata, al solo fine di limitare gli abusi. L'interazione tramite Telegram è inoltre soggetta all'informativa di Telegram. Base giuridica: legittimo interesse al funzionamento del servizio e alla prevenzione degli abusi (art. 6.1.f). Il socio può facoltativamente collegare il proprio account Telegram al proprio profilo associativo: in tal caso conserviamo l'associazione tra l'identificativo Telegram e l'account del socio, al solo fine di riconoscere il livello di accesso sul canale. Il collegamento avviene con il consenso dell'interessato al momento dell'attivazione ed è revocabile in qualsiasi momento dall'area soci del sito. Base giuridica per il collegamento: consenso (art. 6.1.a). Si invita a non inserire dati personali non necessari nelle domande.
       </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>j) Contributi dei soci nell'app della community (Storie e Museo).</strong> I soci che utilizzano l'app possono pubblicare storie (titolo, testo, immagini) e proporre materiale per il Museo della Grande Guerra (immagini, titolo, descrizione, fonte o provenienza, anno). Trattiamo questi contenuti e le relative immagini associandoli al socio che li ha caricati. Per le immagini il socio dichiara di esserne titolare o di avere il diritto di condividerle. Le storie sono visibili agli altri soci; la loro eventuale diffusione pubblica sul sito, così come la pubblicazione dei materiali proposti per il Museo, sono decise dalla curatela dell'Associazione, che verifica contenuti e diritti. Finché non pubblicati, i materiali proposti per il Museo sono visibili solo al socio che li ha caricati e alla curatela, e il socio può modificarli o ritirarli. Finalità: vita associativa partecipativa e valorizzazione della memoria storica e linguistica delle valli. Base giuridica: esecuzione del rapporto associativo e consenso, in particolare per la condivisione delle immagini (art. 6.1.b e 6.1.a GDPR).
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
+        <strong>k) Proposte di materiale storico (modulo pubblico).</strong> Chiunque, anche senza essere socio, può segnalare di possedere materiale sulla Grande Guerra tramite l'apposito modulo sul sito: raccogliamo il nome, un recapito (email o telefono) e la descrizione del materiale. Finalità: ricontattare la persona per valutare, digitalizzare ed eventualmente catalogare il materiale. I dati sono visibili solo alla curatela dell'Associazione, non sono pubblicati né ceduti a terzi, e sono conservati per il tempo necessario alla gestione della proposta, poi cancellati. Base giuridica: consenso (art. 6.1.a GDPR), prestato spuntando l'apposita casella.
+      </p>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
         <strong>l) Dati tecnici e di sicurezza.</strong> Per proteggere i moduli da abusi registriamo in modo temporaneo l'indirizzo IP e dati tecnici minimi (ad esempio limiti di frequenza delle richieste). Finalità: sicurezza del sistema e prevenzione di invii automatizzati o abusivi. Base giuridica: legittimo interesse (art. 6.1.f).
       </p>
@@ -117,6 +125,8 @@ import Layout from '../layouts/Layout.astro';
         <li>dati relativi ad adesione, tesseramento e pagamenti: per la durata del rapporto associativo e, successivamente, per il tempo richiesto dagli obblighi di legge, inclusi quelli contabili e fiscali;</li>
         <li>dati raccolti tramite i moduli di contatto e di download, in assenza di adesione: fino a 12 mesi, o fino a richiesta di cancellazione se anteriore;</li>
         <li>iscritti alla newsletter: fino alla revoca del consenso o alla disiscrizione;</li>
+        <li>proposte di materiale storico (modulo pubblico): per il tempo necessario alla gestione della proposta, poi cancellate;</li>
+        <li>contributi dei soci (storie e materiali per il Museo): per la durata del rapporto associativo; i materiali non pubblicati finché il socio li mantiene o fino al loro ritiro;</li>
         <li>dati tecnici e di sicurezza: per il tempo strettamente necessario alla finalità di protezione.</li>
       </ul>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
