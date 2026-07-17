@@ -296,32 +296,6 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
     </div>
   </section>
 
-  {/* CARD APP (17/7/2026) — "Porta El Brenz sul telefono": porta i visitatori del
-      sito dentro la Community. Blocco verde + alone oro + telefono inclinato con
-      screenshot reale della home dell'app. CTA a community.elbrenz.eu. Riferimento:
-      mockup_card_app_home.svg. "nosa"/"El Brenz" restano invariati. */}
-  <section class="bg-[#F8F1E4] py-12 md:py-16">
-    <div class="max-w-6xl mx-auto px-6">
-      <div class="relative overflow-hidden rounded-[24px] bg-[#1E2E26] px-8 py-12 md:px-16 md:py-16">
-        <div class="pointer-events-none absolute -right-24 top-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full" style="background: radial-gradient(circle, rgba(200,146,62,0.30), rgba(200,146,62,0) 70%);"></div>
-        <div class="relative grid md:grid-cols-2 gap-10 md:gap-6 items-center">
-          <div class="text-center md:text-left">
-            <p class="text-[11px] tracking-[0.24em] uppercase text-[#C8923E] font-semibold m-0 mb-5" style="font-family: 'Inter', sans-serif;">La community dei soci</p>
-            <h2 class="text-3xl md:text-4xl leading-tight text-[#F5EEDD] m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">Porta El Brenz sul tuo telefono</h2>
-            <p class="text-[#F5EEDD]/75 text-lg leading-relaxed m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">La <em>nosa</em> storia, la lingua e la vita delle valli, sempre a portata di mano.</p>
-            <a href="https://community.elbrenz.eu" class="inline-flex items-center gap-2 bg-[#C8923E] text-[#1E2E26] px-8 py-4 rounded-full text-[15px] font-bold no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]" style="font-family: 'Inter', sans-serif;">Entra nella Community <span aria-hidden="true">→</span></a>
-            <p class="text-[13px] text-[#F5EEDD]/50 mt-4 m-0" style="font-family: 'Inter', sans-serif;">community.elbrenz.eu</p>
-          </div>
-          <div class="flex justify-center md:justify-end">
-            <div class="app-card-phone">
-              <div class="frame"><div class="screen"><img src="/img/home/app-home.jpg" alt="La home dell'app El Brenz Community" width="425" height="920" loading="lazy" decoding="async" /></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   {/* AGGIUNTA M5.0 v2 — filigrana Aquila Tirolensis (pubblico dominio) nella
       fascia sotto la hero: centro-destra, parzialmente fuori viewport,
       dietro il contenuto, opacità 0.05, nascosta su mobile. Ritocchi
@@ -539,6 +513,35 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
           </p>
         </div>
       )}
+    </div>
+  </section>
+
+  {/* CARD APP (spostata 18/7/2026 sotto "Prossimi eventi", come sezione a se'
+      stante a piena larghezza — richiesta Cristian) — "Porta El Brenz sul
+      telefono": porta i visitatori del sito dentro la Community. Blocco verde +
+      alone oro + telefono inclinato con screenshot reale della home dell'app.
+      CTA a community.elbrenz.eu. Riferimento: mockup_card_app_home.svg.
+      Responsive: su mobile testo sopra e telefono sotto (grid → 1 colonna),
+      niente overflow orizzontale. "nosa"/"El Brenz" restano invariati. */}
+  <section class="bg-[#F8F1E4] py-12 md:py-16">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="relative overflow-hidden rounded-[24px] bg-[#1E2E26] px-8 py-12 md:px-16 md:py-16">
+        <div class="pointer-events-none absolute -right-24 top-1/2 -translate-y-1/2 w-[520px] h-[520px] rounded-full" style="background: radial-gradient(circle, rgba(200,146,62,0.30), rgba(200,146,62,0) 70%);"></div>
+        <div class="relative grid md:grid-cols-2 gap-10 md:gap-6 items-center">
+          <div class="text-center md:text-left">
+            <p class="text-[11px] tracking-[0.24em] uppercase text-[#C8923E] font-semibold m-0 mb-5" style="font-family: 'Inter', sans-serif;">La community dei soci</p>
+            <h2 class="text-3xl md:text-4xl leading-tight text-[#F5EEDD] m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">Porta El Brenz sul tuo telefono</h2>
+            <p class="text-[#F5EEDD]/75 text-lg leading-relaxed m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">La <em>nosa</em> storia, la lingua e la vita delle valli, sempre a portata di mano.</p>
+            <a href="https://community.elbrenz.eu" class="inline-flex items-center gap-2 bg-[#C8923E] text-[#1E2E26] px-8 py-4 rounded-full text-[15px] font-bold no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]" style="font-family: 'Inter', sans-serif;">Entra nella Community <span aria-hidden="true">→</span></a>
+            <p class="text-[13px] text-[#F5EEDD]/50 mt-4 m-0" style="font-family: 'Inter', sans-serif;">community.elbrenz.eu</p>
+          </div>
+          <div class="flex justify-center md:justify-end">
+            <div class="app-card-phone">
+              <div class="frame"><div class="screen"><img src="/img/home/app-home.jpg" alt="La home dell'app El Brenz Community" width="425" height="920" loading="lazy" decoding="async" /></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
 
