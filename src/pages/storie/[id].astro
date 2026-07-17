@@ -1,0 +1,55 @@
+---
+/**
+ * /storie/{id} — singola storia promossa. SSR sulla vista v_storia_pubblica
+ * (solo pubblica=true). Testo reso come testo (Astro fa l'escape: niente HTML
+ * iniettabile). Nessun dato di contatto dell'autore. Meta per la condivisione.
+ */
+import Layout from '../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+const { id } = Astro.params;
+type Storia = {
+  id: string; titolo: string; contenuto: string;
+  immagini_urls: string[]; copertina_url: string | null; created_at: string; autore_nome: string;
+};
+let s: Storia | null = null;
+if (id && /^[0-9a-fA-F-]{36}$/.test(id)) {
+  try {
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+    const { data } = await sb.from('v_storia_pubblica')
+      .select('id, titolo, contenuto, immagini_urls, copertina_url, created_at, autore_nome')
+      .eq('id', id).maybeSingle();
+    s = (data as Storia) ?? null;
+  } catch (e) { console.error('[storia] lettura fallita:', e); }
+}
+if (!s) return Astro.redirect('/storie');
+
+const dataIt = new Date(s.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+const descr = s.contenuto.length > 155 ? s.contenuto.slice(0, 155).trim() + '…' : s.contenuto;
+const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
+---
+
+<Layout title={`${s.titolo} · Storie El Brenz`} description={descr} ogImage={s.copertina_url ?? s.immagini_urls[0] ?? '/og/og-default.jpg'}>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
+      <p class="mb-6"><a href="/storie" class="text-[#8a6215] text-sm no-underline hover:underline" style="font-family: 'Inter', sans-serif;">← Storie dalle valli</a></p>
+
+      {s.copertina_url && <img src={s.copertina_url} alt={s.titolo} width="1200" height="675" class="w-full h-auto rounded-md mb-6" loading="eager" decoding="async" />}
+      <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">{s.titolo}</h1>
+      <p class="text-[12px] tracking-[0.06em] text-[#8a6215] m-0 mb-6" style="font-family: 'Inter', sans-serif;">di {s.autore_nome} · {dataIt}</p>
+
+      <div class="text-[#1E2E26]/85 leading-relaxed whitespace-pre-wrap break-words" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem; line-height: 1.7;">{s.contenuto}</div>
+
+      {galleria.length > 0 && (
+        <div class="grid gap-4 mt-8">
+          {galleria.map((u, i) => <img src={u} alt={`${s!.titolo} ${i + 1}`} loading="lazy" decoding="async" class="w-full h-auto rounded-md" />)}
+        </div>
+      )}
+    </div>
+  </main>
+</Layout>

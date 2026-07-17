@@ -1,0 +1,66 @@
+---
+/**
+ * /storie — "Storie dalle valli": vetrina pubblica delle storie che gli admin
+ * hanno promosso (pubblica=true). SSR sulla vista v_storia_pubblica (l'anon
+ * legge solo le promosse; RLS/vista lo garantiscono). Nessun dato di contatto
+ * dell'autore. I contenuti delle storie sono nella lingua dell'autore (non
+ * tradotti); la cornice è in italiano.
+ */
+import Layout from '../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+type Storia = {
+  id: string; titolo: string; contenuto: string;
+  immagini_urls: string[]; copertina_url: string | null; created_at: string; autore_nome: string;
+};
+let storie: Storia[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('v_storia_pubblica')
+    .select('id, titolo, contenuto, immagini_urls, copertina_url, created_at, autore_nome')
+    .order('created_at', { ascending: false });
+  storie = (data as Storia[]) ?? [];
+} catch (e) {
+  console.error('[storie] lettura vista fallita:', e);
+}
+const dataIt = (iso: string) => new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+const estratto = (t: string) => t.length > 150 ? t.slice(0, 150).trim() + '…' : t;
+---
+
+<Layout title="Storie dalle valli · El Brenz" description="I racconti della comunità di El Brenz: memorie, luoghi e voci delle Valli del Noce, condivisi dai soci." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3" style="font-family: 'Inter', sans-serif;">La comunità racconta</p>
+      <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">Storie dalle valli</h1>
+      <p class="text-[#1E2E26]/75 leading-relaxed mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Memorie, luoghi e voci delle nostre valli, raccontate dai soci di El Brenz.
+      </p>
+
+      {storie.length === 0 ? (
+        <p class="text-[#1E2E26]/70 text-lg py-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Le prime storie stanno arrivando. Presto qui i racconti della nosa comunità.
+        </p>
+      ) : (
+        <div class="grid gap-5">
+          {storie.map((s) => (
+            <a href={`/storie/${s.id}`} class="block no-underline bg-white border border-[#E8DFC7] rounded-lg overflow-hidden hover:border-[#C8923E]/60 transition-colors">
+              {(s.copertina_url || s.immagini_urls[0]) && (
+                <img src={s.copertina_url || s.immagini_urls[0]} alt={s.titolo} loading="lazy" decoding="async" class="w-full h-48 object-cover" />
+              )}
+              <div class="p-5">
+                <h2 class="text-xl text-[#1E2E26] m-0 mb-1" style="font-family: 'Playfair Display', serif; font-weight: 500;">{s.titolo}</h2>
+                <p class="text-[12px] tracking-[0.06em] text-[#8a6215] m-0 mb-3" style="font-family: 'Inter', sans-serif;">di {s.autore_nome} · {dataIt(s.created_at)}</p>
+                <p class="text-[#1E2E26]/75 text-sm leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">{estratto(s.contenuto)}</p>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  </main>
+</Layout>
