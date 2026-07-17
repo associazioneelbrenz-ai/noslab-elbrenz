@@ -88,7 +88,7 @@ Deno.serve(async (req: Request) => {
         state: 'ACTIVE',
         hexBackgroundColor: '#1E2E26',
         logo: { sourceUri: { uri: `${SITO}/logo-eb-footer@2x.png` } },
-        cardTitle: { defaultValue: { language: 'it', value: 'El Brenz dle Val del Nos' } },
+        cardTitle: { defaultValue: { language: 'it', value: 'El Brenz da le Val del Nos' } },
         subheader: { defaultValue: { language: 'it', value: `Tessera socio · anno ${socio.anno}` } },
         header: { defaultValue: { language: 'it', value: socio.nome } },
         textModulesData: [

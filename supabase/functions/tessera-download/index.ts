@@ -76,7 +76,7 @@ function svgTessera(p: { nome: string; numero: number; anno: number; qrUri: stri
   <image href="${LOGO_URI}" x="90" y="110" width="150" height="150"/>
   <text x="270" y="165" font-family="Playfair Display" font-size="23" fill="#D9A94E" letter-spacing="5">ASSOCIAZIONE STORICO</text>
   <text x="270" y="196" font-family="Playfair Display" font-size="23" fill="#D9A94E" letter-spacing="5">CULTURALE LINGUISTICA</text>
-  <text x="270" y="252" font-family="Playfair Display" font-size="54" fill="#F5EEDD">El <tspan fill="#C8923E" font-style="italic">Brenz</tspan> dle Val del Nos</text>
+  <text x="270" y="252" font-family="Playfair Display" font-size="54" fill="#F5EEDD">El <tspan fill="#C8923E" font-style="italic">Brenz</tspan> da le Val del Nos</text>
   <line x1="90" y1="320" x2="${W - 90}" y2="320" stroke="#C8923E" stroke-opacity="0.45" stroke-width="2"/>
   <!-- dati socio -->
   <text x="540" y="420" text-anchor="middle" font-family="Playfair Display" font-size="27" fill="#F5EEDD" fill-opacity="0.7" letter-spacing="8">TESSERA SOCIO · ANNO ${p.anno}</text>

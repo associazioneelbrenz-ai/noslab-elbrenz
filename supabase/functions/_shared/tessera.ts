@@ -94,7 +94,7 @@ export function tesseraEmailHtml(p: {
           <td style="width:76px;vertical-align:top;"><img src="${LOGO_URL}" alt="Timbro Associazione El Brenz" width="64" height="64" style="display:block;border-radius:50%;"/></td>
           <td style="vertical-align:middle;padding-left:6px;">
             <p style="color:#C8923E;text-transform:uppercase;letter-spacing:.22em;font-size:10px;margin:0 0 6px;">Associazione Storico Culturale Linguistica</p>
-            <h1 style="font-family:Georgia,serif;font-size:26px;margin:0;color:#1E2E26;font-weight:500;">El <em style="color:#C8923E;">Brenz</em> dle Val del Nos</h1>
+            <h1 style="font-family:Georgia,serif;font-size:26px;margin:0;color:#1E2E26;font-weight:500;">El <em style="color:#C8923E;">Brenz</em> da le Val del Nos</h1>
           </td>
         </tr></table>
         <div style="border-top:1px solid rgba(200,146,62,.45);margin:22px 0 20px;"></div>

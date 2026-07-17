@@ -1,4 +1,4 @@
-# El *Brenz* dle Val del Nos
+# El *Brenz* da le Val del Nos
 
 > *Rais fonde no le 'nglacia*
 > — Radici profonde non gelano —
@@ -89,7 +89,7 @@ noslab-elbrenz/
 ## 🎨 Identità visiva
 
 - **Motto**: *Rais fonde no le 'nglacia* (sempre in ladino anaunico)
-- **Wordmark**: *El Brenz dle Val del Nos*
+- **Wordmark**: *El Brenz da le Val del Nos*
 - **Palette**: verde foresta \`#1E2E26\` · crema caldo \`#F8F1E4\` · oro ambra \`#C8923E\`
 - **Tipografia**: Playfair Display (display/titoli) · Source Serif (body) · Inter (UI)
 

@@ -40,7 +40,7 @@ interface Props {
 }
 
 const {
-  title = 'El Brenz dle Val del Nos',
+  title = 'El Brenz da le Val del Nos',
   description = 'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Storia, lingua ladino-anaunica, cultura di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo.',
   ogImage = '/og-image.png',
   ogType = 'website',
@@ -54,9 +54,9 @@ const pl: PublicLocale = (['it', 'de', 'en'] as const).includes(lang as PublicLo
   : 'it';
 const t = useTranslations(lang);
 
-const fullTitle = title === 'El Brenz dle Val del Nos'
+const fullTitle = title === 'El Brenz da le Val del Nos'
   ? `${title} · Associazione Storico Culturale Linguistica`
-  : `${title} · El Brenz dle Val del Nos`;
+  : `${title} · El Brenz da le Val del Nos`;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = new URL(ogImage, Astro.site);
