@@ -143,3 +143,30 @@
   .eb-marquee__track > div:first-child { flex-wrap: wrap; justify-content: center; width: 100%; padding-right: 0; }
   .eb-marquee__rep, .eb-marquee__dup { display: none; }
 }
+
+/* =========================================================================
+   Campi form su sezioni SCURE (verde bosco): chiari, leggibili, focus oro.
+   Centralizzato: usare .eb-campo-scuro su input/select/textarea che stanno
+   su fondo #1E2E26. Etichette .eb-label-scuro, errori .eb-err-scuro. WCAG AA.
+   ========================================================================= */
+.eb-campo-scuro {
+  width: 100%;
+  background: #FCF7EC;
+  border: 1px solid #E8DFC7;
+  color: #1E2E26;
+  padding: 11px 14px;
+  font-size: 16px;            /* >=16px: niente zoom automatico su iOS */
+  border-radius: 8px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.eb-campo-scuro::placeholder { color: #8A9488; opacity: 1; }
+.eb-campo-scuro:focus,
+.eb-campo-scuro:focus-visible {
+  outline: none;
+  border-color: #C8923E;
+  box-shadow: 0 0 0 3px rgba(200, 146, 62, 0.25);
+}
+.eb-label-scuro { color: #F5EEDD; }
+.eb-help-scuro  { color: #B9C6BB; }
+.eb-err-scuro   { color: #E8A0A0; }
+.eb-check-scuro { accent-color: #C8923E; width: 18px; height: 18px; }
