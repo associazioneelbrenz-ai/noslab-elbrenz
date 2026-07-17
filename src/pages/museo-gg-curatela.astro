@@ -264,28 +264,51 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       .select('*').order('created_at', { ascending: false });
     const box = $('mu-lista')!;
     if (error) { box.innerHTML = `<p class="text-[#a33] text-sm">Errore di lettura: ${esc(error.message)}</p>`; return; }
-    const righe = (data as any[]) ?? [];
-    if (righe.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessun pezzo. Caricane uno nuovo.</p>'; return; }
+    const tutte = (data as any[]) ?? [];
+    if (tutte.length === 0) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessun pezzo. Caricane uno nuovo.</p>'; return; }
+    // In attesa (contributi soci da validare) in cima.
+    const ordine = { in_attesa: 0, rifiutato: 1, pubblicato: 2 } as Record<string, number>;
+    const righe = [...tutte].sort((a, b) => (ordine[a.stato] ?? 3) - (ordine[b.stato] ?? 3));
+    // Nomi di chi ha caricato (solo colonne pubbliche, mai email).
+    const ids = [...new Set(tutte.map((r) => r.caricato_da).filter(Boolean))];
+    const nomi = new Map<string, string>();
+    if (ids.length) {
+      const { data: aut } = await supabase.from('v_forum_autore').select('id, nome_visualizzato').in('id', ids);
+      for (const a of (aut as any[]) ?? []) nomi.set(a.id, a.nome_visualizzato ?? 'Socio');
+    }
+    const badge = (s: string) => s === 'pubblicato'
+      ? '<span style="background:#2d86591a;color:#2d8659;padding:2px 10px;border-radius:999px;font-size:12px;">Pubblicato</span>'
+      : s === 'rifiutato'
+      ? '<span style="background:#a333;color:#a33;padding:2px 10px;border-radius:999px;font-size:12px;">Non pubblicato</span>'
+      : '<span style="background:#C8923E22;color:#8a6215;padding:2px 10px;border-radius:999px;font-size:12px;">In attesa</span>';
     box.innerHTML = righe.map((r) => {
-      const pub = r.stato === 'pubblicato'
-        ? '<span style="background:#2d86591a;color:#2d8659;padding:2px 10px;border-radius:999px;font-size:12px;">Pubblicato</span>'
-        : '<span style="background:#6b5a3a1a;color:#6b5a3a;padding:2px 10px;border-radius:999px;font-size:12px;">In attesa</span>';
       const thumb = (r.immagini_urls && r.immagini_urls[0])
         ? `<img src="${esc(r.immagini_urls[0])}" class="w-12 h-12 object-cover rounded border border-[#E5DFCF] shrink-0" />`
         : '<span class="w-12 h-12 rounded bg-[#eee6d5] shrink-0 inline-block"></span>';
-      return `<div class="bg-white border border-[#E5DFCF] rounded p-3 flex items-center gap-3">
+      const daSocio = r.caricato_da ? ` · <span class="text-[#8a6215]">da ${esc(nomi.get(r.caricato_da) || 'un socio')}</span>` : '';
+      const rifiuta = r.stato === 'in_attesa'
+        ? `<button type="button" data-rifiuta="${r.id}" class="text-sm text-[#a33] underline bg-transparent border-0 cursor-pointer">Rifiuta</button>` : '';
+      return `<div class="bg-white border ${r.stato === 'in_attesa' ? 'border-[#C8923E]/60' : 'border-[#E5DFCF]'} rounded p-3 flex items-center gap-3">
         ${thumb}
         <div class="min-w-0 flex-1">
           <p class="m-0 text-[#1E2E26] truncate"><strong>${esc(r.titolo)}</strong></p>
-          <p class="m-0 text-[13px] text-[#1E2E26]/60 truncate">${esc(TIPO[r.tipo] || r.tipo)}${r.anno ? ' · ' + esc(r.anno) : (r.periodo ? ' · ' + esc(r.periodo) : '')}${r.fonte ? ' · ' + esc(r.fonte) : ''}</p>
+          <p class="m-0 text-[13px] text-[#1E2E26]/60 truncate">${esc(TIPO[r.tipo] || r.tipo)}${r.anno ? ' · ' + esc(r.anno) : (r.periodo ? ' · ' + esc(r.periodo) : '')}${r.fonte ? ' · ' + esc(r.fonte) : ''}${daSocio}</p>
         </div>
         <div class="flex items-center gap-3 shrink-0">
-          ${pub}
+          ${badge(r.stato)}
+          ${rifiuta}
           <button type="button" data-edit="${r.id}" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Apri</button>
         </div>
       </div>`;
     }).join('');
-    box.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => apriForm((b as HTMLElement).dataset.edit!, righe)));
+    box.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => apriForm((b as HTMLElement).dataset.edit!, tutte)));
+    box.querySelectorAll('[data-rifiuta]').forEach((b) => b.addEventListener('click', async () => {
+      const id = (b as HTMLElement).dataset.rifiuta!;
+      if (!window.confirm('Rifiutare questo contributo? Non sarà pubblicato (resta visibile al socio come «non pubblicato»).')) return;
+      const { error } = await supabase.from('museo_gg_pezzo').update({ stato: 'rifiutato' }).eq('id', id);
+      if (error) { alert('Rifiuto non riuscito: ' + error.message); return; }
+      await caricaLista();
+    }));
   }
 
   // ---- FORM ----
