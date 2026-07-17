@@ -3,8 +3,10 @@
  * Privacy — Informativa sul trattamento dei dati personali (GDPR, Reg. UE 2016/679).
  *
  * Aggiornamento 17/7/2026: aggiunti i trattamenti j) contributi dei soci
- * nell'app (Storie e Museo, con dichiarazione diritti immagini) e k) proposte
- * di materiale storico (modulo pubblico Grande Guerra), + relative conservazioni.
+ * nell'app (Storie e Museo, con dichiarazione diritti immagini), k) proposte
+ * di materiale storico (modulo pubblico Grande Guerra) e m) donazioni di
+ * materiale da parte di ospiti nell'app (file su storage privato, «caricato
+ * != pubblicato», ritiro/cancellazione), + relative conservazioni.
  * Base 13/7/2026 (brief compliance B.3): copre TUTTI i trattamenti attuali
  * (tesseramento, contatti/Sportello, lead-gen libro/documentario, newsletter,
  * Guardiani, convenzioni, eventi/pagamenti PayPal+bonifico, area editor,
@@ -92,8 +94,11 @@ import Layout from '../layouts/Layout.astro';
       <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
         <strong>k) Proposte di materiale storico (modulo pubblico).</strong> Chiunque, anche senza essere socio, può segnalare di possedere materiale sulla Grande Guerra tramite l'apposito modulo sul sito: raccogliamo il nome, un recapito (email o telefono) e la descrizione del materiale. Finalità: ricontattare la persona per valutare, digitalizzare ed eventualmente catalogare il materiale. I dati sono visibili solo alla curatela dell'Associazione, non sono pubblicati né ceduti a terzi, e sono conservati per il tempo necessario alla gestione della proposta, poi cancellati. Base giuridica: consenso (art. 6.1.a GDPR), prestato spuntando l'apposita casella.
       </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
         <strong>l) Dati tecnici e di sicurezza.</strong> Per proteggere i moduli da abusi registriamo in modo temporaneo l'indirizzo IP e dati tecnici minimi (ad esempio limiti di frequenza delle richieste). Finalità: sicurezza del sistema e prevenzione di invii automatizzati o abusivi. Base giuridica: legittimo interesse (art. 6.1.f).
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        <strong>m) Donazioni di materiale da parte di ospiti nell'app della community.</strong> Chi accede all'app come ospite (email verificata, senza essere socio) può donare materiale storico caricando direttamente i file (fotografie, documenti in formato immagine o PDF) insieme a titolo, descrizione, provenienza e tipo. I file caricati sono conservati in uno spazio di archiviazione <strong>privato</strong>: non sono pubblici né accessibili da altri utenti, ma solo dalla curatela dell'Associazione ai fini della valutazione. Caricare non significa pubblicare: nulla viene reso pubblico automaticamente. Solo se il materiale è idoneo e i diritti sono verificati, la curatela lo cataloga nel Museo della Grande Guerra, dove segue l'ordinaria revisione prima dell'eventuale pubblicazione, con menzione della provenienza. Prima della catalogazione l'ospite può ritirare in autonomia la propria donazione, e in ogni momento può chiederne la cancellazione scrivendo a info@elbrenz.eu. Al momento della donazione l'interessato dichiara di essere titolare del materiale o di avere il diritto di condividerlo e acconsente alla conservazione e all'eventuale pubblicazione. Finalità: raccolta e valorizzazione della memoria storica delle valli. Base giuridica: consenso (art. 6.1.a GDPR), prestato spuntando l'apposita dichiarazione.
       </p>
 
       <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">3. Modalità del trattamento</h2>
@@ -127,6 +132,7 @@ import Layout from '../layouts/Layout.astro';
         <li>iscritti alla newsletter: fino alla revoca del consenso o alla disiscrizione;</li>
         <li>proposte di materiale storico (modulo pubblico): per il tempo necessario alla gestione della proposta, poi cancellate;</li>
         <li>contributi dei soci (storie e materiali per il Museo): per la durata del rapporto associativo; i materiali non pubblicati finché il socio li mantiene o fino al loro ritiro;</li>
+        <li>donazioni di materiale da parte di ospiti nell'app: i file restano nello spazio privato finché la curatela non li valuta; se non idonei, o su richiesta di ritiro o cancellazione, vengono eliminati; se catalogati, confluiscono nel Museo con le regole del punto precedente;</li>
         <li>dati tecnici e di sicurezza: per il tempo strettamente necessario alla finalità di protezione.</li>
       </ul>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
