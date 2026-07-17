@@ -1,74 +1,38 @@
 ---
+/**
+ * Cookie policy - 17/7/2026: sostituita con la COOKIE POLICY UNIFICATA (sito +
+ * app), testo VERBATIM da TESTI_LEGALI_COMPLETI_elbrenz.md (blocco 2).
+ * Pubblicazione autorizzata da Cristian (data 17 luglio 2026), da far rivedere
+ * da un professionista. Versione precedente in cookie-policy.astro.bak2.
+ */
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout ogImage="/og/og-cookie-policy.jpg" title="Cookie policy" description="Informativa sui cookie utilizzati dal sito elbrenz.eu · Associazione Storico Culturale Linguistica El Brenz">
+<Layout ogImage="/og/og-cookie-policy.jpg" title="Cookie policy" description="Cookie policy dell'ecosistema El Brenz (sito e app soci) · Associazione Storico Culturale Linguistica El Brenz">
   <main class="container mx-auto px-4 py-12 max-w-3xl prose prose-lg">
-    <h1>Cookie policy</h1>
-    <p class="lead">
-      Ultimo aggiornamento: 13 luglio 2026
+    <h1>Cookie Policy</h1>
+    <p class="lead">Ultimo aggiornamento: 17 luglio 2026</p>
+
+    <h2>2.1 Cosa sono</h2>
+    <p>
+      I cookie e le tecnologie simili sono piccoli file o dati salvati sul tuo dispositivo per far funzionare i servizi e ricordare alcune scelte.
     </p>
 
-    <h2>Uso dei cookie su elbrenz.eu</h2>
-    <p>
-      Raccogliamo il minimo indispensabile per farti accedere all'area soci e per i servizi essenziali del sito. Niente tracciamento pubblicitario, niente cookie di terze parti per profilazione.
-    </p>
-
-    <h2>Cookie strettamente necessari</h2>
-    <p>
-      Sempre attivi. Garantiscono login soci, validazione OTP via email, sessioni Supabase. Senza, alcune parti del sito non funzionano. Non richiedono consenso esplicito (Art. 122 Codice Privacy, eccezione tecnica).
-    </p>
+    <h2>2.2 Cosa usiamo</h2>
     <ul>
-      <li><strong>cc_cookie</strong>, memorizza la tua scelta sui cookie (durata: 365 giorni)</li>
-      <li><strong>sb-*</strong> (Supabase), sessione utente autenticato (durata: sessione)</li>
-      <li><strong>localStorage tecnici</strong>, <code>elbrenz-auth</code> (sessione area soci) e <code>andreas_widget_seen</code> (ricorda che hai già visto il widget di Andreas, così il segnalino di notifica non ricompare). Finalità puramente tecnica/UX, nessun tracciamento; si eliminano cancellando i dati di navigazione.</li>
-      <li><strong>Service Worker (PWA)</strong>, il sito può essere installato come applicazione e memorizza alcune pagine e risorse nella cache del browser (Cache Storage) per consentirne la consultazione anche offline e caricamenti più rapidi. È un meccanismo puramente tecnico, non traccia la navigazione e non trasmette dati a terzi; si azzera disinstallando l'applicazione o cancellando i dati del sito dal browser.</li>
+      <li><strong>Strumenti tecnici e necessari.</strong> Sul sito e nell'app usiamo cookie e archiviazione locale tecnici, indispensabili al funzionamento: gestione della sessione e dell'autenticazione, memorizzazione delle preferenze (incluse le preferenze sui cookie). Non richiedono consenso.</li>
+      <li><strong>Nessun cookie di profilazione o marketing di terze parti.</strong> Non utilizziamo cookie pubblicitari né di tracciamento di terzi per profilazione.</li>
+      <li><strong>Contenuti di terze parti "click-to-load".</strong> Alcuni contenuti (ad esempio video di YouTube o Vimeo) vengono caricati solo dopo che tu scegli di avviarli: finché non li avvii, il terzo non riceve i relativi dati.</li>
     </ul>
 
-    <h2>Cookie analitici (non ancora attivi)</h2>
+    <h2>2.3 Come gestirli</h2>
     <p>
-      Categoria pronta per <strong>Google Analytics 4</strong>, che potremmo attivare in futuro per capire quali contenuti delle Valli del Noce interessano di più ai visitatori. Per ora questa categoria è vuota e nessun cookie analitico viene installato.
-    </p>
-    <p>
-      Se in futuro attiveremo GA4, lo segnaleremo nel banner e potrai scegliere se acconsentire. I cookie che andremmo a installare sarebbero <code>_ga</code>, <code>_gid</code>, <code>_ga_*</code> (Google LLC, durata massima 2 anni).
+      Puoi gestire o eliminare i cookie dalle impostazioni del tuo browser e, dove presente, dal pannello delle preferenze cookie del sito. La disattivazione dei cookie tecnici può compromettere il funzionamento dei servizi.
     </p>
 
-    <h2>Come modificare le preferenze</h2>
+    <h2>2.4 Riferimenti</h2>
     <p>
-      Puoi cambiare in qualsiasi momento la tua scelta cookie eliminando il cookie <code>cc_cookie</code> dal tuo browser (sezione impostazioni privacy/cookie), oppure ricaricando il banner manualmente da una sessione in incognito.
-    </p>
-
-    <h2>Contenuti incorporati da terze parti (meccanismo a due click)</h2>
-    <p>
-      In alcune pagine incorporiamo contenuti esterni: <strong>reel Instagram</strong> (Meta Platforms Ireland Ltd.) e <strong>video YouTube</strong> (Google Ireland Ltd., in modalità privacy-enhanced tramite il dominio <code>youtube-nocookie.com</code>).
-    </p>
-    <p>
-      Al caricamento della pagina <strong>nessun dato viene trasmesso a questi fornitori</strong>: vedi solo una copertina o un riquadro ospitati sui nostri server. Il contenuto (e i relativi cookie di terze parti) si carica <strong>solo dopo una tua azione esplicita</strong>: premendo "Carica" sull'avviso che compare al primo click. Se spunti <strong>"Ricorda la mia scelta"</strong>, la preferenza viene salvata nella categoria "Contenuti esterni" del banner cookie (attivabile anche direttamente dalle preferenze del banner) e da quel momento i contenuti si caricano subito; senza spunta vale solo per la sessione in corso. In alternativa trovi sempre il link diretto al contenuto sul sito del fornitore.
-    </p>
-    <p>
-      La <strong>Mappa delle Valli</strong> (/mappa) segue lo stesso principio: la cartografia
-      arriva dai servizi pubblici della <strong>Provincia Autonoma di Trento</strong> (ente
-      pubblico, nessun cookie impostato) e viene richiesta <strong>solo dopo che premi
-      "Carica la mappa"</strong>; in caso di indisponibilità del servizio provinciale
-      subentra OpenStreetMap (OpenStreetMap Foundation), sempre senza cookie.
-    </p>
-    <ul>
-      <li><strong>eb_embed_instagram</strong>, <strong>eb_embed_youtube</strong>, cookie tecnici first-party che ricordano il tuo click per la sessione in corso (durata: sessione del browser, si cancellano alla chiusura)</li>
-      <li>I cookie impostati dai fornitori dopo il click sono descritti nelle loro informative: <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener">privacy policy di Meta</a> · <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">privacy policy di Google</a></li>
-    </ul>
-
-    <h2>Cookie di terze parti</h2>
-    <p>
-      Al di fuori dei contenuti incorporati descritti sopra (che richiedono comunque una tua azione esplicita), il sito <strong>non installa cookie di terze parti</strong> per profilazione o pubblicità.
-    </p>
-
-    <h2>Contatti</h2>
-    <p>
-      Per qualsiasi domanda su privacy o cookie scrivi a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>.
-    </p>
-
-    <p>
-      Vedi anche la nostra <a href="/privacy">Privacy policy</a>.
+      Per il trattamento dei dati personali vedi l'<a href="/privacy">Informativa sulla Privacy</a>. Per l'uso dell'app vedi i <a href="/regolamento">Termini d'uso</a>.
     </p>
   </main>
 </Layout>

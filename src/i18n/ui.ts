@@ -105,6 +105,7 @@ export const ui = {
     'footer.cookieprefs': 'Preferenze cookie',
     'footer.statuto': 'Statuto',
     'footer.termini': 'Termini di servizio',
+    'footer.regolamento': 'Regolamento community',
     'footer.crediti': 'Crediti e licenze',
     // Home pilota — hero + CTA
     'hero.badge': 'Associazione Storico Culturale Linguistica',
@@ -158,6 +159,7 @@ export const ui = {
     'footer.cookieprefs': 'Cookie-Einstellungen',
     'footer.statuto': 'Satzung',
     'footer.termini': 'Nutzungsbedingungen',
+    'footer.regolamento': 'Community-Regeln',
     'footer.crediti': 'Credits und Lizenzen',
     'hero.badge': 'Historisch-kulturell-sprachlicher Verein',
     'hero.title1': 'Die Wurzeln des',
@@ -209,6 +211,7 @@ export const ui = {
     'footer.cookieprefs': 'Cookie preferences',
     'footer.statuto': 'Statute',
     'footer.termini': 'Terms of service',
+    'footer.regolamento': 'Community rules',
     'footer.crediti': 'Credits and licenses',
     'hero.badge': 'Historical, Cultural and Linguistic Association',
     'hero.title1': 'The roots of',

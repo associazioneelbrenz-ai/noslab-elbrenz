@@ -1,20 +1,13 @@
 ---
 /**
- * Privacy — Informativa sul trattamento dei dati personali (GDPR, Reg. UE 2016/679).
+ * Privacy - Informativa sul trattamento dei dati personali (GDPR, Reg. UE 2016/679).
  *
- * Aggiornamento 17/7/2026: aggiunti i trattamenti j) contributi dei soci
- * nell'app (Storie e Museo, con dichiarazione diritti immagini), k) proposte
- * di materiale storico (modulo pubblico Grande Guerra) e m) donazioni di
- * materiale da parte di ospiti nell'app (file su storage privato, «caricato
- * != pubblicato», ritiro/cancellazione), + relative conservazioni.
- * Base 13/7/2026 (brief compliance B.3): copre TUTTI i trattamenti attuali
- * (tesseramento, contatti/Sportello, lead-gen libro/documentario, newsletter,
- * Guardiani, convenzioni, eventi/pagamenti PayPal+bonifico, area editor,
- * assistente Andreas con Anthropic+OpenAI, dati tecnici). Testo rivisto con Cristian.
- *
- * Versione precedente (3/5/2026, solo tesseramento) in privacy.astro.bak.
+ * 17/7/2026: sostituita con l'INFORMATIVA UNIFICATA (sito + app soci), testo
+ * VERBATIM da TESTI_LEGALI_COMPLETI_elbrenz.md (blocco 1). Pubblicazione
+ * autorizzata da Cristian (data 17 luglio 2026), da far rivedere da un
+ * professionista. La sezione "Notifiche push" (1.3) resta COMMENTATA finché le
+ * push non sono attive. Versioni precedenti in privacy.astro.bak / .bak2.
  */
-
 import Layout from '../layouts/Layout.astro';
 ---
 <Layout ogImage="/og/og-privacy.jpg"
@@ -42,126 +35,94 @@ import Layout from '../layouts/Layout.astro';
   <section class="bg-[#F8F1E4] py-16">
     <div class="max-w-3xl mx-auto px-6" style="font-family: 'Source Serif 4', Georgia, serif;">
 
-      <p class="text-sm text-[#0F0F0F]/55 mb-2" style="font-family: 'Inter', sans-serif;">
-        Ai sensi degli articoli 13 e 14 del Regolamento (UE) 2016/679 (GDPR).
-      </p>
       <p class="text-sm text-[#0F0F0F]/55 mb-12" style="font-family: 'Inter', sans-serif;">
         Ultimo aggiornamento: 17 luglio 2026
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1. Titolare del trattamento</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-2">
-        Il Titolare del trattamento è l'<strong>Associazione Storico Culturale Linguistica "El Brenz" delle Valli del Noce</strong>, con sede in Via Trento 40, 38027 Malè (TN), Codice Fiscale 92019480224.
-      </p>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.1 Titolare del trattamento</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Per ogni questione relativa alla presente informativa e per l'esercizio dei diritti è possibile scrivere a: <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
+        Titolare è l'<strong>Associazione Storico Culturale Linguistica "El Brenz" delle Valli del Noce</strong>, Via Trento 40, 38027 Malè (TN), C.F. 92019480224, email <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>. Per ogni questione relativa ai tuoi dati puoi scrivere a questo indirizzo.
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">2. Quali dati raccogliamo, per quali finalità e con quale base giuridica</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        Raccogliamo il minimo indispensabile, e solo per le finalità qui indicate. I dati provengono dai moduli e dalle funzioni del sito. Di seguito il dettaglio per ciascun trattamento.
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>a) Adesione e tesseramento.</strong> Raccogliamo nome, cognome, indirizzo email, data e luogo di nascita e sesso, oltre a un eventuale messaggio facoltativo. Finalità: gestire la richiesta di adesione, il tesseramento e le comunicazioni relative alla vita associativa. Base giuridica: esecuzione del rapporto associativo e adempimento degli obblighi connessi (art. 6.1.b e 6.1.c GDPR); per l'eventuale iscrizione futura in assenza di adesione formale, il consenso (art. 6.1.a). La data di nascita, qualora venga attivato l'invio di auguri ai soci, sarà trattata anche per tale finalità.
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>b) Contatti e "Sportello El Brenz. Porta la tua Storia".</strong> Raccogliamo nome, indirizzo email e il contenuto del messaggio o della testimonianza inviata. Finalità: rispondere alle richieste e gestire i contributi proposti. Base giuridica: consenso e riscontro alla richiesta dell'interessato (art. 6.1.a e 6.1.b).
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>c) Download del libro e del documentario (modulo).</strong> Per scaricare l'opera "A proposito di Tirolo" e per il documentario "Fiöi dal Nos" raccogliamo nome, indirizzo email e, facoltativamente, il numero di telefono. Finalità: fornire la risorsa richiesta e, se acconsentito separatamente, inviare aggiornamenti dell'Associazione. Base giuridica: consenso (art. 6.1.a).
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>d) Newsletter e comunicazioni.</strong> Chi si iscrive fornisce nome e indirizzo email. Finalità: inviare la newsletter e le comunicazioni dell'Associazione. Base giuridica: consenso (art. 6.1.a), revocabile in qualsiasi momento tramite il link di disiscrizione presente in ogni messaggio. La gestione degli invii e delle disiscrizioni avviene tramite Resend.
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>e) "Guardiani de la lenga" (glossario collaborativo).</strong> Chi propone un termine invia la parola, il significato e le informazioni linguistiche correlate, oltre a un indirizzo email; può indicare il proprio nome. Finalità: raccogliere, validare e conservare il patrimonio linguistico proposto, gestire il riscontro sulla proposta e l'eventuale attribuzione. L'email è utilizzata per la gestione del contributo e non è resa pubblica; il nome del contributore compare pubblicamente <strong>solo se l'interessato sceglie di renderlo visibile</strong>. Base giuridica: consenso (art. 6.1.a).
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>f) Proposte di convenzione (esercenti e partner).</strong> Raccogliamo i dati dell'attività e del referente che propone la convenzione. Finalità: valutare e gestire le convenzioni riservate ai soci. Base giuridica: consenso e legittimo interesse alla gestione dei rapporti convenzionali (art. 6.1.a e 6.1.f).
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>g) Iscrizione a eventi e gite, pagamenti e donazioni.</strong> Per l'iscrizione a eventi e gite raccogliamo i dati del partecipante necessari alla partecipazione. I pagamenti (quota associativa, anticipo per le gite, donazioni) sono effettuati tramite PayPal oppure tramite bonifico bancario sull'IBAN dell'Associazione. Finalità: gestire l'iscrizione, il pagamento e la relativa ricevuta. Base giuridica: esecuzione del servizio richiesto e adempimenti connessi, inclusi quelli contabili (art. 6.1.b e 6.1.c). I dati di pagamento effettuati tramite PayPal sono trattati direttamente da PayPal secondo la sua informativa; per i bonifici, i dati risultano dalla contabile bancaria.
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>h) Area riservata e redazione (soci e collaboratori).</strong> Per l'accesso all'area riservata e alla redazione utilizziamo l'autenticazione tramite codice inviato via email (OTP). Per i collaboratori editoriali trattiamo i dati dell'account e i contenuti prodotti. Finalità: consentire l'accesso riservato e l'attività editoriale. Base giuridica: esecuzione del rapporto associativo o di collaborazione e consenso (art. 6.1.b e 6.1.a).
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>i) Assistente digitale "Andreas".</strong> Le domande poste ad Andreas, sul sito e tramite il canale Telegram, vengono elaborate da fornitori di servizi di intelligenza artificiale per generare la risposta (vedi sezione 4). Per gli utenti non autenticati (uso anonimo del widget pubblico e canale Telegram) non conserviamo le conversazioni. Per i soci autenticati sul sito, invece, la cronologia delle conversazioni con Andreas viene conservata nel profilo dell'utente per consentire di riprendere il dialogo; è consultabile e cancellabile su richiesta scrivendo a info@elbrenz.eu. Finalità di quest'ultimo trattamento: continuità del servizio per l'utente autenticato; base giuridica: esecuzione del rapporto associativo e consenso (art. 6.1.b e 6.1.a). Per il funzionamento del canale Telegram trattiamo un identificativo tecnico della chat, in forma cifrata, al solo fine di limitare gli abusi. L'interazione tramite Telegram è inoltre soggetta all'informativa di Telegram. Base giuridica: legittimo interesse al funzionamento del servizio e alla prevenzione degli abusi (art. 6.1.f). Il socio può facoltativamente collegare il proprio account Telegram al proprio profilo associativo: in tal caso conserviamo l'associazione tra l'identificativo Telegram e l'account del socio, al solo fine di riconoscere il livello di accesso sul canale. Il collegamento avviene con il consenso dell'interessato al momento dell'attivazione ed è revocabile in qualsiasi momento dall'area soci del sito. Base giuridica per il collegamento: consenso (art. 6.1.a). Si invita a non inserire dati personali non necessari nelle domande.
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>j) Contributi dei soci nell'app della community (Storie e Museo).</strong> I soci che utilizzano l'app possono pubblicare storie (titolo, testo, immagini) e proporre materiale per il Museo della Grande Guerra (immagini, titolo, descrizione, fonte o provenienza, anno). Trattiamo questi contenuti e le relative immagini associandoli al socio che li ha caricati. Per le immagini il socio dichiara di esserne titolare o di avere il diritto di condividerle. Le storie sono visibili agli altri soci; la loro eventuale diffusione pubblica sul sito, così come la pubblicazione dei materiali proposti per il Museo, sono decise dalla curatela dell'Associazione, che verifica contenuti e diritti. Finché non pubblicati, i materiali proposti per il Museo sono visibili solo al socio che li ha caricati e alla curatela, e il socio può modificarli o ritirarli. Finalità: vita associativa partecipativa e valorizzazione della memoria storica e linguistica delle valli. Base giuridica: esecuzione del rapporto associativo e consenso, in particolare per la condivisione delle immagini (art. 6.1.b e 6.1.a GDPR).
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>k) Proposte di materiale storico (modulo pubblico).</strong> Chiunque, anche senza essere socio, può segnalare di possedere materiale sulla Grande Guerra tramite l'apposito modulo sul sito: raccogliamo il nome, un recapito (email o telefono) e la descrizione del materiale. Finalità: ricontattare la persona per valutare, digitalizzare ed eventualmente catalogare il materiale. I dati sono visibili solo alla curatela dell'Associazione, non sono pubblicati né ceduti a terzi, e sono conservati per il tempo necessario alla gestione della proposta, poi cancellati. Base giuridica: consenso (art. 6.1.a GDPR), prestato spuntando l'apposita casella.
-      </p>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-4">
-        <strong>l) Dati tecnici e di sicurezza.</strong> Per proteggere i moduli da abusi registriamo in modo temporaneo l'indirizzo IP e dati tecnici minimi (ad esempio limiti di frequenza delle richieste). Finalità: sicurezza del sistema e prevenzione di invii automatizzati o abusivi. Base giuridica: legittimo interesse (art. 6.1.f).
-      </p>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.2 A cosa si applica</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        <strong>m) Donazioni di materiale da parte di ospiti nell'app della community.</strong> Chi accede all'app come ospite (email verificata, senza essere socio) può donare materiale storico caricando direttamente i file (fotografie, documenti in formato immagine o PDF) insieme a titolo, descrizione, provenienza e tipo. I file caricati sono conservati in uno spazio di archiviazione <strong>privato</strong>: non sono pubblici né accessibili da altri utenti, ma solo dalla curatela dell'Associazione ai fini della valutazione. Caricare non significa pubblicare: nulla viene reso pubblico automaticamente. Solo se il materiale è idoneo e i diritti sono verificati, la curatela lo cataloga nel Museo della Grande Guerra, dove segue l'ordinaria revisione prima dell'eventuale pubblicazione, con menzione della provenienza. Prima della catalogazione l'ospite può ritirare in autonomia la propria donazione, e in ogni momento può chiederne la cancellazione scrivendo a info@elbrenz.eu. Al momento della donazione l'interessato dichiara di essere titolare del materiale o di avere il diritto di condividerlo e acconsente alla conservazione e all'eventuale pubblicazione. Finalità: raccolta e valorizzazione della memoria storica delle valli. Base giuridica: consenso (art. 6.1.a GDPR), prestato spuntando l'apposita dichiarazione.
+        Questa informativa riguarda il trattamento dei dati personali attraverso il sito <strong>elbrenz.eu</strong> e l'applicazione per i soci <strong>community.elbrenz.eu</strong>, che fanno parte di un unico ecosistema dell'Associazione.
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">3. Modalità del trattamento</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        I dati sono trattati con strumenti informatici, nel rispetto dei principi di liceità, minimizzazione e limitazione delle finalità. La trasmissione avviene tramite connessione cifrata (HTTPS/TLS). L'accesso ai dati è riservato alle persone autorizzate dell'Associazione. Non è previsto alcun processo decisionale automatizzato che produca effetti giuridici sulle persone.
-      </p>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.3 Quali dati trattiamo, per quali finalità e con quali basi giuridiche</h2>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">4. Responsabili esterni e trasferimenti di dati</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        Per erogare i propri servizi l'Associazione si avvale di fornitori che agiscono come responsabili del trattamento (art. 28 GDPR):
-      </p>
-      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
-        <li><strong>Supabase</strong>: banca dati, autenticazione e archiviazione. Dati ospitati nell'Unione Europea.</li>
-        <li><strong>Resend</strong>: invio delle email transazionali e della newsletter. Dati trattati su infrastruttura nell'Unione Europea (regione eu-west-1).</li>
-        <li><strong>Netlify</strong>: hosting del sito. Il fornitore ha sede negli Stati Uniti: il trasferimento avviene sulla base di garanzie adeguate (clausole contrattuali standard della Commissione europea o meccanismi equivalenti).</li>
-        <li><strong>PayPal</strong>: gestione dei pagamenti. Fornitore con sede negli Stati Uniti, che tratta i dati secondo la propria informativa e con garanzie adeguate.</li>
-        <li><strong>Anthropic e OpenAI</strong>: elaborazione delle domande poste ad Andreas per generare la risposta. Fornitori con sede negli Stati Uniti: il trasferimento avviene sulla base di garanzie adeguate. Le conversazioni degli utenti non autenticati non sono conservate; per i soci autenticati la cronologia è conservata dall'Associazione come indicato al punto i) della sezione 2.</li>
-        <li><strong>Telegram</strong>: canale di messaggistica dell'assistente Andreas, soggetto alla propria informativa.</li>
+      <h3 class="text-lg font-medium text-[#1E2E26] mb-3 mt-6" style="font-family: 'Playfair Display', serif;">Trattamenti del sito</h3>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-2">
+        <li><strong>Adesione e tesseramento.</strong> Dati anagrafici e di contatto (nome, cognome, email, dati necessari alla tessera). Non richiediamo il numero di telefono per il tesseramento. Finalità: gestione del rapporto associativo e degli obblighi connessi. Base giuridica: esecuzione del rapporto associativo e obblighi di legge (art. 6.1.b e 6.1.c GDPR). Conservazione: per la durata dell'iscrizione e per i termini previsti dagli obblighi contabili e di legge.</li>
+        <li><strong>Donazioni.</strong> Dati necessari al pagamento tramite PayPal o bonifico e alla registrazione della donazione. Finalità: gestione e rendicontazione delle donazioni. Base giuridica: esecuzione della richiesta e obblighi di legge (art. 6.1.b/c). Conservazione: secondo gli obblighi fiscali e contabili.</li>
+        <li><strong>Iscrizione a gite ed eventi.</strong> Nome, cognome, email, telefono, eventuali dati di pagamento dell'anticipo. Finalità: gestione dell'iscrizione e dell'evento. Base giuridica: esecuzione del rapporto (art. 6.1.b). Conservazione: per il tempo necessario alla gestione dell'evento e ai relativi obblighi.</li>
+        <li><strong>Contatti e sportello.</strong> Email e contenuto dei messaggi che ci invii. Finalità: rispondere alle richieste. Base giuridica: riscontro alla richiesta dell'interessato (art. 6.1.b). Conservazione: per il tempo necessario a gestire la richiesta.</li>
+        <li><strong>Newsletter.</strong> Email e consenso, con doppio opt-in e possibilità di disiscrizione in ogni momento (link in ogni invio). Finalità: inviare comunicazioni dell'Associazione. Base giuridica: consenso (art. 6.1.a). Fornitore di invio: Resend (UE). Conservazione: fino alla revoca del consenso.</li>
+        <li><strong>Raccolta contatti (materiali e iniziative).</strong> Email lasciata volontariamente per accedere a contenuti (ad esempio un volume o un documentario). Finalità: invio del contenuto e comunicazioni collegate. Base giuridica: consenso (art. 6.1.a). Conservazione: 12 mesi, salvo iscrizione alla newsletter.</li>
+        <li><strong>Guardiani (glossario del ladino anaunico).</strong> Email (obbligatoria, non pubblicata) e i contributi proposti. Finalità: raccolta e curatela del glossario. Base giuridica: consenso e legittimo interesse alla valorizzazione della lingua (art. 6.1.a/f). I contributi pubblicati sono rilasciati con licenza CC BY 4.0. Conservazione: per la durata del progetto.</li>
+        <li><strong>Convenzioni.</strong> Dati dell'esercente e del referente che propone una convenzione. Finalità: valutazione e gestione della convenzione. Base giuridica: riscontro alla richiesta (art. 6.1.b). Nella parte pubblica non sono esposti i dati personali del referente.</li>
+        <li><strong>Custodi della memoria.</strong> Testimonianze, ricordi e materiali conferiti. Finalità: raccolta e valorizzazione della memoria delle valli. Base giuridica: consenso (art. 6.1.a).</li>
+        <li><strong>Area redazione (collaboratori).</strong> Dati dei collaboratori abilitati a proporre e pubblicare contenuti. Finalità: gestione redazionale. Base giuridica: rapporto di collaborazione (art. 6.1.b).</li>
       </ul>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        I dati non sono diffusi né ceduti a terzi per finalità commerciali. I trasferimenti verso Paesi al di fuori dell'Unione Europea avvengono, ove presenti, sulla base delle garanzie previste dagli articoli 44 e seguenti del GDPR.
-      </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">5. Periodo di conservazione</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        Conserviamo i dati per il tempo necessario alle finalità indicate:
-      </p>
-      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
-        <li>dati relativi ad adesione, tesseramento e pagamenti: per la durata del rapporto associativo e, successivamente, per il tempo richiesto dagli obblighi di legge, inclusi quelli contabili e fiscali;</li>
-        <li>dati raccolti tramite i moduli di contatto e di download, in assenza di adesione: fino a 12 mesi, o fino a richiesta di cancellazione se anteriore;</li>
-        <li>iscritti alla newsletter: fino alla revoca del consenso o alla disiscrizione;</li>
-        <li>proposte di materiale storico (modulo pubblico): per il tempo necessario alla gestione della proposta, poi cancellate;</li>
-        <li>contributi dei soci (storie e materiali per il Museo): per la durata del rapporto associativo; i materiali non pubblicati finché il socio li mantiene o fino al loro ritiro;</li>
-        <li>donazioni di materiale da parte di ospiti nell'app: i file restano nello spazio privato finché la curatela non li valuta; se non idonei, o su richiesta di ritiro o cancellazione, vengono eliminati; se catalogati, confluiscono nel Museo con le regole del punto precedente;</li>
-        <li>dati tecnici e di sicurezza: per il tempo strettamente necessario alla finalità di protezione.</li>
+      <h3 class="text-lg font-medium text-[#1E2E26] mb-3 mt-6" style="font-family: 'Playfair Display', serif;">Trattamenti dell'app soci</h3>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-2">
+        <li><strong>Registrazione e accesso.</strong> Email, password ed eventuale autenticazione a due fattori; se colleghi Telegram, l'identificativo Telegram e il collegamento con il tuo account. Finalità: accesso all'app e sicurezza. Base giuridica: esecuzione del rapporto associativo e misure di sicurezza (art. 6.1.b/f). Conservazione: per la durata dell'iscrizione; il collegamento Telegram è revocabile.</li>
+        <li><strong>Community (post, commenti, storie).</strong> Contenuto pubblicato, autore, canale e date. I contenuti sono visibili agli altri soci nell'area riservata; le storie promosse possono comparire sul sito pubblico con il solo nome dell'autore. Finalità: vita della community. Base giuridica: rapporto associativo e legittimo interesse (art. 6.1.b/f). Conservazione: per la durata dell'iscrizione o finché il contenuto resta pubblicato; rimovibile su richiesta.</li>
+        <li><strong>Immagini, documenti e avatar caricati.</strong> File caricati (foto profilo, immagini, documenti) con dichiarazione dei diritti; se ritraggono persone, dichiarazione di aver raccolto i consensi. I contenuti sono soggetti a moderazione. Finalità: profilo, community, Museo, storie. Base giuridica: consenso e dichiarazione dell'utente (art. 6.1.a/b). Conservazione: per la durata dell'iscrizione o finché pubblicati.</li>
+        <li><strong>Menzioni tra soci.</strong> Collegamento del nome di un altro socio a un contenuto. La ricerca soci per la menzione espone solo nome e immagine del profilo. Base giuridica: legittimo interesse alla funzionalità (art. 6.1.f).</li>
+        <li><strong>Donazione di materiale da parte di non soci.</strong> Chi non è socio può proporre una donazione previa verifica dell'email (codice OTP): email, file e metadati indicati, con dichiarazione dei diritti; ogni caricamento è soggetto ad approvazione e i file restano privati finché non catalogati. Base giuridica: consenso e riscontro alla richiesta (art. 6.1.a/b). Conservazione: le proposte non accolte sono cancellate entro un periodo ragionevole; i materiali accolti entrano nell'archivio con il relativo credito.</li>
+        <li><strong>Riconoscimenti e livelli di partecipazione.</strong> Registro delle azioni che maturano punti (ad esempio pubblicare contenuti, ricevere reazioni, contribuire), totale e livello. Il livello (non il dettaglio dei punti) può essere mostrato agli altri soci accanto al nome; è possibile nasconderlo dalle impostazioni. I livelli hanno finalità di riconoscimento, non determinano l'accesso alle funzioni e non producono effetti giuridici. Allo stato non sono previsti premi. Base giuridica: legittimo interesse alla partecipazione (art. 6.1.f). Conservazione: per la durata dell'iscrizione.</li>
       </ul>
+
+      <h3 class="text-lg font-medium text-[#1E2E26] mb-3 mt-6" style="font-family: 'Playfair Display', serif;">Trattamenti trasversali</h3>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-2">
+        <li><strong>Assistente "Andreas".</strong> Le domande che poni ad Andreas sono elaborate tramite fornitori di intelligenza artificiale con sede negli Stati Uniti (Anthropic e OpenAI), sulla base di garanzie adeguate (vedi 1.5). Le conversazioni non sono conservate a fini di profilazione. Andreas non adotta decisioni che producano effetti giuridici sull'interessato. Base giuridica: esecuzione del servizio e legittimo interesse (art. 6.1.b/f).</li>
+        <li><strong>Log tecnici e sicurezza.</strong> Dati tecnici di funzionamento (ad esempio indirizzo IP e log) necessari a erogare e proteggere il servizio. Base giuridica: legittimo interesse alla sicurezza e al corretto funzionamento (art. 6.1.f). Conservazione: per il tempo limitato necessario.</li>
+        {/* SEZIONE PUSH - da PUBBLICARE solo quando le notifiche push saranno attive.
+        <li><strong>Notifiche push (funzione futura, non attiva).</strong> Qualora attivate, l'app registrerà un identificativo del dispositivo previo consenso, revocabile in ogni momento. L'informativa sarà aggiornata indicando il fornitore di invio e le relative garanzie.</li>
+        */}
+      </ul>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.4 Destinatari e responsabili del trattamento</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Al termine dei periodi indicati i dati sono cancellati o resi anonimi.
+        I dati sono trattati dal personale autorizzato dell'Associazione e da fornitori che agiscono come responsabili del trattamento, tra cui: <strong>Supabase</strong> (infrastruttura dati e autenticazione, UE), <strong>Resend</strong> (invio email, UE), <strong>Netlify</strong> (hosting, USA), <strong>PayPal</strong> (pagamenti), <strong>Anthropic</strong> e <strong>OpenAI</strong> (elaborazione delle richieste ad Andreas, USA), <strong>Telegram</strong> (se colleghi l'utenza). In caso di attivazione delle notifiche push si aggiungerà il relativo fornitore. I dati non sono diffusi né ceduti a terzi per finalità di marketing.
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">6. Diritti dell'interessato</h2>
-      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
-        In qualsiasi momento è possibile esercitare i diritti previsti dagli articoli 15 e seguenti del GDPR: accesso ai propri dati, rettifica, cancellazione, limitazione del trattamento, portabilità, opposizione, nonché revoca del consenso prestato, senza che ciò pregiudichi la liceità del trattamento effettuato prima della revoca.
-      </p>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.5 Trasferimenti verso Paesi extra-UE</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Le richieste vanno inviate a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>. È inoltre possibile proporre reclamo all'Autorità di controllo competente, ossia il <strong>Garante per la protezione dei dati personali</strong> (<a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" class="text-[#C8923E] no-underline hover:underline">garanteprivacy.it</a>).
+        Alcuni fornitori hanno sede negli Stati Uniti (Netlify, PayPal, Anthropic, OpenAI, ed eventuali servizi di notifiche push). I trasferimenti avvengono nel rispetto delle garanzie previste dal GDPR, quali le <strong>clausole contrattuali standard</strong> della Commissione Europea e/o l'adesione al <strong>Data Privacy Framework</strong>. Puoi richiedere maggiori informazioni scrivendo a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">7. Cookie</h2>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.6 Visibilità dei dati nella community</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        Il sito utilizza esclusivamente cookie tecnici e strumenti necessari al funzionamento, e adotta un meccanismo di caricamento su richiesta per i contenuti di terze parti (video, mappa, social), così da non trasmettere dati prima di un'azione esplicita dell'utente. Il dettaglio è riportato nella <a href="/cookie-policy" class="text-[#C8923E] no-underline hover:underline">Cookie Policy</a>, richiamabile anche dal piè di pagina insieme al <button type="button" data-cc="show-preferencesModal" class="text-[#C8923E] bg-transparent border-0 p-0 cursor-pointer hover:underline" style="font: inherit;">pannello delle preferenze</button>.
+        Nell'area riservata gli altri soci vedono, di ciascun socio: nome, immagine del profilo, contenuti pubblicati, reazioni e, se non disattivato, il livello. Non sono visibili agli altri soci l'email, il numero di tessera o altri dati amministrativi. Le storie promosse e i materiali pubblicati possono comparire sul sito pubblico con il solo nome dell'autore. Puoi rimuovere i tuoi contenuti e limitare la visibilità del livello.
       </p>
 
-      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">8. Modifiche alla presente informativa</h2>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.7 Conservazione (sintesi)</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        L'Associazione può aggiornare la presente informativa per adeguarla a modifiche normative o dei servizi. La versione vigente è sempre pubblicata su questa pagina, con l'indicazione della data di ultimo aggiornamento.
+        In generale: dati del rapporto associativo per la durata dell'iscrizione e secondo gli obblighi di legge; contenuti, media e riconoscimenti per la durata dell'iscrizione o finché pubblicati; contatti da raccolta materiali 12 mesi; newsletter fino a revoca; proposte di donazione non accolte per un periodo ragionevole; log tecnici per il tempo limitato necessario.
       </p>
 
-      <div class="border-t border-[#E5DFCF] mt-16 pt-8">
-        <p class="text-sm text-[#0F0F0F]/55 leading-relaxed" style="font-family: 'Inter', sans-serif;">
-          Per qualsiasi domanda relativa a questa informativa o al trattamento dei dati personali, contatta l'Associazione all'indirizzo <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
-        </p>
-      </div>
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.8 I tuoi diritti</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Puoi in ogni momento esercitare i diritti previsti dagli articoli 15-22 del GDPR: <strong>accesso</strong>, <strong>rettifica</strong>, <strong>cancellazione</strong>, <strong>limitazione</strong>, <strong>portabilità</strong>, <strong>opposizione</strong>, e <strong>revoca del consenso</strong> (senza pregiudicare la liceità del trattamento precedente). Scrivi a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>. Hai inoltre diritto di proporre reclamo al <strong>Garante per la protezione dei dati personali</strong>.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.9 Minori</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        L'uso dei servizi che richiedono il consenso è consentito dai <strong>14 anni</strong> compiuti, ai sensi della normativa italiana. Per i minori di 14 anni è necessario il consenso di chi esercita la responsabilità genitoriale.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.10 Decisioni automatizzate</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Non adottiamo decisioni automatizzate che producano effetti giuridici o incidano significativamente sugli interessati. L'assistente Andreas e i livelli di partecipazione hanno natura informativa e di riconoscimento.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.11 Modifiche</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Questa informativa può essere aggiornata; la versione vigente, con la data di ultimo aggiornamento, è sempre disponibile su elbrenz.eu e nell'app.
+      </p>
 
     </div>
   </section>
