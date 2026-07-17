@@ -14,4 +14,18 @@
   # Host mappa (tile OSM + WMS SIAT PAT) in img-src; SIAT anche in connect-src
   # (GetCapabilities); www.facebook.com in frame-src (Page Plugin embed consent-gated).
   # 16/7: enforced (era Report-Only dal 14/7) dopo verifica console senza violazioni.
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com https://tile.openstreetmap.org https://siat.provincia.tn.it; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypal.com https://siat.provincia.tn.it; frame-src https://www.paypal.com https://www.instagram.com https://www.youtube-nocookie.com https://www.facebook.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
+  # 17/7: cdn.jsdelivr.net in script-src — la chat Andreas (andreas-chat.js) carica
+  # marked+DOMPurify da lì per il markdown; senza, ensureLibs() falliva e la chat
+  # non si inizializzava («Andreas non interrogabile»).
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com https://tile.openstreetmap.org https://siat.provincia.tn.it; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypal.com https://siat.provincia.tn.it; frame-src https://www.paypal.com https://www.instagram.com https://www.youtube-nocookie.com https://www.facebook.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
+
+# La chat Andreas minimale (/andreas/embed) è pensata per essere inglobata via
+# iframe dall'app della community: qui allentiamo SOLO il framing (frame-ancestors
+# + X-Frame-Options) verso le origin dell'app, lasciando invariato il resto della
+# policy. La protezione clickjacking del resto del sito NON cambia.
+/andreas/embed
+  X-Frame-Options: ALLOWALL
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co; frame-ancestors 'self' https://elbrenz-community.netlify.app https://app.elbrenz.eu https://community.elbrenz.eu; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co
+/andreas/embed/*
+  X-Frame-Options: ALLOWALL
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://wacknihvdjxltiqvxtqr.supabase.co https://www.paypalobjects.com; font-src 'self'; connect-src 'self' https://wacknihvdjxltiqvxtqr.supabase.co; frame-ancestors 'self' https://elbrenz-community.netlify.app https://app.elbrenz.eu https://community.elbrenz.eu; base-uri 'self'; form-action 'self' https://wacknihvdjxltiqvxtqr.supabase.co

@@ -711,7 +711,11 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
 
   async function init() {
     if (!bindElements()) return;
-    await ensureLibs();
+    // ensureLibs carica marked+DOMPurify da CDN per il markdown. Se il caricamento
+    // fallisce (CDN irraggiungibile o bloccato da CSP), NON deve impedire l'init:
+    // la chat resta interrogabile e le risposte si mostrano in testo semplice
+    // (renderMarkdown ha già il fallback a testo se le librerie mancano).
+    try { await ensureLibs(); } catch (_) { /* markdown non disponibile: fallback a testo */ }
 
     // Eventi
     $form.addEventListener('submit', (e) => {
