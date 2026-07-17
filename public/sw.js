@@ -1,5 +1,5 @@
 /**
- * Service Worker — El Brenz dle Val del Nos
+ * Service Worker — El Brenz da le Val del Nos
  *
  * Strategia cache:
  *   - Asset statici (icone PWA, font Google, immagini): cache-first
