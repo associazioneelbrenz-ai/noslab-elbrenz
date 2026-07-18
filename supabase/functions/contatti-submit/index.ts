@@ -16,6 +16,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app',
   'https://elbrenz.eu',
+  'https://community.elbrenz.eu',
   'https://www.elbrenz.eu',
   'http://localhost:4321',
   'http://localhost:3000',

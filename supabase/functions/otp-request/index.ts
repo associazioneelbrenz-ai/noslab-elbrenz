@@ -4,6 +4,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app',
   'https://elbrenz.eu',
+  'https://community.elbrenz.eu',
   'https://www.elbrenz.eu',
   'https://elbrenz-community.netlify.app',  // PWA soci — staging (16/7)
   'https://app.elbrenz.eu',                 // PWA soci — dominio previsto

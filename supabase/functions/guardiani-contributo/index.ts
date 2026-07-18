@@ -18,7 +18,8 @@ import { INFORMATIVA_VERSIONE } from '../_shared/consenso.ts';
 import { notificaDirettivo } from '../_shared/notificaDirettivo.ts';
 
 const ALLOWED_ORIGINS = [
-  'https://elbrenz-app.netlify.app', 'https://elbrenz.eu', 'https://www.elbrenz.eu',
+  'https://elbrenz-app.netlify.app', 'https://elbrenz.eu',
+  'https://community.elbrenz.eu', 'https://www.elbrenz.eu',
   'http://localhost:4321', 'http://localhost:3000',
 ];
 const RATE_MAX = 5;

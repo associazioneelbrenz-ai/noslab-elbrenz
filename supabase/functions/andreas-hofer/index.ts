@@ -17,6 +17,7 @@
 const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app',
   'https://elbrenz.eu',
+  'https://community.elbrenz.eu',
   'https://www.elbrenz.eu',
   'http://localhost:4321',  // Astro dev default
   'http://localhost:3000',  // dev alt
