@@ -1,0 +1,101 @@
+---
+/**
+ * /luoghi — indice dei luoghi delle Valli del Noce (§B.3 del brief 18/7).
+ *
+ * SSR come /mappa: elenco server-rendered (SEO + alternativa accessibile alla
+ * mappa) con filtri per valle e categoria coerenti con quelli della mappa.
+ * E' la porta d'ingresso per chi arriva da una ricerca generica.
+ */
+import { createClient } from '@supabase/supabase-js';
+import Layout from '../../layouts/Layout.astro';
+import { CATEGORIE_LUOGHI, COLORI_LUOGHI, VALLI_LUOGHI, sigilloCategoria } from '../../lib/luoghi';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const { data: luoghiRaw } = await supabase
+  .from('v_luoghi_pagina')
+  .select('slug, nome, categoria, valle, descrizione_breve')
+  .order('nome');
+const luoghi = luoghiRaw ?? [];
+
+// Filtri attivi da query string (senza JavaScript: link, non bottoni).
+const qsValle = Astro.url.searchParams.get('valle') ?? 'tutte';
+const qsCat = Astro.url.searchParams.get('categoria') ?? 'tutte';
+const filtrati = luoghi.filter((l: any) =>
+  (qsValle === 'tutte' || l.valle === qsValle) && (qsCat === 'tutte' || l.categoria === qsCat));
+
+const valliPresenti = [...new Set(luoghi.map((l: any) => l.valle))];
+const catPresenti = [...new Set(luoghi.map((l: any) => l.categoria))];
+const linkFiltro = (v: string, c: string) => {
+  const p = new URLSearchParams();
+  if (v !== 'tutte') p.set('valle', v);
+  if (c !== 'tutte') p.set('categoria', c);
+  return p.toString() ? `/luoghi?${p}` : '/luoghi';
+};
+
+const titolo = 'Luoghi delle Valli del Noce | El Brenz';
+const descrizione = `I ${luoghi.length} luoghi di interesse storico e culturale delle Valli del Noce: castelli, chiese, tracce della Grande Guerra, musei e cultura materiale. Con coordinate e mappa.`;
+---
+
+<Layout title={titolo} description={descrizione}>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-5xl mx-auto px-6 py-14">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Le Valli del Noce</p>
+      <h1 class="text-4xl md:text-5xl m-0 mb-4 leading-tight" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        I luoghi della <em class="text-[#C8923E]">nosa storia</em>
+      </h1>
+      <p class="text-[#F5EEDD]/75 max-w-2xl m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Castelli, chiese e santuari, tracce della Grande Guerra, mulini e segherie, musei di valle. Ogni luogo con la sua posizione, le coordinate e la strada per arrivarci.
+      </p>
+    </div>
+  </header>
+
+  <section class="bg-[#F8F1E4] py-10">
+    <div class="max-w-5xl mx-auto px-6">
+      {/* Filtri: link, funzionano anche senza JavaScript */}
+      <div class="flex flex-wrap gap-2 mb-4">
+        <a href={linkFiltro('tutte', qsCat)} class={`px-4 py-2 text-xs uppercase tracking-wider rounded-full no-underline border-2 ${qsValle === 'tutte' ? 'bg-[#1E2E26] text-[#F5EEDD] border-[#1E2E26]' : 'bg-white text-[#1E2E26] border-[#C8923E]/40'}`} style="font-family: 'Inter', sans-serif;">Tutte le valli</a>
+        {valliPresenti.map((v: any) => (
+          <a href={linkFiltro(v, qsCat)} class={`px-4 py-2 text-xs uppercase tracking-wider rounded-full no-underline border-2 ${qsValle === v ? 'bg-[#1E2E26] text-[#F5EEDD] border-[#1E2E26]' : 'bg-white text-[#1E2E26] border-[#C8923E]/40'}`} style="font-family: 'Inter', sans-serif;">{VALLI_LUOGHI[v] ?? v}</a>
+        ))}
+      </div>
+      <div class="flex flex-wrap gap-2 mb-8">
+        <a href={linkFiltro(qsValle, 'tutte')} class={`px-4 py-2 text-xs uppercase tracking-wider rounded-full no-underline border-2 ${qsCat === 'tutte' ? 'bg-[#1E2E26] text-[#F5EEDD] border-[#1E2E26]' : 'bg-white text-[#1E2E26] border-[#C8923E]/40'}`} style="font-family: 'Inter', sans-serif;">Tutte le categorie</a>
+        {catPresenti.map((c: any) => (
+          <a href={linkFiltro(qsValle, c)} class={`px-4 py-2 text-xs uppercase tracking-wider rounded-full no-underline border-2 ${qsCat === c ? 'bg-[#1E2E26] text-[#F5EEDD] border-[#1E2E26]' : 'bg-white text-[#1E2E26] border-[#C8923E]/40'}`} style="font-family: 'Inter', sans-serif;">{CATEGORIE_LUOGHI[c] ?? c}</a>
+        ))}
+      </div>
+
+      <p class="text-sm text-[#1E2E26]/60 m-0 mb-4" style="font-family: 'Inter', sans-serif;">{filtrati.length} luoghi</p>
+
+      {filtrati.length === 0 ? (
+        <p class="text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">Nessun luogo con questi filtri. <a href="/luoghi" class="text-[#8a6215] underline">Vedi tutti</a>.</p>
+      ) : (
+        <ul class="list-none p-0 m-0 grid gap-3 md:grid-cols-2">
+          {filtrati.map((l: any) => (
+            <li class="bg-white border border-[#E5DFCF] rounded-md">
+              <a href={`/luoghi/${l.slug}`} class="no-underline flex items-start gap-3 p-4">
+                <span class="flex-none grid place-items-center w-10 h-10 rounded-full" style={`background: ${(COLORI_LUOGHI[l.categoria] ?? '#C8923E')}1f; border: 1px solid ${COLORI_LUOGHI[l.categoria] ?? '#C8923E'};`} aria-hidden="true">
+                  <Fragment set:html={sigilloCategoria(l.categoria, COLORI_LUOGHI[l.categoria] ?? '#C8923E', 20)} />
+                </span>
+                <span class="min-w-0">
+                  <strong class="text-[#1E2E26] block">{l.nome}</strong>
+                  <span class="text-xs text-[#1E2E26]/55" style="font-family: 'Inter', sans-serif;">{CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · {VALLI_LUOGHI[l.valle] ?? l.valle}</span>
+                  {l.descrizione_breve && <span class="block text-sm text-[#1E2E26]/75 mt-1" style="font-family: 'Source Serif 4', Georgia, serif;">{l.descrizione_breve}</span>}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p class="mt-8 m-0">
+        <a href="/mappa" class="text-sm text-[#8a6215] underline" style="font-family: 'Inter', sans-serif;">Vedi i luoghi sulla mappa →</a>
+      </p>
+    </div>
+  </section>
+</Layout>

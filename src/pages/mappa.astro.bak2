@@ -29,7 +29,7 @@ const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 
 type Luogo = {
   id: string; nome: string; categoria: string; valle: string;
-  lat: number; lng: number; descrizione_breve: string | null; url_articolo: string | null; slug: string | null;
+  lat: number; lng: number; descrizione_breve: string | null; url_articolo: string | null;
 };
 type ConvenzioneMappa = {
   id: string; nome_attivita: string; categoria: string; localita: string | null;
@@ -368,8 +368,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
           <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1E2E26;margin:0 0 4px;">${l.nome}</p>
           <span style="font-family:'Inter',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a6215;background:rgba(200,146,62,.15);border-radius:999px;padding:2px 10px;">${dati.categorie?.[l.categoria] ?? l.categoria}</span>
           ${l.descrizione_breve ? `<p style="font-size:13px;color:rgba(30,46,38,.8);margin:8px 0 0;">${l.descrizione_breve}</p>` : ''}
-          ${l.slug ? `<p style="margin:8px 0 0;"><a href="/luoghi/${l.slug}" style="color:#8a6215;font-weight:600;">Scheda del luogo →</a></p>` : ''}
-          ${l.url_articolo ? `<p style="margin:6px 0 0;"><a href="${l.url_articolo}" style="color:#8a6215;">Leggi la storia →</a></p>` : ''}
+          ${l.url_articolo ? `<p style="margin:8px 0 0;"><a href="${l.url_articolo}" style="color:#8a6215;">Leggi la storia →</a></p>` : ''}
         </div>`);
       markers.push({ tipo: 'luoghi', valle: l.valle, m });
     }

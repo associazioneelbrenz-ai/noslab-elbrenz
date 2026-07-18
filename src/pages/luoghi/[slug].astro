@@ -1,0 +1,191 @@
+---
+/**
+ * /luoghi/{slug} — pagina di un luogo delle Valli del Noce (§B del brief 18/7).
+ *
+ * SSR (prerender=false), coerente con /mappa: i luoghi si leggono a ogni
+ * richiesta da v_luoghi_pagina (vista pubblica, solo campi di visualizzazione).
+ * La pagina deve restare dignitosa anche senza descrizione_estesa: oggi quel
+ * campo e' vuoto per tutti e 39, li scrivera' Cristian nel tempo.
+ *
+ * Contiene: intestazione con sigillo di categoria e valle, descrizioni,
+ * mappa centrata sul punto (Leaflet self-hosted, caricamento differito),
+ * coordinate copiabili, collegamento all'articolo o invito a raccontare,
+ * luoghi vicini della stessa valle, dati strutturati Place.
+ */
+import { createClient } from '@supabase/supabase-js';
+import Layout from '../../layouts/Layout.astro';
+import { CATEGORIE_LUOGHI, COLORI_LUOGHI, VALLI_LUOGHI, sigilloCategoria } from '../../lib/luoghi';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+const { slug } = Astro.params;
+
+type Luogo = {
+  id: string; slug: string; nome: string; categoria: string; valle: string;
+  lat: number; lng: number; descrizione_breve: string | null;
+  descrizione_estesa: string | null; meta_description: string | null;
+  url_articolo: string | null; fonte_immagine: string | null;
+};
+
+const { data: luogo } = await supabase
+  .from('v_luoghi_pagina')
+  .select('id, slug, nome, categoria, valle, lat, lng, descrizione_breve, descrizione_estesa, meta_description, url_articolo, fonte_immagine')
+  .eq('slug', slug)
+  .maybeSingle<Luogo>();
+
+if (!luogo) return Astro.redirect('/luoghi', 302);
+
+// Luoghi vicini: stessa valle, esclusi se stesso. Fanno navigare invece di uscire.
+const { data: viciniRaw } = await supabase
+  .from('v_luoghi_pagina')
+  .select('slug, nome, categoria, valle, descrizione_breve')
+  .eq('valle', luogo.valle)
+  .neq('slug', luogo.slug)
+  .limit(4);
+const vicini = viciniRaw ?? [];
+
+const categoriaLabel = CATEGORIE_LUOGHI[luogo.categoria] ?? luogo.categoria;
+const valleLabel = VALLI_LUOGHI[luogo.valle] ?? luogo.valle;
+const colore = COLORI_LUOGHI[luogo.categoria] ?? '#C8923E';
+const coord = `${luogo.lat.toFixed(6)}, ${luogo.lng.toFixed(6)}`;
+const titoloSeo = `${luogo.nome} · ${valleLabel} | El Brenz`;
+const descrizione = luogo.meta_description || luogo.descrizione_breve ||
+  `${luogo.nome}, ${categoriaLabel.toLowerCase()} in ${valleLabel}. Coordinate, mappa e come arrivare.`;
+
+// Dati strutturati Place: e' cio' che rende il luogo comprensibile alle mappe
+// e alle ricerche locali.
+const schemaPlace = {
+  '@context': 'https://schema.org',
+  '@type': 'Place',
+  name: luogo.nome,
+  description: descrizione,
+  geo: { '@type': 'GeoCoordinates', latitude: luogo.lat, longitude: luogo.lng },
+  address: { '@type': 'PostalAddress', addressRegion: valleLabel, addressCountry: 'IT' },
+  url: `https://elbrenz.eu/luoghi/${luogo.slug}`,
+};
+---
+
+<Layout title={titoloSeo} description={descrizione}>
+  <script type="application/ld+json" set:html={JSON.stringify(schemaPlace)} />
+
+  <article class="bg-[#F8F1E4] py-12">
+    <div class="max-w-3xl mx-auto px-6">
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">
+        <a href="/luoghi" class="no-underline text-[#8a6215] hover:underline">Luoghi delle Valli</a>
+        <span aria-hidden="true"> · </span>{valleLabel}
+      </p>
+
+      <div class="flex items-start gap-4 mb-6">
+        <span class="flex-none grid place-items-center w-14 h-14 rounded-full" style={`background: ${colore}1f; border: 1.5px solid ${colore};`} aria-hidden="true">
+          <Fragment set:html={sigilloCategoria(luogo.categoria, colore)} />
+        </span>
+        <div>
+          <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 leading-tight" style="font-family: 'Playfair Display', serif; font-weight: 500;">{luogo.nome}</h1>
+          <p class="text-sm text-[#1E2E26]/60 m-0 mt-2" style="font-family: 'Inter', sans-serif;">{categoriaLabel} · {valleLabel}</p>
+        </div>
+      </div>
+
+      {luogo.descrizione_breve && (
+        <p class="text-lg leading-relaxed text-[#1E2E26] m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">{luogo.descrizione_breve}</p>
+      )}
+      {luogo.descrizione_estesa && (
+        <div class="text-[#1E2E26]/85 leading-relaxed mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+          {luogo.descrizione_estesa.split('\n').filter(Boolean).map((p: string) => <p class="m-0 mb-4">{p}</p>)}
+        </div>
+      )}
+
+      {/* Mappa del punto: caricamento differito, nessuna richiesta a terzi senza gesto */}
+      <div class="mb-4">
+        <div id="mappa-luogo" class="h-[320px] rounded-md border border-[#C8923E]/50 bg-[#F5EEDD] grid place-items-center" data-lat={luogo.lat} data-lng={luogo.lng} data-nome={luogo.nome} data-colore={colore}>
+          <button id="mappa-carica" type="button" class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase cursor-pointer border-0 hover:bg-[#D9A94E] transition-colors" style="font-family: 'Inter', sans-serif;">
+            Carica la mappa
+          </button>
+        </div>
+      </div>
+
+      {/* Coordinate: chi va in montagna le usa davvero */}
+      <div class="flex flex-wrap items-center gap-3 mb-8">
+        <code class="bg-white border border-[#E5DFCF] rounded px-3 py-2 text-sm text-[#1E2E26]" style="font-family: 'JetBrains Mono', monospace;" id="coord">{coord}</code>
+        <button type="button" id="copia-coord" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer min-h-[44px]" style="font-family: 'Inter', sans-serif;">Copia le coordinate</button>
+        <a href={`https://www.google.com/maps/dir/?api=1&destination=${luogo.lat},${luogo.lng}`} target="_blank" rel="noopener noreferrer"
+           class="inline-block bg-[#1E2E26] text-[#F5EEDD] px-5 py-3 text-sm no-underline hover:bg-[#25382E] transition-colors" style="font-family: 'Inter', sans-serif;">
+          Apri le indicazioni
+        </a>
+      </div>
+
+      {/* Articolo collegato, oppure invito a raccontare */}
+      {luogo.url_articolo ? (
+        <p class="m-0 mb-8">
+          <a href={luogo.url_articolo} class="text-[#8a6215] underline" style="font-family: 'Source Serif 4', Georgia, serif;">Leggi la storia di questo luogo →</a>
+        </p>
+      ) : (
+        <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 mb-8">
+          <p class="m-0 mb-2 text-[#1E2E26]" style="font-family: 'Source Serif 4', Georgia, serif;">Conosci la storia di questo luogo? Raccontacela.</p>
+          <a href="/sportello" class="text-sm text-[#8a6215] underline" style="font-family: 'Inter', sans-serif;">Porta la tua storia →</a>
+        </div>
+      )}
+
+      {vicini.length > 0 && (
+        <section class="border-t border-[#E5DFCF] pt-8">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Altri luoghi in {valleLabel}</h2>
+          <ul class="list-none p-0 m-0 grid gap-3">
+            {vicini.map((v: any) => (
+              <li class="bg-white border-l-4 border-[#C8923E] px-4 py-3">
+                <a href={`/luoghi/${v.slug}`} class="no-underline">
+                  <strong class="text-[#1E2E26]">{v.nome}</strong>
+                  <span class="text-xs text-[#1E2E26]/55"> · {CATEGORIE_LUOGHI[v.categoria] ?? v.categoria}</span>
+                  {v.descrizione_breve && <p class="text-sm text-[#1E2E26]/75 m-0 mt-1">{v.descrizione_breve}</p>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <p class="mt-8 m-0">
+        <a href={`/mappa?valle=${luogo.valle}`} class="text-sm text-[#8a6215] underline" style="font-family: 'Inter', sans-serif;">Vedi tutti i luoghi sulla mappa →</a>
+      </p>
+    </div>
+  </article>
+</Layout>
+
+<script>
+  // Coordinate copiabili + mappa a caricamento differito (Leaflet self-hosted).
+  const btnCopia = document.getElementById('copia-coord');
+  btnCopia?.addEventListener('click', async () => {
+    const testo = document.getElementById('coord')?.textContent ?? '';
+    try { await navigator.clipboard.writeText(testo); btnCopia.textContent = 'Coordinate copiate'; }
+    catch { btnCopia.textContent = 'Copia non riuscita'; }
+    setTimeout(() => { btnCopia.textContent = 'Copia le coordinate'; }, 2500);
+  });
+
+  const box = document.getElementById('mappa-luogo');
+  document.getElementById('mappa-carica')?.addEventListener('click', async () => {
+    if (!box) return;
+    if (!document.getElementById('leaflet-css')) {
+      const l = document.createElement('link');
+      l.id = 'leaflet-css'; l.rel = 'stylesheet'; l.href = '/leaflet/leaflet.css';
+      document.head.appendChild(l);
+    }
+    await new Promise<void>((res, rej) => {
+      if ((window as any).L) return res();
+      const s = document.createElement('script');
+      s.src = '/leaflet/leaflet.js'; s.onload = () => res(); s.onerror = () => rej(new Error('leaflet'));
+      document.head.appendChild(s);
+    });
+    const L = (window as any).L;
+    const lat = Number(box.dataset.lat), lng = Number(box.dataset.lng);
+    const colore = box.dataset.colore ?? '#C8923E';
+    box.innerHTML = '';
+    box.classList.remove('grid', 'place-items-center');
+    const map = L.map(box, { scrollWheelZoom: false }).setView([lat, lng], 15);
+    map.on('click focus', () => map.scrollWheelZoom.enable());
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
+    const html = `<svg viewBox="0 0 32 44" width="32" height="44" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="${colore}" stroke="#F5EEDD" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="#F5EEDD"/></svg>`;
+    L.marker([lat, lng], { icon: L.divIcon({ html, className: '', iconSize: [32, 44], iconAnchor: [16, 43] }), title: box.dataset.nome }).addTo(map);
+  });
+</script>
