@@ -18,7 +18,15 @@ export type SeoArticolo = {
   meta_description: string | null;
   immagine_alt: string | null;
   noindex: boolean;
+  /** A2 — copertina per og:image (URL assoluto su Storage dopo la migrazione). */
+  copertina: string | null;
+  /** A2 — article:published_time (ISO). */
+  pubblicato_at: string | null;
 };
+
+/** Immagine OG di riserva per i ~27 articoli senza copertina: meglio
+ *  un'anteprima sobria e brandizzata che nessuna anteprima. */
+export const OG_DEFAULT = '/og/default.png';
 
 let cache: Map<number, SeoArticolo> | null = null;
 
@@ -32,7 +40,7 @@ export async function mappaSeoArticoli(): Promise<Map<number, SeoArticolo>> {
     const sb = createClient(url, anon);
     const { data } = await sb
       .from('v_articoli_seo')
-      .select('wp_legacy_id, meta_title, meta_description, immagine_alt, noindex');
+      .select('wp_legacy_id, meta_title, meta_description, immagine_alt, noindex, immagine_copertina_url, pubblicato_at');
     for (const r of (data ?? []) as any[]) {
       if (r.wp_legacy_id == null) continue;
       cache.set(Number(r.wp_legacy_id), {
@@ -40,6 +48,8 @@ export async function mappaSeoArticoli(): Promise<Map<number, SeoArticolo>> {
         meta_description: r.meta_description || null,
         immagine_alt: r.immagine_alt || null,
         noindex: r.noindex === true,
+        copertina: r.immagine_copertina_url || null,
+        pubblicato_at: r.pubblicato_at || null,
       });
     }
   } catch {

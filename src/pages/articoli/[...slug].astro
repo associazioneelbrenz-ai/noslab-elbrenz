@@ -17,7 +17,7 @@
 import { getCollection, render } from 'astro:content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import { nomePilastro, formatDataIT } from '../../lib/articoli';
-import { mappaSeoArticoli, titoloSeo } from '../../lib/seoArticoli';
+import { mappaSeoArticoli, titoloSeo, OG_DEFAULT } from '../../lib/seoArticoli';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (async () => {
@@ -42,6 +42,13 @@ const seo = (await mappaSeoArticoli()).get(Number((data as any).legacy_wp_id));
 const titoloPagina = titoloSeo(seo?.meta_title ?? null, data.title);
 const descrizionePagina = seo?.meta_description || data.excerpt;
 const altCopertina = seo?.immagine_alt || data.hero_alt;
+
+// A2 — og:image: copertina dell'articolo (gia' su Storage dopo la migrazione).
+// Dove manca (una trentina di articoli) si usa l'immagine di riserva
+// brandizzata: meglio un'anteprima sobria che nessuna anteprima.
+const ogImmagine = seo?.copertina || data.hero_image || OG_DEFAULT;
+const pubblicatoIso = seo?.pubblicato_at
+  || (data.data_pubblicazione ? new Date(data.data_pubblicazione).toISOString() : undefined);
 ---
 <ArticleLayout
   title={data.title}
@@ -53,6 +60,8 @@ const altCopertina = seo?.immagine_alt || data.hero_alt;
   heroImage={data.hero_image}
   heroAlt={altCopertina}
   noindex={seo?.noindex === true}
+  ogImage={ogImmagine}
+  publishedTime={pubblicatoIso}
 >
   <Content />
 </ArticleLayout>

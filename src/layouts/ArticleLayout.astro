@@ -35,6 +35,10 @@ interface Props {
   titoloSeo?: string;
   /** A1 — articolo escluso dagli indici (meta robots + fuori sitemap). */
   noindex?: boolean;
+  /** A2 — immagine per og:image (copertina, o riserva brandizzata). */
+  ogImage?: string;
+  /** A2 — article:published_time in ISO. */
+  publishedTime?: string;
   subtitle?: string;
   pillar?: string;
   author?: string;
@@ -50,6 +54,8 @@ const {
   title,
   titoloSeo,
   noindex = false,
+  ogImage,
+  publishedTime,
   subtitle,
   pillar,
   author,
@@ -68,7 +74,7 @@ const heroImageMobileJpg = heroImage
   : '';
 const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
 ---
-<Layout title={titoloSeo || title} description={description || subtitle || title} ogType="article" ogImage={heroImage} noindex={noindex}>
+<Layout title={titoloSeo || title} description={description || subtitle || title} ogType="article" ogImage={ogImage || heroImage} noindex={noindex} publishedTime={publishedTime}>
 
   <article class="article">
 
