@@ -30,6 +30,11 @@ import Layout from './Layout.astro';
 
 interface Props {
   title: string;
+  /** A1 — titolo per il tag <title> (da meta_title, con ricaduta sul titolo
+   *  dell'articolo troncato). Il visibile in pagina resta `title`. */
+  titoloSeo?: string;
+  /** A1 — articolo escluso dagli indici (meta robots + fuori sitemap). */
+  noindex?: boolean;
   subtitle?: string;
   pillar?: string;
   author?: string;
@@ -43,6 +48,8 @@ interface Props {
 
 const {
   title,
+  titoloSeo,
+  noindex = false,
   subtitle,
   pillar,
   author,
@@ -61,7 +68,7 @@ const heroImageMobileJpg = heroImage
   : '';
 const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
 ---
-<Layout title={title} description={description || subtitle || title} ogType="article" ogImage={heroImage}>
+<Layout title={titoloSeo || title} description={description || subtitle || title} ogType="article" ogImage={heroImage} noindex={noindex}>
 
   <article class="article">
 

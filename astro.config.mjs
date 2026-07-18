@@ -5,6 +5,39 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import netlify from '@astrojs/netlify';
+import { readdirSync, readFileSync } from 'node:fs';
+
+/**
+ * A1 — articoli marcati `noindex` nel DB: vanno esclusi dalla sitemap oltre che
+ * ricevere il meta robots. Il ponte e' legacy_wp_id (frontmatter) <-> wp_legacy_id
+ * (DB), perche' lo slug del DB non sempre coincide con il nome del file .md, che
+ * e' quello che finisce nell'URL. Se il DB non risponde, la sitemap resta com'era:
+ * un problema di rete non deve far fallire la build.
+ */
+async function slugNoindex() {
+  const esclusi = new Set();
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return esclusi;
+  try {
+    const r = await fetch(`${url}/rest/v1/v_articoli_seo?select=wp_legacy_id&noindex=is.true`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return esclusi;
+    const righe = await r.json();
+    const idNoindex = new Set(righe.map((x) => Number(x.wp_legacy_id)).filter(Boolean));
+    if (idNoindex.size === 0) return esclusi;
+    const dir = new URL('./src/content/articoli/', import.meta.url).pathname;
+    for (const f of readdirSync(dir).filter((n) => n.endsWith('.md'))) {
+      const m = readFileSync(dir + f, 'utf8').match(/^legacy_wp_id:\s*(\d+)/m);
+      if (m && idNoindex.has(Number(m[1]))) esclusi.add('/articoli/' + f.replace(/\.md$/, ''));
+    }
+  } catch {
+    // degrado silenzioso
+  }
+  return esclusi;
+}
+const NOINDEX = await slugNoindex();
 
 // https://astro.build/config
 export default defineConfig({
@@ -53,6 +86,8 @@ export default defineConfig({
         const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';
         if (!deLive && page.includes('/de/')) return false;
         if (!enLive && page.includes('/en/')) return false;
+        // A1: fuori dalla sitemap gli articoli marcati noindex nel DB.
+        for (const p of NOINDEX) if (page.endsWith(p) || page.endsWith(p + '/')) return false;
         return true;
       },
       i18n: {

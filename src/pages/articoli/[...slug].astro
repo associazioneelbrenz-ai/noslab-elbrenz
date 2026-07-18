@@ -17,6 +17,7 @@
 import { getCollection, render } from 'astro:content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import { nomePilastro, formatDataIT } from '../../lib/articoli';
+import { mappaSeoArticoli, titoloSeo } from '../../lib/seoArticoli';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (async () => {
@@ -34,15 +35,24 @@ const { Content } = await render(entry);
 
 const pillar = nomePilastro(data.pilastro);
 const dataEstesa = formatDataIT(data.data_pubblicazione);
+
+// A1 — metadati SEO dal DB (ponte: legacy_wp_id <-> articolo.wp_legacy_id).
+// Ricaduta sui dati del frontmatter quando i campi SEO sono vuoti.
+const seo = (await mappaSeoArticoli()).get(Number((data as any).legacy_wp_id));
+const titoloPagina = titoloSeo(seo?.meta_title ?? null, data.title);
+const descrizionePagina = seo?.meta_description || data.excerpt;
+const altCopertina = seo?.immagine_alt || data.hero_alt;
 ---
 <ArticleLayout
   title={data.title}
+  titoloSeo={titoloPagina}
   pillar={pillar || undefined}
   author={data.autore}
   date={dataEstesa}
-  description={data.excerpt}
+  description={descrizionePagina}
   heroImage={data.hero_image}
-  heroAlt={data.hero_alt}
+  heroAlt={altCopertina}
+  noindex={seo?.noindex === true}
 >
   <Content />
 </ArticleLayout>
