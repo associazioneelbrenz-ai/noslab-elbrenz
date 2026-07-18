@@ -10,14 +10,14 @@ excerpt: "L'Associazione Storico Culturale Linguistica \"El Brenz\" è lieta di 
 legacy_wp_id: 3128
 ---
 
-[![b140bbb998492a77e8ecea6a1ead88a1](http://www.elbrenz.eu/wp-content/uploads/2015/11/b140bbb998492a77e8ecea6a1ead88a1.jpg)](http://www.elbrenz.eu/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua/b140bbb998492a77e8ecea6a1ead88a1/)
+[![b140bbb998492a77e8ecea6a1ead88a1](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/11/b140bbb998492a77e8ecea6a1ead88a1.jpg)](http://www.elbrenz.eu/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua/b140bbb998492a77e8ecea6a1ead88a1/)
 
 L'Associazione Storico Culturale Linguistica "El Brenz" è lieta di invitarvi alla presentazione ufficiale del Documentario
 
 **"Fioi dal Nos - Ladinità Nonesa e Solandra"**  
   
 
-[![IMG\_6391](http://www.elbrenz.eu/wp-content/uploads/2015/11/IMG_6391-1024x765.jpg)](http://www.elbrenz.eu/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua/img_6391/)
+[![IMG\_6391](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/11/IMG_6391-1024x765.jpg)](http://www.elbrenz.eu/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua/img_6391/)
 
 **Programma:**
 

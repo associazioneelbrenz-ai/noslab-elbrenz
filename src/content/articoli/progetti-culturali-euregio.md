@@ -10,7 +10,7 @@ excerpt: "PROGETTI EUREGIO-FILM \"LA MONTAGNA SILENZIOSA\" \"Der stille Berg –
 legacy_wp_id: 568
 ---
 
-[![cultura\_stencil](http://www.elbrenz.eu/wp-content/uploads/2013/05/cultura_stencil.png)](http://www.europaregion.info/it/cultura-istruzione-ricerca/progetti-cultura.asp)
+[![cultura\_stencil](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/cultura_stencil.png)](http://www.europaregion.info/it/cultura-istruzione-ricerca/progetti-cultura.asp)
 
 # **PROGETTI**
 

@@ -14,4 +14,4 @@ Tutta la nostra Associazione si stringe attorno alla famiglia del nostro grande 
 
 GRAZIE GRAZIE GRAZIE!!!! Veglia su di noi!!!!!!
 
-[![Diego](http://www.elbrenz.eu/wp-content/uploads/2014/11/Diego.jpg)](http://www.elbrenz.eu/2014/11/buon-viaggio-amico/diego/)
+[![Diego](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/11/Diego.jpg)](http://www.elbrenz.eu/2014/11/buon-viaggio-amico/diego/)

@@ -10,7 +10,7 @@ excerpt: "Michael Gaismair (1490–1532) La rivolta contadina del 1525, nota anc
 legacy_wp_id: 3805
 ---
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/Michael-Gaismair.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/Michael-Gaismair.jpg)
 
 *Michael Gaismair (1490–1532)*
 
@@ -28,7 +28,7 @@ Le popolazioni alpine, inclusi i contadini delle Valli del Noce, vivevano in una
 
 **La Scintilla della Riforma Protestante**
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/Luther95theses.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/Luther95theses.jpg)
 
 Le idee della Riforma protestante, avviata da Martin Lutero, agirono come un catalizzatore, fornendo l'ideologia e la legittimazione per la rivolta. Le sue dottrine sull'uguaglianza di tutti i cristiani e sul rinnovamento della vita religiosa, inizialmente teologiche, si tradussero rapidamente in rivendicazioni sociali e politiche. I contadini videro nella religione uno strumento per la rivoluzione sociale, trasformando la loro rassegnazione in audacia e mettendo in discussione l'autorità. Nelle valli del Trentino, la fusione del potere politico e religioso nella figura del Principe Vescovo rese il clero, spesso percepito come corrotto e immorale, un bersaglio politico diretto per i ribelli. I contadini aspiravano a liberarsi dal "due infesti reggimenti del vescovo e del conte del Tirolo". La storiografia moderna definisce la Guerra dei Contadini come la "rivoluzione dell'uomo comune", un concetto che permette di cogliere la portata del movimento, che coinvolse anche artigiani e strati inferiori della popolazione urbana, uniti dall'aspirazione a una società più equa, basata sulla "legge divina" piuttosto che sull'arbitrio dei signori.
 
@@ -57,13 +57,13 @@ Il movimento a livello europeo si consolidò attorno ai "Dodici Articoli" di Mem
 
 **La Figura di Michael Gaismair**
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/michael-gaismair-ein-muentzerscher.jpeg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/michael-gaismair-ein-muentzerscher.jpeg)
 
 Michael Gaismair (1490–1532) fu il principale leader e ideologo della rivolta in Tirolo e Salisburgo. Eletto Feldhauptmann (comandante supremo) dopo l'assalto al monastero di Novacella nel maggio 1525, convocò la Dieta Provinciale a Innsbruck per negoziare i suoi articoli con l'Arciduca Ferdinando d'Asburgo. Gaismair era un politico e un uomo colto che anticipò i principi democratici di secoli, come l'uguaglianza di fronte alla legge e l'elezione dei giudici.
 
 **Bernardo Clesio: Il Principe Vescovo e Abile Politico**
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/Bernardo-Clesio.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/Bernardo-Clesio.jpg)
 
 A contrastare il movimento c'era il Principe Vescovo di Trento, Bernardo Clesio, una figura cruciale per il Principato. Mentre la rivolta scoppiava, si trovava in Germania con l'imperatore Carlo V. Temendo il dilagare del luteranesimo e della rivolta nel suo principato, tornò a Trento con grande fretta. Clesio non era solo un ecclesiastico, ma un influente cancelliere dell'Impero, amico personale di Carlo V e Ferdinando I. La sua abilità politica fu dimostrata non solo nella repressione, ma anche nella sua capacità di raccogliere un esercito e di sfruttare divisioni tra i ribelli. La sua contrapposizione con Gaismair rappresenta una lotta tra l'aspirazione a un nuovo ordine sociale e la difesa dello *status quo* e dell'autorità feudale e imperiale.
 
@@ -79,7 +79,7 @@ Dopo essersi diffusa dalla Germania al Tirolo, la rivolta giunse alle valli tren
 
 **Lo Stratagemma che Sventò la Rivolta**
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/Unknown_Artist_-_German_Peasants_War_1524-1526_Orenbach_farmers_Rotenburg_Bavaria_Germany_-_MeisterDrucke-1481071.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/Unknown_Artist_-_German_Peasants_War_1524-1526_Orenbach_farmers_Rotenburg_Bavaria_Germany_-_MeisterDrucke-1481071.jpg)
 
 Il momento decisivo della rivolta locale fu l'intervento di Baldassare di Cles, fratello del Vescovo Bernardo Clesio. Baldassare intercettò i contadini delle Valli di Non e di Sole in marcia verso Trento e utilizzò un abile stratagemma per fermarli. Inizialmente tentò di intimidirli affermando che un immenso esercito si trovava già a Trento per annientarli, ma non sortì l'effetto desiderato. La sua strategia di inganno ebbe successo solo nella seconda fase, quando inventò una falsa notizia cruciale: che il capitano imperiale Corradino Cloro stava avanzando dal Passo del Tonale con l'intenzione di mettere a ferro e fuoco le loro valli. Questa notizia, che minacciava direttamente le loro case e le loro famiglie, ebbe l'effetto desiderato: i contadini, impauriti, interruppero la loro marcia su Trento e fecero ritorno frettolosamente ai loro paesi per difenderli. La mancanza di organizzazione e di unione fu una delle cause principali del rapido insuccesso.
 
@@ -113,6 +113,6 @@ La rivolta, pur fallendo nel suo obiettivo immediato, fu un evento spartiacque c
 
 **La Memoria del 1525 Oggi**
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/image.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/image.png)
 
 La memoria della rivolta è mantenuta viva attraverso iniziative culturali e rievocazioni. Ad esempio, nel 2025 ricorre il cinquecentenario della Guerra Rustica, e il FAI Trentino-Alto Adige ha organizzato una serie di eventi per esplorare le diverse sfaccettature storiche, politiche, sociali e artistiche di questo periodo. La rappresentazione teatrale in costume “La Guerra Rustica del 1525” con la Filodrammatica "La Marianella" di Romallo e il gruppo storico "I Gropi d'Anaunia" è un esempio di come la storia venga rievocata e resa accessibile al pubblico. Tali rievocazioni non sono solo un'esposizione di fatti, ma un modo per ricreare e tramandare l'identità culturale di un popolo che ha affrontato la sfida del potere.

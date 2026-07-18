@@ -12,7 +12,7 @@ legacy_wp_id: 806
 
 #### Museion Passage, via Dante 6
 
-[![941976\_10200793849162563\_1131062994\_n](http://www.elbrenz.eu/wp-content/uploads/2013/06/941976_10200793849162563_1131062994_n-300x224.jpg)](http://www.comune.bolzano.it/events_detail.jsp?IDAREA=21&ID_EVENT=3362&GTEMPLATE=cultura_home.jsp)
+[![941976\_10200793849162563\_1131062994\_n](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/941976_10200793849162563_1131062994_n-300x224.jpg)](http://www.comune.bolzano.it/events_detail.jsp?IDAREA=21&ID_EVENT=3362&GTEMPLATE=cultura_home.jsp)
 
 ### Mercoledì 12 giugno 2013 alle ore 18.30 - mercui ai 12 de jugn da les 18.30
 

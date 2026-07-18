@@ -14,7 +14,7 @@ legacy_wp_id: 2834
 
 **L' Associazione Mulino Ruatti è lieta di invitarVi alla serata:**
 
-**[![Locandina Assemblea 15 marzo (1)-page-001](http://www.elbrenz.eu/wp-content/uploads/2014/03/Locandina-Assemblea-15-marzo-1-page-001.jpg)](https://www.facebook.com/pages/Molino-Ruatti-Museo-del-mulino-ad-acqua/168616329834596)"STORIE DI EMIGRATI E GUERRIERI DALLA VAL DI RABBI"**
+**[![Locandina Assemblea 15 marzo (1)-page-001](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/03/Locandina-Assemblea-15-marzo-1-page-001.jpg)](https://www.facebook.com/pages/Molino-Ruatti-Museo-del-mulino-ad-acqua/168616329834596)"STORIE DI EMIGRATI E GUERRIERI DALLA VAL DI RABBI"**
 
 **SABATO 15 MARZO ORE 21.00**  
 **PRESSO LA SALA DELLA CANONICA**  

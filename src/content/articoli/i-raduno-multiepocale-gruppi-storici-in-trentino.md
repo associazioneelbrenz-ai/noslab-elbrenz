@@ -10,7 +10,7 @@ excerpt: "PRESSO L'OSTELLO DELLA GIOVENTU' MADONNA DELLA NEVE DI CASTELFONDO(TN)
 legacy_wp_id: 515
 ---
 
-[![raduno amici di castelfondo](http://www.elbrenz.eu/wp-content/uploads/2013/05/raduno-amici-di-castelfondo.jpg)](https://www.facebook.com/events/446771518736200/)PRESSO L'OSTELLO DELLA GIOVENTU' MADONNA DELLA NEVE DI CASTELFONDO(TN).  
+[![raduno amici di castelfondo](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/raduno-amici-di-castelfondo.jpg)](https://www.facebook.com/events/446771518736200/)PRESSO L'OSTELLO DELLA GIOVENTU' MADONNA DELLA NEVE DI CASTELFONDO(TN).  
 ORE 8.00 ARRIVO DEI GRUPPI  
 ORE 10.00 APERTURA MANIFESTAZIONE CON SALUTO AUTORITA' PRESENTI  
 PRESENTAZIONE GRUPPI  

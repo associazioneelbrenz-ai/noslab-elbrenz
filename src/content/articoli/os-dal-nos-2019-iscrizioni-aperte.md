@@ -18,7 +18,7 @@ Dovrete scaricarlo, compilarlo e mandarlo entro venerdì 9 agosto 2019 all’ind
 
 Fiduciosi che anche quest’anno sarà un successo, attendiamo le vostre iscrizioni!!!
 
-![](http://www.elbrenz.eu/wp-content/uploads/2019/06/Black-Os-dal-nos-1.jpeg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2019/06/Black-Os-dal-nos-1.jpeg)
 
 **REGOLAMENTO CONCORSO “OS DAL NOS” 2019:**
 
@@ -84,7 +84,7 @@ Gli organizzatori si riservano il diritto di utilizzare le opere pervenute per e
 
 Chiunque sottoscriva la scheda di partecipazione accetta tutti gli articoli del regolamento.**M**
 
-[**Modulo di Iscrizione**](http://www.elbrenz.eu/wp-content/uploads/2019/05/Modulo-Iscrizione-Concorso-Os-dal-Nos.doc)[Scarica](http://www.elbrenz.eu/wp-content/uploads/2019/05/Modulo-Iscrizione-Concorso-Os-dal-Nos.doc)
+[**Modulo di Iscrizione**](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2019/05/Modulo-Iscrizione-Concorso-Os-dal-Nos.doc)[Scarica](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2019/05/Modulo-Iscrizione-Concorso-Os-dal-Nos.doc)
 
 Associazione Storico Culturale Linguistica El Brenz
 

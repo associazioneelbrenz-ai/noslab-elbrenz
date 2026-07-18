@@ -14,7 +14,7 @@ Oggi siamo usciti sull'Adige siamo usciti con un articolo scritto da Fabrizio Br
 
 > **Val di Non e Val di Sole: il mancato riconoscimento della minoranza ladina e il silenzio del Consiglio Provinciale**
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/02/image.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/02/image.png)
 
 > I dati del censimento 2021 confermano ciò che l'Associazione El Brenz sostiene da anni: la Val di Non e la Val di Sole sono terre ladine. Ignorare queste evidenze significa negare un diritto fondamentale a una comunità e rischiare di perdere per sempre un patrimonio culturale unico  
 > Sono trascorsi quasi 4 anni dal censimento e nonostante anni di ricerche e iniziative, la Provincia Autonoma di Trento continua a ignorare le richieste di tutela della lingua e della cultura ladina in queste valli. Una questione irrisolta che mette a rischio un patrimonio culturale unico.  
@@ -36,6 +36,6 @@ Oggi siamo usciti sull'Adige siamo usciti con un articolo scritto da Fabrizio Br
 
 Malè 12 febbraio 2025
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/02/image-1.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/02/image-1.png)
 
 [https://www.ladige.it](https://www.ladige.it)

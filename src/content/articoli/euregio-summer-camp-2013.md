@@ -12,9 +12,9 @@ legacy_wp_id: 290
 
 ## Iniziamo a dare un po' di notizie! Interessante iniziativa per i nostri ragazzi 
 
-## [![giovani\_stencil\_Euregio](http://www.elbrenz.eu/wp-content/uploads/2013/05/giovani_stencil_Euregio.png)](http://www.europaregion.info/it/giovani.asp)
+## [![giovani\_stencil\_Euregio](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/giovani_stencil_Euregio.png)](http://www.europaregion.info/it/giovani.asp)
 
-# [![Schema Euregio, con Trentino, Alto Adige e Tirolo](http://www.elbrenz.eu/wp-content/uploads/2013/05/euregio.jpg)](http://www.europaregion.info/it/default.asp)EUREGIO SUMMER CAMP 2013
+# [![Schema Euregio, con Trentino, Alto Adige e Tirolo](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/euregio.jpg)](http://www.europaregion.info/it/default.asp)EUREGIO SUMMER CAMP 2013
 
 Per ragazzi dagli 11 ai 14 anni 
 
@@ -51,7 +51,7 @@ Viale Druso 1 - I-39100 Bolzano
 Tel.: +39 0471 402026 - Fax.: +39 0471 405016  
 info@europaregion.info - [www.europaregion.info](http://www.facebook.com/l.php?u=http%3A%2F%2Fwww.europaregion.info&h=AAQEvH8aHAQEG-E7thbe_G6psqkIXePeG-K4aviuBoM3mvA&s=1)
 
-**[![Ragazzi](http://www.elbrenz.eu/wp-content/uploads/2013/05/Ragazzi.jpg)](http://www.elbrenz.eu/wp-content/uploads/2013/05/Ragazzi.jpg)Luogo:** **Varna**
+**[![Ragazzi](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Ragazzi.jpg)](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Ragazzi.jpg)Luogo:** **Varna**
 
 **Data:** 21.07.2013 - 28.07.2013
 

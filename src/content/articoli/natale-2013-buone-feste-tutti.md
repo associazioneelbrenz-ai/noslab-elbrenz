@@ -14,6 +14,6 @@ legacy_wp_id: 1385
 
 **Buon Natale e un Felicissimo Anno Nuovo**
 
-[![mercatini-natale-austria-3](http://www.elbrenz.eu/wp-content/uploads/2013/12/mercatini-natale-austria-3.jpg)](http://www.elbrenz.eu/2013/12/natale-2013-buone-feste-tutti/mercatini-natale-austria-3/)[![mercatino-di-natale](http://www.elbrenz.eu/wp-content/uploads/2013/12/mercatino-di-natale-di-cimego-1383234407798.jpg)](http://www.elbrenz.eu/2013/12/natale-2013-buone-feste-tutti/mercatino-di-natale-di-cimego-1383234407798/)  
+[![mercatini-natale-austria-3](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/12/mercatini-natale-austria-3.jpg)](http://www.elbrenz.eu/2013/12/natale-2013-buone-feste-tutti/mercatini-natale-austria-3/)[![mercatino-di-natale](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/12/mercatino-di-natale-di-cimego-1383234407798.jpg)](http://www.elbrenz.eu/2013/12/natale-2013-buone-feste-tutti/mercatino-di-natale-di-cimego-1383234407798/)  
 
 Ci scusiamo per l'assenza di attività del sito in questi ultimi 2 mesi ma molti impegni ed attività sia personali che associative hanno assorbito tutto il nostro tempo disponibile. A presto grandi novità!!!!!!

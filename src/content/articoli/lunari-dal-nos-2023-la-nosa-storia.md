@@ -38,7 +38,7 @@ La struttura è tratta dalla narrazione del documentario [**“Fioi dal Nos”**
 
 sorgenti del Noce, si viaggia nell’ambiente naturale e si rivivono le epoche storiche salienti che hanno plasmato ciò che ora noi siamo. La poesia conclusiva è una dedica che vuole toccare il cuore delle genti anauniche.
 
-![](http://www.elbrenz.eu/wp-content/uploads/2022/11/copertina-lunari-dal-Nos-2023.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2022/11/copertina-lunari-dal-Nos-2023.jpg)
 
 Lo potete trovare in distribuzione:
 

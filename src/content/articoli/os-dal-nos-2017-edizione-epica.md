@@ -10,11 +10,11 @@ excerpt: "Domenica 6 agosto ha avuto luogo l'attesa 4° edizione del Concorso Mu
 legacy_wp_id: 3252
 ---
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2017/08/Felix-Bob-e-Thomas-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/felix-bob-e-thomas/)[![](http://www.elbrenz.eu/wp-content/uploads/2017/08/Pol-5-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/pol-5/)[![](http://www.elbrenz.eu/wp-content/uploads/2017/08/Fausto-Ceschi-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/fausto-ceschi/)[![](http://www.elbrenz.eu/wp-content/uploads/2017/08/Dolores-Keller-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/dolores-keller/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/08/Felix-Bob-e-Thomas-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/felix-bob-e-thomas/)[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/08/Pol-5-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/pol-5/)[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/08/Fausto-Ceschi-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/fausto-ceschi/)[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/08/Dolores-Keller-300x225.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/dolores-keller/)
 
 Domenica 6 agosto ha avuto luogo l'attesa 4° edizione del Concorso Musicale e Poetico "Os dal Nos". Nello splendido teatro boscoso delle Plaze di Croviana, all'interno del Festival "Le Parti di Ricambio", si sono alternati gli artisti nonesi, solandri e rabiesi che hanno reso speciale, osiamo dire epica, quest'edizione del concorso.
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2017/08/Ettore-255x300.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/ettore/)Ettore Zanon alla sua prima esperienza come giurato di Os dal Nos scrive:
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/08/Ettore-255x300.jpg)](http://www.elbrenz.eu/2017/08/os-dal-nos-2017-edizione-epica/ettore/)Ettore Zanon alla sua prima esperienza come giurato di Os dal Nos scrive:
 
   
 **Os dal Nos: un gran bel miscuglio, una bella storia.**  

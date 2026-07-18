@@ -10,7 +10,7 @@ excerpt: "L'Associazione Storico Culturale Linguistica \"El Brenz\" con il patro
 legacy_wp_id: 984
 ---
 
-![brenz FB piccolo](http://www.elbrenz.eu/wp-content/uploads/2013/07/brenz-FB-piccolo-724x1024.jpg)
+![brenz FB piccolo](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/07/brenz-FB-piccolo-724x1024.jpg)
 
 **L'Associazione Storico Culturale Linguistica "El Brenz" con il patrocinio del Comune di Malè e in collaborazione con le Associazioni** 
 

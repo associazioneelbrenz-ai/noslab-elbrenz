@@ -14,7 +14,7 @@ legacy_wp_id: 3196
 
 **"OS DAL NOS"** (in Nones, Solander, Rabies e Pegaes)
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2017/04/locandina2-1005x1024.jpg)](http://www.elbrenz.eu/2017/04/4-edizione-del-concorso-poetico-musicale-os-dal-nos/locandina2/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/04/locandina2-1005x1024.jpg)](http://www.elbrenz.eu/2017/04/4-edizione-del-concorso-poetico-musicale-os-dal-nos/locandina2/)
 
 L’Associazione Storico Culturale Linguistica “El Brenz”, in collaborazione con l’Associazione "Le Cose Utili”, con il patrocinio dell’Ufficio Integrazione Europea della Regione Trentino Alto-Adige/ Südtirol organizza la quarta edizione del Concorso Musicale e Poetico “Os dal Nos” al fine di promuovere e valorizzare l’uso delle varianti della lingua Ladino-Anaunica.
 

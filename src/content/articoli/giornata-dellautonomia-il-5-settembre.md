@@ -12,11 +12,11 @@ legacy_wp_id: 1031
 
 **"Giornata dell'Autonomia"**
 
-[**![stemmi\_personalizzati\_citta\_di\_trento](http://www.elbrenz.eu/wp-content/uploads/2013/09/stemmi_personalizzati_citta_di_trento.jpg)**](http://www.provincia.tn.it/)
+[**![stemmi\_personalizzati\_citta\_di\_trento](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/stemmi_personalizzati_citta_di_trento.jpg)**](http://www.provincia.tn.it/)
 
 **Giovedì 5 settembre a Trento si festeggia la Giornata dell'Autonomia**. Giunta alla quinta edizione, la manifestazione nasce per ricordare la firma dell'accordo **De Gasperi – Gruber** del 1946 a Parigi.
 
-[![300px-Accordo\_De\_Gasperi\_-\_Gruber](http://www.elbrenz.eu/wp-content/uploads/2013/09/300px-Accordo_De_Gasperi_-_Gruber.jpg)](http://www.regione.taa.it/codice/accordo.aspx)
+[![300px-Accordo\_De\_Gasperi\_-\_Gruber](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/300px-Accordo_De_Gasperi_-_Gruber.jpg)](http://www.regione.taa.it/codice/accordo.aspx)
 
 **Istituita con la legge provinciale** numero 13 del 30 luglio 2008 dal Consiglio Provinciale, è una festa paragonabile a quella che lo Stato Italiano celebra il 2 giugno, il cui scopo è quello di festeggiare il riconoscimento  del diritto secolare all'autogoverno della comunità trentino-tirolese, valorizzandone le diverse culture e le minoranze linguistiche. In occasione della Giornata dell'Autonomia il Presidente attribuisce riconoscimenti e onorificenze a persone, associazioni e istituzioni che si sono distinte nella promozione e valorizzazione dell'autonomia.
 

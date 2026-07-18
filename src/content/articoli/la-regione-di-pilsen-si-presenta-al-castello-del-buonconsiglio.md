@@ -12,7 +12,7 @@ legacy_wp_id: 769
 
 **Giovedì 6 giugno alle 18.00 musica, giochi e gastronomia dalla Repubblica Ceca** 
 
-[![Pilsen Buonconsiglio](http://www.elbrenz.eu/wp-content/uploads/2013/06/Pilsen-Buonconsiglio2-106x150.jpg)](http://www.museosanmichele.it/NewsDetail.aspx?id=3728)La regione di Pilsen, nella parte occidentale della Boemia, in Repubblica Ceca, deve la sua fama al birrificio nato nell’omonima città, ma si caratterizza anche per i numerosi monumenti di interesse culturale e storico, la natura armonica e l’eccellente gastronomia.   
+[![Pilsen Buonconsiglio](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/Pilsen-Buonconsiglio2-106x150.jpg)](http://www.museosanmichele.it/NewsDetail.aspx?id=3728)La regione di Pilsen, nella parte occidentale della Boemia, in Repubblica Ceca, deve la sua fama al birrificio nato nell’omonima città, ma si caratterizza anche per i numerosi monumenti di interesse culturale e storico, la natura armonica e l’eccellente gastronomia.   
 Giovedì 6 giugno alle ore 18.00, nelle marangonerie del Castello del Buonconsiglio, la regione di Pilsen si presenta, con la sua musica, i prodotti gastronomici, i racconti che caratterizzano la Boemia, in una serata di festa e cultura, a cura di Plzeňskỳ Kraj, CzechTourism, Museo degli Usi e Costumi della Gente Trentina e Castello del Buonconsiglio monumenti e collezioni provinciali.
 
 **Programma:** 

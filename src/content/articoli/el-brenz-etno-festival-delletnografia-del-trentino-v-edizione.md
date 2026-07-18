@@ -12,11 +12,11 @@ legacy_wp_id: 3204
 
 Quest'anno la nostra Associazione è stata onorata di ricevere l'invito del prestigioso Museo degli Usi e Costumi della Gente Trentina di San Michele all'Adige a partecipare alla V Edizione di **eTNo, il Festival dell'etnografia del Trentino**. Durante questo bellissimo evento proietteremo il nostro documentario **"Fiöi dal Nos"** oltre a presentare l'associazione e le attività che svolge.
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2015/11/Foto-Evento-1024x693.jpg)](http://www.elbrenz.eu/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua/foto-evento/)Siamo grati e felici per questa straordinaria opportunità che ci permette di mostrare a un vasto pubblico ciò che con impegno e dedizione siamo riusciti a realizzare in questi anni.
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/11/Foto-Evento-1024x693.jpg)](http://www.elbrenz.eu/2015/11/presentazione-di-fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua/foto-evento/)Siamo grati e felici per questa straordinaria opportunità che ci permette di mostrare a un vasto pubblico ciò che con impegno e dedizione siamo riusciti a realizzare in questi anni.
 
 Vi aspettiamo numerosi domenica 23 aprile dalle 10:00 alle 19:00 al Museo di San Michele all'Adige
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2017/04/16FestivalEtnografia2017newA-1024x491.jpg)](http://www.elbrenz.eu/2017/04/el-brenz-etno-festival-delletnografia-del-trentino-v-edizione/16festivaletnografia2017newa/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/04/16FestivalEtnografia2017newA-1024x491.jpg)](http://www.elbrenz.eu/2017/04/el-brenz-etno-festival-delletnografia-del-trentino-v-edizione/16festivaletnografia2017newa/)
 
 [**eTNo - Festival dell’etnografia del Trentino, V edizione Tradizioni popolari a confronto: il “polo dell’etnografia”**](http://www.museosanmichele.it/blog/etno-festivale-delletngorafia-del-trentino-tradizioni-popolari-a-confronto/)
 

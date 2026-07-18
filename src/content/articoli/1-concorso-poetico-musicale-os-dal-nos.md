@@ -74,7 +74,7 @@ ISCRITTI AL CONCORSO
 15° POESIA: Andrea Daprà  
 16° INEDITO: Paolo Bertagnolli
 
-[![Concorso Os dal Nos](http://www.elbrenz.eu/wp-content/uploads/2014/07/Concorso-Os-dal-Nos-260x300.png)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/concorso-os-dal-nos/)![le parti 1](http://www.elbrenz.eu/wp-content/uploads/2014/07/le-parti-1.jpg)L’Associazione Storico Culturale Linguistica “El Brenz”, in collaborazione con l’Associazione “Le Cose Utili”, con il patrocinio dell’Ufficio Integrazione Europea della Regione Trentino Alto-Adige/ Südtirol organizza il primo Concorso Musicale e Poetico “Os dal Nos” al fine di promuovere e valorizzare l’uso delle varianti della lingua Ladino-Anaunica.
+[![Concorso Os dal Nos](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/07/Concorso-Os-dal-Nos-260x300.png)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/concorso-os-dal-nos/)![le parti 1](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/07/le-parti-1.jpg)L’Associazione Storico Culturale Linguistica “El Brenz”, in collaborazione con l’Associazione “Le Cose Utili”, con il patrocinio dell’Ufficio Integrazione Europea della Regione Trentino Alto-Adige/ Südtirol organizza il primo Concorso Musicale e Poetico “Os dal Nos” al fine di promuovere e valorizzare l’uso delle varianti della lingua Ladino-Anaunica.
 
 **Il concorso è aperto a tutti gli abitanti delle Valli del Noce che compongono poesie o musica nelle varianti del Ladino Anaunico (nones, solander, rabies, pegaes).**
 
@@ -86,7 +86,7 @@ ISCRITTI AL CONCORSO
 
 **Regolamento:**
 
-**Art. 1[![trento\_-\_il\_logo\_della\_regione\_trentino-alto\_adige.\_-\_2012\_-\_imagefull](http://www.elbrenz.eu/wp-content/uploads/2014/07/trento_-_il_logo_della_regione_trentino-alto_adige._-_2012_-_imagefull.jpg)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/trento_-_il_logo_della_regione_trentino-alto_adige-_-_2012_-_imagefull/)**[![le parti di ricambio logo](http://www.elbrenz.eu/wp-content/uploads/2014/07/le-parti-di-ricambio-logo.jpg)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/le-parti-di-ricambio-logo/)  
+**Art. 1[![trento\_-\_il\_logo\_della\_regione\_trentino-alto\_adige.\_-\_2012\_-\_imagefull](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/07/trento_-_il_logo_della_regione_trentino-alto_adige._-_2012_-_imagefull.jpg)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/trento_-_il_logo_della_regione_trentino-alto_adige-_-_2012_-_imagefull/)**[![le parti di ricambio logo](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/07/le-parti-di-ricambio-logo.jpg)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/le-parti-di-ricambio-logo/)  
 L’Associazione Storico Culturale Linguistica “El Brenz”, in collaborazione con l’Associazione “Le Cose Utili”, con il patrocinio dell’Ufficio Integrazione Europea della Regione Trentino Alto-Adige/ Südtirol organizza il primo Concorso Musicale e Poetico “Os dal Nos” al fine di promuovere e valorizzare l’uso delle varianti della lingua Ladino-Anaunica.
 
 **Art. 2**  
@@ -143,10 +143,10 @@ Chiunque sottoscriva la scheda di partecipazione accetta tutti gli articoli del 
 
 **Ringraziamo di cuore Sergio Zanella per lo splendido articolo comparso sul Trentino il 29 luglio 2014.**
 
-[![Articolo Sergio Zanella Os dal Nos](http://www.elbrenz.eu/wp-content/uploads/2014/07/Articolo-Sergio-Zanella-Os-dal-Nos-300x215.jpg)](http://trentinocorrierealpi.gelocal.it/trento/cronaca/2014/07/29/news/musica-e-poesia-solo-in-ladino-1.9679807?ref=search)
+[![Articolo Sergio Zanella Os dal Nos](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/07/Articolo-Sergio-Zanella-Os-dal-Nos-300x215.jpg)](http://trentinocorrierealpi.gelocal.it/trento/cronaca/2014/07/29/news/musica-e-poesia-solo-in-ladino-1.9679807?ref=search)
 
 **Ringraziamo il servizio minoranze linguistiche per aver dato spazio alla nostra iniziativa!**
 
-[![Sito Minoranze Linguistiche per Os dal Nos](http://www.elbrenz.eu/wp-content/uploads/2014/07/Sito-Minoranze-Linguistiche-per-Os-dal-Nos.png)](http://www.minoranzelinguistiche.provincia.tn.it/notizie_minoranze/notizie_locali/pagina709.html)
+[![Sito Minoranze Linguistiche per Os dal Nos](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/07/Sito-Minoranze-Linguistiche-per-Os-dal-Nos.png)](http://www.minoranzelinguistiche.provincia.tn.it/notizie_minoranze/notizie_locali/pagina709.html)
 
 **\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*ARTICOLO IN AGGIORNAMENTO \*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\***

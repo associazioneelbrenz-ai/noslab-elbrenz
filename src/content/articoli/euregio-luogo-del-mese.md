@@ -10,7 +10,7 @@ excerpt: "Malga Jagdhaus di Andreas Eppacher, Presidente del Consorzio allevator
 legacy_wp_id: 1086
 ---
 
-## ![cittadino\_stencil\_Euregio](http://www.elbrenz.eu/wp-content/uploads/2013/05/cittadino_stencil_Euregio.png)
+## ![cittadino\_stencil\_Euregio](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/cittadino_stencil_Euregio.png)
 
 ## **Malga Jagdhaus**
 

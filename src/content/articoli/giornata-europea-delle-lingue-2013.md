@@ -10,7 +10,7 @@ excerpt: "Giornata Europea delle Lingue 2013 Mostre, conferenze, workshop, rappr
 legacy_wp_id: 1052
 ---
 
-## [![testata\_scritte\_Minoranze linguistiche](http://www.elbrenz.eu/wp-content/uploads/2013/09/testata_scritte_Minoranze-linguistiche.jpg)](http://www.minoranzelinguistiche.provincia.tn.it/)
+## [![testata\_scritte\_Minoranze linguistiche](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/testata_scritte_Minoranze-linguistiche.jpg)](http://www.minoranzelinguistiche.provincia.tn.it/)
 
 ## **Giornata Europea delle Lingue 2013**
 

@@ -10,7 +10,7 @@ excerpt: "Il Museo Regionale Tirolese Ferdinandeum di Innsbruck è nato nel 1823
 legacy_wp_id: 1368
 ---
 
-[![cittadino\_stencil](http://www.elbrenz.eu/wp-content/uploads/2013/06/cittadino_stencil.png)](http://www.europaregion.info/it/tiroler-landesmuseum-ferdinandeum.asp)
+[![cittadino\_stencil](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/cittadino_stencil.png)](http://www.europaregion.info/it/tiroler-landesmuseum-ferdinandeum.asp)
 
 Il Museo Regionale Tirolese Ferdinandeum di Innsbruck è nato nel 1823 e con le sue sette collezioni è il museo più grande e antico dell'intero Tirolo storico. Il percorso storico-artistico e storico conduce il visitatore dall’età della pietra ai giorni nostri – un viaggio che si snoda lungo 30,000 anni di storia. Tra gli oggetti esposti ci sono capolavori romanici e gotici, una collezione olandese di spicco che include opera di Brueghel e di Rembrandt, pezzi del Barocco e del XIX secolo, una collezione di preziosi strumenti musicali, la collezione Biedermeier e la Galleria Moderna con dipinti di Egger-Lienz, Klimt e Kokoschka.
 

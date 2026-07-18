@@ -26,7 +26,7 @@ Questa nuova piattaforma rappresenta l'evoluzione naturale della nostra missione
 
 La community nasce proprio con questo spirito: essere un luogo di incontro moderno per chi ha il cuore antico delle nostre valli.  
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/12/community-El-Brenz.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/12/community-El-Brenz.png)
 
 ### Perché Iscriversi? Il Nostro Dono per Voi
 
@@ -36,7 +36,7 @@ Per celebrare questo lancio e ringraziarvi del sostegno in questi anni, abbiamo 
 
 È un'opportunità unica per approfondire le vicende, i personaggi e gli eventi che hanno plasmato la nostra terra.
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/12/Corso-di-Storia-Valli-del-Noce.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/12/Corso-di-Storia-Valli-del-Noce.png)
 
 ### Come Accedere e Scaricare l'App
 

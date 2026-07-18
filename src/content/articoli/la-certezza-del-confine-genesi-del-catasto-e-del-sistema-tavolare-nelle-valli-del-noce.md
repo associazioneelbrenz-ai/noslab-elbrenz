@@ -32,7 +32,7 @@ Nelle Valli del Noce, questo processo fu traumatico e incontrò la resistenza de
 
 #### 3. Il Capolavoro Asburgico: Il Catasto Stabile e il Libro Fondiario (XIX Secolo)
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/12/Gemini_Generated_Image_7jqpdq7jqpdq7jqp-1-2048x1117.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/12/Gemini_Generated_Image_7jqpdq7jqpdq7jqp-1-2048x1117.png)
 
 L'assetto attuale si cristallizzò nel XIX secolo con l'introduzione del Catasto Stabile (o Franceschino, avviato nel 1817 e completato in Trentino tra il 1853 e il 1861).
 

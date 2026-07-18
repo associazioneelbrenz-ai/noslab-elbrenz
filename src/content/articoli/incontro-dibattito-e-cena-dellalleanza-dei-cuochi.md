@@ -10,9 +10,9 @@ excerpt: "Gli amici della Condotta delle Terre del Noce - Slow Food ci propongon
 legacy_wp_id: 653
 ---
 
-[![Condotte Slow Food Logo](http://www.elbrenz.eu/wp-content/uploads/2013/05/Condotte-Slow-Food-Logo-150x150.jpg)](http://slowfoodtrentinoaltoadige.it/it/home)Gli amici della Condotta delle Terre del Noce - Slow Food ci propongono 2 interessanti appuntamenti che sottolineano lo stretto legame di fratellanza che, da millenni,  unisce la Val di Sole e la Val di Non
+[![Condotte Slow Food Logo](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Condotte-Slow-Food-Logo-150x150.jpg)](http://slowfoodtrentinoaltoadige.it/it/home)Gli amici della Condotta delle Terre del Noce - Slow Food ci propongono 2 interessanti appuntamenti che sottolineano lo stretto legame di fratellanza che, da millenni,  unisce la Val di Sole e la Val di Non
 
-[![Locandina Adi\_page\_1](http://www.elbrenz.eu/wp-content/uploads/2013/05/Locandina-Adi_page_1-150x150.png)](http://slowfoodtrentinoaltoadige.it/it/event/index/benessere-e-tradizione-percorsi-di-salute-con-la-cucina-delle-nostre-valli)
+[![Locandina Adi\_page\_1](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Locandina-Adi_page_1-150x150.png)](http://slowfoodtrentinoaltoadige.it/it/event/index/benessere-e-tradizione-percorsi-di-salute-con-la-cucina-delle-nostre-valli)
 
 [**Incontro-Dibattito**](http://slowfoodtrentinoaltoadige.it/it/event/index/benessere-e-tradizione-percorsi-di-salute-con-la-cucina-delle-nostre-valli)
 
@@ -23,7 +23,7 @@ Relatori:
 *Dr Carlo Pedrolli* - specialista in Scienze dell’Alimentazione, Servizio di Dietetica presso l’Ospedale Santa Chiara di Trento  
 *Giuliano Pezzini*  - Fiduciario di Slow Food Condotta Terre del Noce
 
-**[![Locandina Alleanza 1.jpg\_page\_1](http://www.elbrenz.eu/wp-content/uploads/2013/05/Locandina-Alleanza-1.jpg_page_1-150x150.png)](http://slowfoodtrentinoaltoadige.it/it/event/index/cena-dei-cuochi-dell-alleanza-convento-di-terzolas-)[Cena dell'Alleanza tra i Cuochi e i Presìdi Slow Food](http://slowfoodtrentinoaltoadige.it/it/event/index/cena-dei-cuochi-dell-alleanza-convento-di-terzolas-)**
+**[![Locandina Alleanza 1.jpg\_page\_1](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Locandina-Alleanza-1.jpg_page_1-150x150.png)](http://slowfoodtrentinoaltoadige.it/it/event/index/cena-dei-cuochi-dell-alleanza-convento-di-terzolas-)[Cena dell'Alleanza tra i Cuochi e i Presìdi Slow Food](http://slowfoodtrentinoaltoadige.it/it/event/index/cena-dei-cuochi-dell-alleanza-convento-di-terzolas-)**
 
 **Martedì 4 giugno 2013 - ore 20.00 presso il convento di Terzolas**
 

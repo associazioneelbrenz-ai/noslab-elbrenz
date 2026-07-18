@@ -26,4 +26,4 @@ L’auspicio è che attraverso questa ristampa anastatica si riesca a far conosc
 Nicola Fioretti  
 Presidente OSAR
 
-[![Locandina\_OSAR\_Lanzerotti](http://www.elbrenz.eu/wp-content/uploads/2013/09/Locandina_OSAR_Lanzerotti.jpg)](http://www.elbrenz.eu/2013/09/lanzerotti-la-rete-ferroviaria-il-trentino-le-alpi-orientali/locandina_osar_lanzerotti/)
+[![Locandina\_OSAR\_Lanzerotti](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/Locandina_OSAR_Lanzerotti.jpg)](http://www.elbrenz.eu/2013/09/lanzerotti-la-rete-ferroviaria-il-trentino-le-alpi-orientali/locandina_osar_lanzerotti/)

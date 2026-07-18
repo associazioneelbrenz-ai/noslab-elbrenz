@@ -10,11 +10,11 @@ excerpt: "Home › Cittadino › Luogo del mese › Abbazia di Stams In giugno i
 legacy_wp_id: 820
 ---
 
-[![cittadino\_stencil](http://www.elbrenz.eu/wp-content/uploads/2013/06/cittadino_stencil.png)](http://www.europaregion.info/it/cittadino/stift-stams.asp)
+[![cittadino\_stencil](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/cittadino_stencil.png)](http://www.europaregion.info/it/cittadino/stift-stams.asp)
 
 [Home](http://www.europaregion.info/it/default.asp) › [Cittadino](http://www.europaregion.info/it/cittadino.asp) › [Luogo del mese](http://www.europaregion.info/it/cittadino/luoghi.asp) › *Abbazia di Stams*
 
-![thumb\_2018\_\_elements\_gallery\_block\_lightbox](http://www.elbrenz.eu/wp-content/uploads/2013/06/thumb_2018__elements_gallery_block_lightbox.jpeg)In giugno il team dell'Euregio è andato a trovare l'abate German Erd dell'Abbazia di Stams in Tirolo, che ci porta attraverso il monastero e le strutture connesse. Il giro di presentazione inizia nella basilica e nella sala Bernardi per poi fermarsi nel seminario dell'istituto pedagogico e finisce nel negozietto monastico. 
+![thumb\_2018\_\_elements\_gallery\_block\_lightbox](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/thumb_2018__elements_gallery_block_lightbox.jpeg)In giugno il team dell'Euregio è andato a trovare l'abate German Erd dell'Abbazia di Stams in Tirolo, che ci porta attraverso il monastero e le strutture connesse. Il giro di presentazione inizia nella basilica e nella sala Bernardi per poi fermarsi nel seminario dell'istituto pedagogico e finisce nel negozietto monastico. 
 
 **Abbazia di Stams: Dai Conti del Tirolo all’Euroregione**
 

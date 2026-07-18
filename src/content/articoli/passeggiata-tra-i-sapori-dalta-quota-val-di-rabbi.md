@@ -10,7 +10,7 @@ excerpt: "ASSAPORARE IL GUSTO TRADIZIONALE DELLA VALLE DI RABBI A PIEDI ATTRAVER
 legacy_wp_id: 930
 ---
 
-**![Passeggiata in alta quota locandina](http://www.elbrenz.eu/wp-content/uploads/2013/06/Passeggiata-in-alta-quota-locandina-731x1024.jpg)ASSAPORARE IL GUSTO TRADIZIONALE DELLA VALLE DI RABBI A PIEDI ATTRAVERSO LE MALGHE**
+**![Passeggiata in alta quota locandina](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/Passeggiata-in-alta-quota-locandina-731x1024.jpg)ASSAPORARE IL GUSTO TRADIZIONALE DELLA VALLE DI RABBI A PIEDI ATTRAVERSO LE MALGHE**
 
 *25,00* € comprensivo di tutti gli assaggi, accompagnamento con guide CAI SAT, assicurazione,bus navetta.
 
@@ -32,7 +32,7 @@ Il bus navetta parte ogni mezz’ora dalle 8.00 alle 10.00
 
 **PROGRAMMA:**
 
-**![malga-cercen-1](http://www.elbrenz.eu/wp-content/uploads/2013/06/malga-cercen-1-300x174.jpg)Malga Cercen**
+**![malga-cercen-1](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/malga-cercen-1-300x174.jpg)Malga Cercen**
 
 Colazione alla Rabbiese  10.00 -11.30
 
@@ -42,7 +42,7 @@ tagliere di affettati misti con pane di segale
 
 caffè d’orzo con burro di malga.
 
-**![Malga-Monte-Sole-1](http://www.elbrenz.eu/wp-content/uploads/2013/06/Malga-Monte-Sole-1-300x225.jpg)Malga Monte Sole**
+**![Malga-Monte-Sole-1](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/Malga-Monte-Sole-1-300x225.jpg)Malga Monte Sole**
 
 Pranzo del Malgaro  11.30-14.00
 
@@ -52,7 +52,7 @@ assaggini di ricotta di malga con miele
 
 degustazione vino Teroldego
 
-**![malga-fratte-rabbi](http://www.elbrenz.eu/wp-content/uploads/2013/06/malga-fratte-rabbi-300x174.jpg)Malga Fratte**
+**![malga-fratte-rabbi](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/malga-fratte-rabbi-300x174.jpg)Malga Fratte**
 
 Merenda con dolci tipici  14.00-16.00
 
@@ -62,7 +62,7 @@ strudel di mele e crostata con marmellata nostrana
 
 degustazione grappe Trentine
 
-**![34\_termedirabbi\_1191785276](http://www.elbrenz.eu/wp-content/uploads/2013/06/34_termedirabbi_1191785276.jpg)Terme di Rabbi**
+**![34\_termedirabbi\_1191785276](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/34_termedirabbi_1191785276.jpg)Terme di Rabbi**
 
 L’elisir naturale  17.00-19.00
 
@@ -74,7 +74,7 @@ visita gratuita della mostra
 
 “I masi delle valli di Pejo e Rabbi”
 
-**![valle](http://www.elbrenz.eu/wp-content/uploads/2013/06/valle-300x96.jpg)Plaze dei Forni**
+**![valle](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/valle-300x96.jpg)Plaze dei Forni**
 
 Cena tradizionale  18.00 in poi
 

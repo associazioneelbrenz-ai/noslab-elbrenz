@@ -16,6 +16,6 @@ DOMANI ALLE ORE 20:30 SULLA PAGINA DI FACEBOOK https://www.facebook.com/ASSOCIAZ
 
 COLLEGATEVI NUMEROSI - VI ASPETTIAMO
 
-![](http://www.elbrenz.eu/wp-content/uploads/2021/12/d3252c60-1a7b-4793-b38c-be90fd10adea.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2021/12/d3252c60-1a7b-4793-b38c-be90fd10adea.jpg)
 
-[CENSIMENTO-LINGUISTICO-2021](http://www.elbrenz.eu/wp-content/uploads/2021/12/CENSIMENTO-LINGUISTICO-2021.pdf)[Download](http://www.elbrenz.eu/wp-content/uploads/2021/12/CENSIMENTO-LINGUISTICO-2021.pdf)
+[CENSIMENTO-LINGUISTICO-2021](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2021/12/CENSIMENTO-LINGUISTICO-2021.pdf)[Download](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2021/12/CENSIMENTO-LINGUISTICO-2021.pdf)

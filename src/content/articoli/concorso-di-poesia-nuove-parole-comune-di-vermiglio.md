@@ -12,7 +12,7 @@ legacy_wp_id: 830
 
 **Segnaliamo questa interessante iniziativa culturale promossa dall' Assessorato alla Cultura e dalla Biblioteca del Comune di Vermiglio.**
 
-**![001](http://www.elbrenz.eu/wp-content/uploads/2013/06/001-723x1024.jpg)1° edizione 2013** 
+**![001](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/001-723x1024.jpg)1° edizione 2013** 
 
 **Regolamento**
 

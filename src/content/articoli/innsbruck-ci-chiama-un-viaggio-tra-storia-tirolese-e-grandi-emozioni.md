@@ -10,7 +10,7 @@ excerpt: "Domenica 26 Ottobre: L'Associazione Storico Culturale Linguistica \"El
 legacy_wp_id: 3831
 ---
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/10/LOCANDINA-INNSBRUCK-1-1448x2048.jpeg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/10/LOCANDINA-INNSBRUCK-1-1448x2048.jpeg)
 
 **Domenica 26 Ottobre:** L'Associazione Storico Culturale Linguistica **"El Brenz"** vi invita a un'avventura culturale a **Innsbruck**, il cuore pulsante del **Tirolo**, terra storicamente legata alle nostre valli!
 

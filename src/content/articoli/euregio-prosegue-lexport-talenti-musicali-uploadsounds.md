@@ -10,7 +10,7 @@ excerpt: "I musicisti di \"Uploadosounds\", concluso il contest ed il festival d
 legacy_wp_id: 1131
 ---
 
-[![cultura\_stencil](http://www.elbrenz.eu/wp-content/uploads/2013/05/cultura_stencil.png)](http://www.elbrenz.eu/2013/05/plurilingue-e-transfrontaliero-workshop-euregio-su-capitale-della-cultura-2019/cultura_stencil/)
+[![cultura\_stencil](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/cultura_stencil.png)](http://www.elbrenz.eu/2013/05/plurilingue-e-transfrontaliero-workshop-euregio-su-capitale-della-cultura-2019/cultura_stencil/)
 
 I musicisti di "Uploadosounds", concluso il contest ed il festival del progetto, possono suonare nei migliori festival dell' Euregio, in Italia, Austria e in tutta Europa grazie alla rete di relazioni che Uploadsounds ha intrecciato in questi anni per sviluppare e potenziare i talenti musicali Euroregionali. Le prossime date.
 

@@ -14,7 +14,7 @@ Segnaliamo questo bell' evento che dimostra quanto può essere bello e proficuo 
 
 ## Bravi **Alpini di Mori** e **Gruppo Storico Trentino**!!! Date un grande esempio a tutti noi!
 
-[![Inaugurazione Monumento Mori](http://www.elbrenz.eu/wp-content/uploads/2013/05/Inaugurazione-Monumento-Mori.jpg)](http://www.elbrenz.eu/wp-content/uploads/2013/05/Inaugurazione-Monumento-Mori.jpg)
+[![Inaugurazione Monumento Mori](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Inaugurazione-Monumento-Mori.jpg)](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Inaugurazione-Monumento-Mori.jpg)
 
 L'evento è organizzato dal **Gruppo Alpini “Remo Rizzardi” di Mori insieme** con il **Gruppo Storico Trentino.** 
 

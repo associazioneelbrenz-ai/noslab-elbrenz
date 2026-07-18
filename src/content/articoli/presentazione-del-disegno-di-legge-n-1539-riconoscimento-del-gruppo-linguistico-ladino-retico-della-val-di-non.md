@@ -44,11 +44,11 @@ Il popolo al centro di questa legge è quello degli
 
 **Anauni**, più familiarmente conosciuti come "Nònesi". La loro terra, l'Anaunia (Val di Non), si trova nella provincia autonoma di Trento. Questo insediamento, composto da decine di migliaia di persone, rappresenta l'unica "isola residua in Italia" della civiltà romana innestata sul popolo semitico dei Reti.
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/Cartina-dAnaunia.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/Cartina-dAnaunia.jpg)
 
 Il nome "Anaunia" deriverebbe dalla combinazione dell'idronimo semitico "enu" (fiume) e della particella "ana" (vicino), con il significato di "terra vicino al fiume". Questo fiume, che i Reti chiamavano "enu" e i Romani "enus," è ora conosciuto come Noce.
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/Nauno-1.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/Nauno-1.png)
 
 Gli Anauni compaiono per la prima volta nella storia nel 46 d.C. su una tavola in bronzo, la **"Tabula Clesiana"**, che conferiva loro la cittadinanza romana. Il documento, la cui autenticità fu confermata da Theodor Mommsen, attesta che gli anauni erano pienamente integrati nell'Impero Romano, servendo come ufficiali nelle legioni, guardie personali dell'imperatore e magistrati a Roma. Nel 397 d.C., gli anauni furono protagonisti di un episodio storico: l'eccidio dei tre martiri anauniensi, avvenuto in seguito a una violenta reazione alla chiusura dei loro templi. Nei secoli successivi, il monaco **Secondo di Anaunia** divenne ministro alla corte della regina Teodolinda e fu determinante per la conversione dei Longobardi al cattolicesimo.
 
@@ -101,4 +101,4 @@ Il riconoscimento del gruppo linguistico ladino-retico degli Anauni non solo por
 
 **Di seguito il Testo integrale del DDL n. 1539**
 
-[ddl\_1539\_\_Riconoscimento\_gruppo\_linguistico\_ladino\_retico\_Val\_di\_Non\[1\]](https://www.elbrenz.eu/wp-content/uploads/2025/08/ddl_1539__Riconoscimento_gruppo_linguistico_ladino_retico_Val_di_Non1.pdf)[Download](https://www.elbrenz.eu/wp-content/uploads/2025/08/ddl_1539__Riconoscimento_gruppo_linguistico_ladino_retico_Val_di_Non1.pdf)
+[ddl\_1539\_\_Riconoscimento\_gruppo\_linguistico\_ladino\_retico\_Val\_di\_Non\[1\]](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/ddl_1539__Riconoscimento_gruppo_linguistico_ladino_retico_Val_di_Non1.pdf)[Download](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/ddl_1539__Riconoscimento_gruppo_linguistico_ladino_retico_Val_di_Non1.pdf)

@@ -10,7 +10,7 @@ excerpt: "DOMENICA 19 MAGGIO 2013 , Con l'obiettivo di passare una giornata insi
 legacy_wp_id: 378
 ---
 
-[![Innsbruck4](http://www.elbrenz.eu/wp-content/uploads/2013/05/Innsbruck4.jpg)](http://www.elbrenz.eu/wp-content/uploads/2013/05/Innsbruck4.jpg)
+[![Innsbruck4](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Innsbruck4.jpg)](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/Innsbruck4.jpg)
 
 **DOMENICA 19 MAGGIO 2013, Con l'obiettivo di passare una giornata insieme all'insegna della cultura del nostro territorio, l'Associazione Storico Culturale Linguistica "El Brenz"** organizza una gita nel capoluogo del Nord Tirolo. **LA GITA E' APERTA A TUTTI!!!!** 
 

@@ -23,7 +23,7 @@ A presto
 
 **Andrea Daprà 1997**
 
-[![giornifreddi](http://www.elbrenz.eu/wp-content/uploads/2015/02/giornifreddi-1024x669.jpg)](http://www.elbrenz.eu/2015/02/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno/giornifreddi/)                                                                                                                                                                                                                                                                                                          
+[![giornifreddi](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/02/giornifreddi-1024x669.jpg)](http://www.elbrenz.eu/2015/02/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno/giornifreddi/)                                                                                                                                                                                                                                                                                                          
 
 ***L'ultim dì de genar***  
 ***le anch l'ultim di dala merla***  
@@ -51,4 +51,4 @@ chje pasa a travers al tabar.***
 **Simone Daprà (elaborzione Pio Stablum)  
 **
 
-[![Poesia di Febbraio Simone Daprà](http://www.elbrenz.eu/wp-content/uploads/2015/02/Poesia-di-Febbraio-Simone-Daprà-1024x711.jpg)](http://www.elbrenz.eu/2015/02/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno/poesia-di-febbraio-simone-dapra/)
+[![Poesia di Febbraio Simone Daprà](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/02/Poesia-di-Febbraio-Simone-Dapra-1024x711.jpg)](http://www.elbrenz.eu/2015/02/si-ricomincia-con-le-poesie-dei-primi-mesi-dellanno/poesia-di-febbraio-simone-dapra/)

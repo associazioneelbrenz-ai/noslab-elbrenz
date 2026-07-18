@@ -14,7 +14,7 @@ legacy_wp_id: 3307
 
 **OS DAL NOS COMPIE 5 ANNI!!!!!!!! UN LUSTRO E' UN GRAN TRAGUARDO!!!!!!!!**
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2018/06/Immagine-1.png)](http://www.elbrenz.eu/2018/06/os-dal-nos-2018-5-edizione/immagine-2/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/06/Immagine-1.png)](http://www.elbrenz.eu/2018/06/os-dal-nos-2018-5-edizione/immagine-2/)
 
 Torna il concorso poetico e musicale nelle nostre parlate “Os dal Nos”, giunto alla sua 5^ edizione!
 

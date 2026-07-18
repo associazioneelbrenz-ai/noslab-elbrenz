@@ -26,4 +26,4 @@ il testo sarà presentato
 
 Nel merito, una serie di interventi a firme diverse (Andrea Saccocci, Michele Asolati, Beata T. Marcinik oltre ad Alberto Mosca e Nicoletta Pisu) da un lato fanno luce sulla vicenda intricata e complessa delle ANTICHE MONETE ritrovate in Val di Sole, dall'altra ci illustrano quanto emerso negli scavi condotti una decina d'anni fa in diversi siti storici della Valle: Dimaro (Chiesa S. Lorenzo - Doss di S. Brigida); Commezzadura (Chiesa di S. Agata); Ossana (Chiesa Parrocchiale e Castello di S. Michele). 
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2017/04/Archeologia-e-Numismatica.jpg)](http://www.elbrenz.eu/2017/04/archeologia-numismatica-val-sole-nuova-pubblicazione-del-centro-studi-la-val-sole/archeologia-e-numismatica/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/04/Archeologia-e-Numismatica.jpg)](http://www.elbrenz.eu/2017/04/archeologia-numismatica-val-sole-nuova-pubblicazione-del-centro-studi-la-val-sole/archeologia-e-numismatica/)

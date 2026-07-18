@@ -20,4 +20,4 @@ Relatori: **Alberto Mosca, Andrea Leonardi e Roberto Pancheri**
 
 **Revò / Casa Campia**
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2017/04/Maria-teresa-723x1024.jpg)](http://www.elbrenz.eu/2017/04/buon-compleanno-maria-teresa-revo-casa-campia-12-maggio-2017/maria-teresa/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/04/Maria-teresa-723x1024.jpg)](http://www.elbrenz.eu/2017/04/buon-compleanno-maria-teresa-revo-casa-campia-12-maggio-2017/maria-teresa/)

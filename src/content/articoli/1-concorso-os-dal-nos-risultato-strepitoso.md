@@ -18,7 +18,7 @@ legacy_wp_id: 2977
 
 \[embed\]https://www.youtube.com/watch?v=64MO\_Aot5bc&feature=youtu.be\[/embed\]
 
- [![os dal nos](http://www.elbrenz.eu/wp-content/uploads/2014/08/os-dal-nos-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/os-dal-nos/)
+ [![os dal nos](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/os-dal-nos-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/os-dal-nos/)
 
 La prima edizione di un nuovo progetto genera, negli organizzatori, una strana miscela di elettrizzante entusiasmo e sottile preoccupazione. Nel nostro caso il secondo componente è stato totalmente annientato dalla compattezza del nostro splendido gruppo (che da Presidente e socio non finirò mai di ringraziare) e dalla magnifica collaborazione con i ragazzi dell'Associazione [**"Le Cose Utili"**](http://lepartidiricambio.com/). Siete eccezionali!!!!!!! Il pubblico non è mancato e l'interesse è stato davvero molto. La qualità dei partecipanti è andata ben oltre alle aspettative!!! Complimenti a tutti!!!
 
@@ -30,7 +30,7 @@ Chiediamo scusa per il ritardo nella pubblicazione dei risultati del concorso ma
 **2° Felix Lalù (Oscar de Bertoldi) - "Pulp alpestre"**  
 **3° Giordano Cova - "En le not"**
 
-[![Paolo bertagnolli](http://www.elbrenz.eu/wp-content/uploads/2014/08/Paolo-bertagnolli-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/paolo-bertagnolli/)[![Felix](http://www.elbrenz.eu/wp-content/uploads/2014/08/Felix-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/felix/)[![Giordano](http://www.elbrenz.eu/wp-content/uploads/2014/08/Giordano-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/giordano/)
+[![Paolo bertagnolli](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/Paolo-bertagnolli-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/paolo-bertagnolli/)[![Felix](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/Felix-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/felix/)[![Giordano](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/Giordano-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/giordano/)
 
 **Categoria Cover:**
 
@@ -38,7 +38,7 @@ Chiediamo scusa per il ritardo nella pubblicazione dei risultati del concorso ma
 **2° Felix Lalù - "La Mina da Mecel"**  
 **3° The Tananai - "Blu Gins - Lana dei Pej"**
 
-[![Sflantugem](http://www.elbrenz.eu/wp-content/uploads/2014/08/Sflantugem-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/sflantugem/)[![Felix 2](http://www.elbrenz.eu/wp-content/uploads/2014/08/Felix-2-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/felix-2/)[![Tananai 2](http://www.elbrenz.eu/wp-content/uploads/2014/08/Tananai-2-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/tananai-2/)
+[![Sflantugem](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/Sflantugem-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/sflantugem/)[![Felix 2](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/Felix-2-300x225.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/felix-2/)[![Tananai 2](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/Tananai-2-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/tananai-2/)
 
 **Categoria Poesia:**
 
@@ -46,8 +46,8 @@ Chiediamo scusa per il ritardo nella pubblicazione dei risultati del concorso ma
 **2° Silvia Albasini - "Tut en te na grignada"**  
 **3° Gialuca Dal Rì - " 'L treno per la galizia"**
 
-[![Silvia albasini](http://www.elbrenz.eu/wp-content/uploads/2014/08/Silvia-albasini-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/silvia-albasini/)[![dalrì](http://www.elbrenz.eu/wp-content/uploads/2014/08/dalrì-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/dalri/)
+[![Silvia albasini](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/Silvia-albasini-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/silvia-albasini/)[![dalrì](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/dalri-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/dalri/)
 
 **Giuria**: Massimo Paternoster (El Brenz), Marco Cimarosti (El Brenz), Alessio Andreis (Le Cose Utili), Cristian Bresadola (El Brenz), Massimiliano Stablum (Le Cose Utili), Federico Brusegan (El Brenz), Arianna Grassi.
 
-[![foto 2(1)](http://www.elbrenz.eu/wp-content/uploads/2014/08/foto-21-e1407967086380-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/foto-21/)
+[![foto 2(1)](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/foto-21-e1407967086380-225x300.jpg)](http://www.elbrenz.eu/2014/08/1-concorso-os-dal-nos-risultato-strepitoso/foto-21/)

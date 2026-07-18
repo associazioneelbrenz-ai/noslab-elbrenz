@@ -14,14 +14,14 @@ https://youtu.be/p3\_rYKq5QX8?si=zcjtaqJGJLWZXekF
 
 ## Rispetto, Identità Storica e Cultura del Tirolo
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/libro.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/libro.jpg)
 
 Questo articolo riassume la presentazione di un nuovo libro, il cui contenuto è tratto dall'introduzione del libro stesso, dedicata al concetto di "rispetto" e all'identità storica e culturale, con particolare attenzione alle vicende della terra tirolese e alle conseguenze della guerra del 24 maggio 1915. Vengono analizzati in profondità i concetti di rispetto, coscienza e identità, le criticità storiche e attuali che ne derivano, e vengono citati interventi istituzionali (come quello del Presidente della Repubblica Sergio Mattarella) e giornalistici (come l'articolo di Edoardo Venditti su La Stampa) per riflettere sull'importanza della verità storica e della cultura condivisa. Sono inoltre evidenziate le questioni aperte relative al riconoscimento dell'identità tirolese e ai persistenti rischi di perdita culturale e di manomissione dell'identità stessa. Non vengono esplicitamente indicate azioni concrete da intraprendere, ma si sottolinea la necessità di ristabilire la verità.
 
 ##   
 Il Rispetto, Identità e Coscienza
 
-![](https://www.elbrenz.eu/wp-content/uploads/2025/08/giuseppe-matuella.jpg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2025/08/giuseppe-matuella.jpg)
 
 Il rispetto è definito come sentimento e comportamento che implica considerazione, stima e deferenza verso gli altri, le loro idee, i loro diritti e i loro sentimenti.  
 Non si limita alla semplice educazione o cortesia, ma è un atteggiamento fondamentale per costruire relazioni sane e pacifiche, basate sulla fiducia.  

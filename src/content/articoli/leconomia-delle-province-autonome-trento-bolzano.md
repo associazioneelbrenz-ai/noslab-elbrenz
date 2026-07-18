@@ -10,7 +10,7 @@ excerpt: "È disponibile online il rapporto annuale della Banca d’Italia con i
 legacy_wp_id: 1027
 ---
 
-[*![logo\_euregio](http://www.elbrenz.eu/wp-content/uploads/2013/09/logo_euregio.png)*](http://www.europaregion.info/it/default.asp)
+[*![logo\_euregio](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/logo_euregio.png)*](http://www.europaregion.info/it/default.asp)
 
 È disponibile online il rapporto annuale della Banca d’Italia con il nome “L’Economia delle Provincie Autonome di Trento e Bolzano” relativo all’anno 2012, presentato a Bolzano il 18 giugno. Il rapporto n. 5 di giugno 2013 è stato pubblicato all’interno della serie “Economie regionali” che ha la finalità di presentare studi e documentazioni sugli aspetti territoriali dell’economia italiana. Il rapporto parla anche del GECT Euregio Tirolo-Alto Adige-Trentino.
 

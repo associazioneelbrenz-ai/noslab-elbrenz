@@ -10,7 +10,7 @@ excerpt: "https://tirolquiz.com/it Un test completo e molto divertente che ci po
 legacy_wp_id: 3741
 ---
 
-![](https://www.elbrenz.eu/wp-content/uploads/2024/12/image.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2024/12/image.png)
 
 [https://tirolquiz.com/it](https://tirolquiz.com/it)
 

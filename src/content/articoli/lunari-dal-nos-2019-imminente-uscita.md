@@ -28,8 +28,8 @@ Un ringraziamento a tutti coloro che sostengono e sosterranno le nostre iniziati
 
 Ecco a voi l'anteprima della copertina
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2018/11/Lunari-da-Nos-Copertina.png)](http://www.elbrenz.eu/2018/11/lunari-dal-nos-2019-imminente-uscita/lunari-da-nos-copertina/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/11/Lunari-da-Nos-Copertina.png)](http://www.elbrenz.eu/2018/11/lunari-dal-nos-2019-imminente-uscita/lunari-da-nos-copertina/)
 
 Un GRAZIE di cuore alle attività nonese e solandre che credono in noi
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2018/11/Lunari-dal-Nos-Ultima-pagina.png)](http://www.elbrenz.eu/2018/11/lunari-dal-nos-2019-imminente-uscita/lunari-dal-nos-ultima-pagina/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/11/Lunari-dal-Nos-Ultima-pagina.png)](http://www.elbrenz.eu/2018/11/lunari-dal-nos-2019-imminente-uscita/lunari-dal-nos-ultima-pagina/)

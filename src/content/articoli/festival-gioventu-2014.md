@@ -10,7 +10,7 @@ excerpt: "\"STUDIO, LAVORO, SOCIETÀ: SCOPRI LE TUE POTENZIALITÀ!\" 09 AL 12 AP
 legacy_wp_id: 2846
 ---
 
-**[![giovani\_stencil\_Euregio](http://www.elbrenz.eu/wp-content/uploads/2013/05/giovani_stencil_Euregio.png)](http://www.europaregion.info/it/festival-gioventu.asp)  
+**[![giovani\_stencil\_Euregio](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/giovani_stencil_Euregio.png)](http://www.europaregion.info/it/festival-gioventu.asp)  
 "STUDIO, LAVORO, SOCIETÀ: SCOPRI LE TUE POTENZIALITÀ!"**
 
 09 AL 12 APRILE 2014 / LIENZ - BRUNICO - TRENTO / 3° EDIZIONE

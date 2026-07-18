@@ -10,7 +10,7 @@ excerpt: "Esperienza di Scambio docenti Trentino-Tirolo a. s. 2013/14 Adesioni e
 legacy_wp_id: 1165
 ---
 
-[![logo\_euregio](http://www.elbrenz.eu/wp-content/uploads/2013/09/logo_euregio.png)](http://www.elbrenz.eu/2013/09/leconomia-delle-province-autonome-trento-bolzano/logo_euregio/)
+[![logo\_euregio](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/logo_euregio.png)](http://www.elbrenz.eu/2013/09/leconomia-delle-province-autonome-trento-bolzano/logo_euregio/)
 
 [Esperienza di Scambio docenti Trentino-Tirolo a. s. 2013/14](http://www.vivoscuola.it/c/document_library/get_file?uuid=59e9d98d-b927-482d-9a4c-c228ef466460&groupId=10137 "Esperienza di Scambio docenti Trentino-Tirolo a. s. 2013/14")
 

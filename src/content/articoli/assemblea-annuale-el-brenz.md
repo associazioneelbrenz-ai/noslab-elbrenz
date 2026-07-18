@@ -10,7 +10,7 @@ excerpt: "Salve a tutti, finalmente ora il sito tornerà operativo con tante new
 legacy_wp_id: 1402
 ---
 
-[![116\_assemblea2007\_teatro](http://www.elbrenz.eu/wp-content/uploads/2014/01/116_assemblea2007_teatro.bmp)](http://www.elbrenz.eu/wp-content/uploads/2014/01/116_assemblea2007_teatro.bmp)Salve a tutti, finalmente ora il sito tornerà operativo con tante news! Una di queste è la tanto attesa Assemblea Annuale dei soci, aperta a tutti, che si terrà giovedì 30 Gennaio ore 20.30 presso la Sala Conferenze del Comune di Male'. Solo i soci in regola con il pagamento della quota associativa avranno diritto al voto, tra cui il punto più importante è la proposta di modifica dello statuto. Il consiglio direttivo ritiene opportuno, in seguito alle esperienze, ai progetti e alle attività svolte,  proporre modifiche ed implementazioni all' attuale carta statutaria dell'associazione. Tanti progetti e tante novità, che verranno illustrate all'assemblea secondo il seguente O.d.G.
+[![116\_assemblea2007\_teatro](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/01/116_assemblea2007_teatro.bmp)](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/01/116_assemblea2007_teatro.bmp)Salve a tutti, finalmente ora il sito tornerà operativo con tante news! Una di queste è la tanto attesa Assemblea Annuale dei soci, aperta a tutti, che si terrà giovedì 30 Gennaio ore 20.30 presso la Sala Conferenze del Comune di Male'. Solo i soci in regola con il pagamento della quota associativa avranno diritto al voto, tra cui il punto più importante è la proposta di modifica dello statuto. Il consiglio direttivo ritiene opportuno, in seguito alle esperienze, ai progetti e alle attività svolte,  proporre modifiche ed implementazioni all' attuale carta statutaria dell'associazione. Tanti progetti e tante novità, che verranno illustrate all'assemblea secondo il seguente O.d.G.
 
 **Ordine del giorno:**
 
@@ -26,7 +26,7 @@ legacy_wp_id: 1402
 
 *6)Varie ed eventuali.*
 
-[![rinfresco2](http://www.elbrenz.eu/wp-content/uploads/2014/01/rinfresco2.jpg)](http://www.elbrenz.eu/wp-content/uploads/2014/01/rinfresco2.jpg)
+[![rinfresco2](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/01/rinfresco2.jpg)](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/01/rinfresco2.jpg)
 
 Al termine dei lavori si procederà al rinnovo per l'anno 2014, seguito da un piccolo rinfresco.
 

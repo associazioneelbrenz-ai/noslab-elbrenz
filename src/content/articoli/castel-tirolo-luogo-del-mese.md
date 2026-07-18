@@ -24,7 +24,7 @@ Il mastio di Castel Tirolo illustra in 20 “tappe” la storia del XX secolo. I
 
 Il **nucleo castellano** comprende il palazzo meridionale e le due cappelle, il palazzo orientale, il camminamento di ronda, il refettorio (il cosiddetto “Mushaus”), il mastio, il cortile delle cucine e gli edifici di servizio. Ospita la storia del Tirolo dai suoi albori, l’epoca d’oro di Castel Tirolo nel Medioevo, la legislazione e la codificazione delle pene, la decadenza e il recupero edilizio, la vita quotidiana nel Medioevo, la storia contemporanea e le mostre temporanee.
 
-[![Schloss Tirol - Castel Tirolo Foto mgmFrieder Blickle](http://www.elbrenz.eu/wp-content/uploads/2013/06/Schloss-Tirol-Castel-Tirolo-Foto-mgmFrieder-Blickle-150x150.jpg)](http://www.europaregion.info/it/cittadino/schloss-tirol.asp)
+[![Schloss Tirol - Castel Tirolo Foto mgmFrieder Blickle](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/Schloss-Tirol-Castel-Tirolo-Foto-mgmFrieder-Blickle-150x150.jpg)](http://www.europaregion.info/it/cittadino/schloss-tirol.asp)
 
 **Mostra/Esposizione Marcello Jori:**
 

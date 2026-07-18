@@ -10,7 +10,7 @@ excerpt: "PROROGA DATA D'ISCRIZIONE! Fino al 06 agosto 2015 2° EDIZIONE DEL CON
 legacy_wp_id: 3059
 ---
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2015/06/locandina_osdalnos2015-2-1005x1024.jpg)](http://www.elbrenz.eu/2015/06/2-edizione-del-concorso-musicale-e-poetico-os-dal-nos/locandina_osdalnos2015-2/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/06/locandina_osdalnos2015-2-1005x1024.jpg)](http://www.elbrenz.eu/2015/06/2-edizione-del-concorso-musicale-e-poetico-os-dal-nos/locandina_osdalnos2015-2/)
 
  **PROROGA DATA D'ISCRIZIONE! Fino al 06 agosto 2015**
 
@@ -132,4 +132,4 @@ Chiunque sottoscriva la scheda di partecipazione accetta tutti gli articoli del 
 
 A brevissimo i dettagli ed il regolamento. Seguiteci su [www.elbrenz.eu](www.elbrenz.eu) e sulla nostra pagina di [Facebook.](https://www.facebook.com/pages/Concorso-Musicale-e-Poetico-Os-dal-Nos/678790988872567?fref=ts "OS DAL NOS")
 
-[![trento\_-\_il\_logo\_della\_regione\_trentino-alto\_adige.\_-\_2012\_-\_imagefull](http://www.elbrenz.eu/wp-content/uploads/2014/07/trento_-_il_logo_della_regione_trentino-alto_adige._-_2012_-_imagefull.jpg)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/trento_-_il_logo_della_regione_trentino-alto_adige-_-_2012_-_imagefull/)
+[![trento\_-\_il\_logo\_della\_regione\_trentino-alto\_adige.\_-\_2012\_-\_imagefull](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/07/trento_-_il_logo_della_regione_trentino-alto_adige._-_2012_-_imagefull.jpg)](http://www.elbrenz.eu/2014/07/1-concorso-poetico-musicale-os-dal-nos/trento_-_il_logo_della_regione_trentino-alto_adige-_-_2012_-_imagefull/)

@@ -19,7 +19,7 @@ legacy_wp_id: 3247
 # “Os dal Nos”  
 SCALETTA ESIBIZIONI
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2017/04/locandina2-1005x1024.jpg)](http://www.elbrenz.eu/2017/04/4-edizione-del-concorso-poetico-musicale-os-dal-nos/locandina2/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2017/04/locandina2-1005x1024.jpg)](http://www.elbrenz.eu/2017/04/4-edizione-del-concorso-poetico-musicale-os-dal-nos/locandina2/)
 
 1. Cat. Musica Cover: EL FOCH DE SANT’ANTONI – Vagabonds & Travelling Band
 

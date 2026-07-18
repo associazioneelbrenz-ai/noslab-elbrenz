@@ -10,7 +10,7 @@ excerpt: "Buongiorno a tutti!!! Dopo 2 mesi di inattività dovuti a molti impegn
 legacy_wp_id: 999
 ---
 
-![Bentornati-Welcome-back](http://www.elbrenz.eu/wp-content/uploads/2013/08/Bentornati-Welcome-back.jpg)
+![Bentornati-Welcome-back](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/08/Bentornati-Welcome-back.jpg)
 
 Buongiorno a tutti!!! Dopo 2 mesi di inattività dovuti a molti impegni, ferie e problemi tecnici di varia natura stiamo per tornare, a brevissimo, operativi. Ci scusiamo per l'assenza!! Vi ripagheremo con tantissime novità nel corso delle prossime settimane!
 

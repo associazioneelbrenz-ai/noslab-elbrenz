@@ -10,13 +10,13 @@ excerpt: "Settimana di eventi intorno al mondo dell'ACQUA in Val di Peio dal 30 
 legacy_wp_id: 861
 ---
 
-![viviamo l'acqua](http://www.elbrenz.eu/wp-content/uploads/2013/06/viviamo-lacqua.jpg)
+![viviamo l'acqua](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/viviamo-lacqua.jpg)
 
 **Settimana di eventi intorno al mondo dell'ACQUA in Val di Peio dal 30 al 6 luglio 2013** 
 
 ***Domenica 30 giugno:***
 
-![logo\_terme-peio2](http://www.elbrenz.eu/wp-content/uploads/2013/06/logo_terme-peio2.jpg)
+![logo\_terme-peio2](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/logo_terme-peio2.jpg)
 
 PORTE APERTE ALLE TERME  
 visite guidate  
@@ -33,9 +33,9 @@ Sala Congressi Parco Stelvio
 
 ***Lunedì 1 luglio:***
 
-![Logo\_verticale Parco dello Stelvio](http://www.elbrenz.eu/wp-content/uploads/2013/06/Logo_verticale-Parco-dello-Stelvio.jpg)UN'INTERA GIORNATA NEL PARCO DELLO STELVIO
+![Logo\_verticale Parco dello Stelvio](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/Logo_verticale-Parco-dello-Stelvio.jpg)UN'INTERA GIORNATA NEL PARCO DELLO STELVIO
 
-Passeggiata lungo le sponde del Lago Palù con il personale del Parco e dell'Associazione Pescatori con rilascio degli avanotti nel lago![4846-01-14-07-6037](http://www.elbrenz.eu/wp-content/uploads/2013/06/4846-01-14-07-6037.jpg)
+Passeggiata lungo le sponde del Lago Palù con il personale del Parco e dell'Associazione Pescatori con rilascio degli avanotti nel lago![4846-01-14-07-6037](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/4846-01-14-07-6037.jpg)
 
 ***Martedì 2 luglio:***
 

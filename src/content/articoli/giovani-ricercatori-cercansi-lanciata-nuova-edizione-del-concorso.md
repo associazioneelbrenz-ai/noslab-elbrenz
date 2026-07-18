@@ -10,9 +10,9 @@ excerpt: "Giovani ricercatori cercansi! è il titolo del concorso indetto dall'A
 legacy_wp_id: 369
 ---
 
-# [![cultura\_stencil](http://www.elbrenz.eu/wp-content/uploads/2013/05/cultura_stencil.png)](http://www.europaregion.info/it/cultura-istruzione-ricerca.asp)
+# [![cultura\_stencil](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/cultura_stencil.png)](http://www.europaregion.info/it/cultura-istruzione-ricerca.asp)
 
-# [![Schema Euregio, con Trentino, Alto Adige e Tirolo](http://www.elbrenz.eu/wp-content/uploads/2013/05/euregio.jpg)](http://www.elbrenz.eu/wp-content/uploads/2013/05/euregio.jpg)Giovani ricercatori cercansi! è il titolo del concorso indetto dall'Accademia Europea e dall'Euregio Tirolo-Alto Adige- Trentino rivolto a ragazze e ragazzi fra i 16 ed i 20 anni. I dettagli e le novità riferiti al concorso sono stati illustrati oggi, venerdì 3 maggio 2013, dal presidente della Provincia e dell'Euregio, Luis Durnwalder, e dai vertici dell'EURAC Werner Stuflesser e Stephan Ortner.
+# [![Schema Euregio, con Trentino, Alto Adige e Tirolo](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/euregio.jpg)](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/euregio.jpg)Giovani ricercatori cercansi! è il titolo del concorso indetto dall'Accademia Europea e dall'Euregio Tirolo-Alto Adige- Trentino rivolto a ragazze e ragazzi fra i 16 ed i 20 anni. I dettagli e le novità riferiti al concorso sono stati illustrati oggi, venerdì 3 maggio 2013, dal presidente della Provincia e dell'Euregio, Luis Durnwalder, e dai vertici dell'EURAC Werner Stuflesser e Stephan Ortner.
 
 [![Junge Forscher gesucht](http://www.europaregion.info/it/cultura-istruzione-ricerca/news-cultura.asp?news_action=300&news_image_id=614568)](http://www.europaregion.info/it/cultura-istruzione-ricerca/news-cultura.asp?news_action=300&news_image_id=614569 "Junge Forscher gesucht")
 

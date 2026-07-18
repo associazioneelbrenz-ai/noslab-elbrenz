@@ -12,7 +12,7 @@ legacy_wp_id: 3849
 
 Mentre il resto del Reggimento 28 è passato alla storia per la presunta "vergogna" sul fronte russo (poi smentita dagli storici moderni), il **4º Battaglione** ha scritto una storia completamente diversa, legata indissolubilmente alle nostre valli.
 
-![](https://www.elbrenz.eu/wp-content/uploads/2026/01/Caserma-del-28-reggimento-Praga-a-Male-sulla-sinistra.png)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2026/01/Caserma-del-28-reggimento-Praga-a-Male-sulla-sinistra.png)
 
 *"Questa immagine storica, **conservata nel** Fondo Generale Museo Storico in Trento onlus, offre un suggestivo **panorama della** Località all'Arco a Malé (TN). Il documento, **catalogato dalla** Fondazione Museo storico del Trentino a cura di Maria Letizia Tonelli, è reperibile con la **collocazione archivistica** B. 2 IV 3/297."*
 

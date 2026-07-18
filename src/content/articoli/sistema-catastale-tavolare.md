@@ -12,7 +12,7 @@ legacy_wp_id: 1255
 
 **Il patrimonio storico**
 
-[![storia-3.1172052816](http://www.elbrenz.eu/wp-content/uploads/2013/09/storia-3.1172052816.jpg)](http://www.catasto.provincia.tn.it/vetrina/patrimonio_storico/)
+[![storia-3.1172052816](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/storia-3.1172052816.jpg)](http://www.catasto.provincia.tn.it/vetrina/patrimonio_storico/)
 
 Il Catasto della regione autonoma " Trentino - Alto Adige " si differenzia da quello vigente nelle altre regioni italiane. Fino al 1918, infatti, la nostra regione faceva parte dell'Impero Austro-ungarico e precisamente del Land Tirol. Sul suo territorio, come anche in parte di altre province dell’Italia settentrionale, anch'esse facenti parte del vecchio Impero (Belluno, Trieste, ecc.), è tuttora in vigore il Catasto Fondiario austriaco, istituto con patente sovrana di Francesco I d'Austria del 23.12.1817, al fine di perequare l'imposta fondiaria "… presa in considerazione la sproporzione risultante a danno d'intere province, distretti, comuni nonché dei singoli contribuenti nel ripartimento dell'imposta fondiaria secondo le norme attualmente vigenti...". Con ciò si voleva creare un Catasto geometrico, particellare, basato sulla misura e sulla "stima stabile". Doveva essere determinata per ogni singola particella, con valutazione estimale diretta, il valore imponibile perpetuo ossia il reddito netto con riferimento ad anni di produttività media. I lavori di formazione iniziarono nel 1817 e proseguirono fino al 1861 (nel Tirolo dal 1851 al 1861).
 
@@ -64,4 +64,4 @@ immagine in basso a destra - Riva del Garda (TN), il porto vecchio con la torre
 
  **[Cartografia - Atlas Tirolensis](http://mo.tirol.gv.at/scripts/esrimap.dll?Name=Anich&MyAufl=1024&Left=13395&Bottom=57100&Right=418078&Top=294432&KS=0&thv=1&Cmd=&ka=0&AppPar=3&HiGr=0&Par3=0&Par4=0&Aktual.x=5&Aktual.y=3)** 
 
-[![Atlas Tirolensis](http://www.elbrenz.eu/wp-content/uploads/2013/09/Atlas-Tirolensis.png)](http://mo.tirol.gv.at/scripts/esrimap.dll?Name=Anich&MyAufl=1024&Left=13395&Bottom=57100&Right=418078&Top=294432&KS=0&thv=1&Cmd=&ka=0&AppPar=3&HiGr=0&Par3=0&Par4=0&Aktual.x=5&Aktual.y=3)
+[![Atlas Tirolensis](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/09/Atlas-Tirolensis.png)](http://mo.tirol.gv.at/scripts/esrimap.dll?Name=Anich&MyAufl=1024&Left=13395&Bottom=57100&Right=418078&Top=294432&KS=0&thv=1&Cmd=&ka=0&AppPar=3&HiGr=0&Par3=0&Par4=0&Aktual.x=5&Aktual.y=3)

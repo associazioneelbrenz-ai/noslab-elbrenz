@@ -16,7 +16,7 @@ Per comunicazioni, info o chiarimenti contattare il numero: **3911027363**
 
 Si raccomanda la puntualità per motivi organizzativi. 
 
- ![locandina\_osdalnos2015-2](http://www.elbrenz.eu/wp-content/uploads/2015/06/locandina_osdalnos2015-2-2010x2048.jpg)
+ ![locandina\_osdalnos2015-2](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/06/locandina_osdalnos2015-2-2010x2048.jpg)
 
 SCALETTA ESIBIZIONI
 

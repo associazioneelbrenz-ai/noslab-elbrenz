@@ -10,7 +10,7 @@ excerpt: "Mancano meno di 7 giorni alla nuova edizione di Os dal Nos. I preparat
 legacy_wp_id: 3316
 ---
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2018/07/Are-You-Ready...-We-Are.....jpg)](http://www.elbrenz.eu/2018/07/siete-pronti-meno-7-giorni-al-grande-evento-os-dal-nos-2018/are-you-ready-we-are/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/07/Are-You-Ready...-We-Are.....jpg)](http://www.elbrenz.eu/2018/07/siete-pronti-meno-7-giorni-al-grande-evento-os-dal-nos-2018/are-you-ready-we-are/)
 
 Mancano meno di 7 giorni alla nuova edizione di Os dal Nos. I preparati fervono e siamo a buon punto tanto da potervi dare qualche anticipazione sulle novità di quest'anno.  Al momento sembra che per il primo anno la musica batta la poesia. Quindi invitiamo i poeti del Noce ancora indecisi ad inviare le iscrizioni.
 
@@ -36,4 +36,4 @@ Infine invitiamo tutti, ma proprio tutti, a non mancare. A domenica prossima!!!!
 
 STAY TUNED .... STAY BRENZ
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2018/06/Immagine-1.png)](http://www.elbrenz.eu/2018/06/os-dal-nos-2018-5-edizione/immagine-2/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/06/Immagine-1.png)](http://www.elbrenz.eu/2018/06/os-dal-nos-2018-5-edizione/immagine-2/)

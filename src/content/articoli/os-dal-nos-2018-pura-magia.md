@@ -10,11 +10,11 @@ excerpt: "Le Plaze di Croviana sono un luogo che trasuda magia e bellezza e il F
 legacy_wp_id: 3324
 ---
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2018/06/Immagine-1.png)](http://www.elbrenz.eu/2018/06/os-dal-nos-2018-5-edizione/immagine-2/)Le Plaze di Croviana sono un luogo che trasuda magia e bellezza e il  Festival "Le Parti di Ricambio" è un evento che sta entrando nella leggenda. In questo mix direi perfetto, domenica 5 agosto, è andata in scena la 5^ edizione (caspita un lustro farebbe scena ma ve lo risparmiamo) del Concorso Musicale e Poetico "Os dal Nos", benedetta da un tempo meravigliosamente stabile ed infuocata da un Sole implacabile.
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/06/Immagine-1.png)](http://www.elbrenz.eu/2018/06/os-dal-nos-2018-5-edizione/immagine-2/)Le Plaze di Croviana sono un luogo che trasuda magia e bellezza e il  Festival "Le Parti di Ricambio" è un evento che sta entrando nella leggenda. In questo mix direi perfetto, domenica 5 agosto, è andata in scena la 5^ edizione (caspita un lustro farebbe scena ma ve lo risparmiamo) del Concorso Musicale e Poetico "Os dal Nos", benedetta da un tempo meravigliosamente stabile ed infuocata da un Sole implacabile.
 
 La giuria composta da Marco Cimarosti (ex presidente del Brenz), Ettore Zanon, Bruno Cavallari, Mauro Pedergnana, Massimo Pedrotti, Abla Laghe, Clarissa Visintainer (finalmente una donna in giuria) e Pierangelo Giacomuzzi (finalmente un amico dei ladini di Fassa) ha avuto il piacere e l'onore di valutare un numero di esibizioni che ha sfondato ogni record delle precedenti edizioni. Ben 20 componimenti!!!!! Senza considerare tanti altri artisti delle Valli del Noce che non hanno potuto partecipare!!! STRARDINARIO RISULTATO che ci tocca il cuore e ci spinge, con entusiasmo, a portare avanti questo meraviglioso evento.
 
-**[![](http://www.elbrenz.eu/wp-content/uploads/2018/08/DZIS8940.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/dzis8940/)Ecco a voi la scaletta che ha ritmato lo show**:
+**[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/08/DZIS8940.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/dzis8940/)Ecco a voi la scaletta che ha ritmato lo show**:
 
 1. Cat. Musica Cover: METI ‘L TREI – Los Loco’s Armando’s
 
@@ -58,7 +58,7 @@ La giuria composta da Marco Cimarosti (ex presidente del Brenz), Ettore Zanon, B
 
 Come da "tradizione" le canzoni e le poesie in concorso sono state intervallate, grazie alla disponibilità di Felix Lalù, i mitici Sflantugem (grande ritorno dopo 2 anni di assenza), Lorenzo Nicolodi e Giorgio Brentari , da brani fuori concorso delle precedenti edizioni di Os dal Nos.
 
-# **[![](http://www.elbrenz.eu/wp-content/uploads/2018/08/HWEA3034.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/hwea3034/)Risultati**
+# **[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/08/HWEA3034.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/hwea3034/)Risultati**
 
 **Categoria Cover**
 
@@ -72,7 +72,7 @@ Come da "tradizione" le canzoni e le poesie in concorso sono state intervallate,
 
 5° classificato MESDA I CRAUTI – Paolo Bertagnolli (Pol)
 
-**[![](http://www.elbrenz.eu/wp-content/uploads/2018/08/AXMK0767.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/axmk0767/)Categoria Brani originali**
+**[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/08/AXMK0767.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/axmk0767/)Categoria Brani originali**
 
 1° classificato CHIANZON DEL FOCH – Matteo Misseroni
 
@@ -106,4 +106,4 @@ A nome del direttivo de El Brenz
 
 Cristian (qui sotto al termine della manifestazione con l'Amico Paolo "Pol" Bertagnolli)
 
-[![](http://www.elbrenz.eu/wp-content/uploads/2018/08/EERK3716.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/eerk3716/)
+[![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2018/08/EERK3716.jpg)](http://www.elbrenz.eu/2018/08/os-dal-nos-2018-pura-magia/eerk3716/)

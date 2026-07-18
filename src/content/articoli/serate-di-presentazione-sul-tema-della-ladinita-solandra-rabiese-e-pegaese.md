@@ -10,7 +10,7 @@ excerpt: "L'Associazione Storico Culturale Linguistica \"El Brenz\" propone, anc
 legacy_wp_id: 3529
 ---
 
-![](http://www.elbrenz.eu/wp-content/uploads/2021/11/WhatsApp-Image-2021-10-18-at-11.27.53.jpeg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2021/11/WhatsApp-Image-2021-10-18-at-11.27.53.jpeg)
 
 L'Associazione Storico Culturale Linguistica "El Brenz" propone, anche in seguito ad un lavoro di ricerca durato anni, un ciclo di serate di sensibilizzazione della popolazione solandra, rabiesa e nonesa riguardo all'appartenenza delle parlate locali al gruppo delle lingue ladine.
 
@@ -28,6 +28,6 @@ Il Presidente
 
 Cristian Bresadola
 
-![](http://www.elbrenz.eu/wp-content/uploads/2021/11/WhatsApp-Image-2021-11-08-at-09.29.54.jpeg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2021/11/WhatsApp-Image-2021-11-08-at-09.29.54.jpeg)
 
-![](http://www.elbrenz.eu/wp-content/uploads/2021/11/WhatsApp-Image-2021-11-08-at-09.40.44.jpeg)
+![](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2021/11/WhatsApp-Image-2021-11-08-at-09.40.44.jpeg)

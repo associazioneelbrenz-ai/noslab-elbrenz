@@ -10,9 +10,9 @@ excerpt: "Il centro sportivo di Corvara, sabato 15 e domenica 16 giugno, sarà t
 legacy_wp_id: 852
 ---
 
-[![cultura\_stencil](http://www.elbrenz.eu/wp-content/uploads/2013/05/cultura_stencil.png)](http://www.europaregion.info/it/default.asp)
+[![cultura\_stencil](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/05/cultura_stencil.png)](http://www.europaregion.info/it/default.asp)
 
-[![78009\_10200091149138604\_1116854179\_o](http://www.elbrenz.eu/wp-content/uploads/2013/04/78009_10200091149138604_1116854179_o-300x134.jpg)](http://www.europaregion.info/it/default.asp)Il centro sportivo di Corvara, sabato 15 e domenica 16 giugno, sarà teatro del primo Festival giovanile dei ladini delle Dolomiti, che coinvolgerà tutte le cinque vallate ladine. "Il Festival - spiega l'assessore Florian Mussner - vuole favorire contatti e rapporti fra i giovani delle nostre valli e rafforzare la loro comune identità".
+[![78009\_10200091149138604\_1116854179\_o](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/04/78009_10200091149138604_1116854179_o-300x134.jpg)](http://www.europaregion.info/it/default.asp)Il centro sportivo di Corvara, sabato 15 e domenica 16 giugno, sarà teatro del primo Festival giovanile dei ladini delle Dolomiti, che coinvolgerà tutte le cinque vallate ladine. "Il Festival - spiega l'assessore Florian Mussner - vuole favorire contatti e rapporti fra i giovani delle nostre valli e rafforzare la loro comune identità".
 
 Val Gardena, Colle Santa Lucia, Ampezzo, Val Badia e Val di Fassa: un territorio di poche decine di km. in mezzo alle Dolomiti accomunato dal fatto che in queste valli la lingua madre non è nè l'italiano, nè il tedesco, bensì il ladino. Per incentivare contatti e rapporti tra gli abitanti delle cinque vallate, sabato e domenica (15 e 16 giugno) Corvara ospita il primo Festival giovanile dei ladini delle Dolomiti, organizzato dai rispettivi Servizi giovani. Sport e musica faranno la parte del leone nel programma della due giorni, ma ci sarà spazio anche per una messa celebrata dal Vescovo diocesano Ivo Muser.
 
