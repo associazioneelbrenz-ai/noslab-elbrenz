@@ -160,7 +160,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       {/* Alternativa testuale accessibile + SEO: server-rendered, sempre fresca. */}
       <div class="mt-10">
         <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-4 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">
-          I luoghi sulla mappa
+          I luoghi sulla mappa<span id="mappa-elenco-conteggio" class="text-[#1E2E26]/45 normal-case tracking-normal"></span>
         </h2>
         {luoghi.length === 0 && convenzioni.length === 0 ? (
           <p class="text-[#1E2E26]/60 text-sm" style="font-family: 'Source Serif 4', Georgia, serif;">
@@ -169,24 +169,31 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
             si geolocalizzano.
           </p>
         ) : (
-          <ul class="grid gap-3 md:grid-cols-2 list-none p-0 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
-            {luoghi.map((l) => (
-              <li class="bg-white border-l-4 border-[#C8923E] px-4 py-3">
-                <strong class="text-[#1E2E26]">{l.nome}</strong>
-                <span class="text-xs text-[#1E2E26]/55"> · {CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · {VALLI[l.valle] ?? l.valle}</span>
-                {l.descrizione_breve && <p class="text-sm text-[#1E2E26]/75 m-0 mt-1">{l.descrizione_breve}</p>}
-                {l.url_articolo && <a href={l.url_articolo} class="text-sm text-[#8a6215] underline">Leggi la storia</a>}
-              </li>
-            ))}
-            {convenzioni.map((c) => (
-              <li class="bg-white border-l-4 border-[#1E2E26] px-4 py-3">
-                <strong class="text-[#1E2E26]">{c.nome_attivita}</strong>
-                <span class="text-xs text-[#1E2E26]/55"> · Convenzione{c.localita ? ` · ${c.localita}` : ''}</span>
-                <p class="text-sm text-[#C8923E] font-medium m-0 mt-1" style="font-family: 'Inter', sans-serif;">{c.beneficio}</p>
-                <a href="/convenzioni" class="text-sm text-[#8a6215] underline">Vedi la convenzione</a>
-              </li>
-            ))}
-          </ul>
+          <Fragment>
+            {/* I data-* vengono dagli stessi record che alimentano i marker: e' quello
+                che tiene allineate lista e mappa sotto lo stesso filtro. */}
+            <ul id="mappa-elenco" class="grid gap-3 md:grid-cols-2 list-none p-0 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+              {luoghi.map((l) => (
+                <li class="bg-white border-l-4 border-[#C8923E] px-4 py-3" data-tipo="luoghi" data-valle={l.valle} data-categoria={l.categoria} data-slug={l.slug}>
+                  <strong class="text-[#1E2E26]">{l.nome}</strong>
+                  <span class="text-xs text-[#1E2E26]/55"> · {CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · {VALLI[l.valle] ?? l.valle}</span>
+                  {l.descrizione_breve && <p class="text-sm text-[#1E2E26]/75 m-0 mt-1">{l.descrizione_breve}</p>}
+                  {l.url_articolo && <a href={l.url_articolo} class="text-sm text-[#8a6215] underline">Leggi la storia</a>}
+                </li>
+              ))}
+              {convenzioni.map((c) => (
+                <li class="bg-white border-l-4 border-[#1E2E26] px-4 py-3" data-tipo="convenzioni" data-valle="fuori_valle" data-categoria="convenzione">
+                  <strong class="text-[#1E2E26]">{c.nome_attivita}</strong>
+                  <span class="text-xs text-[#1E2E26]/55"> · Convenzione{c.localita ? ` · ${c.localita}` : ''}</span>
+                  <p class="text-sm text-[#C8923E] font-medium m-0 mt-1" style="font-family: 'Inter', sans-serif;">{c.beneficio}</p>
+                  <a href="/convenzioni" class="text-sm text-[#8a6215] underline">Vedi la convenzione</a>
+                </li>
+              ))}
+            </ul>
+            <p id="mappa-elenco-vuoto" hidden class="text-[#1E2E26]/60 text-sm m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+              Nessun luogo per questa selezione: prova ad allargare il filtro.
+            </p>
+          </Fragment>
         )}
       </div>
 
@@ -233,11 +240,18 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   let filtroCat = 'tutte';
 
   // stato filtri da querystring (link condivisibili)
-  const qs = new URLSearchParams(location.search);
-  if (['luoghi', 'convenzioni'].includes(qs.get('tipo') ?? '')) filtroTipo = qs.get('tipo')!;
-  if (Object.keys(dati.valli ?? {}).includes(qs.get('valle') ?? '')) filtroValle = qs.get('valle')!;
+  // Lettura dello stato dall'URL: usata al primo caricamento e a ogni popstate,
+  // cosi' il deep-link e il tasto «indietro» danno la stessa vista.
+  function leggiUrl() {
+    const qs = new URLSearchParams(location.search);
+    filtroTipo = ['luoghi', 'convenzioni'].includes(qs.get('tipo') ?? '') ? qs.get('tipo')! : 'tutti';
+    filtroValle = Object.keys(dati.valli ?? {}).includes(qs.get('valle') ?? '') ? qs.get('valle')! : 'tutte';
+    const cat = qs.get('categoria') ?? '';
+    filtroCat = document.querySelector(`.mappa-filtro-cat[data-filtro-cat="${CSS.escape(cat)}"]`) ? cat : 'tutte';
+  }
+  leggiUrl();
 
-  function aggiornaBottoni() {
+  function aggiornaBottoni(modo: 'replace' | 'push' = 'replace') {
     document.querySelectorAll<HTMLButtonElement>('.mappa-filtro').forEach((b) => {
       const attivo = b.dataset.filtroTipo === filtroTipo;
       b.setAttribute('aria-pressed', String(attivo));
@@ -258,42 +272,69 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       b.classList.toggle('text-[#1E2E26]', !attivo);
       b.classList.toggle('border-[#C8923E]/40', !attivo);
     });
+    document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-cat').forEach((b) => {
+      const attivo = b.dataset.filtroCat === filtroCat;
+      b.setAttribute('aria-pressed', String(attivo));
+      b.classList.toggle('bg-[#1E2E26]', attivo);
+      b.classList.toggle('text-[#F5EEDD]', attivo);
+      b.classList.toggle('border-[#1E2E26]', attivo);
+      b.classList.toggle('bg-white', !attivo);
+      b.classList.toggle('text-[#1E2E26]', !attivo);
+      b.classList.toggle('border-[#C8923E]/40', !attivo);
+    });
     const p = new URLSearchParams();
     if (filtroTipo !== 'tutti') p.set('tipo', filtroTipo);
     if (filtroValle !== 'tutte') p.set('valle', filtroValle);
-    history.replaceState(null, '', p.toString() ? `?${p}` : location.pathname);
+    if (filtroCat !== 'tutte') p.set('categoria', filtroCat);
+    const url = p.toString() ? `?${p}` : location.pathname;
+    // push sul click (il tasto «indietro» torna al filtro precedente),
+    // replace all'avvio per non sporcare la cronologia.
+    if (modo === 'push') history.pushState(null, '', url);
+    else history.replaceState(null, '', url);
+  }
+
+  // UNICO predicato: lo stesso record decide se il marker sta nel cluster e se
+  // la card resta visibile. Prima l'elenco ignorava i filtri e mostrava tutte
+  // le valli anche con ?valle=val_di_non.
+  function passa(tipo: string, valle: string, categoria?: string) {
+    const okTipo = filtroTipo === 'tutti' || tipo === filtroTipo;
+    // Le convenzioni non hanno una valle affidabile: restano fuori dal vincolo.
+    const okValle = filtroValle === 'tutte' || valle === filtroValle || tipo === 'convenzioni';
+    const okCat = filtroCat === 'tutte' || tipo === 'convenzioni' || categoria === filtroCat;
+    return okTipo && okValle && okCat;
   }
 
   function applicaFiltri() {
-    if (!cluster) return;
-    for (const { tipo, valle, categoria, m } of markers) {
-      const okTipo = filtroTipo === 'tutti' || tipo === filtroTipo;
-      const okValle = filtroValle === 'tutte' || valle === filtroValle || tipo === 'convenzioni';
-      const okCat = filtroCat === 'tutte' || tipo === 'convenzioni' || categoria === filtroCat;
-      if (!okCat) { if (cluster.hasLayer(m)) cluster.removeLayer(m); continue; }
-      if (okTipo && okValle) { if (!cluster.hasLayer(m)) cluster.addLayer(m); }
-      else { if (cluster.hasLayer(m)) cluster.removeLayer(m); }
+    if (cluster) {
+      for (const { tipo, valle, categoria, m } of markers) {
+        if (passa(tipo, valle, categoria)) { if (!cluster.hasLayer(m)) cluster.addLayer(m); }
+        else if (cluster.hasLayer(m)) cluster.removeLayer(m);
+      }
     }
+    // L'elenco si filtra anche a mappa non ancora caricata (init su gesto).
+    let visibili = 0;
+    document.querySelectorAll<HTMLLIElement>('#mappa-elenco > li').forEach((li) => {
+      const ok = passa(li.dataset.tipo ?? '', li.dataset.valle ?? '', li.dataset.categoria);
+      li.hidden = !ok;
+      if (ok) visibili++;
+    });
+    const vuoto = document.getElementById('mappa-elenco-vuoto');
+    const elenco = document.getElementById('mappa-elenco');
+    if (vuoto) vuoto.hidden = visibili > 0;
+    if (elenco) elenco.hidden = visibili === 0;
+    const conteggio = document.getElementById('mappa-elenco-conteggio');
+    if (conteggio) conteggio.textContent = visibili > 0 ? ` (${visibili})` : '';
   }
 
   document.querySelectorAll<HTMLButtonElement>('.mappa-filtro').forEach((b) =>
-    b.addEventListener('click', () => { filtroTipo = b.dataset.filtroTipo!; aggiornaBottoni(); applicaFiltri(); }));
+    b.addEventListener('click', () => { filtroTipo = b.dataset.filtroTipo!; aggiornaBottoni('push'); applicaFiltri(); }));
   document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-valle').forEach((b) =>
-    b.addEventListener('click', () => { filtroValle = b.dataset.filtroValle!; aggiornaBottoni(); applicaFiltri(); }));
+    b.addEventListener('click', () => { filtroValle = b.dataset.filtroValle!; aggiornaBottoni('push'); applicaFiltri(); }));
   document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-cat').forEach((b) =>
-    b.addEventListener('click', () => {
-      filtroCat = b.dataset.filtroCat!;
-      document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-cat').forEach((x) => {
-        const on = x.dataset.filtroCat === filtroCat;
-        x.setAttribute('aria-pressed', String(on));
-        x.classList.toggle('bg-[#1E2E26]', on); x.classList.toggle('text-[#F5EEDD]', on);
-        x.classList.toggle('border-[#1E2E26]', on);
-        x.classList.toggle('bg-white', !on); x.classList.toggle('text-[#1E2E26]', !on);
-        x.classList.toggle('border-[#C8923E]/40', !on);
-      });
-      applicaFiltri();
-    }));
+    b.addEventListener('click', () => { filtroCat = b.dataset.filtroCat!; aggiornaBottoni('push'); applicaFiltri(); }));
+  window.addEventListener('popstate', () => { leggiUrl(); aggiornaBottoni(); applicaFiltri(); });
   aggiornaBottoni();
+  applicaFiltri();
 
   function goccia(colori: { corpo: string; bordo: string }) {
     return `<svg viewBox="0 0 32 44" width="32" height="44" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="${colori.corpo}" stroke="${colori.bordo}" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="${colori.bordo}"/></svg>`;
