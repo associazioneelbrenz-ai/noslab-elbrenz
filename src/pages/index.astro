@@ -49,6 +49,7 @@ const MIGOLE_ETICHETTE = ['Storia delle valli', 'Parlate ladine', 'Memoria e rad
 // PaginaPilastro (!draft && !archivio). Ordinamento data desc, primi 4.
 import { getCollection } from 'astro:content';
 import { formatDataIT, nomePilastro } from '../lib/articoli';
+import { mappaSeoArticoli } from '../lib/seoArticoli';
 
 const articoliProduzione = await getCollection(
   'articoli',
@@ -61,6 +62,13 @@ const ultimiArticoli = articoliProduzione
       b.data.data_pubblicazione.getTime() - a.data.data_pubblicazione.getTime(),
   )
   .slice(0, 4);
+
+// Copertine degli articoli dal DB (post-migrazione sono su Storage): le card
+// con immagine si notano molto piu' di quelle di solo testo. Chi non ha
+// copertina resta testuale, senza riempitivi finti.
+const seoHome = await mappaSeoArticoli();
+const copertinaDi = (a: any): string | null =>
+  seoHome.get(Number(a.data.legacy_wp_id))?.copertina || null;
 
 /** Tronca l'excerpt a ~160 caratteri per la card, con ellissi. */
 function troncaExcerpt(testo: string): string {
@@ -383,8 +391,21 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
         {ultimiArticoli.map((a) => (
           <a
             href={`/articoli/${a.id}`}
-            class="group flex flex-col bg-white border border-[#E5DFCF] hover:border-[#C8923E] transition-colors p-6 no-underline"
+            class="group flex flex-col bg-white border border-[#E5DFCF] hover:border-[#C8923E] transition-colors no-underline overflow-hidden"
           >
+            {copertinaDi(a) && (
+              <img
+                src={copertinaDi(a)}
+                alt=""
+                width="600"
+                height="338"
+                loading="lazy"
+                decoding="async"
+                class="w-full object-cover"
+                style="aspect-ratio: 16 / 9;"
+              />
+            )}
+            <span class="flex flex-col p-6">
             <p
               class="text-[11px] tracking-[0.18em] uppercase text-[#C8923E] m-0 mb-2"
               style="font-family: 'Inter', sans-serif;"
@@ -410,6 +431,7 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
                 {troncaExcerpt(a.data.excerpt)}
               </p>
             )}
+            </span>
           </a>
         ))}
       </div>
