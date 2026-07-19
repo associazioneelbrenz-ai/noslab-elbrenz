@@ -21,7 +21,6 @@
 
 import { createClient } from '@supabase/supabase-js';
 import Layout from '../layouts/Layout.astro';
-import { CATEGORIE_LUOGHI, COLORI_LUOGHI } from '../lib/luoghi';
 
 export const prerender = false;
 
@@ -58,10 +57,26 @@ const VALLI: Record<string, string> = {
   val_di_pejo: 'Val di Pejo',
   fuori_valle: 'Fuori valle',
 };
-
-// Solo le categorie realmente presenti: niente pulsanti che non filtrano nulla.
-const categoriePresenti = [...new Set(luoghi.map((l) => l.categoria))]
-  .sort((a, b) => (CATEGORIE_LUOGHI[a] ?? a).localeCompare(CATEGORIE_LUOGHI[b] ?? b));
+const CATEGORIE_LUOGHI: Record<string, string> = {
+  castelli_e_residenze: 'Castelli e residenze',
+  chiese_e_santuari: 'Chiese e santuari',
+  grande_guerra: 'Grande Guerra',
+  cultura_materiale: 'Cultura materiale',
+  musei_e_collezioni: 'Musei e collezioni',
+  // storiche (additivo, compatibilita'):
+  luoghi_sacri: 'Luoghi sacri',
+  memoria_e_comunita: 'Memoria e comunità',
+};
+// Colore "a sigillo" per categoria (pin distinto per ciascuna).
+const COLORI_LUOGHI: Record<string, string> = {
+  castelli_e_residenze: '#8a5a2b',
+  chiese_e_santuari: '#5b6ea8',
+  grande_guerra: '#8a3a3a',
+  cultura_materiale: '#6b8e23',
+  musei_e_collezioni: '#b0872f',
+  luoghi_sacri: '#5b6ea8',
+  memoria_e_comunita: '#b0872f',
+};
 
 const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOGHI, colori: COLORI_LUOGHI };
 ---
@@ -100,30 +115,6 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
         {Object.entries(VALLI).filter(([k]) => k !== 'fuori_valle').map(([k, label]) => (
           <button type="button" data-filtro-valle={k} aria-pressed="false" class="mappa-filtro-valle bg-white text-[#1E2E26] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#C8923E]/40 hover:border-[#C8923E] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">{label}</button>
         ))}
-      </div>
-
-      {/* Filtro per categoria: con 54 luoghi in sei categorie, senza questo
-          la mappa si legge male. Vale solo per i luoghi; le convenzioni hanno
-          gia' il loro filtro di tipo. */}
-      <div class="flex flex-wrap gap-2 mb-3" role="group" aria-label="Filtra per categoria" style="font-family: 'Inter', sans-serif;">
-        <button type="button" data-filtro-cat="tutte" aria-pressed="true" class="mappa-filtro-cat bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#1E2E26] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Tutte le categorie</button>
-        {categoriePresenti.map((c) => (
-          <button type="button" data-filtro-cat={c} aria-pressed="false" class="mappa-filtro-cat bg-white text-[#1E2E26] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#C8923E]/40 hover:border-[#C8923E] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">{CATEGORIE_LUOGHI[c] ?? c}</button>
-        ))}
-      </div>
-
-      {/* Legenda dei colori: i pin sono colorati per categoria, va detto. */}
-      <div class="flex flex-wrap gap-x-5 gap-y-2 mb-6 text-xs text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">
-        {categoriePresenti.map((c) => (
-          <span class="inline-flex items-center gap-2">
-            <span class="inline-block w-3 h-3 rounded-full" style={`background: ${COLORI_LUOGHI[c] ?? '#C8923E'};`} aria-hidden="true"></span>
-            {CATEGORIE_LUOGHI[c] ?? c}
-          </span>
-        ))}
-        <span class="inline-flex items-center gap-2">
-          <span class="inline-block w-3 h-3 rounded-full" style="background: #1E2E26;" aria-hidden="true"></span>
-          Convenzioni soci
-        </span>
       </div>
 
       {/* Placeholder brand: la mappa si inizializza SOLO su gesto esplicito. */}
@@ -226,11 +217,10 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   const wrap = document.getElementById('mappa-wrap');
 
   let mappa: import('leaflet').Map | null = null;
-  let markers: { tipo: string; valle: string; categoria?: string; m: import('leaflet').Marker }[] = [];
+  let markers: { tipo: string; valle: string; m: import('leaflet').Marker }[] = [];
   let cluster: any = null;
   let filtroTipo = 'tutti';
   let filtroValle = 'tutte';
-  let filtroCat = 'tutte';
 
   // stato filtri da querystring (link condivisibili)
   const qs = new URLSearchParams(location.search);
@@ -266,11 +256,9 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
 
   function applicaFiltri() {
     if (!cluster) return;
-    for (const { tipo, valle, categoria, m } of markers) {
+    for (const { tipo, valle, m } of markers) {
       const okTipo = filtroTipo === 'tutti' || tipo === filtroTipo;
       const okValle = filtroValle === 'tutte' || valle === filtroValle || tipo === 'convenzioni';
-      const okCat = filtroCat === 'tutte' || tipo === 'convenzioni' || categoria === filtroCat;
-      if (!okCat) { if (cluster.hasLayer(m)) cluster.removeLayer(m); continue; }
       if (okTipo && okValle) { if (!cluster.hasLayer(m)) cluster.addLayer(m); }
       else { if (cluster.hasLayer(m)) cluster.removeLayer(m); }
     }
@@ -280,19 +268,6 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
     b.addEventListener('click', () => { filtroTipo = b.dataset.filtroTipo!; aggiornaBottoni(); applicaFiltri(); }));
   document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-valle').forEach((b) =>
     b.addEventListener('click', () => { filtroValle = b.dataset.filtroValle!; aggiornaBottoni(); applicaFiltri(); }));
-  document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-cat').forEach((b) =>
-    b.addEventListener('click', () => {
-      filtroCat = b.dataset.filtroCat!;
-      document.querySelectorAll<HTMLButtonElement>('.mappa-filtro-cat').forEach((x) => {
-        const on = x.dataset.filtroCat === filtroCat;
-        x.setAttribute('aria-pressed', String(on));
-        x.classList.toggle('bg-[#1E2E26]', on); x.classList.toggle('text-[#F5EEDD]', on);
-        x.classList.toggle('border-[#1E2E26]', on);
-        x.classList.toggle('bg-white', !on); x.classList.toggle('text-[#1E2E26]', !on);
-        x.classList.toggle('border-[#C8923E]/40', !on);
-      });
-      applicaFiltri();
-    }));
   aggiornaBottoni();
 
   function goccia(colori: { corpo: string; bordo: string }) {
@@ -396,7 +371,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
           ${l.slug ? `<p style="margin:8px 0 0;"><a href="/luoghi/${l.slug}" style="color:#8a6215;font-weight:600;">Scheda del luogo →</a></p>` : ''}
           ${l.url_articolo ? `<p style="margin:6px 0 0;"><a href="${l.url_articolo}" style="color:#8a6215;">Leggi la storia →</a></p>` : ''}
         </div>`);
-      markers.push({ tipo: 'luoghi', valle: l.valle, categoria: l.categoria, m });
+      markers.push({ tipo: 'luoghi', valle: l.valle, m });
     }
     for (const c of dati.convenzioni ?? []) {
       const m = L.marker([c.lat, c.lng], { icon: iconaConv, title: c.nome_attivita, alt: c.nome_attivita });

@@ -6,6 +6,7 @@ export const CATEGORIE_LUOGHI: Record<string, string> = {
   grande_guerra: 'Grande Guerra',
   cultura_materiale: 'Cultura materiale',
   musei_e_collezioni: 'Musei e collezioni',
+  natura_e_paesaggio: 'Natura e paesaggio',
   // storiche (compatibilita')
   luoghi_sacri: 'Luoghi sacri',
   memoria_e_comunita: 'Memoria e comunità',
@@ -17,6 +18,9 @@ export const COLORI_LUOGHI: Record<string, string> = {
   grande_guerra: '#8a3a3a',
   cultura_materiale: '#6b8e23',
   musei_e_collezioni: '#b0872f',
+  // Verde acqua: distingue laghi, forre e parchi dal verde oliva della
+  // cultura materiale, che altrimenti si confonderebbe sulla mappa.
+  natura_e_paesaggio: '#2e7d6b',
   luoghi_sacri: '#5b6ea8',
   memoria_e_comunita: '#b0872f',
 };
@@ -36,6 +40,8 @@ const TRATTI: Record<string, string> = {
   grande_guerra: '<path d="M12 3 4 7v5c0 5 3.5 8 8 9 4.5-1 8-4 8-9V7z"/>',
   cultura_materiale: '<path d="M14 4 20 10"/><path d="M17 7 7 17l-3 3 3-3"/><path d="M4 20l3-3"/><path d="M11 7 7 3 3 7l4 4"/>',
   musei_e_collezioni: '<path d="M3 10 12 4l9 6"/><path d="M5 10v8M10 10v8M14 10v8M19 10v8"/><path d="M3 21h18"/>',
+  // Monte con specchio d'acqua: laghi, canyon, parchi.
+  natura_e_paesaggio: '<path d="M3 16l5-7 4 5 3-4 6 6"/><path d="M3 20h18"/>',
   luoghi_sacri: '<path d="M12 3v6"/><path d="M9 6h6"/><path d="M6 21V12l6-4 6 4v9"/>',
   memoria_e_comunita: '<circle cx="12" cy="8" r="3.2"/><path d="M5 21v-1.5A5.5 5.5 0 0 1 10.5 14h3A5.5 5.5 0 0 1 19 19.5V21"/>',
 };
