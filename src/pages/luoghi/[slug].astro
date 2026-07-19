@@ -15,6 +15,7 @@
 import { createClient } from '@supabase/supabase-js';
 import Layout from '../../layouts/Layout.astro';
 import { CATEGORIE_LUOGHI, COLORI_LUOGHI, VALLI_LUOGHI, sigilloCategoria } from '../../lib/luoghi';
+import { schemaBreadcrumb } from '../../lib/schema';
 
 export const prerender = false;
 
@@ -71,6 +72,11 @@ const schemaPlace = {
 
 <Layout title={titoloSeo} description={descrizione}>
   <script type="application/ld+json" set:html={JSON.stringify(schemaPlace)} />
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb([
+    { nome: 'El Brenz', url: '/' },
+    { nome: 'Luoghi delle Valli', url: '/luoghi' },
+    { nome: luogo.nome, url: `/luoghi/${luogo.slug}` },
+  ]))} />
 
   <article class="bg-[#F8F1E4] py-12">
     <div class="max-w-3xl mx-auto px-6">

@@ -50,6 +50,7 @@ const MIGOLE_ETICHETTE = ['Storia delle valli', 'Parlate ladine', 'Memoria e rad
 import { getCollection } from 'astro:content';
 import { formatDataIT, nomePilastro } from '../lib/articoli';
 import { mappaSeoArticoli } from '../lib/seoArticoli';
+import { schemaOrganization } from '../lib/schema';
 
 const articoliProduzione = await getCollection(
   'articoli',
@@ -189,6 +190,9 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
   title="El Brenz da le Val del Nos"
   description="Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Custodiamo la lingua ladino-anaunica e la storia di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo."
 >
+
+  {/* A5 — dati strutturati dell'ente (una sola volta, in home) */}
+  <script type="application/ld+json" set:html={JSON.stringify(schemaOrganization())} />
 
   {/* PROVA (14/7): richiamo laterale — logo El Brenz dorato che pulsa, porta al
       tesseramento. Fisso a sinistra, si espande in "Diventa socio" all'hover.

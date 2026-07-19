@@ -18,6 +18,7 @@ import { getCollection, render } from 'astro:content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import { nomePilastro, formatDataIT } from '../../lib/articoli';
 import { mappaSeoArticoli, titoloSeo, OG_DEFAULT } from '../../lib/seoArticoli';
+import { schemaArticle, schemaBreadcrumb } from '../../lib/schema';
 import type { GetStaticPaths } from 'astro';
 
 export const getStaticPaths = (async () => {
@@ -49,7 +50,26 @@ const altCopertina = seo?.immagine_alt || data.hero_alt;
 const ogImmagine = seo?.copertina || data.hero_image || OG_DEFAULT;
 const pubblicatoIso = seo?.pubblicato_at
   || (data.data_pubblicazione ? new Date(data.data_pubblicazione).toISOString() : undefined);
+
+// A5 — dati strutturati: Article + percorso di navigazione.
+const urlArticolo = new URL(`/articoli/${entry.id}`, Astro.site).href;
+const ldArticle = schemaArticle({
+  titolo: data.title,
+  descrizione: descrizionePagina,
+  url: urlArticolo,
+  immagine: ogImmagine?.startsWith('http') ? ogImmagine : new URL(ogImmagine, Astro.site).href,
+  pubblicatoIso: pubblicatoIso ?? null,
+  autore: data.autore ?? null,
+  sezione: pillar || null,
+});
+const ldBreadcrumb = schemaBreadcrumb([
+  { nome: 'El Brenz', url: '/' },
+  { nome: 'Archivio', url: '/archivio-storico' },
+  { nome: data.title, url: `/articoli/${entry.id}` },
+]);
 ---
+<script type="application/ld+json" set:html={JSON.stringify(ldArticle)} />
+<script type="application/ld+json" set:html={JSON.stringify(ldBreadcrumb)} />
 <ArticleLayout
   title={data.title}
   titoloSeo={titoloPagina}
