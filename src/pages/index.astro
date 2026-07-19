@@ -52,6 +52,7 @@ import { formatDataIT, nomePilastro } from '../lib/articoli';
 import { mappaSeoArticoli } from '../lib/seoArticoli';
 import { schemaOrganization } from '../lib/schema';
 import { imgRid, srcSetCard } from '../lib/immagini';
+import { MIGOLE, miniatura, embed } from '../data/video';
 
 const articoliProduzione = await getCollection(
   'articoli',
@@ -1103,11 +1104,32 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
             class="text-sm text-[#0F0F0F]/70 leading-relaxed m-0 mb-5"
             style="font-family: 'Source Serif 4', Georgia, serif;"
           >
-            Briciole di storia delle nostre valli, ogni settimana su Instagram.
+            Briciole di storia delle nostre valli, in pochi minuti di video.
           </p>
           {/* M2.9-ter: copertine nostre + lightbox (gli EmbedConsenso
               inline rimossi su decisione Cristian 8/7/2026). Mobile:
               carosello orizzontale con snap; desktop: 3 colonne. */}
+          {/* 19/7/2026 — le migole passano da Instagram a YouTube: un solo
+              fornitore video dichiarato in informativa, nessuna richiesta a
+              Meta dalla home, e meno peso sulla pagina. La versione Instagram
+              NON e' stata cancellata: e' commentata qui sotto, si torna
+              indietro togliendo il commento. */}
+          <div class="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:pb-0 mb-5">
+            {MIGOLE.video.filter((v) => v.pubblicato).sort((a, b) => a.ordine - b.ordine).slice(0, 3).map((v) => (
+              <div class="w-[200px] min-w-[200px] snap-center sm:w-auto sm:min-w-0">
+                <LightboxEmbed
+                  url={`https://www.youtube.com/watch?v=${v.id_youtube}`}
+                  embedSrcDiretto={embed(v.id_youtube)}
+                  cover={miniatura(v.id_youtube)}
+                  titolo={v.titolo}
+                  etichetta={v.titolo}
+                  hashtag="#migoledestoria"
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* VERSIONE INSTAGRAM PRECEDENTE (non cancellata, vedi sopra):
           {MIGOLE_POST_URLS ? (
             <div class="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:pb-0 mb-5">
               {MIGOLE_POST_URLS.map((postUrl, i) => (
@@ -1129,16 +1151,15 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
               <img src="/social/migole/migola-03.webp" alt="Migola de Storia: memoria e radici" width="400" height="400" loading="lazy" decoding="async" class="block w-full h-auto" />
             </div>
           )}
+          */}
           {/* M2.9-ter rifinitura: hashtag spostato SULLE copertine; bottoni
               delle due card gemelli (stile, altezza, focus oro, mt-auto). */}
           <a
-            href="https://www.instagram.com/elbrenzass"
-            target="_blank"
-            rel="noopener"
+            href="/migole-de-storia"
             class="mt-auto inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
             style="font-family: 'Inter', sans-serif;"
           >
-            Seguici su Instagram
+            Tutte le migole →
           </a>
         </div>
 

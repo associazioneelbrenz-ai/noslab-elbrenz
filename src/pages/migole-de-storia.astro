@@ -1,0 +1,50 @@
+---
+/**
+ * /migole-de-storia — la rubrica video breve dell'Associazione.
+ *
+ * Stesso pattern di /os-dal-nos: miniature statiche + lightbox click-to-load,
+ * nessun iframe finche' non si apre. Qui il formato e' verticale (9/16): i
+ * video nascono per i social.
+ */
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+import LightboxEmbed from '../components/LightboxEmbed.astro';
+import { MIGOLE, miniatura, embed } from '../data/video';
+
+const video = MIGOLE.video.filter((v) => v.pubblicato).sort((a, b) => a.ordine - b.ordine);
+// OG: finche' non c'e' una grafica dedicata della rubrica, la miniatura del
+// video piu' recente e' meglio di un'immagine generica.
+const ogImage = miniatura(video[0].id_youtube);
+---
+<PaginaIstituzionale
+  occhiello="Progetti"
+  titolo="Migole de storia"
+  metaTitle="Migole de storia, la rubrica video | El Brenz"
+  metaDescription="Migole (briciole) di storia: i video brevi de El Brenz su episodi, personaggi e curiosità delle Valli del Noce."
+  ogImage={ogImage}
+>
+  <div class="prosa-istituzionale">
+    <p>
+      <em>Migole</em> (briciole) di storia: la rubrica video de El Brenz che
+      racconta in pochi minuti episodi, personaggi e curiosità delle nostre valli.
+    </p>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-8">
+    {video.map((v) => (
+      <LightboxEmbed
+        url={`https://www.youtube.com/watch?v=${v.id_youtube}`}
+        embedSrcDiretto={embed(v.id_youtube)}
+        cover={miniatura(v.id_youtube)}
+        titolo={v.titolo}
+        etichetta={v.titolo}
+        aspetto="9/16"
+      />
+    ))}
+  </div>
+
+  <p class="text-sm text-[#0F0F0F]/60 mt-8 m-0 leading-relaxed" style="font-family: 'Inter', sans-serif;">
+    Le migole nascono per i social e vivono anche qui, nella casa di El Brenz.
+    Le trovi tutte anche sul
+    <a href={MIGOLE.playlist} target="_blank" rel="noopener noreferrer" class="text-[#8a6215] underline">canale YouTube dell'Associazione</a>.
+  </p>
+</PaginaIstituzionale>

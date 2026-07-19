@@ -171,14 +171,21 @@ const embedSrc = embedSrcDiretto || (m ? `https://www.instagram.com/${m[1]}/${m[
       function pannelloConsenso(card, contenitore) {
         var wrap = document.createElement('div');
         wrap.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:#1E2E26;';
+        // Il pannello e' PER FORNITORE: dire "Instagram" davanti a un video
+        // YouTube sarebbe un'informativa sbagliata, non un dettaglio di stile.
+        var suYoutube = (card.dataset.embedSrc || '').indexOf('youtube') !== -1;
+        var occhiello = suYoutube ? 'Contenuto da YouTube' : 'Contenuto da Instagram';
+        var spiegazione = suYoutube
+          ? 'Questo contenuto è ospitato da YouTube (Google). Caricandolo, il tuo browser si collegherà ai server di Google, che potrà installare cookie e trattare i tuoi dati secondo la sua informativa. Il video parte solo se accetti. <a href="/privacy" style="color:#C8923E;">Informativa privacy</a>'
+          : 'Caricandolo verranno impostati cookie di terze parti (Meta), <a href="/cookie-policy" style="color:#C8923E;">informativa</a>';
         wrap.innerHTML =
-          '<p style="margin:0;font:600 10px/1.4 Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#D9A94E;">Contenuto da Instagram</p>' +
-          '<p style="margin:0;font:400 13px/1.5 Inter,sans-serif;color:rgba(245,238,221,.85);max-width:34ch;">Caricandolo verranno impostati cookie di terze parti (Meta), <a href="/cookie-policy" style="color:#C8923E;">informativa</a></p>' +
+          '<p style="margin:0;font:600 10px/1.4 Inter,sans-serif;letter-spacing:.18em;text-transform:uppercase;color:#D9A94E;">' + occhiello + '</p>' +
+          '<p style="margin:0;font:400 13px/1.5 Inter,sans-serif;color:rgba(245,238,221,.85);max-width:38ch;">' + spiegazione + '</p>' +
           '<label style="display:flex;align-items:center;gap:8px;font:400 13px/1 Inter,sans-serif;color:#F5EEDD;cursor:pointer;">' +
             '<input type="checkbox" class="lbx-ricorda" checked style="accent-color:#C8923E;width:16px;height:16px;"> Ricorda la mia scelta' +
           '</label>' +
           '<button type="button" class="lbx-carica" style="background:#C8923E;color:#1E2E26;border:0;padding:10px 26px;font:600 12px/1 Inter,sans-serif;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;">Carica</button>' +
-          '<a href="' + (card.dataset.url || '#') + '" target="_blank" rel="noopener" style="font:400 11px/1 Inter,sans-serif;color:rgba(245,238,221,.6);">oppure apri su Instagram →</a>';
+          '<a href="' + (card.dataset.url || '#') + '" target="_blank" rel="noopener" style="font:400 11px/1 Inter,sans-serif;color:rgba(245,238,221,.6);">oppure apri su ' + (suYoutube ? 'YouTube' : 'Instagram') + ' →</a>';
         wrap.querySelector('.lbx-carica').addEventListener('click', function () {
           salvaConsenso(wrap.querySelector('.lbx-ricorda').checked);
           wrap.remove();

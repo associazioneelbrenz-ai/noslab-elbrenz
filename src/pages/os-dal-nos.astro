@@ -12,7 +12,7 @@
 
 import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
 import LightboxEmbed from '../components/LightboxEmbed.astro';
-import { osDalNos } from '../data/osdalnos.js';
+import { OS_DAL_NOS, miniatura, embed } from '../data/video';
 
 const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
 ---
@@ -20,7 +20,8 @@ const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
   occhiello="Progetti"
   titolo="Os dal Nos"
   intro="Il concorso poetico e musicale che dà voce alle parlate retoromanze delle Valli del Noce: componimenti in nones, solander, rabies e pegaes."
-  metaDescription="Os dal Nos, il concorso poetico e musicale dell'Associazione El Brenz per le parlate ladino-anauniche delle Valli del Noce, dalla prima edizione del 2014."
+  metaTitle="Os dal Nos, il concorso in ladino anaunico | El Brenz"
+  metaDescription="I video di tutte le edizioni di Os dal Nos, il concorso poetico e musicale de El Brenz nella lingua delle Valli del Noce (2014-2019)."
 >
   <div class="prosa-istituzionale">
     <h2>La voce del Noce</h2>
@@ -52,7 +53,7 @@ const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
       sono immagini statiche di YouTube: NESSUN iframe finche' non si apre il
       lightbox, quindi la pagina resta leggera con oltre quaranta video. */}
   <div class="mt-8 flex flex-col gap-4">
-    {osDalNos.edizioni.map((ed) => (
+    {OS_DAL_NOS.edizioni.map((ed) => (
       ed.stato === 'pubblicata' ? (
         <details class="bg-white border border-[#E5DFCF] group" open={ed.n === 5}>
           <summary class="cursor-pointer list-none p-6 md:p-8 flex items-center gap-4">
@@ -68,15 +69,22 @@ const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ed.video.map((v) => (
                 <LightboxEmbed
-                  url={`https://www.youtube.com/watch?v=${v.yt}`}
-                  embedSrcDiretto={`https://www.youtube-nocookie.com/embed/${v.yt}`}
-                  cover={`https://i.ytimg.com/vi/${v.yt}/hqdefault.jpg`}
-                  titolo={v.t}
-                  etichetta={v.t}
+                  url={`https://www.youtube.com/watch?v=${v.id_youtube}`}
+                  embedSrcDiretto={embed(v.id_youtube)}
+                  cover={miniatura(v.id_youtube)}
+                  titolo={v.titolo}
+                  etichetta={v.titolo}
                   aspetto="16/9"
                 />
               ))}
             </div>
+            {ed.articolo && (
+              <p class="mt-5 m-0">
+                <a href={`/articoli/${ed.articolo}`} class="text-sm text-[#8a6215] underline" style="font-family: 'Inter', sans-serif;">
+                  Leggi l'articolo dell'edizione →
+                </a>
+              </p>
+            )}
           </div>
         </details>
       ) : (
@@ -85,6 +93,11 @@ const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
             {ed.titolo}
           </span>
           <span class="text-sm text-[#0F0F0F]/45" style="font-family: 'Inter', sans-serif;">{ed.anno}</span>
+          {ed.articolo && (
+            <a href={`/articoli/${ed.articolo}`} class="text-sm text-[#8a6215] underline" style="font-family: 'Inter', sans-serif;">
+              Leggi l'articolo →
+            </a>
+          )}
           <span
             class="ml-auto inline-block text-[11px] tracking-[0.18em] uppercase text-[#C8923E] border border-[#C8923E] px-3 py-1.5"
             style="font-family: 'Inter', sans-serif;"
@@ -97,6 +110,9 @@ const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
   </div>
 
   <p class="text-sm text-[#0F0F0F]/55 mt-6 m-0" style="font-family: 'Inter', sans-serif;">
+    Le edizioni mancanti verranno aggiunte man mano che i video tornano disponibili.
+  </p>
+  <p class="text-sm text-[#0F0F0F]/55 mt-2 m-0" style="font-family: 'Inter', sans-serif;">
     I video si aprono in una finestra sul sito, da YouTube in modalità senza cookie di profilazione.
   </p>
 
