@@ -1024,9 +1024,13 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
       >
         Diventa socio
       </a>
+      {/* Community soci ora LIVE (19/7/2026): chi e' gia' socio entra da qui. */}
+      <p class="text-sm text-[#F5EEDD]/70 m-0 mt-5" style="font-family: 'Inter', sans-serif;">
+        <a href="https://community.elbrenz.eu" class="text-[#C8923E] underline hover:text-[#D9A94E]">Sei già socio? Entra nella Community</a> →
+      </p>
       {/* AGGIUNTA go-live pagamenti (8/7/2026): link secondario /dona. */}
       {PAGAMENTI_LIVE && (
-        <p class="text-sm text-[#F5EEDD]/70 m-0 mt-5" style="font-family: 'Inter', sans-serif;">
+        <p class="text-sm text-[#F5EEDD]/70 m-0 mt-3" style="font-family: 'Inter', sans-serif;">
           Oppure <a href="/dona" class="text-[#C8923E] underline hover:text-[#D9A94E]">sostienici con una donazione libera</a> →
         </p>
       )}
