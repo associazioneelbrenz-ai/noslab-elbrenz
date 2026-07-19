@@ -1,5 +1,5 @@
 ---
-title: "EUREGIO - NEWS"
+title: "Euregio: news"
 data_pubblicazione: 2013-06-02
 pilastro: 5_identita_appartenenza
 tags: []

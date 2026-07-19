@@ -1,5 +1,5 @@
 ---
-title: "EUREGIO - PROSEGUE L'EXPORT DI TALENTI MUSICALI CON UPLOADSOUNDS"
+title: "Euregio: talenti musicali in viaggio con UploadSounds"
 data_pubblicazione: 2013-09-10
 pilastro: 4_rievocazioni_eventi
 tags: []

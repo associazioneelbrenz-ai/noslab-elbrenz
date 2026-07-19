@@ -1,5 +1,5 @@
 ---
-title: "IN DISTRIBUZIONE IL LUNARI DAL NOS 2020 - COPIE DISPONIBILI IN ESAURIMENTO - AFFRETTATEVI"
+title: "Lunari dal Nos 2020 in distribuzione: ultime copie"
 data_pubblicazione: 2019-12-12
 pilastro: 6_vita_associativa
 tags: []

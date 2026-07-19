@@ -1,5 +1,5 @@
 ---
-title: "EUREGIO - ENERGIA, AMBIENTE E RISORSE NATURALI"
+title: "Euregio: energia, ambiente e risorse naturali"
 data_pubblicazione: 2013-05-22
 pilastro: 5_identita_appartenenza
 tags: []

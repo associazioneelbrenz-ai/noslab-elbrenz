@@ -1,5 +1,5 @@
 ---
-title: "\"AEROPLANI NEMICI SONO SU TRENTO\": LA MOSTRA A TORRE VANGA"
+title: "\"Aeroplani nemici sono su Trento\": mostra a Torre Vanga"
 data_pubblicazione: 2013-09-04
 pilastro: 4_rievocazioni_eventi
 tags: []

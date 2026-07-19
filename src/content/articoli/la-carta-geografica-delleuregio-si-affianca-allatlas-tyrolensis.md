@@ -1,5 +1,5 @@
 ---
-title: "La Carta geografica dell’Euregio si affianca all’ Atlas Tyrolensis"
+title: "La Carta geografica dell’Euregio si affianca all’Atlas Tyrolensis"
 data_pubblicazione: 2014-03-07
 pilastro: 5_identita_appartenenza
 tags: []

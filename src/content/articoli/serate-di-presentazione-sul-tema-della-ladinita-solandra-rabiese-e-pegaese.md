@@ -1,5 +1,5 @@
 ---
-title: "SERATE DI PRESENTAZIONE SUL TEMA DELLA LADINITA' SOLANDRA, RABIESE E PEGAESE"
+title: "Serate sulla ladinità solandra, rabiesa e pegaesa"
 data_pubblicazione: 2021-11-10
 pilastro: 2_lingua_ladinita
 tags: []

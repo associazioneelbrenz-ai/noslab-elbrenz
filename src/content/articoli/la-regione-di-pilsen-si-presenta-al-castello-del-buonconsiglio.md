@@ -1,5 +1,5 @@
 ---
-title: "LA REGIONE DI PILSEN SI PRESENTA AL CASTELLO DEL BUONCONSIGLIO"
+title: "La regione di Pilsen al Castello del Buonconsiglio"
 data_pubblicazione: 2013-06-05
 pilastro: 4_rievocazioni_eventi
 tags: []

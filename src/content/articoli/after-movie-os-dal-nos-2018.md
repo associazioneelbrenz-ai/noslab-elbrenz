@@ -1,5 +1,5 @@
 ---
-title: "AFTER MOVIE OS DAL NOS 2018"
+title: "Os dal Nos 2018: l'after movie"
 data_pubblicazione: 2018-09-23
 pilastro: 2_lingua_ladinita
 tags: []

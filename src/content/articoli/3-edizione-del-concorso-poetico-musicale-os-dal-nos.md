@@ -1,5 +1,5 @@
 ---
-title: "3° EDIZIONE DEL CONCORSO  POETICO E MUSICALE \"OS DAL NOS\""
+title: "Concorso poetico e musicale \"Os dal Nos\": 3ª edizione"
 data_pubblicazione: 2016-06-15
 pilastro: 2_lingua_ladinita
 tags: []

@@ -1,5 +1,5 @@
 ---
-title: "EUREGIO SUMMER CAMP 2013"
+title: "Euregio Summer Camp 2013"
 data_pubblicazione: 2013-05-03
 pilastro: 5_identita_appartenenza
 tags: []

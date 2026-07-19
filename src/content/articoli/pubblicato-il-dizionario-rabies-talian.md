@@ -1,5 +1,5 @@
 ---
-title: "PUBBLICATO IL DIZIONARIO RABIES-TALIAN"
+title: "Pubblicato il Dizionario Rabies-Talian"
 data_pubblicazione: 2013-05-24
 pilastro: 2_lingua_ladinita
 tags: []

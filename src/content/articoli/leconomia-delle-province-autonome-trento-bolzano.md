@@ -1,5 +1,5 @@
 ---
-title: "L'ECONOMIA DELLE PROVINCE AUTONOME DI TRENTO E DI BOLZANO"
+title: "L'economia delle province autonome di Trento e Bolzano"
 data_pubblicazione: 2013-09-02
 pilastro: 5_identita_appartenenza
 tags: []

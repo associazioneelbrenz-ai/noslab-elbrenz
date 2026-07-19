@@ -1,5 +1,5 @@
 ---
-title: "OS DAL NOS 2019 - ISCRIZIONI APERTE"
+title: "Os dal Nos 2019: iscrizioni aperte"
 data_pubblicazione: 2019-05-01
 pilastro: 2_lingua_ladinita
 tags: []

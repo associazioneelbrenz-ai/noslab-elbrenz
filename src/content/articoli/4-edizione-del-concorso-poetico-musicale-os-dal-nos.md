@@ -1,5 +1,5 @@
 ---
-title: "4° EDIZIONE DEL CONCORSO  POETICO E MUSICALE \"OS DAL NOS\""
+title: "Concorso poetico e musicale \"Os dal Nos\": 4ª edizione"
 data_pubblicazione: 2017-04-15
 pilastro: 2_lingua_ladinita
 tags: []

@@ -1,5 +1,5 @@
 ---
-title: "EUROPEAN COOPERATION DAY 2013"
+title: "European Cooperation Day 2013"
 data_pubblicazione: 2013-09-12
 pilastro: 5_identita_appartenenza
 tags: []

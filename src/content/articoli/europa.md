@@ -1,5 +1,5 @@
 ---
-title: "EUROPA"
+title: "Europa"
 data_pubblicazione: 2013-05-20
 pilastro: 5_identita_appartenenza
 tags: []

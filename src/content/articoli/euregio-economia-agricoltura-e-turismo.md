@@ -1,5 +1,5 @@
 ---
-title: "EUREGIO - ECONOMIA, AGRICOLTURA E TURISMO"
+title: "Euregio: economia, agricoltura e turismo"
 data_pubblicazione: 2013-05-22
 pilastro: 5_identita_appartenenza
 tags: []

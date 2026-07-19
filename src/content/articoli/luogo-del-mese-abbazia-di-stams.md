@@ -1,5 +1,5 @@
 ---
-title: "LUOGO DEL MESE - ABBAZIA DI STAMS"
+title: "Luogo del mese: l'abbazia di Stams"
 data_pubblicazione: 2013-06-12
 pilastro: 1_storia_valli
 tags: []

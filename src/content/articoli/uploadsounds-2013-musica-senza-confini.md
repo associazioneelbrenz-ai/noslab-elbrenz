@@ -1,5 +1,5 @@
 ---
-title: "UPLOADSOUNDS 2013: MUSICA SENZA CONFINI"
+title: "UploadSounds 2013: musica senza confini"
 data_pubblicazione: 2013-05-03
 pilastro: 5_identita_appartenenza
 tags: []

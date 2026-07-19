@@ -1,5 +1,5 @@
 ---
-title: "EUREGIO - NEWS DALL'EUROPA"
+title: "Euregio: news dall'Europa"
 data_pubblicazione: 2013-05-22
 pilastro: 5_identita_appartenenza
 tags: []

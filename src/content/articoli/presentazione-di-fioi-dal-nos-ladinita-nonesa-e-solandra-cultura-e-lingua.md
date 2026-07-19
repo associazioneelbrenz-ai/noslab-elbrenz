@@ -1,5 +1,5 @@
 ---
-title: "Presentazione di \"Fioi dal Nos\" - Ladinità nonesa e solandra - Cultura e Lingua"
+title: "Presentazione di \"Fiöi dal Nos\" - Ladinità nonesa e solandra - Cultura e Lingua"
 data_pubblicazione: 2015-11-09
 pilastro: 2_lingua_ladinita
 tags: []

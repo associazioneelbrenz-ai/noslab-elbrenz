@@ -1,5 +1,5 @@
 ---
-title: "TERMINE DELLE ISCRIZIONI AL PREMIO GIOVANI RICERCATORI DELL’EUREGIO 2013 ESTESO FINO AL 15 GIUGNO 2013"
+title: "Premio Giovani Ricercatori Euregio 2013: proroga iscrizioni"
 data_pubblicazione: 2013-06-06
 pilastro: 5_identita_appartenenza
 tags: []

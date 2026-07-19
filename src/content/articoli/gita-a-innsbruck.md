@@ -1,5 +1,5 @@
 ---
-title: "GITA A INNSBRUCK"
+title: "Gita a Innsbruck"
 data_pubblicazione: 2013-05-06
 pilastro: 1_storia_valli
 tags: []

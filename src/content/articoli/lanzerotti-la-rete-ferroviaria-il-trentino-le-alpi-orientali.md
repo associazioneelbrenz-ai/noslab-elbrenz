@@ -1,5 +1,5 @@
 ---
-title: "LANZEROTTI E LA SUA RETE FERROVIARIA PER IL TRENTINO E LE ALPI ORIENTALI"
+title: "Lanzerotti e la rete ferroviaria per il Trentino"
 data_pubblicazione: 2013-09-17
 pilastro: 1_storia_valli
 tags: []

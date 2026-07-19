@@ -1,5 +1,5 @@
 ---
-title: "OS DAL NOS - SCALETTA ESIBIZIONI"
+title: "Os dal Nos: la scaletta delle esibizioni"
 data_pubblicazione: 2015-08-08
 pilastro: 2_lingua_ladinita
 tags: []

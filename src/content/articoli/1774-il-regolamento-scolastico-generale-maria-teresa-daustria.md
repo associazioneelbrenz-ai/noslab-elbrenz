@@ -1,5 +1,5 @@
 ---
-title: "1774 - Il \"Regolamento Scolastico  Generale\" di Maria Teresa d'Austria"
+title: "1774 - Il \"Regolamento Scolastico Generale\" di Maria Teresa d'Austria"
 data_pubblicazione: 2013-09-28
 pilastro: 2_lingua_ladinita
 tags: []

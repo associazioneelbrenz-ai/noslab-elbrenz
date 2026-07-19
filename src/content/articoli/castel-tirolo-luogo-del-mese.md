@@ -1,5 +1,5 @@
 ---
-title: "CASTEL TIROLO - LUOGO DEL MESE"
+title: "Luogo del mese: Castel Tirolo"
 data_pubblicazione: 2013-06-02
 pilastro: 1_storia_valli
 tags: []

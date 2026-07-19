@@ -1,5 +1,5 @@
 ---
-title: "PROGETTI CULTURALI - EUREGIO"
+title: "Euregio: progetti culturali"
 data_pubblicazione: 2013-05-14
 pilastro: 5_identita_appartenenza
 tags: []

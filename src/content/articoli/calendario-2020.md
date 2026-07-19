@@ -1,5 +1,5 @@
 ---
-title: "PRESENTAZIONE UFFICIALE LUNARI DAL NOS 2020 -  CALENDARIO 2020"
+title: "Presentazione ufficiale del Lunari dal Nos 2020"
 data_pubblicazione: 2019-11-25
 pilastro: 2_lingua_ladinita
 tags: []

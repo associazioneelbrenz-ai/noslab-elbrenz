@@ -1,5 +1,5 @@
 ---
-title: "BENTORNATI!!!!!"
+title: "Bentornati!"
 data_pubblicazione: 2013-08-30
 pilastro: 6_vita_associativa
 tags: []

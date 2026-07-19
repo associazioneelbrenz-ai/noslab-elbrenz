@@ -1,5 +1,5 @@
 ---
-title: "I FUOCHI DEL SACRO CUORE - UNA TRADIZIONE SECOLARE"
+title: "I fuochi del Sacro Cuore, una tradizione secolare"
 data_pubblicazione: 2013-06-06
 pilastro: 1_storia_valli
 tags: []

@@ -1,5 +1,5 @@
 ---
-title: "PRESENTAZIONE DEL \"DIZIONARI RABIES - TALIAN\""
+title: "Presentazione del \"Dizionari Rabies-Talian\""
 data_pubblicazione: 2013-06-18
 pilastro: 2_lingua_ladinita
 tags: []

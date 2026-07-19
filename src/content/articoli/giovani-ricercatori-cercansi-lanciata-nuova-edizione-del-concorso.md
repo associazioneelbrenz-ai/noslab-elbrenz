@@ -1,5 +1,5 @@
 ---
-title: "GIOVANI RICERCATORI CERCANSI! - LANCIATA NUOVA EDIZIONE DEL CONCORSO"
+title: "Giovani ricercatori cercansi: nuova edizione del concorso"
 data_pubblicazione: 2013-05-05
 pilastro: 5_identita_appartenenza
 tags: []

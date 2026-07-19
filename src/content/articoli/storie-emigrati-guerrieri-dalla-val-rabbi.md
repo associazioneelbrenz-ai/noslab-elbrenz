@@ -1,5 +1,5 @@
 ---
-title: "\"STORIE DI EMIGRATI E GUERRIERI DALLA VAL DI RABBI\""
+title: "\"Storie di emigrati e guerrieri dalla Val di Rabbi\""
 data_pubblicazione: 2014-03-15
 pilastro: 1_storia_valli
 tags: []

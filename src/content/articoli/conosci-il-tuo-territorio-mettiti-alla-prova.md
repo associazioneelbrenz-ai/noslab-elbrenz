@@ -1,5 +1,5 @@
 ---
-title: "CONOSCI IL TUO TERRITORIO? METTITI ALLA PROVA"
+title: "Conosci il tuo territorio? Mettiti alla prova"
 data_pubblicazione: 2024-12-31
 pilastro: 5_identita_appartenenza
 tags: []

@@ -1,5 +1,5 @@
 ---
-title: "IL CASO UNICO DEL REGGIMENTO IV/28: \"I FIGLI DI PRAGA\" IN VAL DI SOLE"
+title: "Il reggimento IV/28: i \"figli di Praga\" in Val di Sole"
 data_pubblicazione: 2026-01-25
 pilastro: 1_storia_valli
 tags: []

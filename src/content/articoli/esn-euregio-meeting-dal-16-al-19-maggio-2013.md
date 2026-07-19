@@ -1,5 +1,5 @@
 ---
-title: "ESN EUREGIO MEETING DAL 16 AL 19 MAGGIO 2013"
+title: "ESN Euregio Meeting, 16-19 maggio 2013"
 data_pubblicazione: 2013-05-08
 pilastro: 5_identita_appartenenza
 tags: []

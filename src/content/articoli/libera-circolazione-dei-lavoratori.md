@@ -1,5 +1,5 @@
 ---
-title: "LIBERA CIRCOLAZIONE DEI LAVORATORI"
+title: "La libera circolazione dei lavoratori"
 data_pubblicazione: 2013-05-29
 pilastro: 5_identita_appartenenza
 tags: []

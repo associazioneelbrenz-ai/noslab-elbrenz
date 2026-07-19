@@ -1,5 +1,5 @@
 ---
-title: "OS DAL NOS 2018 - 5^ EDIZIONE"
+title: "Os dal Nos 2018: 5ª edizione"
 data_pubblicazione: 2018-06-11
 pilastro: 2_lingua_ladinita
 tags: []

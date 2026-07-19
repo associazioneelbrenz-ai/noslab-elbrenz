@@ -1,5 +1,5 @@
 ---
-title: "CONCORSO FOTOGRAFICO E STAGE “IL BOSCO, L’UOMO, LA BIODIVERSITÀ: CONVIVENZE E CONOSCENZE TRAS-PARENTI”"
+title: "Concorso fotografico: il bosco, l'uomo, la biodiversità"
 data_pubblicazione: 2013-05-20
 pilastro: 1_storia_valli
 tags: []

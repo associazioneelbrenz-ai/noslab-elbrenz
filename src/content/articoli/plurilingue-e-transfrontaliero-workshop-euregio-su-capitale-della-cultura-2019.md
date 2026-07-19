@@ -1,5 +1,5 @@
 ---
-title: "PLURILINGUE E TRANSFRONTALIERO: WORKSHOP EUREGIO SU CAPITALE DELLA CULTURA 2019"
+title: "Workshop Euregio sulla Capitale della cultura 2019"
 data_pubblicazione: 2013-05-05
 pilastro: 5_identita_appartenenza
 tags: []

@@ -1,5 +1,5 @@
 ---
-title: "SPECIALE CENSIMENTO LINGUISTICO 2021"
+title: "Speciale censimento linguistico 2021"
 data_pubblicazione: 2021-12-09
 pilastro: 2_lingua_ladinita
 tags: []

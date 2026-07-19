@@ -1,5 +1,5 @@
 ---
-title: "IL \"TÖRGGELEN\" NELLA VAL D'ISARCO"
+title: "Il \"Törggelen\" nella Val d'Isarco"
 data_pubblicazione: 2013-10-07
 pilastro: 5_identita_appartenenza
 tags: []

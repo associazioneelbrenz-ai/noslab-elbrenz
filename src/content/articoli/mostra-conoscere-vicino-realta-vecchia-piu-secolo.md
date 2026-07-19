@@ -1,5 +1,5 @@
 ---
-title: "UNA MOSTRA PER CONOSCERE DA VICINO UNA REALTÀ VECCHIA PIÙ DI UN SECOLO."
+title: "Una mostra per conoscere una realtà vecchia di un secolo"
 data_pubblicazione: 2013-09-10
 pilastro: 1_storia_valli
 tags: []

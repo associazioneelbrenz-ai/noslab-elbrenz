@@ -1,5 +1,5 @@
 ---
-title: "MUSEO REGIONALE TIROLESE FERDINANDEUM"
+title: "Il museo regionale tirolese Ferdinandeum"
 data_pubblicazione: 2013-10-16
 pilastro: 5_identita_appartenenza
 tags: []

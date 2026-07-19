@@ -1,5 +1,5 @@
 ---
-title: "LUNARI DAL NOS 2023 - LA NOSA STORIA"
+title: "Lunari dal Nos 2023: la nosa storia"
 data_pubblicazione: 2022-11-18
 pilastro: 6_vita_associativa
 tags: []

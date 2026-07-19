@@ -1,5 +1,5 @@
 ---
-title: "BREVE INTRODUZIONE ALLA STORIA E ALLA CULTURA TIROLESI"
+title: "Breve introduzione alla storia e alla cultura tirolesi"
 data_pubblicazione: 2025-01-03
 pilastro: 1_storia_valli
 tags: []

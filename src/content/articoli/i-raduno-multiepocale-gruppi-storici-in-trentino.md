@@ -1,5 +1,5 @@
 ---
-title: "I RADUNO MULTIEPOCALE GRUPPI STORICI IN TRENTINO"
+title: "Primo raduno multiepocale dei gruppi storici in Trentino"
 data_pubblicazione: 2013-05-12
 pilastro: 1_storia_valli
 tags: []

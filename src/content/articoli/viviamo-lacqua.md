@@ -1,5 +1,5 @@
 ---
-title: "VIVIAMO L'ACQUA"
+title: "Viviamo l'acqua"
 data_pubblicazione: 2013-06-28
 pilastro: 1_storia_valli
 tags: []

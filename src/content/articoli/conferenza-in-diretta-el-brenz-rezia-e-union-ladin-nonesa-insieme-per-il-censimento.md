@@ -1,5 +1,5 @@
 ---
-title: "CONFERENZA IN DIRETTA - EL BRENZ, REZIA E UNION LADIN NONESA INSIEME PER IL CENSIMENTO"
+title: "El Brenz, Rezia e Union Ladin Nonesa per il censimento"
 data_pubblicazione: 2021-12-13
 pilastro: 4_rievocazioni_eventi
 tags: []
