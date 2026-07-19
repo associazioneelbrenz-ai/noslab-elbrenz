@@ -454,3 +454,13 @@
 /2025/*  /archivio-storico  301
 /2026  /archivio-storico  301
 /2026/*  /archivio-storico  301
+
+# ---- Immagini del vecchio WordPress -> Supabase Storage (A3, 19/7/2026) ----
+# Recupera il traffico residuo da Google Immagini e i link esterni storici.
+# I 4 file rinominati dallo Storage vanno PRIMA dello splat: in _redirects
+# vince la prima regola che combacia.
+/wp-content/uploads/2013/04/Cartina-Trentino-divisa-per-dialetti-a-cura-del-dottor-Bauer-Università-di-Salisburgo.png  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/04/Cartina-Trentino-divisa-per-dialetti-a-cura-del-dottor-Bauer-Universita-di-Salisburgo.png  301
+/wp-content/uploads/2013/06/4614_rabbi_i_“masi”_della_val_di_rabbi.jpg  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2013/06/4614_rabbi_i_masi_della_val_di_rabbi.jpg  301
+/wp-content/uploads/2014/08/dalrì-225x300.jpg  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/dalri-225x300.jpg  301
+/wp-content/uploads/2015/02/Poesia-di-Febbraio-Simone-Daprà-1024x711.jpg  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/02/Poesia-di-Febbraio-Simone-Dapra-1024x711.jpg  301
+/wp-content/uploads/*  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/:splat  301
