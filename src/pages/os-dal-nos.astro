@@ -11,6 +11,8 @@
  */
 
 import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+import LightboxEmbed from '../components/LightboxEmbed.astro';
+import { osDalNos } from '../data/osdalnos.js';
 
 const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
 ---
@@ -45,13 +47,58 @@ const edizioni = [2014, 2015, 2016, 2017, 2018, 2019];
     </p>
   </div>
 
-  <ul class="list-none m-0 mt-6 p-0 flex flex-wrap gap-3" style="font-family: 'Inter', sans-serif;">
-    {edizioni.map((anno) => (
-      <li class="bg-white border border-[#E5DFCF] text-[#1E2E26] px-5 py-2.5 text-sm tracking-wider">
-        {anno}
-      </li>
+  {/* Video per edizione. Accordion nativo <details>: nessun JavaScript per
+      aprire e chiudere, funziona anche se lo script non parte. Le miniature
+      sono immagini statiche di YouTube: NESSUN iframe finche' non si apre il
+      lightbox, quindi la pagina resta leggera con oltre quaranta video. */}
+  <div class="mt-8 flex flex-col gap-4">
+    {osDalNos.edizioni.map((ed) => (
+      ed.stato === 'pubblicata' ? (
+        <details class="bg-white border border-[#E5DFCF] group" open={ed.n === 5}>
+          <summary class="cursor-pointer list-none p-6 md:p-8 flex items-center gap-4">
+            <span class="text-2xl text-[#1E2E26] font-medium m-0" style="font-family: 'Playfair Display', serif;">
+              {ed.titolo}
+            </span>
+            <span class="text-sm text-[#0F0F0F]/55" style="font-family: 'Inter', sans-serif;">
+              {ed.anno} · {ed.video.length} video
+            </span>
+            <span class="ml-auto text-[#C8923E] text-xl transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+          </summary>
+          <div class="px-6 md:px-8 pb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {ed.video.map((v) => (
+                <LightboxEmbed
+                  url={`https://www.youtube.com/watch?v=${v.yt}`}
+                  embedSrcDiretto={`https://www.youtube-nocookie.com/embed/${v.yt}`}
+                  cover={`https://i.ytimg.com/vi/${v.yt}/hqdefault.jpg`}
+                  titolo={v.t}
+                  etichetta={v.t}
+                  aspetto="16/9"
+                />
+              ))}
+            </div>
+          </div>
+        </details>
+      ) : (
+        <div class="bg-white border border-[#E5DFCF] p-6 md:p-8 flex items-center gap-4">
+          <span class="text-2xl text-[#1E2E26]/55 font-medium m-0" style="font-family: 'Playfair Display', serif;">
+            {ed.titolo}
+          </span>
+          <span class="text-sm text-[#0F0F0F]/45" style="font-family: 'Inter', sans-serif;">{ed.anno}</span>
+          <span
+            class="ml-auto inline-block text-[11px] tracking-[0.18em] uppercase text-[#C8923E] border border-[#C8923E] px-3 py-1.5"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            In arrivo
+          </span>
+        </div>
+      )
     ))}
-  </ul>
+  </div>
+
+  <p class="text-sm text-[#0F0F0F]/55 mt-6 m-0" style="font-family: 'Inter', sans-serif;">
+    I video si aprono in una finestra sul sito, da YouTube in modalità senza cookie di profilazione.
+  </p>
 
   <div class="bg-white border border-[#E5DFCF] p-8 md:p-10 mt-10">
     <span

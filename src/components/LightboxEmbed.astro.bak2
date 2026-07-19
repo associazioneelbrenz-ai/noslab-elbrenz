@@ -26,31 +26,24 @@ interface Props {
   url: string;
   titolo: string;
   cover: string;
-  /** Proporzioni della copertina e del lightbox. Default 9/16 (reel verticali
-   *  Instagram, comportamento storico invariato). Per YouTube: "16/9". */
-  aspetto?: '9/16' | '16/9';
-  /** Sorgente embed gia' pronta: serve per YouTube, dove l'URL non si ricava
-   *  con il parsing Instagram. Se assente si usa il parsing storico. */
-  embedSrcDiretto?: string;
   /** Titolo VISIBILE sulla copertina (fascia alta). Opzionale. */
   etichetta?: string;
   /** Micro-etichetta in fondo alla copertina (es. hashtag). Opzionale. */
   hashtag?: string;
 }
 
-const { url, titolo, cover, etichetta, hashtag, aspetto = '9/16', embedSrcDiretto } = Astro.props;
+const { url, titolo, cover, etichetta, hashtag } = Astro.props;
 
 // Stesso parsing di EmbedConsenso: /p|reel/{code}/embed/, tracking
 // (?igsh=…) sempre omesso perché si parte dal solo shortcode.
 const m = url.match(/instagram\.com\/(p|reel)\/([A-Za-z0-9_-]+)/);
-const embedSrc = embedSrcDiretto || (m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/` : '');
+const embedSrc = m ? `https://www.instagram.com/${m[1]}/${m[2]}/embed/` : '';
 ---
 <button
   type="button"
   class="lbx-card group relative block w-full overflow-hidden rounded-[6px] border border-[#C8923E] bg-[#1E2E26] p-0 cursor-pointer shadow-[0_1px_4px_rgba(30,46,38,0.18)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_10px_28px_rgba(30,46,38,0.28)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8923E]"
-  style={`aspect-ratio: ${aspetto.replace('/', ' / ')};`}
+  style="aspect-ratio: 9 / 16;"
   data-embed-src={embedSrc}
-  data-aspetto={aspetto}
   data-url={url}
   data-titolo={titolo}
   aria-haspopup="dialog"
@@ -160,11 +153,7 @@ const embedSrc = embedSrcDiretto || (m ? `https://www.instagram.com/${m[1]}/${m[
         f.title = titolo || 'Contenuto incorporato';
         f.loading = 'eager';
         f.referrerPolicy = 'strict-origin-when-cross-origin';
-        // I permessi servono a YouTube (schermo intero, picture-in-picture);
-        // Instagram li ignora, quindi si possono impostare sempre.
-        f.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
-        f.setAttribute('allowfullscreen', '');
-        f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;';
+        f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;';
         return f;
       }
 
@@ -199,13 +188,7 @@ const embedSrc = embedSrcDiretto || (m ? `https://www.instagram.com/${m[1]}/${m[
         overlay.style.cssText = 'position:fixed;inset:0;z-index:60;background:rgba(20,25,22,0.85);display:flex;align-items:center;justify-content:center;padding:16px;';
 
         var scatola = document.createElement('div');
-        // 16/9 (YouTube) va dimensionato sulla LARGHEZZA, altrimenti su schermi
-        // bassi resta una striscia; 9/16 (reel) resta dimensionato sull'altezza.
-        var asp = card.dataset.aspetto === '16/9' ? '16/9' : '9/16';
-        var misura = asp === '16/9'
-          ? 'aspect-ratio:16/9;width:min(1100px, calc(100vw - 32px));max-height:min(85vh,85svh);'
-          : 'aspect-ratio:9/16;height:min(85vh,85svh);max-width:calc(100vw - 32px);';
-        scatola.style.cssText = 'position:relative;' + misura + 'background:#1E2E26;border:1px solid rgba(200,146,62,.5);border-radius:6px;overflow:hidden;';
+        scatola.style.cssText = 'position:relative;aspect-ratio:9/16;height:min(85vh,85svh);max-width:calc(100vw - 32px);background:#1E2E26;border:1px solid rgba(200,146,62,.5);border-radius:6px;overflow:hidden;';
         if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
           scatola.animate(
             [{ opacity: 0, transform: 'scale(.96)' }, { opacity: 1, transform: 'scale(1)' }],
