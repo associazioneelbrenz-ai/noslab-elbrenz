@@ -51,6 +51,7 @@ import { getCollection } from 'astro:content';
 import { formatDataIT, nomePilastro } from '../lib/articoli';
 import { mappaSeoArticoli } from '../lib/seoArticoli';
 import { schemaOrganization } from '../lib/schema';
+import { imgRid, srcSetCard } from '../lib/immagini';
 
 const articoliProduzione = await getCollection(
   'articoli',
@@ -399,7 +400,9 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
           >
             {copertinaDi(a) && (
               <img
-                src={copertinaDi(a)}
+                src={imgRid(copertinaDi(a), 600)}
+                srcset={srcSetCard(copertinaDi(a), 400)}
+                sizes="(min-width: 1024px) 300px, (min-width: 768px) 45vw, 92vw"
                 alt=""
                 width="600"
                 height="338"
