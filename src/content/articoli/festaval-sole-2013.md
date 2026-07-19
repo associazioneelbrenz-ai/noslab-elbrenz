@@ -1,5 +1,5 @@
 ---
-title: "FESTAVAL di SOLE 2013"
+title: "FestaVal di Sole 2013"
 data_pubblicazione: 2013-09-19
 pilastro: 2_lingua_ladinita
 tags: []
