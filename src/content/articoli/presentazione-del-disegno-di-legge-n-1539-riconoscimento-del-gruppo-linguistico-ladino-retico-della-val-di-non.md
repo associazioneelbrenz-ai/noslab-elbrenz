@@ -8,13 +8,15 @@ archivio: false
 autore: "Cristian Bresadola"
 excerpt: "Prefazione dell'Associazione El Brenz Cari amici della Val di Non e della Val di Sole siamo lieti di presentarvi un documento di importanza storica: il Disegno di Legge N. 1539 del Senato della Repubblica di iniziativa del Senatore Patton, che si propone di riconoscere ufficialmente il gruppo…"
 legacy_wp_id: 3783
+hero_image: "https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2022/10/Patton.png"
+hero_alt: "Il senatore Pietro Patton, primo firmatario del ddl 1539"
 ---
 
 ## Prefazione dell'Associazione El Brenz
 
 *Cari amici della Val di Non e della Val di Sole*
 
-![GRUPPO PER LE AUTONOMIE \* BANCHE: SEN. PATTON, «SONO STATO NOMINATO NELLA  COMMISSIONE D'INCHIESTA DEL SENATO, PER TUTELARE I RISPARMIATORI» - Agenzia  giornalistica Opinione. Notizie da Italia - Mondo / Trentino Alto Adige](https://www.agenziagiornalisticaopinione.it/wp-content/uploads/2022/10/Patton.png)
+![Il senatore Pietro Patton, primo firmatario del ddl 1539](https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2022/10/Patton.png)
 
 *siamo lieti di presentarvi un documento di importanza storica: il Disegno di Legge N. 1539 del Senato della Repubblica di iniziativa del Senatore Patton, che si propone di riconoscere ufficialmente il gruppo linguistico ladino-retico della Val di Non. Questo progetto di legge, giunto in Senato il 18 giugno 2025, rappresenta un sostengo straordinario anche per il percorso di sensibilizzazione e ricerca intrapreso dalla nostra Associazione Storico Culturale Linguistica "El Brenz".*
 

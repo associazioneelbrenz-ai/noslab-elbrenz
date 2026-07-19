@@ -67,7 +67,11 @@ const {
   description,
 } = Astro.props;
 
-// Auto-deriva path WebP dalle estensioni jpg — solo quando c'è un hero.
+// Auto-deriva path WebP/mobile dalle estensioni jpg — solo quando c'è un hero
+// E l'hero è davvero un .jpg: con altri formati (es. le copertine .png su
+// Storage) le varianti derivate non esistono, e dichiarare un PNG come
+// type="image/webp" e' scorretto. In quel caso si serve la sola <img>.
+const heroDerivabile = !!heroImage && /\.jpe?g$/i.test(heroImage);
 const heroImageWebp = heroImage ? heroImage.replace(/\.jpe?g$/i, '.webp') : '';
 const heroImageMobileJpg = heroImage
   ? heroImageMobile || heroImage.replace(/(\.jpe?g)$/i, '-mobile$1')
@@ -82,9 +86,13 @@ const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
     <header class="article-hero relative w-full overflow-hidden" style="aspect-ratio: 16 / 9; max-height: 80vh; min-height: 420px;">
 
       <picture class="absolute inset-0 w-full h-full">
-        <source media="(max-width: 768px)" type="image/webp" srcset={heroImageMobileWebp} />
-        <source media="(max-width: 768px)" type="image/jpeg" srcset={heroImageMobileJpg} />
-        <source type="image/webp" srcset={heroImageWebp} />
+        {heroDerivabile && (
+          <>
+            <source media="(max-width: 768px)" type="image/webp" srcset={heroImageMobileWebp} />
+            <source media="(max-width: 768px)" type="image/jpeg" srcset={heroImageMobileJpg} />
+            <source type="image/webp" srcset={heroImageWebp} />
+          </>
+        )}
         <img src={heroImage} alt={heroAlt} class="w-full h-full object-cover" loading="eager" fetchpriority="high" />
       </picture>
 
