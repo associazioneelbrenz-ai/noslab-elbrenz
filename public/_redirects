@@ -10,6 +10,12 @@
 /socio  /tesseramento  301
 /socio/  /tesseramento  301
 
+# ---- Luoghi: slug rinominati (21/7/2026) ----
+# "Museo della Cultura Solandra" -> nome corretto "Museo della Civilta' Solandra".
+# Il vecchio slug puo' essere indicizzato o linkato: 301 al nuovo.
+/luoghi/museo-della-cultura-solandra  /luoghi/museo-della-civilta-solandra  301
+/luoghi/museo-della-cultura-solandra/  /luoghi/museo-della-civilta-solandra  301
+
 # ---- Pagine WP → nuove rotte ----
 /lassociazione-2/  /chi-siamo  301
 /lassociazione-2  /chi-siamo  301

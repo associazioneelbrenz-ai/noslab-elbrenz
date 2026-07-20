@@ -5,7 +5,16 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 import netlify from '@astrojs/netlify';
+import { loadEnv } from 'vite';
 import { readdirSync, readFileSync } from 'node:fs';
+
+// astro.config gira PRIMA che Vite inietti le variabili dei file .env in
+// process.env, quindi le letture DB al build (slugNoindex, urlLuoghi) vedrebbero
+// undefined e tornerebbero vuote: sitemap senza luoghi, articoli noindex non
+// esclusi. Le carichiamo qui SENZA sovrascrivere le env reali (su Netlify quelle
+// del pannello vincono). (Scoperta 21/7: sitemap locale senza i luoghi.)
+const _env = loadEnv(process.env.NODE_ENV || 'production', process.cwd(), '');
+for (const k in _env) if (process.env[k] === undefined) process.env[k] = _env[k];
 
 /**
  * A1 — articoli marcati `noindex` nel DB: vanno esclusi dalla sitemap oltre che
@@ -38,6 +47,34 @@ async function slugNoindex() {
   return esclusi;
 }
 const NOINDEX = await slugNoindex();
+
+/**
+ * Le pagine /luoghi/{slug} sono SSR (prerender=false), quindi @astrojs/sitemap
+ * NON le scopre da sola: senza questo, nessun luogo finisce in sitemap. Le
+ * leggiamo dal DB al build (vista pubblica v_luoghi_mappa, solo pubblicati) e
+ * le passiamo a customPages. Dinamico: il conteggio non e' mai cablato, un
+ * luogo nuovo entra da solo, uno rinominato porta il nuovo slug e non il
+ * vecchio. Se il DB non risponde: lista vuota, la build non fallisce.
+ */
+async function urlLuoghi() {
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return [];
+  try {
+    const r = await fetch(`${url}/rest/v1/v_luoghi_mappa?select=slug`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return [];
+    const righe = await r.json();
+    return righe
+      .map((x) => x.slug)
+      .filter(Boolean)
+      .map((s) => `https://elbrenz.eu/luoghi/${s}`);
+  } catch {
+    return []; // degrado silenzioso
+  }
+}
+const LUOGHI = await urlLuoghi();
 
 // https://astro.build/config
 export default defineConfig({
@@ -81,6 +118,8 @@ export default defineConfig({
     // Esclude le pagine DE/EN finché le traduzioni non sono "live": restano
     // noindex, quindi non devono comparire nella sitemap (audit 14/7).
     sitemap({
+      // Pagine luogo (SSR): non scoperte in automatico, le aggiungiamo noi.
+      customPages: LUOGHI,
       filter: (page) => {
         const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
         const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';
