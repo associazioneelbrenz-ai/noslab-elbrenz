@@ -211,6 +211,15 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
                   Oppure paga subito qui i 20 € con <strong>PayPal o carta di
                   credito/debito</strong>, non serve avere un conto PayPal:
                 </p>
+                {/* Avviso anagrafica: appare SOPRA il pulsante quando createOrder
+                    rifiuta con anagrafica_mancante. L'esito sotto resta per gli
+                    altri messaggi (successo, errori server). */}
+                <div
+                  id="paypal-quota-avviso"
+                  class="hidden mb-4 p-3 text-sm border-l-4 border-[#a33] bg-[#fbecec] text-[#1E2E26]"
+                  role="alert"
+                  style="font-family: 'Inter', sans-serif;"
+                ></div>
                 <div id="paypal-quota-buttons"></div>
                 <div
                   id="paypal-quota-esito"
@@ -530,6 +539,43 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         esito.textContent = msg;
       }
 
+      // Avviso anagrafica: sta SOPRA i pulsanti (vedi #paypal-quota-avviso),
+      // distinto dall'esito qui sotto usato per successo/errori server.
+      const avviso = document.getElementById('paypal-quota-avviso');
+      function mostraAvviso(msg) {
+        if (!avviso) return;
+        avviso.textContent = msg;
+        avviso.classList.remove('hidden');
+      }
+      function nascondiAvviso() {
+        if (avviso) avviso.classList.add('hidden');
+      }
+      // Evidenzia i campi vuoti con outline inline (immune al purge di Tailwind);
+      // pulisce gli altri e toglie l'evidenza appena l'utente scrive nel campo.
+      function puliziaCampo(e) {
+        const el = e.currentTarget;
+        el.style.outline = '';
+        el.style.outlineOffset = '';
+        el.removeAttribute('aria-invalid');
+      }
+      function segnalaCampi(campi) {
+        ['cf-nome', 'cf-email', 'cf-gdpr'].forEach(function (id) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.style.outline = '';
+          el.style.outlineOffset = '';
+          el.removeAttribute('aria-invalid');
+        });
+        campi.forEach(function (el) {
+          if (!el) return;
+          el.style.outline = '2px solid #a33';
+          el.style.outlineOffset = '2px';
+          el.setAttribute('aria-invalid', 'true');
+          el.addEventListener('input', puliziaCampo, { once: true });
+          el.addEventListener('change', puliziaCampo, { once: true });
+        });
+      }
+
       // Il ramo PayPal è VOLUTAMENTE isolato: qualunque errore dell'SDK non
       // deve mai impedire il feedback del modulo né le istruzioni bonifico
       // (che stanno fuori da questo script). try/catch difensivo (M2.6 fix).
@@ -560,10 +606,23 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
             const consenso = !!(gdprCampo && gdprCampo.checked) || daModuloInviato;
             if (nomeVal.length < 2 || !emailValido || !consenso) {
-              mostraEsito('Prima di versare la quota, compila il modulo qui sotto (nome ed email) e accetta l\'informativa privacy.', false);
-              (nomeCampo || document.getElementById('paypal-quota-box'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Feedback visivo: avviso sopra i pulsanti + evidenza dei campi
+              // vuoti + scroll al primo. Se il form era gia' stato inviato i
+              // campi sono resettati (daModuloInviato), non c'e' cosa marcare.
+              const mancanti = [];
+              if (!daModuloInviato) {
+                if (nomeVal.length < 2) mancanti.push(nomeCampo);
+                if (!emailValido) mancanti.push(emailCampo);
+                if (!consenso) mancanti.push(gdprCampo);
+              }
+              segnalaCampi(mancanti);
+              mostraAvviso('Compila prima i campi qui sotto (nome, email e consenso privacy) per procedere col pagamento.');
+              (mancanti[0] || nomeCampo || document.getElementById('paypal-quota-box'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               throw new Error('anagrafica_mancante');
             }
+            // Gate superato: rimuovi avviso ed evidenziazioni eventuali.
+            segnalaCampi([]);
+            nascondiAvviso();
             const resp = await fetch(box.dataset.createUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

@@ -137,7 +137,15 @@ export const OS_DAL_NOS = {
   ] as Edizione[],
 };
 
-/** Miniatura statica di YouTube: nessun iframe, nessuna richiesta a Google al load. */
-export const miniatura = (id: string) => `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+/**
+ * Miniatura self-hostata (public/img/video/{id}.jpg), scaricata una volta da
+ * i.ytimg.com/vi/{id}/hqdefault.jpg. Prima puntava direttamente a ytimg: ma
+ * i.ytimg.com E' un dominio Google e la CSP enforced (16/7) lo blocca in img-src,
+ * quindi le thumb risultavano rotte in home (6 violazioni console, viste da
+ * Cristian il 20/7). Servendole da noi: zero richieste a Google al load, davvero,
+ * e nessun allargamento della CSP. Nuovo video -> scarica anche la sua thumb:
+ *   curl -o public/img/video/{id}.jpg https://i.ytimg.com/vi/{id}/hqdefault.jpg
+ */
+export const miniatura = (id: string) => `/img/video/${id}.jpg`;
 /** Embed senza cookie di profilazione, coerente con la gestione cookie del sito. */
 export const embed = (id: string) => `https://www.youtube-nocookie.com/embed/${id}`;
