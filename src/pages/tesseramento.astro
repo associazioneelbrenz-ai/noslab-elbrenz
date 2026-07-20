@@ -460,14 +460,17 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             Bonifico bancario
             <span class="block text-[11px] font-normal text-[#F5EEDD]/50 mt-1">dal tuo home banking</span>
           </button>
+          {/* 20/7: la terza via e' i CONTANTI (era un placeholder Satispay
+              disattivato, fase 2). Nessun SDK: solo l'istruzione su come pagare
+              di persona; l'incasso lo registra il direttivo (contanti-registra). */}
           <button
             type="button"
-            disabled
-            class="border-2 border-[#F5EEDD]/10 bg-[#1E2E26] text-[#F5EEDD]/35 px-4 py-4 text-sm font-medium cursor-not-allowed"
-            title="In arrivo"
+            id="sp-contanti"
+            class="border-2 border-[#F5EEDD]/25 bg-[#1E2E26] text-[#F5EEDD] px-4 py-4 text-sm font-medium cursor-pointer hover:border-[#C8923E] transition-colors"
+            aria-pressed="false"
           >
-            Satispay
-            <span class="block text-[11px] font-normal text-[#F5EEDD]/30 mt-1">in arrivo</span>
+            Contanti
+            <span class="block text-[11px] font-normal text-[#F5EEDD]/50 mt-1">di persona a un incaricato</span>
           </button>
         </div>
 
@@ -507,6 +510,21 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             Carica la ricevuta
           </button>
           <div id="ricevuta-esito" class="hidden mt-4 p-4 text-sm border-l-4" role="status" aria-live="polite"></div>
+        </div>
+
+        <div id="sp-pannello-contanti" class="hidden bg-[#0F1D18] border border-[#F5EEDD]/10 p-6" style="font-family: 'Inter', sans-serif;">
+          <div class="bg-[#1E2E26] border-l-4 border-[#C8923E] p-4">
+            <p class="text-sm text-[#F5EEDD] m-0 leading-relaxed">
+              Potrai versare la quota di <strong>20 €</strong> in contanti a un
+              incaricato del direttivo, in sede o durante gli eventi. La tessera
+              viene emessa alla registrazione dell'incasso.
+            </p>
+          </div>
+          <p class="text-xs text-[#F5EEDD]/55 m-0 mt-3">
+            Non serve fare altro adesso: la tua domanda è già arrivata. Se vuoi
+            accordarti su dove e quando, scrivi a
+            <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a>.
+          </p>
         </div>
       </div>
     </div>
@@ -670,6 +688,8 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
       const pannelloBonifico = document.getElementById('sp-pannello-bonifico');
       const boxPaypal = document.getElementById('paypal-quota-box');
       const notaPaypal = document.getElementById('sp-paypal-nota');
+      const btnContanti = document.getElementById('sp-contanti');
+      const pannelloContanti = document.getElementById('sp-pannello-contanti');
 
       function setAttivo(btn, attivo) {
         btn.classList.toggle('border-[#C8923E]', attivo);
@@ -677,12 +697,30 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         btn.setAttribute('aria-pressed', attivo ? 'true' : 'false');
       }
 
+      // Tre vie a mutua esclusione: aprire un pannello chiude gli altri, cosi'
+      // non restano due opzioni aperte insieme.
+      function chiudiTutti() {
+        if (pannelloBonifico) pannelloBonifico.classList.add('hidden');
+        if (pannelloContanti) pannelloContanti.classList.add('hidden');
+        if (boxPaypal) boxPaypal.classList.add('hidden');
+        [btnPaypal, btnBonifico, btnContanti].forEach((b) => b && setAttivo(b, false));
+      }
+
       if (btnBonifico && pannelloBonifico) {
         btnBonifico.addEventListener('click', () => {
+          chiudiTutti();
           pannelloBonifico.classList.remove('hidden');
           setAttivo(btnBonifico, true);
-          if (btnPaypal) setAttivo(btnPaypal, false);
           pannelloBonifico.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+      }
+
+      if (btnContanti && pannelloContanti) {
+        btnContanti.addEventListener('click', () => {
+          chiudiTutti();
+          pannelloContanti.classList.remove('hidden');
+          setAttivo(btnContanti, true);
+          pannelloContanti.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
       }
 
@@ -692,9 +730,9 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             new URLSearchParams(window.location.search).get('paypal') === '1';
           if (gate && boxPaypal) {
             // I bottoni PayPal vivono nel PASSO 2 in alto: mostralo e vacci.
+            chiudiTutti();
             boxPaypal.classList.remove('hidden');
             setAttivo(btnPaypal, true);
-            if (btnBonifico) setAttivo(btnBonifico, false);
             boxPaypal.scrollIntoView({ behavior: 'smooth', block: 'center' });
           } else if (notaPaypal) {
             notaPaypal.textContent = 'in attivazione, intanto usa il bonifico';
@@ -908,13 +946,22 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           }
           form.reset();
         } else if (resp.status === 429) {
-          showFeedback(data.error || 'Hai inviato troppe richieste. Riprova più tardi.', 'error');
+          // Troppe richieste: e' colpa del ritmo, non dell'utente.
+          showFeedback('Hai inviato troppe richieste: riprova tra qualche minuto.', 'error');
+        } else if (resp.status === 400) {
+          // Errore di validazione: il server sa esattamente cosa non va.
+          showFeedback(data.error || 'Controlla i dati inseriti e riprova.', 'error');
+        } else if (resp.status === 401 || resp.status === 403) {
+          // Gate/auth (es. l'incidente verify_jwt del 20/7): NON e' colpa
+          // dell'utente ne' dei suoi dati. Mandalo a un canale che funziona.
+          showFeedback('Errore tecnico momentaneo: scrivi a info@elbrenz.eu e ti iscriviamo noi. Ci scusiamo.', 'error');
         } else {
-          showFeedback(data.error || 'Si è verificato un errore. Riprova o scrivi direttamente a info@elbrenz.eu.', 'error');
+          showFeedback(data.error || 'Errore tecnico momentaneo: riprova, oppure scrivi a info@elbrenz.eu.', 'error');
         }
       } catch (err) {
+        // Rete assente / richiesta non partita: tecnico, non di validazione.
         console.error('[contact-form] network error:', err);
-        showFeedback('Errore di connessione. Riprova o scrivi direttamente a info@elbrenz.eu.', 'error');
+        showFeedback('Errore tecnico di connessione: riprova, oppure scrivi a info@elbrenz.eu.', 'error');
       } finally {
         submit.disabled = false;
         submit.textContent = 'Invia la domanda, passo 1 di 3';
