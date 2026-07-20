@@ -53,6 +53,14 @@ verify_jwt = false
 [functions.newsletter-broadcast]
 verify_jwt = false
 
+# paypal-webhook: PayPal chiama SENZA JWT Supabase, quindi verify_jwt=true dava
+# 401 al gateway e ogni notifica asincrona veniva respinta (rete di sicurezza
+# per catture perse/rimborsi spenta, trovato 20/7). Il gate vero e' la verifica
+# firma PayPal (verify-webhook-signature + PAYPAL_WEBHOOK_ID), obbligatoria nel
+# codice: rifiuta con 400 se verification_status != SUCCESS. Quindi false qui.
+[functions.paypal-webhook]
+verify_jwt = false
+
 # tessera-download: oltre a verify_jwt=false, ha static file (wasm + font) che
 # vanno dichiarati o il deploy CLI non li impacchetta.
 [functions.tessera-download]
