@@ -231,6 +231,23 @@ passa lo stesso, quindi il sintomo inganna. Regola: gli import dei file
 attaccate sopra se l'import non è in prima posizione. (Scoperta 7/7/2026,
 bisezione su tesseramento.astro.)
 
+### Trappola 12 — `supabase functions deploy` riaccende `verify_jwt`
+Il deploy CLI di una edge function **rimette `verify_jwt=true`** (default) se la
+function NON è dichiarata con `verify_jwt = false` in `supabase/config.toml`.
+Il 20/7/2026 un deploy di `contact-form` ha così rotto il form pubblico per ~13
+ore: il frontend chiama l'edge senza JWT → **401 al gateway su ogni invio**, con
+un errore generico lato utente. Il curl all'edge NON lo vede (il 401 del gateway
+si manifesta solo con la chiamata reale del browser, che invia l'apikey).
+Regole:
+1. Ogni function pubblica/server-to-server deve avere il suo blocco
+   `[functions.<slug>]` con `verify_jwt = false` in `config.toml`. Già fatto per
+   le 14 attuali; aggiungerne di nuove quando se ne creano.
+2. **Dopo OGNI deploy di edge function**: `supabase functions list` e controlla
+   la colonna `verify_jwt` contro l'atteso. Se una pubblica è tornata `true`,
+   ridichiarala in `config.toml` e ridistribuisci (o correggi via MCP).
+3. Lo smoke test di chiusura di qualunque lavoro che tocca un form è l'**invio
+   reale dal browser**, non il curl.
+
 ## Cose da NON fare mai
 
 - ❌ Modificare il codice direttamente in produzione (anche se il sito è giù)

@@ -1,9 +1,60 @@
-# Config CLI Supabase — creata il 10/7/2026 per gli static file di
-# tessera-download (wasm resvg + font Playfair). Le altre function NON sono
-# elencate: continuano a deployarsi come sempre (flag --no-verify-jwt a mano).
+# Config CLI Supabase.
+#
+# 20/7/2026 — INCIDENTE contact-form: un `supabase functions deploy contact-form`
+# ha riacceso verify_jwt=true (default CLI quando il flag NON e' dichiarato qui),
+# rompendo il form pubblico per ~13 ore (401 al gateway su ogni invio senza JWT).
+# LEZIONE: ogni function che deve stare a verify_jwt=false VA DICHIARATA qui,
+# altrimenti il prossimo deploy CLI la ribalta. Vedi Trappola 12 in CLAUDE.md.
+#
+# Le function NON elencate usano il default verify_jwt=true: e' corretto, sono
+# tutte protette da JWT (chiamate autenticate o server-to-server con altro gate).
 
 project_id = "noslab-elbrenz"
 
+# --- verify_jwt = false: pubbliche o server-to-server con gate proprio ---
+# (honeypot/time-trap/rate-limit, shared secret, HMAC nel path, webhook secret…)
+
+[functions.contact-form]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.andreas-chat]
+verify_jwt = false
+
+[functions.scheda-domanda]
+verify_jwt = false
+
+[functions.ingest-articoli]
+verify_jwt = false
+
+[functions.ingest-doc]
+verify_jwt = false
+
+[functions.ingest-chunks]
+verify_jwt = false
+
+[functions.wallet-google]
+verify_jwt = false
+
+[functions.integrazione-invio]
+verify_jwt = false
+
+[functions.solleciti-integrazione]
+verify_jwt = false
+
+[functions.telegram-bot]
+verify_jwt = false
+
+[functions.telegram-setup]
+verify_jwt = false
+
+[functions.newsletter-broadcast]
+verify_jwt = false
+
+# tessera-download: oltre a verify_jwt=false, ha static file (wasm + font) che
+# vanno dichiarati o il deploy CLI non li impacchetta.
 [functions.tessera-download]
 enabled = true
 verify_jwt = false
@@ -13,3 +64,7 @@ static_files = [
   "./functions/tessera-download/fonts/PlayfairDisplay-Regular.ttf",
   "./functions/tessera-download/fonts/PlayfairDisplay-Italic.ttf",
 ]
+
+# NOTA: test-search e andreas-test sono function scratch (verify_jwt=false in
+# prod) da ELIMINARE, non da blindare. Vanno rimosse dalla dashboard Supabase
+# (azione distruttiva: la fa Cristian). Finche' esistono, non ridistribuirle.

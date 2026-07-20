@@ -19,6 +19,10 @@
 //   il preflight per non rompere il preflight stesso.
 // M.A.2.5 fix auth send-email: shared secret pattern invece di SERVICE_ROLE_KEY
 //   (che con la nuova gestione chiavi Supabase non è più un JWT valido).
+// 20/7 sera (via MCP, concordato con Cristian): redeploy IDENTICO del codice v36
+//   con verify_jwt=false. Il deploy CLI del 20/7 mattina aveva riacceso il flag
+//   (default CLI) → 401 su tutti gli invii del form pubblico. Nessuna modifica
+//   di codice oltre a questo commento. Da persistere in supabase/config.toml.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
