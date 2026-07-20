@@ -137,6 +137,13 @@ function getClientIp(req: Request): string {
   return 'unknown'
 }
 
+// SHA-256 esadecimale: l'IP non entra MAI in chiaro nella tabella rate limit,
+// solo il suo hash (come contatti-submit/convenzioni).
+async function sha256Hex(s: string): Promise<string> {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s))
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 function jsonResponse(
   body: unknown,
   status: number,
@@ -254,7 +261,7 @@ serve(async (req) => {
     return jsonResponse({ error: 'Method not allowed' }, 405, cors)
   }
 
-  // 4. Rate limit
+  // 4. Rate limit (in-memory: gate veloce per-istanza, si azzera a cold start)
   const ip = getClientIp(req)
   const rl = checkRateLimit(ip)
   if (!rl.allowed) {
@@ -267,6 +274,32 @@ serve(async (req) => {
       429,
       cors,
     )
+  }
+
+  // 4b. Rate limit PERSISTENTE su DB (C5, 20/7): il gate in-memory qui sopra non
+  // sopravvive ai cold start ne' e' condiviso tra istanze. Stessa RPC oraria di
+  // contatti-submit/convenzioni, prefisso dedicato per non condividere il bucket.
+  // Fail-open: un errore DB non deve mai impedire un'iscrizione.
+  try {
+    const rlDb = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+    const ipHash = await sha256Hex(`contact-form:${ip}`)
+    const { data: entro } = await rlDb.rpc('convenzioni_rl_hit', {
+      p_ip_hash: ipHash,
+      p_max: RATE_LIMIT_MAX,
+    })
+    if (entro === false) {
+      console.warn('[contact-form] rate limit DB hit')
+      return jsonResponse(
+        { error: 'Hai inviato troppe richieste. Riprova più tardi.' },
+        429,
+        cors,
+      )
+    }
+  } catch (e) {
+    console.error('[contact-form] rate limit DB errore (fail-open):', e)
   }
 
   // 5. Parse body
