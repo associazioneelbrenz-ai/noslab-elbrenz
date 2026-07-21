@@ -283,6 +283,17 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         alla pagina trovi come contattarci.
       </p>
 
+      {/* Banner per l'iscrizione raccolta di persona: compare con
+          ?modalita=contanti (link mandato via WhatsApp da un consigliere che ha
+          gia' incassato). Reso visibile via script in fondo alla pagina. */}
+      <div id="banner-contanti" class="hidden bg-[#0F1D18] border-l-4 border-[#C8923E] p-5 mb-8" style="font-family: 'Inter', sans-serif;">
+        <p class="text-sm md:text-base text-[#F5EEDD] m-0 leading-relaxed">
+          <strong>Hai già versato la quota a un membro del direttivo?</strong>
+          Indica nel messaggio qui sotto a chi e quando: la segreteria collegherà
+          il versamento alla tua scheda.
+        </p>
+      </div>
+
       <form
         id="contact-form"
         class="bg-[#0F1D18] p-8 md:p-10"
@@ -827,6 +838,12 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
   const submit = document.getElementById('cf-submit') as HTMLButtonElement | null;
   const feedback = document.getElementById('cf-feedback') as HTMLDivElement | null;
 
+  // Iscrizione raccolta di persona: ?modalita=contanti (link via WhatsApp da un
+  // consigliere che ha gia' incassato). Mostra il banner sopra il modulo e, dopo
+  // l'invio, preseleziona l'opzione contanti nel selettore del passo 2.
+  const modalitaContanti = new URLSearchParams(location.search).get('modalita') === 'contanti';
+  if (modalitaContanti) document.getElementById('banner-contanti')?.classList.remove('hidden');
+
   if (form && submit && feedback) {
     const endpoint = form.dataset.endpoint;
     if (!endpoint) {
@@ -943,6 +960,11 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             // (custom_id) alla domanda con consenso gia' raccolto.
             if (data.domanda_id) scelta.dataset.domandaId = data.domanda_id;
             scelta.classList.remove('hidden');
+            // Con ?modalita=contanti preseleziona l'opzione contanti: il click
+            // apre il pannello con le istruzioni (il listener e' gia' montato).
+            if (modalitaContanti) {
+              (document.getElementById('sp-contanti') as HTMLButtonElement | null)?.click();
+            }
           }
           form.reset();
         } else if (resp.status === 429) {
