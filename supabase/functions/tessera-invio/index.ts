@@ -30,9 +30,30 @@ function json(body: unknown, status = 200): Response {
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
 
+  // Gate 1: x-ingest-token == INGEST_TOKEN (canale amministrativo storico).
   const expected = Deno.env.get('INGEST_TOKEN') ?? '';
   const got = req.headers.get('x-ingest-token') ?? '';
-  if (!expected || got !== expected) return json({ error: 'Non autorizzato' }, 401);
+  let autorizzato = !!expected && got === expected;
+
+  // Gate 2 (ADDITIVO, 21/7): un token SERVICE ROLE valido autentica l'invio
+  // anche senza x-ingest-token. Serve per l'invio server-side quando il pannello
+  // admin e' bloccato (bug MFA: sessione ferma ad AAL1). Verifica CANONICA e
+  // indipendente dal formato chiave (sb_secret_ o JWT legacy): solo il service
+  // role puo' usare auth.admin. Il ramo x-ingest-token sopra resta invariato.
+  if (!autorizzato) {
+    // Il token service role puo' arrivare in Authorization Bearer (JWT legacy)
+    // o nell'header apikey (chiavi nuove sb_secret_, che la gateway vuole solo li').
+    const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '')
+      || (req.headers.get('apikey') ?? '');
+    if (bearer) {
+      try {
+        const probe = createClient(Deno.env.get('SUPABASE_URL')!, bearer, { auth: { persistSession: false } });
+        const { error: eAdmin } = await probe.auth.admin.listUsers({ page: 1, perPage: 1 });
+        if (!eAdmin) autorizzato = true;
+      } catch { /* non e' service role: resta non autorizzato */ }
+    }
+  }
+  if (!autorizzato) return json({ error: 'Non autorizzato' }, 401);
 
   const adminSecret = Deno.env.get('ADMIN_ACTION_SECRET');
   const sendSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');

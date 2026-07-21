@@ -92,6 +92,11 @@ verify_jwt = true
 [functions.museo-donazioni-media]
 verify_jwt = true
 
+# tessera-invio: verify_jwt=true (invariato). Gate interno x-ingest-token +
+# ramo additivo service-role (21/7). Dichiarato per non derivare col deploy CLI.
+[functions.tessera-invio]
+verify_jwt = true
+
 # paypal-webhook: PayPal chiama SENZA JWT Supabase, quindi verify_jwt=true dava
 # 401 al gateway e ogni notifica asincrona veniva respinta (rete di sicurezza
 # per catture perse/rimborsi spenta, trovato 20/7). Il gate vero e' la verifica
