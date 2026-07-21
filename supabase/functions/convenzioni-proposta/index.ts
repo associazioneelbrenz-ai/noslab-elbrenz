@@ -24,6 +24,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { firmaToken, verificaToken, TOKEN_TTL_MS } from "../_shared/admin.ts"
+import { notificaDirettivo } from "../_shared/notificaDirettivo.ts"
 
 // =============================================================================
 // CONFIG
@@ -555,11 +556,13 @@ serve(async (req) => {
     return jsonResponse({ error: 'Non è stato possibile registrare la proposta. Riprova o scrivi a info@elbrenz.eu.' }, 500, cors)
   }
 
-  // Notifica direttivo (14/7, fire-and-forget): nuova convenzione da validare.
-  fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/telegram-bot`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': Deno.env.get('SUPABASE_ANON_KEY') ?? '', 'X-Bot-Secret': Deno.env.get('BOT_ANDREAS_SECRET') ?? '' },
-    body: JSON.stringify({ text: `🤝 **Nuova convenzione proposta**\n${nome_attivita}${localita ? ` (${localita})` : ''}\nDa validare nello sportello segretario.` }),
+  // Notifica Telegram al direttivo (21/7): via notificaDirettivo (config-driven,
+  // registro telegram_notifica tipo 'convenzione_proposta', toggle spegnibile).
+  // Il fetch grezzo precedente mandava { text } senza notify:true e non era nel
+  // registro. Cosi' l'avviso arriva SIA per mail (mailDirettivo, sopra) SIA su
+  // Telegram, in modo affidabile. Best-effort: non blocca (la proposta e' salvata).
+  notificaDirettivo(supabase, 'convenzione_proposta', {
+    dettaglio: `${nome_attivita}${localita ? ` (${localita})` : ''} — da validare nello sportello segretario.`,
   }).catch(() => {})
 
   // Upload logo in staging PRIVATO (best-effort: la proposta è già salvata)
