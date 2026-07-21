@@ -220,7 +220,13 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
                   role="alert"
                   style="font-family: 'Inter', sans-serif;"
                 ></div>
-                <div id="paypal-quota-buttons"></div>
+                {/* position:relative OBBLIGATORIO: il box parte hidden
+                    (display:none) e viene mostrato via JS. Se il PayPal SDK
+                    monta i pulsanti mentre il container e' a dimensione 0,
+                    l'iframe zoid (position:absolute) si ancora all'ancestor
+                    sbagliato e finisce in alto a sinistra, sovrapposto
+                    all'header (segnalato 21/7). Ancorandolo qui resta nel box. */}
+                <div id="paypal-quota-buttons" style="position: relative; min-height: 45px;"></div>
                 <div
                   id="paypal-quota-esito"
                   class="hidden mt-4 p-4 text-sm border-l-4"
@@ -411,8 +417,13 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           </label>
         </div>
 
-        <!-- Honeypot: nascosto via CSS, deve restare vuoto -->
-        <div aria-hidden="true" style="position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;">
+        <!-- Honeypot: nascosto scroll-safe (clip, NON left:-9999px). Su iOS
+             Safari un elemento a -9999px estende l'area scrollabile a sinistra
+             e overflow-x:clip non lo ritaglia -> pagina spostata a destra "non
+             centrata" (segnalato iPhone 21/7). La tecnica visually-hidden con
+             clip non muove l'elemento fuori schermo: niente scroll. Il campo
+             resta renderizzato (utile all'honeypot) e vuoto per i bot. -->
+        <div aria-hidden="true" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;">
           <label for="cf-website">Website (lascia vuoto)</label>
           <input type="text" id="cf-website" name="_honeypot" tabindex="-1" autocomplete="off" />
         </div>
