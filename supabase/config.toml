@@ -53,6 +53,28 @@ verify_jwt = false
 [functions.newsletter-broadcast]
 verify_jwt = false
 
+# 21/7: form/link PUBBLICI chiamati SENZA JWT. Il batch redeploy del 17/7 li
+# aveva riaccesi a true (default CLI) -> 401 al gateway = form rotti (segnalato
+# un convenzionato). newsletter-unsubscribe a true = disiscrizione rotta (GDPR).
+# Dichiarati qui perche' nessun deploy futuro li ribalti (Trappola 12).
+[functions.convenzioni-proposta]
+verify_jwt = false
+
+[functions.contatti-submit]
+verify_jwt = false
+
+[functions.guardiani-contributo]
+verify_jwt = false
+
+[functions.download-lead]
+verify_jwt = false
+
+[functions.newsletter-unsubscribe]
+verify_jwt = false
+
+[functions.museo-gg-proposta]
+verify_jwt = false
+
 # solleciti-domande (C.5): sollecito direttivo per domande in_attesa >48h.
 # Schedulata (pg_cron) e gated da x-ingest-token, mai pubblica: verify_jwt=false.
 [functions.solleciti-domande]

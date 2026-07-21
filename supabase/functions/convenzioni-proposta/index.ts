@@ -16,6 +16,10 @@
 //
 // Sicurezza: referente_* mai esposti al pubblico (la pagina legge la vista
 // convenzioni_pubbliche). Scrittura solo con service role qui dentro.
+// 21/7 (via MCP, concordato con Cristian): redeploy IDENTICO v18 con
+//   verify_jwt=false — il batch redeploy del 17/7 aveva riacceso il flag
+//   (default CLI) → 401 su tutti gli invii del form pubblico (segnalato da
+//   un convenzionato). Da persistere in supabase/config.toml.
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
