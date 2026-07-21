@@ -86,6 +86,12 @@ verify_jwt = false
 [functions.museo-notifica]
 verify_jwt = true
 
+# museo-donazioni-media (21/7): operazioni Storage sul ramo donazioni per il
+# pannello curatore (signed URL + copia file), via service role. Chiamata col
+# JWT del curatore -> verify_jwt=true + verifica ruolo lato server.
+[functions.museo-donazioni-media]
+verify_jwt = true
+
 # paypal-webhook: PayPal chiama SENZA JWT Supabase, quindi verify_jwt=true dava
 # 401 al gateway e ogni notifica asincrona veniva respinta (rete di sicurezza
 # per catture perse/rimborsi spenta, trovato 20/7). Il gate vero e' la verifica
