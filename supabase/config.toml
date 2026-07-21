@@ -53,6 +53,11 @@ verify_jwt = false
 [functions.newsletter-broadcast]
 verify_jwt = false
 
+# solleciti-domande (C.5): sollecito direttivo per domande in_attesa >48h.
+# Schedulata (pg_cron) e gated da x-ingest-token, mai pubblica: verify_jwt=false.
+[functions.solleciti-domande]
+verify_jwt = false
+
 # paypal-webhook: PayPal chiama SENZA JWT Supabase, quindi verify_jwt=true dava
 # 401 al gateway e ogni notifica asincrona veniva respinta (rete di sicurezza
 # per catture perse/rimborsi spenta, trovato 20/7). Il gate vero e' la verifica
