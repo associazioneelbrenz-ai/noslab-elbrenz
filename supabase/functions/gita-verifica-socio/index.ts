@@ -47,6 +47,16 @@ Deno.serve(async (req: Request) => {
       .eq('codice_tessera', codice)
       .eq('stato', 'approvata')
       .limit(1);
+  } else if (codice && /^\d{1,6}$/.test(codice)) {
+    // Miglioria (21/7): il socio puo' inserire il semplice NUMERO di tessera
+    // (es. "4"). Richiediamo email + numero insieme, cosi' non si espongono
+    // nomi altrui digitando numeri a caso (i numeri bassi sono indovinabili).
+    q = supabase.from('domande_tesseramento')
+      .select('nome, codice_tessera')
+      .eq('email', email)
+      .eq('numero_tessera', Number(codice))
+      .eq('stato', 'approvata')
+      .limit(1);
   }
   const { data } = await q.maybeSingle();
 

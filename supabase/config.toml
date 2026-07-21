@@ -97,6 +97,21 @@ verify_jwt = true
 [functions.tessera-invio]
 verify_jwt = true
 
+# tessera-invio-admin: verify_jwt=true (invariato, gate JWT+AAL2+ruolo interno).
+[functions.tessera-invio-admin]
+verify_jwt = true
+
+# edge gita (verify_jwt=true, invariato): chiamate dal sito pubblico CON anon key.
+# Dichiarate per non derivare col deploy CLI.
+[functions.gita-verifica-socio]
+verify_jwt = true
+
+[functions.gita-crea-ordine]
+verify_jwt = true
+
+[functions.gita-cattura-ordine]
+verify_jwt = true
+
 # paypal-webhook: PayPal chiama SENZA JWT Supabase, quindi verify_jwt=true dava
 # 401 al gateway e ogni notifica asincrona veniva respinta (rete di sicurezza
 # per catture perse/rimborsi spenta, trovato 20/7). Il gate vero e' la verifica

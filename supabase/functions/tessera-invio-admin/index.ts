@@ -14,8 +14,23 @@ const SB_URL = Deno.env.get('SUPABASE_URL')!
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
+// CORS (21/7 fix D): mancavano gestione OPTIONS e header CORS -> il preflight
+// del browser falliva (405 senza Access-Control-*) e la fetch dal pannello
+// moriva con "Failed to send a request", zero log. Additivo: non tocca l'auth.
+const ALLOWED_ORIGINS = [
+  'https://elbrenz-community.netlify.app',
+  'https://community.elbrenz.eu',
+  'https://app.elbrenz.eu',
+  'https://elbrenz.eu',
+  'http://localhost:3000',
+]
+function corsFor(origin: string | null): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Vary': 'Origin',
+  }
 }
 
 function aalDalJwt(jwt: string): string {
@@ -26,6 +41,11 @@ function aalDalJwt(jwt: string): string {
 }
 
 Deno.serve(async (req: Request) => {
+  const CORS = corsFor(req.headers.get('origin'))
+  const json = (body: unknown, status = 200): Response =>
+    new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', ...CORS } })
+
+  if (req.method === 'OPTIONS') return new Response(null, { headers: CORS })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
   const authz = req.headers.get('Authorization') ?? ''
