@@ -629,7 +629,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
       sdk.onload = () => {
         try {
         if (!window.paypal) return;
-        window.paypal.Buttons({
+        const bottoni = window.paypal.Buttons({
           createOrder: async () => {
             // tipo 'quota': l'importo (20.00 EUR) lo fissa il server.
             // VINCOLO tesseramento (14/7): NIENTE pagamento quota senza
@@ -691,9 +691,31 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           onError: () => {
             mostraEsito('Si è verificato un errore col pagamento. Riprova, oppure usa il bonifico qui sopra.', false);
           },
-        }).render('#paypal-quota-buttons');
+        });
+        // Monta i pulsanti SOLO quando il box e' effettivamente visibile.
+        // Il box parte hidden (display:none) e si mostra al click su "PayPal"
+        // in PASSO 2: se lo zoid monta l'iframe (position:absolute) mentre il
+        // container ha dimensione 0, su iOS/WebKit sfugge in alto a sinistra,
+        // sovrapponendosi all'header ED estendendo la pagina (non centrata).
+        // Segnalato 21/7 (iPhone, 3 browser WebKit). Il MutationObserver monta
+        // appena il box perde 'hidden'; guardia anti doppio-mount.
+        let montato = false;
+        const boxEl = document.getElementById('paypal-quota-box');
+        function boxVisibile() {
+          return !!boxEl && !boxEl.classList.contains('hidden') && boxEl.offsetParent !== null;
+        }
+        function montaSePossibile() {
+          if (montato || !boxVisibile()) return;
+          montato = true;
+          Promise.resolve(bottoni.render('#paypal-quota-buttons')).catch((e) => {
+            console.error('[paypal-quota] render fallito:', e);
+            mostraEsito('Il pagamento con carta non è al momento disponibile: usa il bonifico qui sopra.', false);
+          });
+        }
+        montaSePossibile(); // caso go-live: box gia' visibile al load
+        if (boxEl) new MutationObserver(montaSePossibile).observe(boxEl, { attributes: true, attributeFilter: ['class', 'style'] });
         } catch (err) {
-          console.error('[paypal-quota] SDK render fallito:', err);
+          console.error('[paypal-quota] SDK setup fallito:', err);
           mostraEsito('Il pagamento con carta non è al momento disponibile: usa il bonifico qui sopra.', false);
         }
       };
