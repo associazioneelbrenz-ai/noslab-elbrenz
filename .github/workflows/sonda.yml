@@ -1,0 +1,134 @@
+name: Sonda ecosistema
+
+# Sonda end-to-end ogni 15 minuti (OMNIBUS 2 §2.1). Nasce dall'incidente del
+# 20/7: un deploy riaccese verify_jwt su contact-form e il form pubblico rispose
+# 401 al gateway per ~13 ore senza che nessuno se ne accorgesse. Questa sonda
+# quel 401 lo avrebbe visto in 15 minuti.
+#
+# Anti-spam via GitHub Issues: alla PRIMA rottura apre UNA issue "sonda:down" e
+# notifica Telegram; finche' resta rotto non ri-notifica; al rientro chiude la
+# issue e manda UNA notifica di rientro. Lo stato vive nella issue, non nel run.
+#
+# La notifica Telegram va DIRETTA all'API di Telegram (non passa da Supabase):
+# una sonda non deve dipendere da cio' che monitora.
+#
+# Manutenzione programmata: metti a Disabled il workflow da Actions, oppure
+# aggiungi l'etichetta "sonda-muta" a una issue aperta a mano (vedi docs).
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      forza_url_rotto:
+        description: 'Test: usa un URL sbagliato per forzare un fallimento controllato'
+        type: boolean
+        default: false
+
+permissions:
+  issues: write
+
+concurrency:
+  group: sonda
+  cancel-in-progress: false
+
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Controlli end-to-end
+        id: check
+        env:
+          ANON: ${{ secrets.SUPABASE_ANON_KEY }}
+          FORZA: ${{ github.event.inputs.forza_url_rotto }}
+        run: |
+          set +e
+          FAIL=""
+          SITO="https://elbrenz.eu"
+          [ "$FORZA" = "true" ] && SITO="https://elbrenz.eu/_rotto_di_proposito_sonda"
+
+          codice() { curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$@"; }
+
+          # 1) Home
+          c=$(codice "$SITO")
+          [ "$c" = "200" ] || FAIL="${FAIL}- Home elbrenz.eu: atteso 200, ricevuto $c\n"
+
+          # 2) App community
+          c=$(codice "https://community.elbrenz.eu")
+          [ "$c" = "200" ] || FAIL="${FAIL}- App community: atteso 200, ricevuto $c\n"
+
+          # 3) contact-form col honeypot COMPILATO: 200 (o 429 se rate-limited)
+          #    prova l'INTERA catena gateway+funzione senza inviare nulla.
+          #    Un 401 qui = verify_jwt riacceso (l'incidente del 20/7).
+          c=$(codice -X POST \
+            -H "Content-Type: application/json" \
+            -H "Origin: https://elbrenz.eu" \
+            -H "apikey: $ANON" -H "Authorization: Bearer $ANON" \
+            -d '{"_honeypot":"sonda","nome":"Sonda El Brenz","email":"sonda@example.com","messaggio":"probe honeypot della sonda","data_nascita":"1990-01-01","comune_nascita":"Male","sesso":"M","gdpr":true}' \
+            "https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/contact-form")
+          # 200 = ok (success silenzioso da honeypot); 429 = funzione viva ma
+          # rate-limited (la catena regge lo stesso). 401/403/5xx = rotto.
+          case "$c" in 200|429) ;; *) FAIL="${FAIL}- contact-form (honeypot): atteso 200/429, ricevuto $c\n";; esac
+
+          # 4) Articolo campione
+          c=$(codice "https://elbrenz.eu/articoli/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non")
+          [ "$c" = "200" ] || FAIL="${FAIL}- Articolo campione: atteso 200, ricevuto $c\n"
+
+          if [ -n "$FAIL" ]; then
+            echo "stato=down" >> "$GITHUB_OUTPUT"
+            { echo "dettaglio<<EOF"; printf '%b' "$FAIL"; echo "EOF"; } >> "$GITHUB_OUTPUT"
+            echo "La sonda ha rilevato problemi:"; printf '%b' "$FAIL"
+          else
+            echo "stato=up" >> "$GITHUB_OUTPUT"
+            echo "Tutto ok."
+          fi
+
+      - name: Notifica e gestione issue
+        uses: actions/github-script@v7
+        env:
+          TG_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TG_CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+          STATO: ${{ steps.check.outputs.stato }}
+          DETTAGLIO: ${{ steps.check.outputs.dettaglio }}
+        with:
+          script: |
+            const stato = process.env.STATO;
+            const dettaglio = process.env.DETTAGLIO || '';
+            const { owner, repo } = context.repo;
+            const LABEL = 'sonda:down';
+
+            async function telegram(testo) {
+              const token = process.env.TG_TOKEN, chat = process.env.TG_CHAT;
+              if (!token || !chat) { core.warning('TELEGRAM_BOT_TOKEN/CHAT_ID mancanti: notifica saltata'); return; }
+              const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chat, text: testo, disable_web_page_preview: true }),
+              });
+              if (!r.ok) core.warning('Telegram sendMessage non ok: ' + r.status);
+            }
+
+            // Issue aperte della sonda (stato persistente tra i run).
+            const aperte = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: LABEL, per_page: 50,
+            });
+            // "sonda-muta" su una issue aperta = manutenzione: niente notifiche.
+            const muta = aperte.some((i) => i.labels.some((l) => (l.name || l) === 'sonda-muta'));
+
+            if (stato === 'down') {
+              if (aperte.length === 0) {
+                const issue = await github.rest.issues.create({
+                  owner, repo, labels: [LABEL],
+                  title: `Sonda: ecosistema DOWN (${new Date().toISOString().slice(0,16).replace('T',' ')} UTC)`,
+                  body: `La sonda ha rilevato un problema:\n\n${dettaglio}\n\nVerra' chiusa in automatico al rientro.`,
+                });
+                if (!muta) await telegram(`🔴 Sonda El Brenz: qualcosa non risponde.\n\n${dettaglio}\nDettagli: ${issue.data.html_url}`);
+              } else {
+                core.info('Gia' segnalato (issue aperta): nessuna nuova notifica.');
+              }
+            } else {
+              for (const i of aperte) {
+                await github.rest.issues.createComment({ owner, repo, issue_number: i.number, body: 'Rientrato: la sonda torna verde.' });
+                await github.rest.issues.update({ owner, repo, issue_number: i.number, state: 'closed' });
+              }
+              if (aperte.length > 0 && !muta) await telegram('🟢 Sonda El Brenz: tutto e' rientrato, l\'ecosistema risponde di nuovo.');
+            }
