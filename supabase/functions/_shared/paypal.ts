@@ -22,7 +22,11 @@ export function buildCorsHeaders(origin: string | null): Record<string, string> 
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    // apikey + x-client-info servono al preflight: le fetch dal sito verso le
+    // edge gita (verify_jwt=true) mandano l'apikey anon per il gateway (fix E,
+    // 21/7). Senza 'apikey' qui il browser blocca il POST dopo l'OPTIONS 200
+    // (i curl non fanno preflight, per questo non era emerso). Additivo.
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey, x-client-info',
     'Vary': 'Origin',
   };
 }

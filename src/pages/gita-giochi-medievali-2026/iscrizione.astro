@@ -27,6 +27,12 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
 // bloccato dal server alla creazione dell'ordine).
 const PREORDER_ATTIVO = Date.now() <= new Date('2026-07-31T23:59:59+02:00').getTime();
 
+// Termine iscrizioni: venerdì 14 agosto 2026, fine giornata Europe/Rome
+// (CEST = +02:00). La chiusura è valutata lato CLIENT al load (la pagina è
+// SSG: un flag al build non scatterebbe da solo al 14/8) e ribadita
+// server-side dall'edge gita-crea-ordine.
+const ISCRIZIONI_CUTOFF_ISO = '2026-08-14T23:59:59+02:00';
+
 const label = "block text-sm text-[#1E2E26]/70 mb-1.5";
 const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] focus:outline-none focus:border-[#C8923E] rounded";
 ---
@@ -43,7 +49,7 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
         Blocca il tuo posto per i <em class="text-[#C8923E]" style="font-style: italic;">Giochi Medievali</em>
       </h1>
       <p class="text-lg text-[#F5EEDD]/85 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
-        Sluderno, ai piedi di Castel Coira. Posti limitati: si fermano solo con l'anticipo.
+        Sluderno, ai piedi di Castel Coira. Posti limitati (pullman da 54): si fermano solo con l'anticipo.
       </p>
     </div>
   </header>
@@ -57,6 +63,14 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
       data-capture-url={CAPTURE_URL}
       data-paypal-client-id={PAYPAL_CLIENT_ID}
     >
+      {/* ISCRIZIONI CHIUSE — mostrato via JS oltre il termine (14/8), nasconde gli step */}
+      <div id="g-chiuse" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 text-center">
+        <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">Iscrizioni chiuse</h2>
+        <p class="m-0 text-[#1E2E26]/80" style="font-family: 'Inter', sans-serif;">
+          Iscrizioni chiuse. Scrivici a <a href="mailto:info@elbrenz.eu" class="text-[#8a6215] underline">info@elbrenz.eu</a> per la lista d'attesa.
+        </p>
+      </div>
+
       {/* STEP 1 — socio */}
       <section class="bg-white border border-[#E5DFCF] rounded p-6 md:p-8 mb-6">
         <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-1" style="font-family: 'Playfair Display', serif;">1 · Sei già socio El Brenz?</h2>
@@ -112,6 +126,7 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
         </div>
 
         <div class="mt-6 bg-[#F8F1E4] rounded p-5" style="font-family: 'Inter', sans-serif;">
+          <p class="m-0 mb-3 text-xs text-[#1E2E26]/70">Quota di partecipazione: <strong>massimo 60 € a persona</strong> (viaggio in pullman e ingresso ai Giochi). Il saldo, mai superiore a questa quota, sarà comunicato prima della partenza.</p>
           <div class="flex items-baseline justify-between">
             <span class="text-[#1E2E26]/75 text-sm">Anticipo ora (30 € a posto)</span>
             <span id="g-totale" class="text-2xl text-[#1E2E26] font-semibold">30,00 €</span>
@@ -143,11 +158,20 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
   </main>
 </Layout>
 
-<script define:vars={{ VERIFICA_URL, CREATE_URL, CAPTURE_URL, PAYPAL_CLIENT_ID, SUPABASE_ANON }}>
+<script define:vars={{ VERIFICA_URL, CREATE_URL, CAPTURE_URL, PAYPAL_CLIENT_ID, SUPABASE_ANON, ISCRIZIONI_CUTOFF_ISO }}>
   (function () {
     const box = document.getElementById('gita-box');
     if (!box) return;
     const $ = (id) => document.getElementById(id);
+
+    // Chiusura iscrizioni oltre il termine (valutata al load, non al build):
+    // mostra il banner "Iscrizioni chiuse" e nasconde gli step operativi.
+    // L'edge gita-crea-ordine rifiuta comunque a monte (difesa server-side).
+    if (Date.now() > new Date(ISCRIZIONI_CUTOFF_ISO).getTime()) {
+      $('g-chiuse')?.classList.remove('hidden');
+      box.querySelectorAll('section').forEach((s) => s.classList.add('hidden'));
+      return;
+    }
     const esitoSocio = $('g-esito-socio');
     const upsell = $('g-upsell');
     const modulo = $('g-modulo');

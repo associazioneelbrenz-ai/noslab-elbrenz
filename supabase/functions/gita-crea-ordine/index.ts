@@ -24,6 +24,12 @@ const EVENTO = 'gita-giochi-medievali-2026';
 const ANTICIPO_UNIT = 30; // € per posto — deliberato, MAI dal client
 const BONUS_PREORDER = 5; // € di sconto sul totale se prenoti entro la scadenza
 const PREORDER_CUTOFF = new Date('2026-07-31T23:59:59+02:00').getTime();
+// Capienza pullman: 54 posti, NO overbooking (verbale direttivo). Il controllo
+// vive qui lato server, non solo nel frontend (21/7).
+const POSTI_MAX = 54;
+// Termine iscrizioni: venerdì 14 agosto 2026, fine giornata Europe/Rome
+// (CEST = +02:00). Oltre, l'edge rifiuta (oltre al form chiuso lato pagina).
+const ISCRIZIONI_CUTOFF = new Date('2026-08-14T23:59:59+02:00').getTime();
 const LIM = { nome: 100, cognome: 100, email: 200, telefono: 40 };
 
 Deno.serve(async (req: Request) => {
@@ -53,10 +59,52 @@ Deno.serve(async (req: Request) => {
   }
   if (!consenso) return jsonResponse({ error: 'Serve il consenso al trattamento dei dati.' }, 400, cors);
 
+  // Chiusura iscrizioni (server-side): oltre il termine si rifiuta a monte,
+  // senza creare righe né ordini PayPal.
+  if (Date.now() > ISCRIZIONI_CUTOFF) {
+    return jsonResponse({
+      error: 'Iscrizioni chiuse. Scrivici a info@elbrenz.eu per la lista d\'attesa.',
+      chiuse: true,
+    }, 403, cors);
+  }
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
+
+  // Capienza (server-side, no overbooking): posti già occupati =
+  // iscrizioni confermate (anticipo/saldo pagato) + prenotazioni in volo
+  // (in_attesa create negli ultimi 20 min, così due persone non si aggiudicano
+  // lo stesso ultimo posto in una corsa simultanea). Se non c'è spazio per i
+  // posti richiesti, si blocca PRIMA di creare riga e ordine PayPal.
+  const sogliaInVolo = new Date(Date.now() - 20 * 60 * 1000).toISOString();
+  const { data: occRows, error: occErr } = await supabase
+    .from('iscrizioni_gita')
+    .select('posti, stato, created_at')
+    .eq('evento_slug', EVENTO);
+  if (occErr) {
+    console.error('[gita-crea-ordine] conteggio capienza fallito:', occErr);
+    return jsonResponse({ error: 'Errore interno, riprova più tardi.' }, 500, cors);
+  }
+  let occupati = 0;
+  for (const r of occRows ?? []) {
+    const st = String((r as Record<string, unknown>).stato ?? '');
+    const p = Number((r as Record<string, unknown>).posti) || 0;
+    const ca = (r as Record<string, unknown>).created_at;
+    if (st === 'anticipo_pagato' || st === 'saldo_pagato') occupati += p;
+    else if (st === 'in_attesa' && typeof ca === 'string' && ca > sogliaInVolo) occupati += p;
+  }
+  if (occupati + posti > POSTI_MAX) {
+    const restano = Math.max(0, POSTI_MAX - occupati);
+    return jsonResponse({
+      error: restano > 0
+        ? `Sul pullman restano solo ${restano} ${restano === 1 ? 'posto' : 'posti'}: riduci il numero, oppure scrivici a info@elbrenz.eu per la lista d'attesa.`
+        : 'Il pullman è al completo (54 posti). Scrivici a info@elbrenz.eu per la lista d\'attesa.',
+      posti_disponibili: restano,
+      esaurito: restano <= 0,
+    }, 409, cors);
+  }
 
   // is_socio ricalcolato server-side (domanda approvata con quell'email o codice)
   let isSocio = false;
