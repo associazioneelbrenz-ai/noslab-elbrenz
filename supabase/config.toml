@@ -58,6 +58,12 @@ verify_jwt = false
 [functions.solleciti-domande]
 verify_jwt = false
 
+# museo-notifica (21/7): notifica direttivo alla pubblicazione di un pezzo del
+# museo. Chiamata dall'app col JWT del curatore -> verify_jwt=TRUE (il gateway
+# pretende il token; in piu' verifica ruolo lato server). Dichiarato per esplicito.
+[functions.museo-notifica]
+verify_jwt = true
+
 # paypal-webhook: PayPal chiama SENZA JWT Supabase, quindi verify_jwt=true dava
 # 401 al gateway e ogni notifica asincrona veniva respinta (rete di sicurezza
 # per catture perse/rimborsi spenta, trovato 20/7). Il gate vero e' la verifica
