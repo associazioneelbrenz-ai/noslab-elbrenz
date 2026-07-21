@@ -212,6 +212,12 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Errore interno, riprova più tardi.' }, 500, cors);
   }
 
+  // Traccia il metodo scelto sulla domanda (brief 21/7): caricando la ricevuta
+  // il richiedente ha scelto il bonifico. Best-effort, non blocca il flusso.
+  if (domandaId) {
+    await supabase.from('domande_tesseramento').update({ metodo_scelto: 'bonifico' }).eq('id', domandaId);
+  }
+
   // Notifica Telegram al direttivo (16/7): ricevuta bonifico caricata, da
   // verificare. Best-effort, non blocca la risposta al socio. PII minima.
   notificaDirettivo(supabase, 'ricevuta_bonifico', {

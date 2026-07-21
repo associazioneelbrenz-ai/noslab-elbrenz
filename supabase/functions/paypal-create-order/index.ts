@@ -159,6 +159,12 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Errore interno, riprova più tardi.' }, 500, cors);
   }
 
+  // Traccia il metodo scelto sulla domanda (brief 21/7): l'utente ha scelto
+  // PayPal nel PASSO 2 del form. Best-effort, non blocca la creazione ordine.
+  if (domandaId) {
+    await supabase.from('domande_tesseramento').update({ metodo_scelto: 'paypal' }).eq('id', domandaId);
+  }
+
   try {
     const token = await paypalAccessToken();
     const resp = await fetch(`${paypalApiBase()}/v2/checkout/orders`, {

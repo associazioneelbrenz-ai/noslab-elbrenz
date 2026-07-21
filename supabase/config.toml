@@ -120,6 +120,28 @@ verify_jwt = true
 [functions.paypal-webhook]
 verify_jwt = false
 
+# 21/7: flusso PAGAMENTO tesseramento PUBBLICO (chiamato dal form su elbrenz.eu
+# SENZA apikey). Il batch redeploy del 17/7 li aveva flippati a true (default
+# CLI, non erano dichiarati) -> 401 "UNAUTHORIZED_NO_AUTH_HEADER" al gateway:
+# nessun pagamento PayPal dal 17/7 (outage di 4 giorni, causa radice della
+# domanda n.26 senza pagamento). Erano verify_jwt=false (PayPal funzionava prima
+# del 17/7 col form che non manda apikey). Gate vero: origin check + firma
+# PayPal (capture) + rate limit per IP (ricevuta). Ripristinati a false.
+[functions.paypal-create-order]
+verify_jwt = false
+
+[functions.paypal-capture-order]
+verify_jwt = false
+
+[functions.ricevuta-ocr]
+verify_jwt = false
+
+# contanti-registra: registrazione incasso contanti dal pannello admin, con
+# sessione admin (verifica ruolo/livello lato server) -> verify_jwt=TRUE.
+# Dichiarato per non derivare col deploy CLI (Trappola 12).
+[functions.contanti-registra]
+verify_jwt = true
+
 # tessera-download: oltre a verify_jwt=false, ha static file (wasm + font) che
 # vanno dichiarati o il deploy CLI non li impacchetta.
 [functions.tessera-download]

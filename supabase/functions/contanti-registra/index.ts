@@ -92,6 +92,7 @@ Deno.serve(async (req: Request) => {
     domandaId = (esistente as any).id;
     await admin.from("domande_tesseramento").update({
       consenso_privacy: true, informativa_versione: VERSIONE_INFORMATIVA, consenso_modalita: modalita,
+      metodo_scelto: "contanti", // brief 21/7: traccia il metodo sulla domanda
     }).eq("id", domandaId);
   } else {
     const { data: creata, error: eDom } = await admin.from("domande_tesseramento").insert({
@@ -103,6 +104,7 @@ Deno.serve(async (req: Request) => {
       consenso_privacy: true,
       informativa_versione: VERSIONE_INFORMATIVA,
       consenso_modalita: modalita,
+      metodo_scelto: "contanti", // brief 21/7: traccia il metodo sulla domanda
       sorgente_utm: "contanti_di_persona",
     }).select("id").single();
     if (eDom || !creata) return J({ error: "domanda_fallita", detail: eDom?.message }, 500);
