@@ -473,6 +473,9 @@ serve(async (req) => {
   const categoria = str('categoria')
   const localita = str('localita')
   const indirizzo = str('indirizzo')
+  // "Altri punti vendita" grezzo (facoltativo): salvato as-is, NESSUN parsing.
+  // Il segretario lo struttura a mano in convenzioni_punti alla curatela.
+  const punti_extra_grezzi = str('punti_extra_grezzi')
   const beneficio = str('beneficio')
   const dettagli = str('dettagli')
   const rawUrl = str('url')
@@ -499,6 +502,7 @@ serve(async (req) => {
   if (indirizzo && !tra(indirizzo, L.indirizzo)) return jsonResponse({ error: 'Indirizzo non valido.' }, 400, cors)
   if (!tra(beneficio, L.beneficio)) return jsonResponse({ error: `Il beneficio deve avere tra ${L.beneficio.min} e ${L.beneficio.max} caratteri.` }, 400, cors)
   if (dettagli.length > L.dettagli.max) return jsonResponse({ error: `I dettagli non possono superare ${L.dettagli.max} caratteri.` }, 400, cors)
+  if (punti_extra_grezzi.length > 1000) return jsonResponse({ error: 'Gli altri punti vendita non possono superare 1000 caratteri.' }, 400, cors)
   if (rawUrl.length > L.url.max) return jsonResponse({ error: 'URL troppo lungo.' }, 400, cors)
   if (!tra(referente_nome, L.referente_nome)) return jsonResponse({ error: 'Nome referente non valido.' }, 400, cors)
   if (referente_email.length > L.email.max || !EMAIL_REGEX.test(referente_email)) return jsonResponse({ error: 'Email referente non valida.' }, 400, cors)
@@ -533,6 +537,7 @@ serve(async (req) => {
     nome_attivita, categoria,
     localita: localita || null,
     indirizzo: indirizzo || null,
+    punti_extra_grezzi: punti_extra_grezzi || null,
     lat: geo?.lat ?? null,
     lng: geo?.lng ?? null,
     geo_stato: geo ? 'auto' : (indirizzo ? 'non_trovato' : null),

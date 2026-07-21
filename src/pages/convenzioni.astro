@@ -27,6 +27,7 @@ type ConvenzionePubblica = {
   dettagli: string | null;
   url: string | null;
   logo_path: string | null;
+  sedi?: string[];
 };
 
 // URL pubblica del logo su Storage (bucket assets-pubblici); i loghi sono
@@ -50,11 +51,21 @@ try {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON, {
     auth: { persistSession: false },
   });
-  const { data } = await supabase
-    .from('convenzioni_pubbliche')
-    .select('id, nome_attivita, categoria, localita, beneficio, dettagli, url, logo_path')
-    .order('nome_attivita', { ascending: true });
-  attive = (data as ConvenzionePubblica[]) ?? [];
+  // Multi-punto (21/7): le sedi pubblicate di una convenzione (RLS espone solo
+  // quelle collegate a convenzioni attive/in-mappa). Mostrate sulla card; la
+  // mappa vera con i marker resta /mappa.
+  const [conv, punti] = await Promise.all([
+    supabase
+      .from('convenzioni_pubbliche')
+      .select('id, nome_attivita, categoria, localita, beneficio, dettagli, url, logo_path')
+      .order('nome_attivita', { ascending: true }),
+    supabase.from('convenzioni_punti').select('convenzione_id, nome_punto'),
+  ]);
+  const sediPerConv: Record<string, string[]> = {};
+  for (const pt of ((punti.data as { convenzione_id: string; nome_punto: string }[]) ?? [])) {
+    (sediPerConv[pt.convenzione_id] ??= []).push(pt.nome_punto);
+  }
+  attive = ((conv.data as ConvenzionePubblica[]) ?? []).map((a) => ({ ...a, sedi: sediPerConv[a.id] ?? [] }));
 } catch (e) {
   console.error('[convenzioni] lettura vista fallita:', e);
   attive = [];
@@ -199,6 +210,11 @@ const perCategoria = CATEGORIE
                   <p class="text-base font-medium text-[#C8923E] m-0 mb-2" style="font-family: 'Inter', sans-serif;">
                     {c.beneficio}
                   </p>
+                  {c.sedi && c.sedi.length > 0 && (
+                    <p class="text-xs text-[#1E2E26]/60 m-0 mb-2" style="font-family: 'Inter', sans-serif;">
+                      <span class="text-[#1E2E26]/45">Sedi:</span> {c.sedi.join(' · ')}
+                    </p>
+                  )}
                   {c.dettagli && (
                     <p class="text-sm text-[#1E2E26]/75 m-0 mb-3 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
                       {c.dettagli}
@@ -276,6 +292,11 @@ const perCategoria = CATEGORIE
             <span class="block text-sm text-[#F5EEDD]/80 mb-1">Indirizzo <span class="text-[#F5EEDD]/50">(facoltativo)</span></span>
             <input name="indirizzo" maxlength="150" placeholder="es. via Nazionale 10 (per apparire sulla mappa)" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]" />
             <span class="block text-xs text-[#F5EEDD]/50 mt-1">Via e numero civico: serve solo per mostrare l'attività sulla mappa delle Valli.</span>
+          </label>
+          <label class="block md:col-span-2">
+            <span class="block text-sm text-[#F5EEDD]/80 mb-1">Altri punti vendita <span class="text-[#F5EEDD]/50">(facoltativo)</span></span>
+            <textarea name="punti_extra_grezzi" rows="3" maxlength="1000" placeholder="Un punto per riga: nome e indirizzo. Es.&#10;Punto vendita Dimaro, via Campiglio 64&#10;Punto vendita Rumo, Marcena" class="w-full px-3 py-2 rounded bg-[#F5EEDD] text-[#1E2E26] border-0 focus:outline focus:outline-2 focus:outline-[#C8923E]"></textarea>
+            <span class="block text-xs text-[#F5EEDD]/50 mt-1">Se avete più sedi: le geolocalizziamo noi in un secondo momento.</span>
           </label>
         </div>
 
@@ -396,6 +417,7 @@ const perCategoria = CATEGORIE
         categoria: ((fd.get('categoria') as string) || '').trim(),
         localita: ((fd.get('localita') as string) || '').trim(),
         indirizzo: ((fd.get('indirizzo') as string) || '').trim(),
+        punti_extra_grezzi: ((fd.get('punti_extra_grezzi') as string) || '').trim(),
         beneficio: ((fd.get('beneficio') as string) || '').trim(),
         dettagli: ((fd.get('dettagli') as string) || '').trim(),
         url: ((fd.get('url') as string) || '').trim(),
