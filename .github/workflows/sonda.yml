@@ -74,6 +74,24 @@ jobs:
           c=$(codice "https://elbrenz.eu/articoli/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non")
           [ "$c" = "200" ] || FAIL="${FAIL}- Articolo campione: atteso 200, ricevuto $c\n"
 
+          # 5-9) Altri form PUBBLICI col honeypot: la funzione risponde
+          #      (200 success silenzioso / 400 validazione / 429 rate limit),
+          #      MAI 401 = verify_jwt riacceso (l'incidente del 17-20/7 su questi
+          #      stessi endpoint). Guardiamo solo il 401/403/5xx.
+          FB="https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1"
+          for fn in contatti-submit convenzioni-proposta guardiani-contributo download-lead museo-gg-proposta; do
+            c=$(codice -X POST -H "Content-Type: application/json" -H "Origin: https://elbrenz.eu" \
+              -H "apikey: $ANON" -H "Authorization: Bearer $ANON" \
+              -d '{"_honeypot":"sonda","nome":"x","email":"x@x.it"}' "$FB/$fn")
+            case "$c" in 200|400|429) ;; *) FAIL="${FAIL}- $fn (honeypot): atteso 200/400/429, ricevuto $c\n";; esac
+          done
+
+          # 10) newsletter-unsubscribe: link cliccato da email, SENZA apikey,
+          #     token fasullo -> deve rispondere (400/404/200), MAI 401
+          #     (=disiscrizione rotta, problema GDPR).
+          c=$(codice "$FB/newsletter-unsubscribe?token=sonda-probe")
+          case "$c" in 200|400|404) ;; *) FAIL="${FAIL}- newsletter-unsubscribe: atteso 200/400/404, ricevuto $c\n";; esac
+
           if [ -n "$FAIL" ]; then
             echo "stato=down" >> "$GITHUB_OUTPUT"
             { echo "dettaglio<<EOF"; printf '%b' "$FAIL"; echo "EOF"; } >> "$GITHUB_OUTPUT"

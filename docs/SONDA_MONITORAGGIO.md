@@ -11,6 +11,8 @@ sonda quel guasto lo avrebbe visto in 15 minuti.
 2. `GET https://community.elbrenz.eu` → 200
 3. `POST contact-form` con `_honeypot` COMPILATO → 200 **o** 429
 4. `GET` di un articolo campione (ddl 1539) → 200
+5. `POST` honeypot ai form pubblici `contatti-submit`, `convenzioni-proposta`, `guardiani-contributo`, `download-lead`, `museo-gg-proposta` → mai 401
+6. `GET` `newsletter-unsubscribe` (token fasullo, senza apikey, come il link da email) → mai 401 (altrimenti la disiscrizione GDPR e' rotta)
 
 ## Perche' il honeypot
 
