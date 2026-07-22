@@ -27,6 +27,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { firmaToken, TOKEN_TTL_MS } from "../_shared/admin.ts"
+import { notificaDirettivo } from "../_shared/notificaDirettivo.ts"
 
 // =============================================================================
 // CONFIG
@@ -457,6 +458,19 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
+
+    // Notifica Telegram al direttivo (nuova domanda) con la riga pagamento, cosi'
+    // non si approva "al buio" (caso n.26, 21/7). metodo_scelto e' di norma NULL
+    // all'arrivo (si sceglie in PASSO 2): mostra il metodo se una riga pagamento
+    // e' gia' abbinata per email, altrimenti "non indicato". Best-effort.
+    if (domanda) {
+      await notificaDirettivo(supabase, 'nuova_domanda', {
+        nome, email,
+        metodo_scelto: (pag as any)?.metodo ?? null,
+        pag_stato: (pag as any)?.stato ?? null,
+      })
+    }
+
     const pagTesto = pag
       ? (pag.stato === 'completato'
         ? `✓ RICEVUTO — ${pag.importo} € via ${pag.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico'}`

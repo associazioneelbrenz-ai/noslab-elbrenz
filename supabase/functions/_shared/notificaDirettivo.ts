@@ -41,6 +41,22 @@ function componiTesto(
     case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/guardiani-curatela`); break;
     case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto: ${d.contatto ?? '—'}`, `Gestisci su ${site}/museo-gg-curatela`); break;
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
+    case 'nuova_domanda': {
+      // Riga pagamento cosi' il direttivo non approva "al buio" (caso n.26,
+      // 21/7). metodo_scelto dalla domanda + eventuale riga pagamenti_tesseramento.
+      const m = d.metodo_scelto;
+      const pagamento = m === 'paypal'
+        ? `💳 Pagamento: PayPal · ${d.pag_stato === 'completato' ? 'completato' : 'creato'}`
+        : m === 'bonifico'
+        ? '🏦 Pagamento: bonifico dichiarato · in attesa di accredito/ricevuta'
+        : m === 'contanti'
+        ? (d.incassato_da_nome
+            ? `💶 Pagamento: contanti · incassato da ${d.incassato_da_nome}${d.incassato_il ? ` il ${d.incassato_il}` : ''}`
+            : '💶 Pagamento: contanti · da incassare')
+        : 'Pagamento: non indicato';
+      r.push(`${d.nome ?? '—'}${d.email ? ` · ${d.email}` : ''}`, pagamento);
+      break;
+    }
     default:                   r.push(String(d.dettaglio ?? JSON.stringify(dati)).slice(0, 200));
   }
   return r.join('\n');
