@@ -1,0 +1,203 @@
+---
+/* /de/gita-giochi-medievali-2026 — traduzione DE (Fase 1b). Revisione Brunella Bonapace in corso. */
+
+import Layout from '../../layouts/Layout.astro';
+
+const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]';
+---
+
+<Layout
+  lang="de"
+  title="Ein Tag im Mittelalter · Vereinsausflug zu den Südtiroler Ritterspielen, 22. August 2026"
+  description="Vereinsausflug von El Brenz zu den Südtiroler Ritterspielen, 22. August 2026. Begrenzte Plätze, ermäßigter Beitrag für Mitglieder."
+  ogImage="/og/og-gita-giochi-medievali.jpg"
+>
+  {/* ===================== HERO ===================== */}
+  <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
+    <div class="absolute inset-0 opacity-[0.06] pointer-events-none" aria-hidden="true"
+      style="background-image:url('/decoro/aquila-oro-filigrana.png');background-repeat:no-repeat;background-position:right -80px center;background-size:520px auto;"></div>
+    <div class="relative max-w-4xl mx-auto px-6 py-20 md:py-28 text-center">
+      <p class="text-xs md:text-sm tracking-[0.24em] uppercase text-[#D9A94E] font-semibold m-0 mb-5" style="font-family: 'Inter', sans-serif;">Vereinsausflug · 22. August 2026</p>
+      <h1 class="text-4xl md:text-6xl leading-[1.05] m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Ein Tag im <em class="text-[#C8923E]" style="font-style: italic;">Mittelalter</em>, gemeinsam.
+      </h1>
+      <p class="text-lg md:text-xl text-[#F5EEDD]/85 max-w-2xl mx-auto m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Zu Füßen der Churburg, im Vinschgau, geht das größte historische Reenactment des Alpenraums über die Bühne. El Brenz bringt euch dorthin, wo das historische Tirol wieder lebendig wird.
+      </p>
+      <a href="/de/gita-giochi-medievali-2026/iscrizione" class={CTA}>Anmelden und Platz sichern →</a>
+      <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">Nur 54 Plätze · ermäßigter Beitrag für Mitglieder · Vorbucher-Bonus bis 31. Juli</p>
+    </div>
+  </section>
+
+  {/* Miniatura medievale (Codex Manesse, pubblico dominio): dà subito il tono
+      senza usare foto protette di Ritterspiele/Churburg. */}
+  <section class="bg-[#1E2E26]">
+    <div class="max-w-4xl mx-auto px-6 pb-12 md:pb-16 -mt-2">
+      <figure class="m-0">
+        <picture>
+          <source srcset="/eventi/giochi-medievali-manesse.webp" type="image/webp" />
+          <img src="/eventi/giochi-medievali-manesse.jpg" alt="Ritterturnier: zwei Ritter reiten mit eingelegten Lanzen aufeinander zu, Miniatur aus dem Codex Manesse" width="1040" height="696" class="w-full rounded-xl border-2 border-[#C8923E]/50 shadow-2xl" loading="lazy" decoding="async" />
+        </picture>
+        <figcaption class="text-center text-xs text-[#F5EEDD]/55 mt-3" style="font-family: 'Inter', sans-serif;">
+          Miniatur aus dem Codex Manesse (ca. 1300–1340), Universitätsbibliothek Heidelberg, gemeinfrei.
+        </figcaption>
+      </figure>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 1 — VIDEO ===================== */}
+  <section class="bg-[#F5EEDD] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Ein Vorgeschmack in einer Minute</h2>
+      <div class="w-16 h-[2px] bg-[#C8923E] mx-auto mb-8" aria-hidden="true"></div>
+      <div id="video-facade" class="relative rounded-xl overflow-hidden shadow-lg cursor-pointer group" style="aspect-ratio:16/9;" role="button" tabindex="0" aria-label="Video der Ritterspiele ansehen">
+        <div class="absolute inset-0 bg-[#1E2E26]" aria-hidden="true"></div>
+        <div class="absolute inset-0 opacity-[0.12] pointer-events-none" aria-hidden="true"
+          style="background-image:url('/decoro/aquila-oro-filigrana.png');background-repeat:no-repeat;background-position:center;background-size:340px auto;"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-[#F5EEDD]">
+          <span class="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-[#C8923E] text-[#1E2E26] shadow-xl group-hover:scale-105 transition-transform" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+          <span class="mt-4 text-lg md:text-xl" style="font-family: 'Playfair Display', serif;">Die Ritterspiele ansehen</span>
+        </div>
+      </div>
+      <p class="text-xs text-[#1E2E26]/55 mt-3" style="font-family: 'Inter', sans-serif;">
+        Video © <a href="https://www.ritterspiele.it" target="_blank" rel="noopener" class="text-[#8a6215] underline">Südtiroler Ritterspiele</a> · wird erst geladen, wenn ihr auf Play drückt (keine Daten an YouTube vor eurem Klick).
+      </p>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 2 — COSA VIVRAI ===================== */}
+  <section class="bg-[#F8F1E4] py-16 md:py-20">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">Zweitausend Ritter, ein Sprung über acht Jahrhunderte</h2>
+        <p class="text-lg text-[#1E2E26]/80 max-w-2xl mx-auto m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Für einen Tag reist die Ebene von Schluderns in der Zeit zurück: <strong>2.000 Reenactors aus 11 Nationen</strong>,
+          Ritterturniere mit geschmückten Pferden und splitternden Lanzen, Umzüge und Gefechte, ein großer mittelalterlicher
+          Markt und Lager, in denen wirklich gelebt und gekocht wird.
+        </p>
+      </div>
+      <ul class="grid sm:grid-cols-2 gap-4 list-none p-0 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+        {[
+          ['⚔️', 'Ritterturniere und Tjoste'],
+          ['🏰', 'Großer mittelalterlicher Markt'],
+          ['🔥', 'Lager und Handwerker bei der Arbeit'],
+          ['🎯', 'Bogenschießen und Kinderprogramm'],
+          ['🎶', 'Musik, Gaukler, Vorführungen'],
+          ['🎪', 'Ein Großteil der Attraktionen im Gelände ist kostenlos'],
+        ].map(([icona, testo]) => (
+          <li class="flex items-start gap-3 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md px-5 py-4">
+            <span class="text-2xl leading-none" aria-hidden="true">{icona}</span>
+            <span class="text-[#1E2E26]/90">{testo}</span>
+          </li>
+        ))}
+      </ul>
+      <div class="text-center mt-10">
+        <a href="/de/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sichere dir deinen Platz →</a>
+      </div>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 3 — CASTEL COIRA ===================== */}
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4 text-center" style="font-family: 'Inter', sans-serif;">Der Schauplatz</p>
+      <h2 class="text-3xl md:text-4xl m-0 mb-6 text-center" style="font-family: 'Playfair Display', serif; font-weight: 500;">Im Schatten der Waffenschatzkammer Tirols</h2>
+      <p class="text-lg text-[#F5EEDD]/85 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Über dem Fest wacht eine der besterhaltenen Burgen Südtirols. Die <strong>Churburg</strong>
+        (<em>Castel Coira</em>), Mitte des <strong>13. Jahrhunderts</strong> vom Churer Fürstbischof Heinrich von
+        Montfort errichtet, ging an die Herren von Matsch und dann, ab dem 16. Jahrhundert, an die <strong>Grafen
+        Trapp</strong> über, die sie bis heute besitzen. In acht Jahrhunderten nie zerstört, bewahrt sie die
+        <strong>größte private Rüstkammer der Welt</strong>: rund fünfzig vollständige Harnische aus den Werkstätten
+        von Mailand und Innsbruck.
+      </p>
+      <p class="text-[#D9A94E] italic font-serif text-lg mt-6 text-center">
+        Für uns ist das keine beliebige Kulisse: Es ist das historische Tirol, das wiederkehrt, dieselbe Geschichte, die auch durch die <span class="not-italic">nose</span> valli (unsere Täler) gezogen ist.
+      </p>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 4 — PERCHÉ CON NOI ===================== */}
+  <section class="bg-[#F8F1E4] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Kein gewöhnlicher Ausflug</h2>
+      <p class="text-lg text-[#1E2E26]/85 leading-relaxed max-w-2xl mx-auto" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Ein Vereinsausflug heißt, Geschichte Schulter an Schulter zu erleben, uns in einem gemeinsamen Erbe wiederzuerkennen, unsere
+        Gemeinschaft wachsen zu lassen. Wer Mitglied wird, bucht nicht nur einen Platz: Ihr unterstützt die Kultur, die Sprache und das Gedächtnis der Täler des Noce.
+      </p>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 5 — INFO PRATICHE ===================== */}
+  <section class="bg-[#F5EEDD] py-16 md:py-20">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8 text-center" style="font-family: 'Playfair Display', serif; font-weight: 500;">Praktische Infos</h2>
+      <dl class="grid gap-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+        <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
+          <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Wann</dt>
+          <dd class="m-0 text-[#1E2E26]/90">Samstag, 22. August 2026 · Schluderns und Churburg, Vinschgau <span class="text-[#1E2E26]/60">(Veranstaltung geöffnet 10.00–24.00 Uhr)</span></dd>
+        </div>
+        <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
+          <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Programm</dt>
+          <dd class="m-0 text-[#1E2E26]/90">Abfahrt in Malè um 7:30 Uhr · Großer historischer Festumzug um 10:30 Uhr · Rückfahrt am Abend, Ankunft gegen Mitternacht. Eigene Verpflegung (Lunchpaket).</dd>
+        </div>
+        <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
+          <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Beitrag</dt>
+          <dd class="m-0 text-[#1E2E26]/90">Teilnahmebeitrag: höchstens 60 € pro Person (Busfahrt und Eintritt zu den Ritterspielen). Anzahlung von 30 € bei der Anmeldung. Der Restbetrag, nie höher als der genannte Beitrag, wird vor der Abfahrt mitgeteilt.</dd>
+        </div>
+        <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
+          <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Anmeldung</dt>
+          <dd class="m-0 text-[#1E2E26]/90">Offen bis Freitag, 14. August 2026. Begrenzte Plätze: Reisebus mit 54 Plätzen.</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  {/* ===================== SEZIONE 6 — CTA FINALE ===================== */}
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20 md:py-24">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <p class="text-sm tracking-[0.2em] uppercase text-[#D9A94E] font-semibold m-0 mb-4" style="font-family: 'Inter', sans-serif;">54 Plätze. Wartet nicht.</p>
+      <h2 class="text-3xl md:text-5xl m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Sichert euch euren Platz</h2>
+      <p class="text-lg text-[#F5EEDD]/85 max-w-2xl mx-auto m-0 mb-9" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Mitglieder von El Brenz reisen zum <strong>ermäßigten Beitrag</strong>; für Nichtmitglieder gilt der volle Preis.
+        Bei der Anmeldung könnt ihr euren Tarif prüfen und, wenn ihr möchtet, gleich Mitglied werden.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="/de/gita-giochi-medievali-2026/iscrizione" class={CTA}>Zum Ausflug anmelden →</a>
+        <a href="mailto:info@elbrenz.eu" class="inline-block border-2 border-[#C8923E] text-[#F5EEDD] px-7 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors" style="font-family: 'Inter', sans-serif;">Fragen? Schreibt uns</a>
+      </div>
+      <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">
+        <a href="mailto:info@elbrenz.eu" class="text-[#D9A94E] no-underline hover:underline">info@elbrenz.eu</a> · <a href="tel:+393471077636" class="text-[#D9A94E] no-underline hover:underline">+39 347 107 7636</a>
+      </p>
+      <p class="text-[#D9A94E] italic font-serif mt-10 m-0" lang="lld-anau">Raìs fonde no le 'nglacia</p>
+      <p class="text-xs tracking-[0.15em] uppercase text-[#F5EEDD]/55 mt-2 m-0" style="font-family: 'Inter', sans-serif;">(Tiefe Wurzeln erfrieren nicht)</p>
+    </div>
+  </section>
+
+  {/* CTA sticky su mobile */}
+  <div class="md:hidden fixed inset-x-0 bottom-0 z-30 bg-[#1E2E26]/95 backdrop-blur border-t border-[#C8923E]/40 px-4 py-3" style="padding-bottom:max(0.75rem,env(safe-area-inset-bottom));">
+    <a href="/de/gita-giochi-medievali-2026/iscrizione" class="block text-center bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold uppercase tracking-wide text-sm no-underline" style="font-family: 'Inter', sans-serif;">Zum Ausflug anmelden →</a>
+  </div>
+</Layout>
+
+<script>
+  // Video facade click-to-load: nessuna richiesta a YouTube prima del gesto.
+  const facade = document.getElementById('video-facade');
+  function caricaVideo() {
+    if (!facade) return;
+    const iframe = document.createElement('iframe');
+    iframe.src = 'https://www.youtube-nocookie.com/embed/J9hMH4Cadoo?autoplay=1&rel=0';
+    iframe.title = "Südtiroler Ritterspiele";
+    iframe.loading = 'lazy';
+    iframe.allow = 'accelerated-motion; autoplay; encrypted-media; picture-in-picture';
+    iframe.allowFullscreen = true;
+    iframe.style.cssText = 'width:100%;height:100%;border:0;border-radius:12px;position:absolute;inset:0;';
+    facade.innerHTML = '';
+    facade.appendChild(iframe);
+  }
+  facade?.addEventListener('click', caricaVideo);
+  facade?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') { e.preventDefault(); caricaVideo(); }
+  });
+</script>

@@ -260,8 +260,10 @@ export const localeHome: Record<PublicLocale, string> = {
  */
 export const translatedRoutes: Record<PublicLocale, string[]> = {
   it: ['/'],
-  de: ['/'],
-  en: ['/'],
+  // Fase 1b: si aggiunge il percorso IT canonico (senza slash finale) man mano
+  // che la pagina viene tradotta in quella lingua. Alimenta switcher + hreflang.
+  de: ['/', '/gita-giochi-medievali-2026'],
+  en: ['/', '/gita-giochi-medievali-2026'],
 };
 
 /** Ricava la lingua da un pathname (prefisso /de o /en → altrimenti it). */
@@ -281,7 +283,10 @@ export function toCanonicalPath(pathname: string): string {
 /** Il percorso IT canonico esiste tradotto nella lingua data? */
 export function hasTranslation(canonicalPath: string, lang: PublicLocale): boolean {
   if (lang === 'it') return true;
-  const p = canonicalPath.endsWith('/') || canonicalPath === '/' ? canonicalPath : canonicalPath;
+  // Normalizza lo slash finale: Astro.url.pathname arriva con lo slash
+  // (`/gita-giochi-medievali-2026/`), il registro lo tiene senza. Prima era un
+  // no-op e le pagine 1b non avrebbero mai fatto match (hreflang/switcher rotti).
+  const p = canonicalPath === '/' ? '/' : canonicalPath.replace(/\/+$/, '');
   return translatedRoutes[lang].includes(p);
 }
 
