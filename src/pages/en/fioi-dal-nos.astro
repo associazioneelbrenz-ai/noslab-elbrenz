@@ -1,0 +1,234 @@
+---
+/* /en/fioi-dal-nos — traduzione EN (Fase 1b). Revisione Brunella Bonapace in corso. */
+
+import Layout from '../../layouts/Layout.astro';
+import { Content, getHeadings } from '../../data/fioi-dal-nos-studio.en.md';
+
+const headings = getHeadings().filter((h) => h.depth === 2);
+const LEAD_URL = `${import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co'}/functions/v1/download-lead`;
+---
+
+<Layout
+  lang="en"
+  title="Fiöi dal Nos: the documentary on the Ladin identity of the Valli del Noce"
+  description="Fiöi dal Nos: two years of work by El Brenz to rediscover the historical, cultural and linguistic roots of the Valli del Noce. The documentary and the study that founds it."
+  ogImage="/og/og-fioi-dal-nos.jpg"
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-3xl mx-auto px-6 pt-16 pb-10 md:pt-24 md:pb-12 text-center">
+      <p class="text-[11px] tracking-[0.24em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Documentary · Identity and memory</p>
+      <h1 class="text-5xl md:text-6xl leading-[1.05] m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;" lang="lld-anau">Fiöi dal Nos</h1>
+      <p class="text-lg md:text-xl text-[#F5EEDD]/85 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif; font-style: italic;">Ladin identity of Val di Non and Val di Sole: culture and language</p>
+      <p class="text-base md:text-lg text-[#F5EEDD]/75 max-w-2xl mx-auto m-0 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Two years of research, a documentary, a question we have carried within us forever: who are we, we of the Valli del Noce? <em lang="lld-anau">Fiöi dal Nos</em> (Sons of the Noce) is the story in images of our roots (Rhaetian, Latin, Ladin) and remains, more than a decade after its birth, the founding stone of the Association.
+      </p>
+    </div>
+
+    <div class="max-w-4xl mx-auto px-6 pb-16 md:pb-20">
+      <div id="video-facade" class="relative rounded-xl overflow-hidden shadow-2xl cursor-pointer group border border-[#C8923E]/30" style="aspect-ratio:16/9;" role="button" tabindex="0" aria-label="Watch the documentary Fiöi dal Nos">
+        {/* AGGIORNAMENTO 13/7/2026: copertina reale del video incorporato (eA2IEm7VGRk),
+            self-hosted WebP (nessuna richiesta a Google prima del clic) + velo verde. */}
+        <img src="/fioi/fioi-dal-nos-cover.webp" alt="Documentary Fiöi dal Nos: performers in historical costume by a stream in the woods of the Valli del Noce" width="640" height="360" loading="lazy" decoding="async" class="absolute inset-0 w-full h-full object-cover" />
+        <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26]/80 via-[#1E2E26]/45 to-[#1E2E26]/40 pointer-events-none" aria-hidden="true"></div>
+        <div class="absolute inset-0 opacity-[0.14] pointer-events-none" aria-hidden="true"
+          style="background-image:url('/decoro/aquila-oro-filigrana.png');background-repeat:no-repeat;background-position:center;background-size:360px auto;"></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-[#F5EEDD]">
+          <span class="flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-full bg-[#C8923E] text-[#1E2E26] shadow-xl group-hover:scale-105 transition-transform" aria-hidden="true">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+          </span>
+          <span class="mt-4 text-lg md:text-xl" style="font-family: 'Playfair Display', serif;">Watch the documentary</span>
+        </div>
+      </div>
+      <p class="text-xs text-[#F5EEDD]/55 mt-3 text-center" style="font-family: 'Inter', sans-serif;">
+        Official YouTube channel of El Brenz · it loads only when you press play (no data to Google before your click).
+      </p>
+    </div>
+  </header>
+
+  <article class="bg-[#F8F1E4]">
+    <div class="max-w-2xl mx-auto px-6 py-12 md:py-16">
+      {headings.length > 3 && (
+        <nav class="mb-12 bg-white border border-[#E5DFCF] rounded p-5 md:p-6" style="font-family: 'Inter', sans-serif;" aria-label="Contents">
+          <p class="text-[11px] tracking-[0.18em] uppercase text-[#8a6215] font-semibold m-0 mb-3">On this page</p>
+          <ol class="list-none m-0 p-0 grid sm:grid-cols-2 gap-x-6 gap-y-1.5">
+            {headings.map((h, i) => (
+              <li class="text-sm leading-snug"><a href={`#${h.slug}`} class="text-[#1E2E26]/80 no-underline hover:text-[#8a6215]"><span class="text-[#C8923E] tabular-nums mr-2">{String(i + 1).padStart(2, '0')}</span>{h.text}</a></li>
+            ))}
+          </ol>
+        </nav>
+      )}
+
+      <div class="studio-fioi">
+        <Content />
+      </div>
+
+      <hr class="my-12 border-0 border-t border-[#C8923E]/30" />
+      <p class="text-sm text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">
+        «Fiöi dal Nos. Ladin identity of Val di Non and Val di Sole: culture and language» · documentary by the Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce (2015). Video on the official YouTube channel of El Brenz. The cartographic testimonies cited in the study will be reintroduced on this page as we verify their licences.
+      </p>
+    </div>
+  </article>
+
+  {/* Popup soft di fine pagina: invito a restare in contatto (NON blocca il video) */}
+  <div id="lead-soft" class="hidden fixed inset-0 z-50 bg-[#1E2E26]/40 items-end sm:items-center justify-center p-3 sm:p-4" role="dialog" aria-modal="true" aria-labelledby="ls-title" data-lead-url={LEAD_URL}>
+    <div id="lead-card" class="bg-[#F5EEDD] rounded-xl shadow-2xl w-full max-w-md p-5 sm:p-7 relative" style="transform: translateY(12px);">
+      <button type="button" id="ls-close" aria-label="Close" class="absolute top-2.5 right-3 w-9 h-9 flex items-center justify-center text-[#1E2E26]/45 hover:text-[#1E2E26] text-2xl leading-none rounded focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8923E]">×</button>
+      <h2 id="ls-title" class="text-2xl text-[#1E2E26] m-0 mb-1.5" style="font-family: 'Playfair Display', serif; font-weight: 500;">Did you enjoy it?</h2>
+      <p class="text-sm text-[#1E2E26]/70 m-0 mb-4" style="font-family: 'Inter', sans-serif;">Stay in touch with El Brenz: events, new research, the memory of our valleys.</p>
+      <form id="ls-form" novalidate style="font-family: 'Inter', sans-serif;">
+        <div class="grid grid-cols-1 gap-2.5 mb-3">
+          <input type="text" id="ls-nome" required autocomplete="name" placeholder="Name *" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+          <input type="email" id="ls-email" required autocomplete="email" placeholder="Email *" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+          <input type="tel" id="ls-tel" autocomplete="tel" placeholder="Mobile (optional)" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        <div class="hidden" aria-hidden="true"><label>Please do not fill in<input type="text" id="ls-website" tabindex="-1" autocomplete="off" /></label></div>
+        <label class="flex items-start gap-2.5 mb-2 text-sm text-[#1E2E26]/80 cursor-pointer">
+          <input type="checkbox" id="ls-privacy" class="mt-0.5 w-4 h-4 accent-[#C8923E]" />
+          <span>I have read and accept the <a href="/privacy" target="_blank" class="text-[#8a6215] underline">privacy policy</a>. <span class="text-[#a33]">*</span></span>
+        </label>
+        <label class="flex items-start gap-2.5 mb-4 text-sm text-[#1E2E26]/80 cursor-pointer">
+          <input type="checkbox" id="ls-news" class="mt-0.5 w-4 h-4 accent-[#C8923E]" />
+          <span>I want to receive updates from El Brenz.</span>
+        </label>
+        <button type="submit" id="ls-submit" class="w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Stay in touch</button>
+        <div id="ls-esito" class="hidden mt-3 text-sm rounded px-3 py-2"></div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<style is:global>
+  .studio-fioi { font-family: 'Source Serif 4', Georgia, serif; color: #1E2E26; line-height: 1.8; font-size: 1.03rem; }
+  .studio-fioi h2 { font-family: 'Playfair Display', serif; color: #1E2E26; font-size: 1.55rem; line-height: 1.2; font-weight: 500; margin: 2.8rem 0 1rem; scroll-margin-top: 1.5rem; }
+  .studio-fioi h2:first-child { margin-top: 0; }
+  .studio-fioi h3 { font-family: 'Playfair Display', serif; color: #8a6215; font-size: 1.2rem; font-weight: 500; margin: 2rem 0 .7rem; }
+  .studio-fioi p { margin: 0 0 1.1rem; }
+  .studio-fioi em { font-style: italic; }
+  .studio-fioi strong, .studio-fioi b { color: #1E2E26; font-weight: 700; }
+  .studio-fioi a { color: #8a6215; text-decoration: underline; }
+  .studio-fioi ul, .studio-fioi ol { margin: 1rem 0; padding-left: 1.4rem; }
+  .studio-fioi ul { list-style: disc; }
+  .studio-fioi ol { list-style: decimal; }
+  .studio-fioi li { margin: .45rem 0; }
+  .studio-fioi hr { border: 0; border-top: 1px solid rgba(200,146,62,0.3); margin: 2.5rem 0; }
+  .studio-fioi blockquote { border-left: 3px solid #C8923E; background: #FDF9F0; padding: .8rem 1.1rem; margin: 1.6rem 0; font-style: italic; border-radius: 0 6px 6px 0; }
+  .studio-fioi blockquote p { margin: 0; }
+  .studio-fioi img { display: block; max-width: 100%; height: auto; border-radius: 8px; margin: 1.8rem auto .5rem; border: 1px solid rgba(200,146,62,0.3); box-shadow: 0 6px 20px rgba(30,46,38,0.12); }
+  /* didascalia: paragrafo in corsivo subito dopo l'immagine */
+  .studio-fioi p:has(> img) + p { text-align: center; font-size: .85rem; color: rgba(30,46,38,0.6); margin-top: 0; }
+</style>
+
+<script>
+  // Facade video click-to-load: nessuna richiesta a Google prima del gesto.
+  (function () {
+    const facade = document.getElementById('video-facade');
+    if (!facade) return;
+    const carica = () => {
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://www.youtube-nocookie.com/embed/eA2IEm7VGRk?autoplay=1&rel=0';
+      iframe.title = 'Fiöi dal Nos, documentary El Brenz';
+      iframe.loading = 'lazy';
+      iframe.allow = 'accelerated-motion; autoplay; encrypted-media; picture-in-picture; fullscreen';
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.className = 'absolute inset-0 w-full h-full';
+      iframe.style.border = '0';
+      facade.innerHTML = '';
+      facade.appendChild(iframe);
+    };
+    facade.addEventListener('click', carica);
+    facade.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); carica(); } });
+  })();
+</script>
+
+<script>
+  // Popup soft "Resta in contatto": appare a fine pagina / scroll >70%, una
+  // sola volta per sessione, facilmente chiudibile. NON blocca il video.
+  (function () {
+    const KEY = 'lead-soft-fioi';
+    if (sessionStorage.getItem(KEY)) return; // già mostrato/chiuso in questa sessione
+    const overlay = document.getElementById('lead-soft');
+    const card = document.getElementById('lead-card');
+    const form = document.getElementById('ls-form') as HTMLFormElement | null;
+    const submit = document.getElementById('ls-submit') as HTMLButtonElement | null;
+    const esito = document.getElementById('ls-esito');
+    if (!overlay || !card || !form || !submit) return;
+    const leadUrl = overlay.getAttribute('data-lead-url')!;
+    let openedAt = 0;
+    let mostrato = false;
+
+    const apri = () => {
+      if (mostrato) return;
+      mostrato = true;
+      window.removeEventListener('scroll', onScroll);
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      openedAt = Date.now();
+      requestAnimationFrame(() => { card.style.transition = 'transform .35s ease'; card.style.transform = 'translateY(0)'; });
+      (document.getElementById('ls-nome') as HTMLInputElement | null)?.focus();
+    };
+    const chiudi = (motivo: string) => {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+      try { sessionStorage.setItem(KEY, motivo); } catch { /* */ }
+    };
+
+    const onScroll = () => {
+      const scrolled = window.scrollY + window.innerHeight;
+      const soglia = document.documentElement.scrollHeight * 0.7;
+      if (scrolled >= soglia) apri();
+    };
+    // trigger su scroll >70%; se la pagina è cortissima, mostralo dopo un po'
+    window.addEventListener('scroll', onScroll, { passive: true });
+    if (document.documentElement.scrollHeight <= window.innerHeight * 1.4) {
+      setTimeout(apri, 25000);
+    }
+
+    document.getElementById('ls-close')?.addEventListener('click', () => chiudi('dismissed'));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) chiudi('dismissed'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && mostrato && !overlay.classList.contains('hidden')) chiudi('dismissed'); });
+
+    const msg = (t: string, ok: boolean) => {
+      if (!esito) return;
+      esito.classList.remove('hidden');
+      esito.style.background = ok ? '#eaf3ee' : '#fbecec';
+      esito.style.color = '#1E2E26';
+      esito.textContent = t;
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = (document.getElementById('ls-nome') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('ls-email') as HTMLInputElement).value.trim();
+      const telefono = (document.getElementById('ls-tel') as HTMLInputElement).value.trim();
+      const privacy = (document.getElementById('ls-privacy') as HTMLInputElement).checked;
+      const news = (document.getElementById('ls-news') as HTMLInputElement).checked;
+      const honeypot = (document.getElementById('ls-website') as HTMLInputElement).value;
+      if (nome.length < 2) { msg('Please write your name.', false); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg('Invalid email.', false); return; }
+      if (!privacy) { msg('The privacy consent is required to continue.', false); return; }
+      submit.disabled = true; submit.textContent = 'Sending…';
+      try {
+        const r = await fetch(leadUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome, email, telefono, consenso_privacy: privacy, consenso_newsletter: news,
+            risorsa: 'documentario-fioi-dal-nos', _honeypot: honeypot, _ts: openedAt,
+            sorgente: { ref: document.referrer || null, pagina: 'fioi-dal-nos' },
+          }),
+        });
+        const out = await r.json();
+        if (r.ok && out.ok) {
+          form.innerHTML = '<p style="font-family:Playfair Display,serif;font-size:1.3rem;color:#1E2E26;margin:.5rem 0;">Thank you! 🌿</p><p style="font-family:Inter,sans-serif;color:#1E2E26;opacity:.75;margin:0;">We will stay in touch with the memory of our valleys.</p>';
+          try { sessionStorage.setItem(KEY, 'done'); } catch { /* */ }
+          setTimeout(() => { overlay.classList.add('hidden'); overlay.classList.remove('flex'); }, 2400);
+        } else {
+          msg(out.error || 'It was not possible to register. Please try again.', false);
+          submit.disabled = false; submit.textContent = 'Stay in touch';
+        }
+      } catch {
+        msg('Connection error. Please try again shortly.', false);
+        submit.disabled = false; submit.textContent = 'Stay in touch';
+      }
+    });
+  })();
+</script>

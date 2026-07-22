@@ -1,0 +1,173 @@
+---
+/* /en/a-proposito-di-tirolo — traduzione EN (Fase 1b). Revisione Brunella Bonapace in corso. */
+
+import Layout from '../../layouts/Layout.astro';
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+// L'URL del PDF NON è nel sorgente: lo restituisce l'edge download-lead dopo
+// un submit valido del modulo (lead-gen), così il modulo non è aggirabile.
+const LEAD_URL = `${SUPABASE_URL}/functions/v1/download-lead`;
+const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-semibold tracking-wider uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors cursor-pointer border-0 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]';
+---
+
+<Layout
+  lang="en"
+  title="On Tyrol, as far as Lake Garda: the book by Everton Altmayer"
+  description="A gift from Treze Tílias, Brazil: Everton Altmayer's book on historical Tyrol, from the Valli del Noce to Lake Garda. Over 300 pages, free for everyone."
+  ogImage="/og/og-a-proposito-di-tirolo.jpg"
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-14 md:py-20">
+      <div class="grid md:grid-cols-[220px_1fr] gap-8 items-center">
+        <picture>
+          <source srcset="/biblioteca/altmayer-copertina.webp" type="image/webp" />
+          <img src="/biblioteca/altmayer-copertina.jpg" alt="Cover of the book «On Tyrol, as far as Lake Garda» by Everton Altmayer" width="220" height="311" class="w-full max-w-[220px] mx-auto rounded shadow-2xl border border-[#C8923E]/30" loading="eager" decoding="async" />
+        </picture>
+        <div>
+          <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Identity and belonging</p>
+          <h1 class="text-3xl md:text-4xl leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+            On <em class="text-[#C8923E]" style="font-style: italic;">Tyrol</em>, as far as Lake Garda
+          </h1>
+          <p class="text-lg text-[#F5EEDD]/85 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+            A gift from Prof. Everton Altmayer, a voice of the Brazilian Tyrol of Treze Tílias.
+          </p>
+          <button type="button" class={CTA} data-apri-download>Download the book (PDF) →</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <article class="bg-[#F8F1E4]">
+    <div class="max-w-3xl mx-auto px-6 py-12 text-[#1E2E26]/90 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem;">
+      <p>There is a thread that ties our valleys to a small town on the other side of the ocean: <strong>Treze Tílias</strong> (<em>Dreizehnlinden</em>) in the Brazilian state of Santa Catarina, founded in 1933 by Tyrolean families. It is from there that this gift reaches us.</p>
+      <p class="mt-5">Everton Altmayer, a Brazilian university lecturer with a degree, a master's and a doctorate from the University of São Paulo, with which he regularly collaborates as a researcher, is a scholar of the Trentino language, still alive in numerous communities in Brazil, where it continues to be called <em>dialèt tirolés</em>. For over twenty years he has devoted himself to this linguistic and cultural heritage and is the author of the volume <em>O dialeto trentino no Brasil</em> (The Trentino Dialect in Brazil) and of numerous studies on the language and identity of Tyrolean emigration to Brazil, a country where the memory of a Tyrol that here risks being forgotten is still kept alive among the descendants of the emigrants. He is president of the Centro Culturale Dona Leopoldina in Treze Tílias, an institution founded in 1969 in collaboration with the University of Innsbruck, author of the well-known blog «Tirolesi in Brasile» (Tyroleans in Brazil), a point of reference for historical and cultural studies on emigration, and the creator and organiser of the National Symposium for the 160th anniversary of Tyrolean immigration to Brazil (1858–2018), which brought together representatives of all the Brazilian communities founded by emigrants from historical Tyrol.</p>
+      <p class="mt-5">His most recent work, <em>On Tyrol, as far as Lake Garda: an erased history?</em> (Treze Tílias, 2024), reconstructs across more than three hundred pages, with over 600 images of historical maps and documents, the origins of Tyrol and its southern extent: that Tyrol took shape in the lands of the principality of Trent, which included the Valli del Noce, all the way to the shores of Lake Garda, and from 1363 to 1919 was tied to the ancient Duchy of Austria. The subtitle is a question that concerns us closely (<em>an erased history?</em>) and the very one that El Brenz has always asked itself.</p>
+      <p class="mt-5">Prof. Altmayer, a friend of the Association, has allowed us to make his work freely available to everyone: a gesture of friendship between the two shores of the same Tyrolean memory. To him goes the <em>nosa gratitudine</em> (our gratitude).</p>
+
+      <div class="mt-10 text-center">
+        <button type="button" class={CTA} data-apri-download>Download the book (PDF)</button>
+        <p class="text-xs text-[#1E2E26]/55 mt-4" style="font-family: 'Inter', sans-serif;">
+          A work by Everton Altmayer · Treze Tílias, 2024 · published by kind permission of the author. All rights remain with the author.
+        </p>
+      </div>
+    </div>
+  </article>
+
+  {/* MODAL lead-gen download */}
+  <div id="dl-overlay" class="hidden fixed inset-0 z-50 bg-[#1E2E26]/70 backdrop-blur-sm items-center justify-center px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+    <div id="dl-modal" class="bg-[#F5EEDD] rounded-lg shadow-2xl w-full max-w-md mx-auto my-auto p-6 md:p-8 relative" data-lead-url={LEAD_URL}>
+      <button type="button" id="dl-close" aria-label="Close" class="absolute top-3 right-3 w-9 h-9 flex items-center justify-center text-[#1E2E26]/50 hover:text-[#1E2E26] text-2xl leading-none rounded focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8923E]">×</button>
+      <h2 id="dl-title" class="text-2xl text-[#1E2E26] leading-tight m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Download the book</h2>
+      <p class="text-sm text-[#1E2E26]/70 m-0 mb-5" style="font-family: 'Inter', sans-serif;">Leave your details to download the book, made freely available by the author Everton Altmayer.</p>
+      <form id="dl-form" novalidate style="font-family: 'Inter', sans-serif;">
+        <div class="mb-3">
+          <label for="dl-nome" class="block text-sm text-[#1E2E26]/75 mb-1">Name <span class="text-[#a33]">*</span></label>
+          <input type="text" id="dl-nome" required autocomplete="name" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        <div class="mb-3">
+          <label for="dl-email" class="block text-sm text-[#1E2E26]/75 mb-1">Email <span class="text-[#a33]">*</span></label>
+          <input type="email" id="dl-email" required autocomplete="email" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        <div class="mb-4">
+          <label for="dl-tel" class="block text-sm text-[#1E2E26]/75 mb-1">Phone <span class="text-[#1E2E26]/45">(optional)</span></label>
+          <input type="tel" id="dl-tel" autocomplete="tel" class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+        </div>
+        {/* honeypot */}
+        <div class="hidden" aria-hidden="true"><label>Do not fill in<input type="text" id="dl-website" tabindex="-1" autocomplete="off" /></label></div>
+        <label class="flex items-start gap-2.5 mb-2.5 text-sm text-[#1E2E26]/80 cursor-pointer">
+          <input type="checkbox" id="dl-privacy" class="mt-0.5 w-4 h-4 accent-[#C8923E]" />
+          <span>I have read and accept the <a href="/privacy" target="_blank" class="text-[#8a6215] underline">privacy policy</a>. <span class="text-[#a33]">*</span></span>
+        </label>
+        <label class="flex items-start gap-2.5 mb-5 text-sm text-[#1E2E26]/80 cursor-pointer">
+          <input type="checkbox" id="dl-news" class="mt-0.5 w-4 h-4 accent-[#C8923E]" />
+          <span>I want to receive updates from El Brenz.</span>
+        </label>
+        <button type="submit" id="dl-submit" class="w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Download the book (PDF)</button>
+        <div id="dl-esito" class="hidden mt-3 text-sm rounded px-3 py-2"></div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Modal lead-gen: raccoglie nome+email, poi l'edge download-lead restituisce
+  // l'URL del PDF e facciamo partire il download. Focus trap minimale + ESC.
+  (function () {
+    const overlay = document.getElementById('dl-overlay');
+    const modal = document.getElementById('dl-modal');
+    const form = document.getElementById('dl-form') as HTMLFormElement | null;
+    const esito = document.getElementById('dl-esito');
+    const submit = document.getElementById('dl-submit') as HTMLButtonElement | null;
+    if (!overlay || !modal || !form || !submit) return;
+    const leadUrl = modal.getAttribute('data-lead-url')!;
+    let openedAt = 0;
+    let lastFocus: HTMLElement | null = null;
+
+    const apri = () => {
+      lastFocus = document.activeElement as HTMLElement;
+      overlay.classList.remove('hidden');
+      overlay.classList.add('flex');
+      openedAt = Date.now();
+      (document.getElementById('dl-nome') as HTMLInputElement | null)?.focus();
+      document.body.style.overflow = 'hidden';
+    };
+    const chiudi = () => {
+      overlay.classList.add('hidden');
+      overlay.classList.remove('flex');
+      document.body.style.overflow = '';
+      lastFocus?.focus();
+    };
+    document.querySelectorAll('[data-apri-download]').forEach((b) => b.addEventListener('click', apri));
+    document.getElementById('dl-close')?.addEventListener('click', chiudi);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) chiudi(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.classList.contains('hidden')) chiudi(); });
+
+    const msg = (t: string, ok: boolean) => {
+      if (!esito) return;
+      esito.classList.remove('hidden');
+      esito.style.background = ok ? '#eaf3ee' : '#fbecec';
+      esito.style.color = '#1E2E26';
+      esito.textContent = t;
+    };
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nome = (document.getElementById('dl-nome') as HTMLInputElement).value.trim();
+      const email = (document.getElementById('dl-email') as HTMLInputElement).value.trim();
+      const telefono = (document.getElementById('dl-tel') as HTMLInputElement).value.trim();
+      const privacy = (document.getElementById('dl-privacy') as HTMLInputElement).checked;
+      const news = (document.getElementById('dl-news') as HTMLInputElement).checked;
+      const honeypot = (document.getElementById('dl-website') as HTMLInputElement).value;
+      if (nome.length < 2) { msg('Please enter your name.', false); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { msg('Invalid email address.', false); return; }
+      if (!privacy) { msg('Privacy consent is required to download.', false); return; }
+      submit.disabled = true;
+      submit.textContent = 'Preparing the download…';
+      try {
+        const r = await fetch(leadUrl, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nome, email, telefono, consenso_privacy: privacy, consenso_newsletter: news,
+            risorsa: 'libro-altmayer', _honeypot: honeypot, _ts: openedAt,
+            sorgente: { ref: document.referrer || null },
+          }),
+        });
+        const out = await r.json();
+        if (r.ok && out.url) {
+          const a = document.createElement('a');
+          a.href = out.url; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('download', '');
+          document.body.appendChild(a); a.click(); a.remove();
+          msg('Thank you! The download has started. If it does not, please check your email.', true);
+          setTimeout(chiudi, 2200);
+        } else {
+          msg(out.error || 'The download could not be started. Please try again.', false);
+        }
+      } catch {
+        msg('Connection error. Please try again shortly.', false);
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Download the book (PDF)';
+      }
+    });
+  })();
+</script>

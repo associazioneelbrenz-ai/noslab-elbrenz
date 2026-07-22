@@ -1,0 +1,144 @@
+---
+/* /en/lunari-dal-nos — traduzione EN (Fase 1b). Revisione Brunella Bonapace in corso. */
+
+import PaginaIstituzionale from '../../components/PaginaIstituzionale.astro';
+import manifest from '../../lib/gallery-manifest.json';
+
+type Foto = { id: string; w: number; h: number; tw: number; th: number };
+const tavole = (manifest as Record<string, Foto[]>)['tavole-2023'] ?? [];
+
+const mesi = [
+  { mese: 'January', testo: "One river for two valleys: the Noce, an impetuous watercourse that rises at over 3,300 metres on the Corno dei Tre Signori and, after 105 km, flows into the Adige." },
+  { mese: 'February', testo: "Broad meadows between Pellizzano and Mezzana, the rapids that, as far as Dimaro, have become a paradise for canoeing and rafting. Then the meadows again between Monclassico and Malé, the important biotope of Croviana, a cradle of biodiversity; finally the lowest stretch which, after receiving the Rabbiés, the mountain stream of the Val di Rabbi, continues its course, carving ever deeper, until it reaches the very deep gorge of Mostizzolo, the point that marks the passage into the neighbouring Val di Non." },
+  { mese: 'March', testo: "The reservoir of Santa Giustina: the imposing dam, built for hydroelectric purposes, was completed in 1951, radically changing a landscape thousands of years old, now marked by intensive apple growing, which covers wide stretches of the broad Anaunian amphitheatre, extraordinarily dotted with castles on both fertile slopes." },
+  { mese: 'April', testo: "In the Val di Non the oldest evidence of a human presence dates back to the final phase of the Palaeolithic, around 10,000 years before Christ; in the Val di Sole we must wait for the Bronze Age to find traces of human presence, as on the hilltop site of San Rocco, in the Val di Pejo." },
+  { mese: 'May', testo: "A Bronze Age known as the Luco-Meluno phase, and then the Iron Age with the Fritzens-Sanzeno culture, better known as Rhaetian. The Raeti were masters of metalworking, above all of the iron that was abundant in the Val di Rabbi and the Val di Pejo." },
+  { mese: 'June', testo: "From the 2nd–1st century BC, contact with the Roman world led to a slow process of fusion that gave rise to the Rhaeto-Romance languages, born from the layering of Latin over the ancient Rhaetian tongue. The Romanisation is attested by that extraordinary find, the \"Tavola clesiana\", an edict of Emperor Claudius from the year 46, by which the Anauni, the Sinduni and the Tulliassi, long since employed in the administration and the army, were granted Roman citizenship." },
+  { mese: 'July', testo: 'There was no lack, however, of moments of conflict, such as those on the Tonale border, towards the Valcamonica, where in 16–15 BC the Roman legions and bands of Raeti faced one another.' },
+  { mese: 'August', testo: "At the end of the 4th century, precisely in 397, comes the event that marks a fundamental stage in the evangelisation of the Val di Non: the martyrdom of the three Cappadocian missionaries Sisinius, Martyrius and Alexander, sent by Vigilius, bishop of Trento, among the rural Anaunian people, who were devoted to the Roman cult of Saturn." },
+  { mese: 'September', testo: "The subsequent barbarian migrations and the fall of the empire remixed peoples and cultures, opening a long Middle Ages." },
+  { mese: 'October', testo: "Politically set within the Prince-Bishopric of Trento, founded in 1004 and part of the Holy Roman Empire of the German Nation until 1803, the valleys stood at the heart of the age of castles, of noble families and of a society in which the \"Carte di Regola\" (rural community charters) shaped the everyday life of the rural communities." },
+  { mese: 'November', testo: "Over the course of the 19th century a Ladin identity was reborn. The phenomenon mainly concerned the Dolomite area and the Ladin valleys of the Sella massif, which set out on a long path that, with the birth of the Autonomy, would see them protected as a linguistic minority. A similar path was begun, in the final years of the 20th century, in the Val di Non and Val di Sole as well, rediscovering and giving new value to a cultural heritage that is still alive today." },
+  { mese: 'December', testo: "Son qui a sta sortiva, tra i crozi de dolomia e corn de chjaura, 'n torn a mi pradi verdi grandi come fazöi e boschj incontaminadi de laresi e peci. Sta acqua forta che la ven da Pej e che plan plan la schjava e la solchja traversando le naunechje val da semper le l'centro de noi anauni, che qui tanti ani fa aven metù rais e che da qui slonghjan l sguardi vers l mond 'n torn!", ladino: true },
+];
+---
+<PaginaIstituzionale lang="en" ogImage="/og/og-lunari-dal-nos.jpg"
+  occhiello="Projects"
+  titolo="Lunari dal Nos"
+  intro="The association's calendar that celebrates the Rhaeto-Romance varieties of the Valli del Noce, one month at a time."
+  metaDescription="Lunari dal Nos: the calendar of the El Brenz association, with poems in the four language varieties of the Valli del Noce · pegaes, solander, rabies and nones."
+>
+  <div class="prosa-istituzionale">
+    <p>
+      The <strong>"Lunari dal Nos" (the Noce almanacs)</strong> was born from the
+      idea of offering a new tool that, besides celebrating the Rhaeto-Romance
+      varieties of the Valli del Noce, could be a further bridge between the
+      Anaunian peoples. The calendar is in fact structured around the four main
+      language strands, starting with <em>pegaes</em> and continuing with
+      <em>solander</em>, <em>rabies</em> and <em>nones</em>. The poems are all
+      compositions that took part in the editions of the
+      <a href="/en/os-dal-nos">"Os dal Nos" (voices of the Noce)</a> competition.
+    </p>
+    <p>
+      The project grows year after year with ever new ideas: the 2023 edition,
+      dedicated to "La nosa storia" (our history) and created together with a
+      Basque comic artist, was distributed free of charge in the schools of the
+      valleys.
+    </p>
+    <p>
+      Our thanks to all those who support, and will support, our initiatives.
+    </p>
+    <p>
+      <em>The Board and the Youth Group of the Historical, Cultural and
+      Linguistic Association "El Brenz"</em>
+    </p>
+  </div>
+
+  <section class="mt-14 pt-10 border-t border-[#E5DFCF]">
+    <h2
+      class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-2"
+      style="font-family: 'Playfair Display', serif;"
+    >
+      The plates of the Lunari
+    </h2>
+    <p
+      class="text-sm text-[#0F0F0F]/60 m-0 mb-8"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Lunari dal Nos 2023 · "La nosa storia", the twelve comic plates with the
+      English translation. Click a plate to enlarge it.
+    </p>
+
+    <ul class="list-none m-0 p-0 grid grid-cols-1 md:grid-cols-2 gap-8">
+      {tavole.map((t, i) => (
+        <li class="m-0">
+          <figure class="m-0 bg-white border border-[#E5DFCF] p-4">
+            <a
+              href={`/lunari/${t.id}.webp`}
+              class="gallery-item block"
+              data-full={`/lunari/${t.id}.webp`}
+              data-alt={`Plate for ${mesi[i].mese.toLowerCase()} from the Lunari dal Nos 2023`}
+            >
+              <img
+                src={`/lunari/${t.id}-thumb.webp`}
+                alt={`Plate for ${mesi[i].mese.toLowerCase()} from the Lunari dal Nos 2023, "La nosa storia"`}
+                width={t.tw}
+                height={t.th}
+                loading="lazy"
+                decoding="async"
+                class="block w-full h-auto"
+              />
+            </a>
+            <figcaption class="mt-4">
+              <p
+                class="text-[11px] tracking-[0.18em] uppercase text-[#C8923E] m-0 mb-2"
+                style="font-family: 'Inter', sans-serif;"
+              >
+                {mesi[i].mese}
+              </p>
+              <p
+                class={`text-sm text-[#0F0F0F]/75 leading-relaxed m-0 ${mesi[i].ladino ? 'italic' : ''}`}
+                style="font-family: 'Source Serif 4', Georgia, serif;"
+                lang={mesi[i].ladino ? 'lld-anau' : 'en'}
+              >
+                {mesi[i].testo}
+              </p>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <div class="mt-12 pt-8 border-t border-[#E5DFCF]" style="font-family: 'Inter', sans-serif;">
+    <a href="/en/tesseramento" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Support our projects</a>
+  </div>
+</PaginaIstituzionale>
+
+<dialog
+  id="lightbox"
+  class="p-0 border-0 bg-transparent max-w-[92vw] max-h-[92vh] backdrop:bg-black/85"
+>
+  <img id="lightbox-img" src="" alt="" class="block max-w-[92vw] max-h-[88vh] w-auto h-auto" />
+</dialog>
+
+<script is:inline>
+  // Lightbox minimale come in /photogallery: <dialog> nativo, zero dipendenze.
+  (function () {
+    const dialog = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    if (!dialog || !img || !dialog.showModal) return;
+    document.querySelectorAll('.gallery-item').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        img.src = a.dataset.full;
+        img.alt = a.dataset.alt || '';
+        dialog.showModal();
+      });
+    });
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('close', () => { img.src = ''; });
+  })();
+</script>

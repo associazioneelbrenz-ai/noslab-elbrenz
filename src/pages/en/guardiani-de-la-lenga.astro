@@ -1,0 +1,233 @@
+---
+/* /en/guardiani-de-la-lenga — traduzione EN (Fase 1b). Revisione Brunella Bonapace in corso. */
+
+import { createClient } from '@supabase/supabase-js';
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+const ENDPOINT = `${SUPABASE_URL}/functions/v1/guardiani-contributo`;
+const LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
+
+const VARIANTI: [string, string][] = [
+  ['noneso', 'Noneso · Val di Non'],
+  ['solander', 'Solander · Val di Sole'],
+  ['rabies', 'Rabies · Val di Rabbi'],
+  ['pegaes', 'Pegaes · Val di Pejo'],
+];
+const TIPI: [string, string][] = [['parola', 'Word'], ['frase', 'Phrase'], ['espressione', 'Expression']];
+
+type Voce = { id: string; termine: string; tipo: string | null; variante: string | null; comune: string | null; significato_it: string; esempio_uso: string | null; contributore_firma: string | null };
+let glossario: Voce[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('glossario_pubblico').select('*').order('termine').limit(300);
+  glossario = (data as Voce[]) ?? [];
+} catch (e) {
+  console.error('[guardiani] lettura glossario fallita:', e);
+}
+const VARIANTE_LABEL = Object.fromEntries(VARIANTI);
+const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout
+  lang="en"
+  title="Guardiani de la lenga (Guardians of the Language) · The living glossary of Anaunian Ladin"
+  description="Together we safeguard the Anaunian Ladin of the Valli del Noce: propose words, phrases and proverbs in the four varieties (Noneso, Solander, Rabies, Pegaes) and see them enter the living glossary of El Brenz."
+  ogImage="/og/og-guardiani.jpg"
+  noindex={!LIVE}
+>
+  {/* 1. HERO / MANIFESTO */}
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">A community project</p>
+      <h1 class="text-4xl md:text-5xl leading-tight m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Guardiani de la <em class="text-[#C8923E]" style="font-style: italic;">lenga</em>
+      </h1>
+      <p class="text-sm text-[#F5EEDD]/60 italic m-0 mb-5" style="font-family: 'Source Serif 4', Georgia, serif;">(Guardians of the Language)</p>
+      <p class="text-lg leading-relaxed text-[#F5EEDD]/85 m-0 max-w-2xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Every village of our valleys keeps words that no dictionary has yet
+        collected. <em>Noneso</em>, <em>solander</em>, <em>rabies</em>,
+        <em>pegaes</em>: four varieties of Anaunian Ladin that live in the voice
+        of those who speak them. It is not a mere dialect, but a language: help us
+        safeguard them before they are lost. Propose a term, a curator validates
+        it, and it becomes everyone's heritage.
+      </p>
+      <p class="text-[#D9A94E] italic font-serif mt-6 text-lg" lang="lld-anau">Raìs fonde no le ’nglacia</p>
+      <p class="text-xs tracking-[0.12em] uppercase text-[#F5EEDD]/55 mt-1 m-0" style="font-family: 'Inter', sans-serif;">(Deep roots do not freeze)</p>
+    </div>
+  </header>
+
+  {!LIVE && (
+    <div class="bg-[#FDF9F0] border-b border-[#C8923E]/30">
+      <p class="max-w-4xl mx-auto px-6 py-3 text-sm text-[#8a6215] m-0" style="font-family: 'Inter', sans-serif;">
+        Reserved preview: this page is not yet public (awaiting the first validated terms).
+      </p>
+    </div>
+  )}
+
+  <section class="bg-[#F8F1E4] py-14">
+    <div class="max-w-4xl mx-auto px-6">
+
+      {/* 2. COME FUNZIONA */}
+      <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-6 text-center" style="font-family: 'Inter', sans-serif;">How it works</h2>
+      <ol class="grid md:grid-cols-3 gap-5 list-none p-0 m-0 mb-16" style="font-family: 'Source Serif 4', Georgia, serif;">
+        <li class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-6 text-center">
+          <span class="block text-3xl text-[#C8923E] mb-2" style="font-family: 'Playfair Display', serif;">1</span>
+          <strong class="block text-[#1E2E26] mb-1">Propose</strong>
+          <span class="text-sm text-[#1E2E26]/75">A word, a phrase or a proverb, with the village and the variety.</span>
+        </li>
+        <li class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-6 text-center">
+          <span class="block text-3xl text-[#C8923E] mb-2" style="font-family: 'Playfair Display', serif;">2</span>
+          <strong class="block text-[#1E2E26] mb-1">The Commission validates</strong>
+          <span class="text-sm text-[#1E2E26]/75">El Brenz's Language Commission (spokesperson Cristian Bresadola) or the Union Ladin Nonesa validates every contribution.</span>
+        </li>
+        <li class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-6 text-center">
+          <span class="block text-3xl text-[#C8923E] mb-2" style="font-family: 'Playfair Display', serif;">3</span>
+          <strong class="block text-[#1E2E26] mb-1">It enters the glossary</strong>
+          <span class="text-sm text-[#1E2E26]/75">It becomes part of the living heritage of the valleys, with your name if you wish.</span>
+        </li>
+      </ol>
+
+      {/* 3. FORM DI CONTRIBUTO */}
+      <div id="proponi" class="bg-[#F5EEDD] border border-[#C8923E]/50 rounded-md p-6 md:p-8 mb-16 scroll-mt-20">
+        <h2 class="text-2xl text-[#1E2E26] m-0 mb-1" style="font-family: 'Playfair Display', serif; font-weight: 500;">Propose a term</h2>
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">Fields marked with * are required. The contribution appears in the glossary only after a curator's validation.</p>
+        <form id="guardiani-form" data-endpoint={ENDPOINT} class="grid gap-4" novalidate style="font-family: 'Inter', sans-serif;">
+          <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
+          <div class="grid md:grid-cols-2 gap-4">
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Term, phrase or proverb *</label><input name="termine" required maxlength="200" class={input} placeholder="in Anaunian Ladin" /></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Meaning in Italian *</label><input name="significato" required maxlength="2000" class={input} /></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Variety *</label><select name="variante" required class={input}><option value="">Choose…</option>{VARIANTI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Type *</label><select name="tipo" required class={input}><option value="">Choose…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Village or hamlet</label><input name="comune" maxlength="100" class={input} placeholder="e.g. Rabbi, Croviana…" /></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Example of use</label><input name="esempio" maxlength="1000" class={input} /></div>
+          </div>
+          <div class="border-t border-[#C8923E]/30 pt-4 grid md:grid-cols-2 gap-4">
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Your name *</label><input name="nome" required maxlength="100" class={input} /></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Your email *</label><input name="email" type="email" required maxlength="200" class={input} /></div>
+          </div>
+          <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" name="consenso_glossario" required class="mt-1 accent-[#C8923E]" /><span>I agree that my contribution may be used in the glossary and in the Association's materials, in accordance with the <a href="/privacy" target="_blank" class="text-[#8a6215] underline">privacy policy</a>. *</span></label>
+          <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" name="licenza_accettata" required class="mt-1 accent-[#C8923E]" /><span>I release my contribution under the <strong>CC BY 4.0</strong> licence: the Association may use it (glossary, Lunari (almanacs), Os dal Nos (Voices of Our People), the Andreas assistant) citing the source. *</span></label>
+          <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" name="consenso_firma" class="mt-1 accent-[#C8923E]" /><span>I want to appear with my name among the contributors (otherwise I remain anonymous in the glossary).</span></label>
+          <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" name="consenso_marketing" class="mt-1 accent-[#C8923E]" /><span>Keep me updated on the glossary and the language projects (you will receive an email to confirm your subscription).</span></label>
+          <div id="guardiani-feedback" class="hidden rounded px-4 py-3 text-sm"></div>
+          <div><button id="guardiani-invia" type="submit" class="bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase rounded cursor-pointer border-0 hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Send the contribution</button></div>
+        </form>
+      </div>
+
+      {/* 4. GLOSSARIO VIVO */}
+      <h2 class="text-2xl text-[#1E2E26] m-0 mb-1 text-center" style="font-family: 'Playfair Display', serif; font-weight: 500;">The living glossary</h2>
+      <p class="text-sm text-[#1E2E26]/70 m-0 mb-6 text-center" style="font-family: 'Source Serif 4', Georgia, serif;">{glossario.length > 0 ? `${glossario.length} terms preserved so far` : 'It grows with every validated contribution'}</p>
+      {glossario.length > 0 ? (
+        <>
+          <div class="flex flex-wrap gap-3 mb-5 justify-center" style="font-family: 'Inter', sans-serif;">
+            <input id="gloss-cerca" type="search" placeholder="Search…" class="px-3 py-2 rounded bg-white border border-[#C8923E]/40 text-sm text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+            <select id="gloss-filtro" class="px-3 py-2 rounded bg-white border border-[#C8923E]/40 text-sm text-[#1E2E26] focus:outline-none focus:border-[#C8923E]">
+              <option value="">All varieties</option>{VARIANTI.map(([v, l]) => <option value={v}>{l}</option>)}
+            </select>
+          </div>
+          <ul id="gloss-lista" class="grid gap-3 md:grid-cols-2 list-none p-0 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+            {glossario.map((v) => (
+              <li class="gloss-voce bg-white border-l-4 border-[#C8923E] px-4 py-3" data-t={`${v.termine} ${v.significato_it} ${v.comune ?? ''}`.toLowerCase()} data-v={v.variante ?? ''}>
+                <strong class="text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{v.termine}</strong>
+                <span class="text-[10px] uppercase tracking-wider text-[#C8923E] ml-2" style="font-family: 'Inter', sans-serif;">{v.variante ? VARIANTE_LABEL[v.variante]?.split(' · ')[0] : ''}{v.comune ? ` · ${v.comune}` : ''}</span>
+                <p class="text-sm text-[#1E2E26]/80 m-0 mt-1">{v.significato_it}</p>
+                {v.esempio_uso && <p class="text-xs text-[#1E2E26]/55 italic m-0 mt-1">« {v.esempio_uso} »</p>}
+                {v.contributore_firma && <p class="text-[11px] text-[#8a6215] m-0 mt-1">· {v.contributore_firma}</p>}
+              </li>
+            ))}
+          </ul>
+          <p id="gloss-vuoto" class="hidden text-center text-sm text-[#1E2E26]/60 mt-4">No term found.</p>
+        </>
+      ) : (
+        <p class="text-center text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">You could propose the first term: <a href="#proponi" class="text-[#8a6215] underline">start here</a>.</p>
+      )}
+
+      {/* 5. CHI VALIDA / PARTNER */}
+      <div class="mt-16 bg-[#1E2E26] text-[#F5EEDD] rounded-md p-6 md:p-8 text-center">
+        <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Who safeguards with us</h2>
+        <p class="text-[#F5EEDD]/85 m-0 max-w-2xl mx-auto" style="font-family: 'Source Serif 4', Georgia, serif;">
+          The contributions proposed by the community are validated, before
+          publication, by one of the two reference language authorities: the
+          <strong>Language Commission of the El Brenz Association</strong> or the
+          <strong>Union Ladin Nonesa</strong>. Validation by either of the two is
+          enough. Only validated entries become public, kept together with the
+          <a href="/en/custodi-della-memoria" class="text-[#D9A94E] underline">keepers of memory</a>:
+          the people and families who keep the <em>nosa lenga</em> (our language) alive.
+        </p>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('guardiani-form') as HTMLFormElement | null;
+  if (form) {
+    const endpoint = form.dataset.endpoint!;
+    const aperto = Date.now();
+    const feedback = document.getElementById('guardiani-feedback')!;
+    const invia = document.getElementById('guardiani-invia') as HTMLButtonElement;
+    function mostra(msg: string, ok: boolean) {
+      feedback.classList.remove('hidden');
+      feedback.style.background = ok ? '#eaf3ee' : '#fbecec';
+      feedback.style.borderLeft = `3px solid ${ok ? '#2d8659' : '#a33'}`;
+      feedback.style.color = '#1E2E26';
+      feedback.textContent = msg;
+      feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    function utm() {
+      const q = new URLSearchParams(location.search);
+      const u = { source: q.get('utm_source') || '', medium: q.get('utm_medium') || '', campaign: q.get('utm_campaign') || '' };
+      return u.source || u.medium || u.campaign ? u : null;
+    }
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      feedback.classList.add('hidden');
+      const g = (n: string) => (form.querySelector(`[name=${n}]`) as HTMLInputElement);
+      const payload = {
+        termine: g('termine').value.trim(), significato: g('significato').value.trim(),
+        variante: g('variante').value, tipo: g('tipo').value,
+        comune: g('comune').value.trim(), esempio: g('esempio').value.trim(),
+        nome: g('nome').value.trim(), email: g('email').value.trim(),
+        consenso_glossario: g('consenso_glossario').checked,
+        licenza_accettata: g('licenza_accettata').checked,
+        consenso_firma: g('consenso_firma').checked,
+        consenso_marketing: g('consenso_marketing').checked,
+        _honeypot: (form.querySelector('[name=_honeypot]') as HTMLInputElement).value,
+        _ts: aperto, utm: utm(),
+      };
+      if (!payload.termine || !payload.significato) return mostra('Write the term and its meaning.', false);
+      if (!payload.variante || !payload.tipo) return mostra('Choose the variety and type.', false);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return mostra('Invalid email.', false);
+      if (!payload.consenso_glossario || !payload.licenza_accettata) return mostra('The consent to the glossary and acceptance of the licence are required.', false);
+      invia.disabled = true; invia.textContent = 'Sending…';
+      try {
+        const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const d = await r.json().catch(() => ({}));
+        if (r.ok && d.success) { mostra('Thank you! Your contribution has arrived: a curator will review it and, once validated, it enters the glossary.', true); form.reset(); }
+        else mostra(d.error || 'An error occurred: try again or write to info@elbrenz.eu.', false);
+      } catch { mostra('Network error: try again.', false); }
+      finally { invia.disabled = false; invia.textContent = 'Send the contribution'; }
+    });
+  }
+  // glossario vivo: ricerca + filtro parlata (client-side)
+  const cerca = document.getElementById('gloss-cerca') as HTMLInputElement | null;
+  const filtro = document.getElementById('gloss-filtro') as HTMLSelectElement | null;
+  const vuoto = document.getElementById('gloss-vuoto');
+  function applica() {
+    const q = (cerca?.value ?? '').trim().toLowerCase();
+    const v = filtro?.value ?? '';
+    let visibili = 0;
+    document.querySelectorAll<HTMLElement>('.gloss-voce').forEach((li) => {
+      const ok = (!q || (li.dataset.t ?? '').includes(q)) && (!v || li.dataset.v === v);
+      li.style.display = ok ? '' : 'none';
+      if (ok) visibili++;
+    });
+    vuoto?.classList.toggle('hidden', visibili > 0);
+  }
+  cerca?.addEventListener('input', applica);
+  filtro?.addEventListener('change', applica);
+</script>

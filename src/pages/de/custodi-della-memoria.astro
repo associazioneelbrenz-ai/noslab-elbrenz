@@ -1,0 +1,126 @@
+---
+/* /de/custodi-della-memoria — traduzione DE (Fase 1b). Revisione Brunella Bonapace in corso. */
+
+import { createClient } from '@supabase/supabase-js';
+import PaginaIstituzionale from '../../components/PaginaIstituzionale.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+type Custode = {
+  nome_pubblico: string;
+  paese: string | null;
+  descrizione_contributo: string;
+  anno: number;
+  anonimo: boolean;
+  categoria_slug: string | null;
+  valle: string | null;
+  epoca: string | null;
+  tipo_materiale: string | null;
+  categoria_titolo_it: string | null;
+  categoria_titolo_lenga: string | null;
+  categoria_ordine: number | null;
+};
+
+let custodi: Custode[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('v_custodi_memoria').select('*')
+    .eq('sezione', 'custodi')  // la Grande Guerra è una sezione a sé (/non-e-sole-grande-guerra)
+    .order('categoria_ordine', { ascending: true, nullsFirst: false })
+    .order('anno', { ascending: false })
+    .order('nome_pubblico');
+  custodi = (data as Custode[]) ?? [];
+} catch (e) {
+  console.error('[custodi] lettura vista fallita:', e);
+}
+
+// Etichette leggibili dei filtri trasversali (vocabolari chiusi §3 del brief).
+// DE: esonimi standard delle Valli del Noce.
+const VALLE: Record<string, string> = {
+  val_di_non: 'Nonsberg', val_di_sole: 'Sulzberg', val_di_rabbi: 'Rabbital',
+  val_di_pejo: 'Pejotal', piu_valli: 'Mehrere Täler',
+};
+const EPOCA: Record<string, string> = {
+  pre_ottocento: 'Vor dem 19. Jahrhundert', ottocento: '19. Jahrhundert',
+  tirolo_asburgico: 'Habsburgisches Tirol (bis 1918)', tra_le_due_guerre: 'Zwischen den Weltkriegen',
+  novecento: '20. Jahrhundert', contemporaneo: 'Gegenwart',
+};
+const TIPO: Record<string, string> = {
+  fotografia: 'Fotografie', documento: 'Dokument', oggetto: 'Objekt',
+  audio: 'Tonaufnahme', racconto_orale: 'Mündliche Erzählung', video: 'Video',
+};
+
+// Raggruppa per categoria (ordinata per `ordine`); i contributi senza categoria
+// finiscono in coda in un gruppo neutro. Solo categorie con contenuto compaiono.
+type Gruppo = { titolo_it: string; titolo_lenga: string | null; ordine: number; schede: Custode[] };
+const mappa = new Map<string, Gruppo>();
+for (const c of custodi) {
+  const key = c.categoria_slug ?? '__altri__';
+  if (!mappa.has(key)) {
+    mappa.set(key, {
+      titolo_it: c.categoria_titolo_it ?? 'Weitere Beiträge',
+      titolo_lenga: c.categoria_titolo_lenga ?? null,
+      ordine: c.categoria_ordine ?? 9999,
+      schede: [],
+    });
+  }
+  mappa.get(key)!.schede.push(c);
+}
+const gruppi = [...mappa.values()].sort((a, b) => a.ordine - b.ordine);
+---
+
+<PaginaIstituzionale
+  lang="de"
+  occhiello="Der Verein"
+  titolo="Die Hüter der Erinnerung"
+  intro="Die Familien und Menschen, die El Brenz ein Stück der nosa storia (unsere Geschichte) anvertraut haben. Ihnen gilt der Dank der Täler."
+  metaDescription="Die Hüter der Erinnerung: die Familien und Menschen, die El Brenz Fotografien, Dokumente, Objekte und Worte der Täler des Noce geschenkt oder geliehen haben, geordnet nach Themen unserer Geschichte."
+>
+  {gruppi.length === 0 ? (
+    <div class="text-center py-10">
+      <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Der erste Hüter könntest du sein: eine Fotografie, ein Dokument,
+        ein Wort der <em>nosa</em> parlata (unsere Sprache) genügen, um eine Geschichte zu entzünden.
+      </p>
+      <a href="/de/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">
+        Bring uns deine Geschichte
+      </a>
+    </div>
+  ) : (
+    <div class="space-y-12">
+      {gruppi.map((g) => (
+        <section>
+          <header class="mb-5 pb-2 border-b border-[#C8923E]/30">
+            <h2 class="text-2xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif; font-weight: 500;">{g.titolo_it}</h2>
+            {g.titolo_lenga && (
+              <p class="text-[#8a6215] text-sm italic mt-1 mb-0" style="font-family: 'Source Serif 4', Georgia, serif;" lang="lld-anau">{g.titolo_lenga}</p>
+            )}
+          </header>
+          <ul class="list-none p-0 m-0 space-y-4">
+            {g.schede.map((c) => (
+              <li class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <span class="text-xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{c.anonimo ? 'Anonym' : c.nome_pubblico}</span>
+                {c.paese && <span class="text-[11px] tracking-[0.14em] uppercase text-[#C8923E]" style="font-family: 'Inter', sans-serif;">{c.paese}</span>}
+                <span class="text-[11px] tracking-[0.14em] uppercase text-[#1E2E26]/45" style="font-family: 'Inter', sans-serif;">{c.anno}</span>
+                <span class="text-[#1E2E26]/70 text-sm w-full md:w-auto" style="font-family: 'Source Serif 4', Georgia, serif;">{c.descrizione_contributo}</span>
+                {(c.valle || c.epoca || c.tipo_materiale) && (
+                  <span class="w-full flex flex-wrap gap-1.5 mt-0.5">
+                    {c.valle && VALLE[c.valle] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#C8923E]/40 text-[#8a6215] px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{VALLE[c.valle]}</span>}
+                    {c.epoca && EPOCA[c.epoca] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{EPOCA[c.epoca]}</span>}
+                    {c.tipo_materiale && TIPO[c.tipo_materiale] && <span class="text-[10px] tracking-[0.1em] uppercase border border-[#1E2E26]/20 text-[#1E2E26]/60 px-2 py-0.5" style="font-family: 'Inter', sans-serif;">{TIPO[c.tipo_materiale]}</span>}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      <p class="pt-4 text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Bewahrt auch deine Familie etwas auf? <a href="/de/contatti#porta" class="text-[#8a6215] underline">Bring uns deine Geschichte</a>.
+      </p>
+    </div>
+  )}
+</PaginaIstituzionale>

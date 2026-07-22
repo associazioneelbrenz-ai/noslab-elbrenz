@@ -1,0 +1,146 @@
+---
+/* /de/lunari-dal-nos — traduzione DE (Fase 1b). Revisione Brunella Bonapace in corso. */
+
+import PaginaIstituzionale from '../../components/PaginaIstituzionale.astro';
+import manifest from '../../lib/gallery-manifest.json';
+
+type Foto = { id: string; w: number; h: number; tw: number; th: number };
+const tavole = (manifest as Record<string, Foto[]>)['tavole-2023'] ?? [];
+
+const mesi = [
+  { mese: 'Januar', testo: "Ein Fluss für zwei Täler: der Noce, ein ungestümer Wasserlauf, der auf über 3300 Metern Höhe am Corno dei Tre Signori entspringt und sich nach 105 km in die Etsch ergießt." },
+  { mese: 'Februar', testo: "Weite Wiesen zwischen Pellizzano und Mezzana, die Stromschnellen, die bis Dimaro zu einem Paradies für Kanu und Rafting geworden sind. Dann wieder die Wiesen zwischen Monclassico und Malé, das bedeutende Biotop von Croviana, eine Wiege der Biodiversität; schließlich der tiefste Lauf, der nach der Aufnahme des Rabbiés, des Wildbachs des Rabbital, seinen Weg fortsetzt und sich immer tiefer eingräbt, bis zur überaus tiefen Schlucht von Mostizzolo, dem Punkt, der den Übergang in den angrenzenden Nonsberg markiert." },
+  { mese: 'März', testo: "Der Stausee von Santa Giustina: die mächtige Talsperre, zu Zwecken der Wasserkraft errichtet, wurde 1951 fertiggestellt und veränderte eine jahrtausendealte Landschaft von Grund auf. Heute prägt sie der intensive Apfelanbau, der weite Teile des ausladenden anaunischen Amphitheaters einnimmt, das auf beiden fruchtbaren Hängen außergewöhnlich dicht mit Burgen übersät ist." },
+  { mese: 'April', testo: "Am Nonsberg reichen die ältesten Zeugnisse menschlicher Anwesenheit bis in die Endphase des Paläolithikums zurück, etwa 10.000 Jahre vor Christus; am Sulzberg müssen wir bis zur Bronzezeit warten, um Spuren des Menschen zu finden, etwa auf der Höhensiedlung von San Rocco im Pejotal." },
+  { mese: 'Mai', testo: "Eine Bronzezeit, die man als Luco-Meluno bezeichnet, und dann die Eisenzeit mit der Fritzens-Sanzeno-Kultur, besser bekannt als rätische Kultur. Die Räter waren Meister der Metallverarbeitung, vor allem des Eisens, das im Rabbital und im Pejotal reichlich vorhanden war." },
+  { mese: 'Juni', testo: "Ab dem 2.–1. Jahrhundert v. Chr. führte der Kontakt mit der römischen Welt zu einem langsamen Verschmelzungsprozess, aus dem die rätoromanischen Sprachen hervorgingen, entstanden aus der Überlagerung der alten rätischen Sprache durch das Lateinische. Von der Romanisierung zeugt jenes außergewöhnliche Fundstück, die \"Tavola clesiana\", ein Edikt des Kaisers Claudius aus dem Jahr 46, mit dem den Anauni, den Sinduni und den Tulliassi, die schon lange in Verwaltung und Heer dienten, das römische Bürgerrecht verliehen wurde." },
+  { mese: 'Juli', testo: 'Doch fehlte es nicht an Momenten des Zusammenstoßes, wie jenen an der Grenze des Tonale, Richtung Valcamonica, wo sich 16–15 v. Chr. römische Legionen und Scharen von Rätern gegenüberstanden.' },
+  { mese: 'August', testo: "Am Ende des 4. Jahrhunderts, genauer im Jahr 397, ereignet sich das Geschehen, das einen entscheidenden Schritt der Christianisierung des Nonsbergs markiert: das Martyrium der drei kappadokischen Missionare Sisinius, Martyrius und Alexander, die vom Trienter Bischof Vigilius zu den ländlichen anaunischen Bevölkerungen entsandt worden waren, die dem römischen Saturnkult anhingen." },
+  { mese: 'September', testo: "Die darauffolgende Völkerwanderung und das Ende des Reiches vermischten Völker und Kulturen neu und leiteten ein langes Mittelalter ein." },
+  { mese: 'Oktober', testo: "Politisch eingebunden in das 1004 gegründete Fürstbistum Trient, bis 1803 Teil des Heiligen Römischen Reiches Deutscher Nation, standen die Täler im Zentrum des Zeitalters der Burgen, der Adelsfamilien und einer Gesellschaft, in der die \"Carte di Regola\" (Dorfordnungen) den Alltag der ländlichen Gemeinschaften regelten." },
+  { mese: 'November', testo: "Im Lauf des 19. Jahrhunderts erlebt eine ladinische Identität eine Wiedergeburt. Das Phänomen betraf vor allem den Dolomitenraum und die ladinischen Täler rund um die Sella-Gruppe, die einen langen Weg einschlugen, der sie mit dem Entstehen der Autonomie als sprachliche Minderheit geschützt sehen sollte. Ein ähnlicher Weg wurde in den letzten Jahren des 20. Jahrhunderts auch in den Tälern Nonsberg und Sulzberg eingeschlagen, indem man ein bis heute lebendiges Kulturerbe wiederentdeckte und aufwertete." },
+  { mese: 'Dezember', testo: "Son qui a sta sortiva, tra i crozi de dolomia e corn de chjaura, 'n torn a mi pradi verdi grandi come fazöi e boschj incontaminadi de laresi e peci. Sta acqua forta che la ven da Pej e che plan plan la schjava e la solchja traversando le naunechje val da semper le l'centro de noi anauni, che qui tanti ani fa aven metù rais e che da qui slonghjan l sguardi vers l mond 'n torn!", ladino: true },
+];
+---
+<PaginaIstituzionale lang="de" ogImage="/og/og-lunari-dal-nos.jpg"
+  occhiello="Projekte"
+  titolo="Lunari dal Nos"
+  intro="Der Kalender des Vereins, der die rätoromanischen Sprachvarietäten der Täler des Noce würdigt, Monat für Monat."
+  metaDescription="Lunari dal Nos: der Kalender des Vereins El Brenz mit Gedichten in den vier Sprachvarietäten der Täler des Noce · pegaes, solander, rabies und nones."
+>
+  <div class="prosa-istituzionale">
+    <p>
+      Der <strong>"Lunari dal Nos" (die Almanache des Noce)</strong> entstand aus
+      der Idee, ein neues Werkzeug zu schaffen, das die rätoromanischen
+      Sprachvarietäten der Täler des Noce würdigt und zugleich eine weitere Brücke
+      zwischen den anaunischen Gemeinschaften schlägt. Der Kalender ist nämlich
+      nach den vier wichtigsten Sprachstämmen aufgebaut: zuerst das
+      <em>pegaes</em>, dann das <em>solander</em>, das <em>rabies</em> und das
+      <em>nones</em>. Die Gedichte sind allesamt Werke, die an den Ausgaben des
+      Wettbewerbs <a href="/de/os-dal-nos">"Os dal Nos" (Stimmen des Noce)</a>
+      teilgenommen haben.
+    </p>
+    <p>
+      Das Projekt entwickelt sich über die Jahre mit immer neuen Ideen weiter:
+      die Ausgabe 2023, "La nosa storia" (unsere Geschichte) gewidmet und in
+      Zusammenarbeit mit einem baskischen Comiczeichner entstanden, wurde
+      kostenlos an den Schulen der Täler verteilt.
+    </p>
+    <p>
+      Ein Dank an alle, die unsere Initiativen unterstützen und unterstützen
+      werden.
+    </p>
+    <p>
+      <em>Der Vorstand und die Jugendgruppe des Historisch-Kulturell-Sprachlichen
+      Vereins "El Brenz"</em>
+    </p>
+  </div>
+
+  <section class="mt-14 pt-10 border-t border-[#E5DFCF]">
+    <h2
+      class="text-2xl md:text-3xl text-[#1E2E26] font-medium leading-tight m-0 mb-2"
+      style="font-family: 'Playfair Display', serif;"
+    >
+      Die Bildtafeln der Lunari
+    </h2>
+    <p
+      class="text-sm text-[#0F0F0F]/60 m-0 mb-8"
+      style="font-family: 'Inter', sans-serif;"
+    >
+      Lunari dal Nos 2023 · "La nosa storia", die zwölf Comic-Bildtafeln mit der
+      deutschen Übersetzung. Klicke auf eine Bildtafel, um sie zu vergrößern.
+    </p>
+
+    <ul class="list-none m-0 p-0 grid grid-cols-1 md:grid-cols-2 gap-8">
+      {tavole.map((t, i) => (
+        <li class="m-0">
+          <figure class="m-0 bg-white border border-[#E5DFCF] p-4">
+            <a
+              href={`/lunari/${t.id}.webp`}
+              class="gallery-item block"
+              data-full={`/lunari/${t.id}.webp`}
+              data-alt={`Bildtafel für ${mesi[i].mese.toLowerCase()} aus dem Lunari dal Nos 2023`}
+            >
+              <img
+                src={`/lunari/${t.id}-thumb.webp`}
+                alt={`Bildtafel für ${mesi[i].mese.toLowerCase()} aus dem Lunari dal Nos 2023, "La nosa storia"`}
+                width={t.tw}
+                height={t.th}
+                loading="lazy"
+                decoding="async"
+                class="block w-full h-auto"
+              />
+            </a>
+            <figcaption class="mt-4">
+              <p
+                class="text-[11px] tracking-[0.18em] uppercase text-[#C8923E] m-0 mb-2"
+                style="font-family: 'Inter', sans-serif;"
+              >
+                {mesi[i].mese}
+              </p>
+              <p
+                class={`text-sm text-[#0F0F0F]/75 leading-relaxed m-0 ${mesi[i].ladino ? 'italic' : ''}`}
+                style="font-family: 'Source Serif 4', Georgia, serif;"
+                lang={mesi[i].ladino ? 'lld-anau' : 'de'}
+              >
+                {mesi[i].testo}
+              </p>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <div class="mt-12 pt-8 border-t border-[#E5DFCF]" style="font-family: 'Inter', sans-serif;">
+    <a href="/de/tesseramento" class="inline-block bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors">Unterstütze unsere Projekte</a>
+  </div>
+</PaginaIstituzionale>
+
+<dialog
+  id="lightbox"
+  class="p-0 border-0 bg-transparent max-w-[92vw] max-h-[92vh] backdrop:bg-black/85"
+>
+  <img id="lightbox-img" src="" alt="" class="block max-w-[92vw] max-h-[88vh] w-auto h-auto" />
+</dialog>
+
+<script is:inline>
+  // Lightbox minimale come in /photogallery: <dialog> nativo, zero dipendenze.
+  (function () {
+    const dialog = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    if (!dialog || !img || !dialog.showModal) return;
+    document.querySelectorAll('.gallery-item').forEach((a) => {
+      a.addEventListener('click', (e) => {
+        e.preventDefault();
+        img.src = a.dataset.full;
+        img.alt = a.dataset.alt || '';
+        dialog.showModal();
+      });
+    });
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+    dialog.addEventListener('close', () => { img.src = ''; });
+  })();
+</script>

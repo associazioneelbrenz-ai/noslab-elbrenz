@@ -262,8 +262,18 @@ export const translatedRoutes: Record<PublicLocale, string[]> = {
   it: ['/'],
   // Fase 1b: si aggiunge il percorso IT canonico (senza slash finale) man mano
   // che la pagina viene tradotta in quella lingua. Alimenta switcher + hreflang.
-  de: ['/', '/gita-giochi-medievali-2026'],
-  en: ['/', '/gita-giochi-medievali-2026'],
+  de: [
+    '/', '/gita-giochi-medievali-2026',
+    '/chi-siamo', '/contatti', '/a-proposito-di-tirolo', '/custodi-della-memoria',
+    '/direttivo', '/eventi', '/fioi-dal-nos', '/guardiani-de-la-lenga',
+    '/lunari-dal-nos', '/os-dal-nos',
+  ],
+  en: [
+    '/', '/gita-giochi-medievali-2026',
+    '/chi-siamo', '/contatti', '/a-proposito-di-tirolo', '/custodi-della-memoria',
+    '/direttivo', '/eventi', '/fioi-dal-nos', '/guardiani-de-la-lenga',
+    '/lunari-dal-nos', '/os-dal-nos',
+  ],
 };
 
 /** Ricava la lingua da un pathname (prefisso /de o /en → altrimenti it). */

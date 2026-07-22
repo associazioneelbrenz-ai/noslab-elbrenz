@@ -1,0 +1,475 @@
+---
+/* /en/contatti — English translation (Phase 1b). Review in progress.
+ * PaginaIstituzionale shell + Sportello form inlined so text and labels can be
+ * translated while keeping lang="en"; technical names (name=, honeypot,
+ * endpoint, category keys, p_ prefixes) identical to the IT source: the same
+ * contatti-submit edge function stays valid. IT source: src/pages/contatti.astro. */
+
+import Layout from '../../layouts/Layout.astro';
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const ENDPOINT = `${SUPABASE_URL}/functions/v1/contatti-submit`;
+const HERO_BASE = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/sportello`;
+// categorie che alimentano l'archivio: radio "Custodi della Memoria" obbligatorio
+const CATEGORIE_ARCHIVIO = ['documenti_foto', 'oggetti', 'memorie_racconti', 'parole_proverbi'];
+
+type Campo = { nome: string; label: string; tipo?: 'text' | 'textarea' | 'select' | 'date'; opzioni?: [string, string][]; placeholder?: string };
+type Cat = { chiave: string; label: string; campi: Campo[]; upload?: boolean; nota?: string };
+
+const RICHIESTE: Cat[] = [
+  { chiave: 'ricerca_storica', label: 'Historical research', nota: 'andreas', campi: [
+    { nome: 'localita', label: 'Locality', placeholder: 'e.g. Malè, Rabbi…' },
+    { nome: 'cognome_maso', label: 'Surname or farmstead (maso)', placeholder: 'e.g. Bresadola, farmstead…' },
+    { nome: 'periodo', label: 'Period', placeholder: 'e.g. late 19th century' },
+    { nome: 'cosa_sai_gia', label: 'What you already know', tipo: 'textarea' },
+  ]},
+  { chiave: 'pubblicazioni', label: 'Publications', campi: [
+    { nome: 'titolo', label: 'The title you are interested in', placeholder: 'e.g. Lunari dal Nos 2026' },
+    { nome: 'copie', label: 'Number of copies', placeholder: 'e.g. 2' },
+    { nome: 'consegna', label: 'Pickup or shipping', tipo: 'select', opzioni: [['ritiro', 'Pickup'], ['spedizione', 'Shipping']] },
+  ]},
+  { chiave: 'scuole_visite', label: 'Schools and visits', campi: [
+    { nome: 'data', label: 'Approximate date', tipo: 'date' },
+    { nome: 'tipo_pubblico', label: 'What kind of group you are', placeholder: 'e.g. a third-year class, a seniors’ group…' },
+    { nome: 'tema', label: 'The topic you are interested in', placeholder: 'e.g. the Great War, Ladin…' },
+  ]},
+  { chiave: 'stampa_media', label: 'Press and media', campi: [
+    { nome: 'testata', label: 'Outlet or channel', placeholder: 'e.g. newspaper, podcast…' },
+  ]},
+  { chiave: 'altro', label: 'Other', campi: [] },
+];
+const OFFERTE: Cat[] = [
+  { chiave: 'documenti_foto', label: 'Documents and photographs', upload: true, campi: [
+    { nome: 'periodo', label: 'Period', placeholder: 'e.g. the 1920s' },
+    { nome: 'luogo', label: 'Place', placeholder: 'e.g. Croviana' },
+    { nome: 'modalita', label: 'How you would like to share them', tipo: 'select', opzioni: [['dono', 'Donation to the Association'], ['prestito_digitalizzazione', 'Loan for digitisation (we return the originals to you)']] },
+  ]},
+  { chiave: 'oggetti', label: 'Objects', upload: true, campi: [
+    { nome: 'descrizione', label: 'What kind of object it is', tipo: 'textarea', placeholder: 'e.g. your grandfather’s farming tool, an implement from the stua (the panelled parlour)…' },
+  ]},
+  { chiave: 'memorie_racconti', label: 'Memories and stories', campi: [] },
+  { chiave: 'parole_proverbi', label: 'Words and proverbs', campi: [
+    { nome: 'parola', label: 'Word or saying', placeholder: 'in Anaunian Ladin' },
+    { nome: 'significato', label: 'What it means' },
+    { nome: 'paese_detto', label: 'In which village it is said' },
+  ]},
+  { chiave: 'tempo_competenze', label: 'Time and skills', campi: [
+    { nome: 'competenze', label: 'What you can do (separate with commas)', placeholder: 'e.g. photography, archives, transcriptions…' },
+    { nome: 'disponibilita', label: 'How much availability you have', placeholder: 'e.g. one weekend a month' },
+  ]},
+];
+
+const inputCls = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]';
+---
+<Layout
+  lang="en"
+  ogImage="/og/og-contatti.jpg"
+  title="Sportello El Brenz · Bring your Story | Contact"
+  description="Contact the El Brenz association: based in Malè in Val di Sole, email, phone and social media. Write to us for information and proposals."
+>
+  <header class="bg-[#1E2E26] text-[#F5EEDD]">
+    <div class="max-w-4xl mx-auto px-6 py-16 md:py-24">
+      <p
+        class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        The Association
+      </p>
+      <h1
+        class="text-4xl md:text-6xl leading-[1.08] tracking-tight m-0 mb-6"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;"
+      >
+        Sportello El Brenz · Bring your Story
+      </h1>
+      <p
+        class="text-lg md:text-xl leading-relaxed text-[#F5EEDD]/85 m-0 max-w-2xl"
+        style="font-family: 'Source Serif 4', Georgia, serif;"
+      >
+        Every family keeps a piece of <span lang="lld-anau">nosa storia</span> (our history). Yours too.
+      </p>
+    </div>
+  </header>
+
+  <section class="bg-[#FDF9F0]">
+    <div class="max-w-3xl mx-auto px-6 py-16 md:py-20">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <div class="bg-white border border-[#E5DFCF] p-8">
+          <h2
+            class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Our office
+          </h2>
+          <p
+            class="text-lg text-[#1E2E26] leading-relaxed m-0"
+            style="font-family: 'Source Serif 4', Georgia, serif;"
+          >
+            Via Trento 40, 2nd floor<br />
+            38027 Malè (TN)<br />
+            Val di Sole
+          </p>
+          <p
+            class="text-sm text-[#0F0F0F]/60 m-0 mt-4"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Tax code 92019480224
+          </p>
+        </div>
+
+        <div class="bg-white border border-[#E5DFCF] p-8">
+          <h2
+            class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Write or call us
+          </h2>
+          <p class="m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+            <a href="mailto:info@elbrenz.eu" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">info@elbrenz.eu</a>
+          </p>
+          <p class="m-0" style="font-family: 'Inter', sans-serif;">
+            <a href="tel:+393471077636" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">+39 347 107 7636</a>
+          </p>
+        </div>
+
+        <div class="bg-white border border-[#E5DFCF] p-8">
+          <h2
+            class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Follow us
+          </h2>
+          <p class="m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+            <a href="https://facebook.com/ASSOCIAZIONELBRENZ" target="_blank" rel="noopener" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">Facebook →</a>
+          </p>
+          <p class="m-0" style="font-family: 'Inter', sans-serif;">
+            <a href="https://www.instagram.com/elbrenzass" target="_blank" rel="noopener" class="text-lg text-[#1E2E26] no-underline hover:text-[#C8923E] transition-colors">Instagram →</a>
+          </p>
+        </div>
+
+        <div class="bg-white border border-[#E5DFCF] p-8">
+          <h2
+            class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-medium m-0 mb-5"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Support us
+          </h2>
+          <p
+            class="text-sm text-[#0F0F0F]/75 leading-relaxed m-0 mb-2"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Cassa Rurale Val di Sole, Mezzana branch
+          </p>
+          <p class="text-xs font-mono text-[#0F0F0F]/70 tracking-wider m-0" style="word-break: break-all;">
+            IT84U0816335010000190116255
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-[#1E2E26] text-[#F5EEDD] p-8 md:p-10 text-center">
+        <p
+          class="text-lg leading-relaxed m-0 mb-6"
+          style="font-family: 'Source Serif 4', Georgia, serif;"
+        >
+          The finest way to stay in touch? Becoming part of our community.
+        </p>
+        <a
+          href="/en/tesseramento"
+          class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3.5 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Become a member
+        </a>
+      </div>
+
+      <section id="sportello" class="mt-14 scroll-mt-20">
+        {/* HERO fotografico (file forniti da Cristian, generati con AI su direzione
+            creativa dell'Associazione, credito in /crediti-e-licenze). */}
+        <div class="relative rounded-md overflow-hidden mb-10 h-[200px] md:h-[320px]" id="porta">
+          <picture>
+            <source media="(max-width: 767px)" srcset={`${HERO_BASE}/hero-mobile.webp`} type="image/webp" />
+            <source srcset={`${HERO_BASE}/hero.webp`} type="image/webp" />
+            <img
+              src={`${HERO_BASE}/hero.jpg`}
+              alt="Table in an alpine parlour with vintage photographs, a notebook and a magnifying glass"
+              class="absolute inset-0 w-full h-full object-cover object-[center_60%]"
+              width="1920" height="1056"
+              loading="eager"
+              decoding="async"
+            />
+          </picture>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26]/75 via-[#1E2E26]/30 to-[#1E2E26]/20" aria-hidden="true"></div>
+          <div class="absolute inset-x-0 bottom-0 p-6 md:p-8 text-center">
+            <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">Sportello El Brenz</p>
+            <h2 class="text-2xl md:text-4xl text-[#F5EEDD] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+              Bring your <em class="text-[#C8923E]">Story</em>
+            </h2>
+            <p class="text-[#F5EEDD]/85 italic m-0 text-sm md:text-base" style="font-family: 'Source Serif 4', Georgia, serif;">
+              Every family keeps a piece of <em lang="lld-anau">nosa storia</em>. Yours too.
+            </p>
+          </div>
+        </div>
+
+        {/* bivio a due card */}
+        <div class="grid md:grid-cols-2 gap-4 mb-6" role="group" aria-label="Choose your path" style="font-family: 'Inter', sans-serif;">
+          <button type="button" data-percorso="richiesta" aria-pressed="false" class="sportello-bivio bg-[#F5EEDD] border border-[#C8923E]/50 hover:border-[#C8923E] rounded-md p-6 text-left cursor-pointer transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+            <span class="block text-lg text-[#1E2E26] mb-1" style="font-family: 'Playfair Display', serif;">Ask El Brenz</span>
+            <span class="block text-sm text-[#1E2E26]/65">Historical research, publications, visits for schools and groups, press.</span>
+          </button>
+          <button type="button" data-percorso="offerta" aria-pressed="false" class="sportello-bivio bg-[#F5EEDD] border border-[#C8923E]/50 hover:border-[#C8923E] rounded-md p-6 text-left cursor-pointer transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+            {/* SVG scatola-con-foto */}
+            <svg viewBox="0 0 120 80" fill="none" class="w-16 h-auto mb-2 sportello-bivio-icona" aria-hidden="true" role="presentation">
+              <g stroke="#C8923E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <g transform="rotate(-12 45 34)"><rect x="33" y="16" width="24" height="30" fill="#F5EEDD" /><rect x="36.5" y="19.5" width="17" height="17" /></g>
+                <g transform="rotate(10 76 32)"><rect x="64" y="14" width="24" height="30" fill="#F5EEDD" /><rect x="67.5" y="17.5" width="17" height="17" /></g>
+                <g><rect x="49" y="10" width="23" height="29" fill="#F5EEDD" /><rect x="52.5" y="13.5" width="16" height="16" /></g>
+                <path d="M22 40 L98 40 L94 70 L26 70 Z" fill="#F5EEDD" /><path d="M22 40 L98 40 L94 70 L26 70 Z" />
+                <path d="M22 40 L10 30 L30 27 L36 38" fill="#F5EEDD" /><path d="M22 40 L10 30 L30 27 L36 38" />
+                <path d="M98 40 L110 30 L90 27 L84 38" fill="#F5EEDD" /><path d="M98 40 L110 30 L90 27 L84 38" />
+              </g>
+            </svg>
+            <span class="block text-lg text-[#1E2E26] mb-1" style="font-family: 'Playfair Display', serif;">Bring your Story</span>
+            <span class="block text-sm text-[#1E2E26]/65">Documents, photos, objects, memories, words of the valleys, time and skills.</span>
+          </button>
+        </div>
+
+        <form id="sportello-form" data-endpoint={ENDPOINT} class="hidden" novalidate style="font-family: 'Inter', sans-serif;">
+          <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
+
+          {/* chip categorie: un gruppo per percorso */}
+          {[['richiesta', RICHIESTE], ['offerta', OFFERTE]].map(([percorso, cats]) => (
+            <div class="sportello-cats hidden flex-wrap gap-2 mb-6" data-per={percorso} role="group" aria-label="Choose the category">
+              {(cats as Cat[]).map((cat) => (
+                <button type="button" data-cat={cat.chiave} aria-pressed="false" class="sportello-chip bg-white text-[#1E2E26] px-4 py-2 text-xs uppercase tracking-wider rounded-full cursor-pointer border-2 border-[#C8923E]/40 hover:border-[#C8923E] focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">{cat.label}</button>
+              ))}
+            </div>
+          ))}
+
+          {/* nota Andreas per ricerca_storica */}
+          <div id="sportello-nota-andreas" class="hidden bg-[#FDF9F0] border-l-4 border-[#C8923E] px-4 py-3 mb-6 text-sm text-[#1E2E26]/80">
+            💡 Maybe <strong>Andreas</strong>, our history assistant, already has the answer:
+            <button type="button" id="sportello-apri-andreas" class="text-[#8a6215] underline bg-transparent border-0 cursor-pointer p-0 text-sm">ask him right now</button>, it is free and he replies within a minute.
+          </div>
+
+          {/* campi condizionali per categoria */}
+          {[...RICHIESTE, ...OFFERTE].map((cat) => (
+            <div class="sportello-campi hidden grid gap-4 mb-5" data-campi={cat.chiave}>
+              {cat.campi.map((campo) => (
+                <div>
+                  <label for={`sp-${cat.chiave}-${campo.nome}`} class="block text-sm mb-1 text-[#1E2E26]/80">{campo.label}</label>
+                  {campo.tipo === 'textarea' ? (
+                    <textarea id={`sp-${cat.chiave}-${campo.nome}`} name={`p_${campo.nome}`} rows="3" maxlength="1000" placeholder={campo.placeholder} class={inputCls}></textarea>
+                  ) : campo.tipo === 'select' ? (
+                    <select id={`sp-${cat.chiave}-${campo.nome}`} name={`p_${campo.nome}`} class={inputCls}>
+                      <option value="">Select…</option>
+                      {campo.opzioni?.map(([v, l]) => <option value={v}>{l}</option>)}
+                    </select>
+                  ) : (
+                    <input id={`sp-${cat.chiave}-${campo.nome}`} name={`p_${campo.nome}`} type={campo.tipo === 'date' ? 'date' : 'text'} maxlength="500" placeholder={campo.placeholder} class={inputCls} />
+                  )}
+                </div>
+              ))}
+              {CATEGORIE_ARCHIVIO.includes(cat.chiave) && (
+                <fieldset class="border border-[#C8923E]/40 rounded-md px-4 py-3 m-0">
+                  <legend class="text-sm text-[#1E2E26]/80 px-1">If your contribution enters the archive, how would you like to be credited? *</legend>
+                  <label class="flex items-start gap-2 text-sm text-[#1E2E26]/85 mb-2">
+                    <input type="radio" name={`custode_${cat.chiave}`} value="nome" required class="mt-1 accent-[#C8923E]" />
+                    <span>With my name among the <a href="/en/custodi-della-memoria" target="_blank" class="text-[#8a6215] underline">Custodi della Memoria (Keepers of Memory)</a></span>
+                  </label>
+                  <label class="flex items-start gap-2 text-sm text-[#1E2E26]/85">
+                    <input type="radio" name={`custode_${cat.chiave}`} value="anonimo" required class="mt-1 accent-[#C8923E]" />
+                    <span>I prefer to remain anonymous</span>
+                  </label>
+                </fieldset>
+              )}
+              {cat.upload && (
+                <div>
+                  <label for={`sp-${cat.chiave}-allegati`} class="block text-sm mb-1 text-[#1E2E26]/80">Photos or scans (up to 3 files, 5 MB each, JPG, PNG, WebP or PDF)</label>
+                  <input id={`sp-${cat.chiave}-allegati`} type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf" class="sportello-allegati block w-full text-sm text-[#1E2E26]/80 file:mr-3 file:px-4 file:py-2 file:rounded file:border-0 file:bg-[#C8923E] file:text-[#1E2E26] file:text-sm file:font-medium file:cursor-pointer" />
+                  <p class="text-xs text-[#1E2E26]/50 m-0 mt-1">They stay confidential: only the board sees them.</p>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {/* campi comuni */}
+          <div id="sportello-comuni" class="hidden">
+            <div class="grid md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label for="sp-nome" class="block text-sm mb-1 text-[#1E2E26]/80">First and last name *</label>
+                <input id="sp-nome" name="nome" required maxlength="100" class={inputCls} />
+              </div>
+              <div>
+                <label for="sp-email" class="block text-sm mb-1 text-[#1E2E26]/80">Email *</label>
+                <input id="sp-email" name="email" type="email" required maxlength="200" class={inputCls} />
+              </div>
+              <div>
+                <label for="sp-telefono" class="block text-sm mb-1 text-[#1E2E26]/80">Phone (optional)</label>
+                <input id="sp-telefono" name="telefono" maxlength="40" class={inputCls} />
+              </div>
+              <div>
+                <label for="sp-paese" class="block text-sm mb-1 text-[#1E2E26]/80">Village or valley (optional)</label>
+                <input id="sp-paese" name="paese" maxlength="100" placeholder="e.g. Croviana, Val di Sole" class={inputCls} />
+              </div>
+            </div>
+            <div class="mb-4">
+              <label for="sp-messaggio" class="block text-sm mb-1 text-[#1E2E26]/80">Your message</label>
+              <textarea id="sp-messaggio" name="messaggio" rows="5" maxlength="5000" class={inputCls} placeholder="Tell us in your own words…"></textarea>
+            </div>
+            <label class="flex items-start gap-3 text-sm text-[#1E2E26]/80 mb-5">
+              <input type="checkbox" name="consenso" required class="mt-1 shrink-0 accent-[#C8923E]" />
+              <span>I consent to the processing of my data to handle my request, as set out in the <a href="/privacy" target="_blank" class="text-[#8a6215] underline">privacy policy</a>. *</span>
+            </label>
+            <div id="sportello-feedback" class="hidden rounded mb-4 px-4 py-3 text-sm"></div>
+            <button id="sportello-invia" type="submit" class="bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase rounded cursor-pointer border-0 hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+              Send to the Sportello
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  const form = document.getElementById('sportello-form') as HTMLFormElement | null;
+  if (form) {
+    const endpoint = form.dataset.endpoint!;
+    const apertura = Date.now();
+    const UPLOAD_CATS = ['documenti_foto', 'oggetti'];
+    let percorso = '';
+    let categoria = '';
+
+    const bivio = document.querySelectorAll<HTMLButtonElement>('.sportello-bivio');
+    const gruppiCat = document.querySelectorAll<HTMLDivElement>('.sportello-cats');
+    const gruppiCampi = document.querySelectorAll<HTMLDivElement>('.sportello-campi');
+    const comuni = document.getElementById('sportello-comuni')!;
+    const notaAndreas = document.getElementById('sportello-nota-andreas')!;
+    const feedback = document.getElementById('sportello-feedback')!;
+    const invia = document.getElementById('sportello-invia') as HTMLButtonElement;
+
+    function mostra(msg: string, ok: boolean) {
+      feedback.classList.remove('hidden');
+      feedback.style.background = ok ? '#eaf3ee' : '#fbecec';
+      feedback.style.borderLeft = `3px solid ${ok ? '#2d8659' : '#a33'}`;
+      feedback.style.color = '#1E2E26';
+      feedback.textContent = msg;
+      feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // arrivo con #porta (card home, pagina Custodi): apre subito il percorso offerta
+    if (location.hash === '#porta') {
+      requestAnimationFrame(() => {
+        (document.querySelector('.sportello-bivio[data-percorso=offerta]') as HTMLButtonElement | null)?.click();
+      });
+    }
+
+    bivio.forEach((b) => b.addEventListener('click', () => {
+      percorso = b.dataset.percorso!;
+      categoria = '';
+      bivio.forEach((x) => {
+        const attivo = x === b;
+        x.setAttribute('aria-pressed', String(attivo));
+        x.classList.toggle('bg-[#1E2E26]', attivo);
+        x.classList.toggle('bg-[#F5EEDD]', !attivo);
+        x.querySelectorAll('span').forEach((s, i) => {
+          s.classList.toggle('text-[#F5EEDD]', attivo && i === 0);
+          s.classList.toggle('text-[#1E2E26]', !attivo && i === 0);
+          s.classList.toggle('text-[#F5EEDD]/65', attivo && i === 1);
+          s.classList.toggle('text-[#1E2E26]/65', !attivo && i === 1);
+        });
+      });
+      form.classList.remove('hidden');
+      gruppiCat.forEach((g) => {
+        const suo = g.dataset.per === percorso;
+        g.classList.toggle('hidden', !suo);
+        g.classList.toggle('flex', suo);
+      });
+      gruppiCampi.forEach((g) => g.classList.add('hidden'));
+      comuni.classList.add('hidden');
+      notaAndreas.classList.add('hidden');
+      document.querySelectorAll('.sportello-chip').forEach((c) => c.setAttribute('aria-pressed', 'false'));
+    }));
+
+    document.querySelectorAll<HTMLButtonElement>('.sportello-chip').forEach((chip) =>
+      chip.addEventListener('click', () => {
+        categoria = chip.dataset.cat!;
+        chip.closest('.sportello-cats')!.querySelectorAll('.sportello-chip').forEach((c) => {
+          const attivo = c === chip;
+          c.setAttribute('aria-pressed', String(attivo));
+          c.classList.toggle('bg-[#1E2E26]', attivo);
+          c.classList.toggle('text-[#F5EEDD]', attivo);
+          c.classList.toggle('border-[#1E2E26]', attivo);
+          c.classList.toggle('bg-white', !attivo);
+          c.classList.toggle('text-[#1E2E26]', !attivo);
+          c.classList.toggle('border-[#C8923E]/40', !attivo);
+        });
+        gruppiCampi.forEach((g) => {
+          const suo = g.dataset.campi === categoria;
+          g.classList.toggle('hidden', !suo);
+          g.classList.toggle('grid', suo);
+        });
+        comuni.classList.remove('hidden');
+        notaAndreas.classList.toggle('hidden', categoria !== 'ricerca_storica');
+      }));
+
+    document.getElementById('sportello-apri-andreas')?.addEventListener('click', () => {
+      (document.getElementById('fab-andreas') as HTMLButtonElement | null)?.click();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      feedback.classList.add('hidden');
+      if (!categoria) return mostra('Please choose a category first.', false);
+
+      const fd = new FormData();
+      fd.set('categoria', categoria);
+      fd.set('_honeypot', (form.querySelector('[name=_honeypot]') as HTMLInputElement).value);
+      fd.set('_ts', String(apertura));
+      for (const nome of ['nome', 'email', 'telefono', 'paese', 'messaggio']) {
+        fd.set(nome, (form.querySelector(`[name=${nome}]`) as HTMLInputElement)?.value.trim() ?? '');
+      }
+      fd.set('consenso', (form.querySelector('[name=consenso]') as HTMLInputElement).checked ? 'on' : '');
+      // solo i campi della categoria attiva
+      const gruppo = document.querySelector(`.sportello-campi[data-campi="${categoria}"]`)!;
+      // Custodi della Memoria: radio obbligatorio nelle categorie d'archivio
+      const radioCustode = gruppo.querySelector<HTMLInputElement>(`[name=custode_${categoria}]:checked`);
+      const custodeRichiesto = gruppo.querySelector(`[name=custode_${categoria}]`) !== null;
+      if (custodeRichiesto) {
+        if (!radioCustode) return mostra('Tell us how you would like to be credited (or choose to stay anonymous).', false);
+        fd.set('p_consenso_custode', radioCustode.value);
+      }
+      gruppo.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('[name^=p_]').forEach((c) => {
+        if (c.value.trim()) fd.set(c.name, c.value.trim());
+      });
+      // allegati solo per le categorie con upload
+      if (UPLOAD_CATS.includes(categoria)) {
+        const fileInput = gruppo.querySelector<HTMLInputElement>('.sportello-allegati');
+        const files = Array.from(fileInput?.files ?? []);
+        if (files.length > 3) return mostra('No more than 3 attachments.', false);
+        for (const f of files) {
+          if (f.size > 5 * 1024 * 1024) return mostra(`"${f.name}" exceeds 5 MB.`, false);
+          fd.append('allegati', f);
+        }
+      }
+      if (!fd.get('consenso')) return mostra('We need your privacy consent in order to reply to you.', false);
+
+      invia.disabled = true;
+      invia.textContent = 'Sending…';
+      try {
+        const resp = await fetch(endpoint, { method: 'POST', body: fd });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+          mostra(`Thank you! Your request number is ${data.codice}: we have sent you a summary by email. We will reply within 7–10 days.`, true);
+          form.reset();
+        } else {
+          mostra(data.error || 'Something went wrong: try again or write to info@elbrenz.eu.', false);
+        }
+      } catch {
+        mostra('Network error: check your connection and try again.', false);
+      } finally {
+        invia.disabled = false;
+        invia.textContent = 'Send to the Sportello';
+      }
+    });
+  }
+</script>
