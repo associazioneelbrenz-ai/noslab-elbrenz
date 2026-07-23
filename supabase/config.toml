@@ -154,6 +154,62 @@ static_files = [
   "./functions/tessera-download/fonts/PlayfairDisplay-Italic.ttf",
 ]
 
+# =============================================================================
+# CENSIMENTO ANTI-OUTAGE (23/7/2026) — dichiarazione ESPLICITA di tutte le
+# function di produzione che restavano affidate al default verify_jwt=true.
+# Valori allineati 1:1 allo stato LIVE (supabase functions list del 23/7):
+# nessun cambio di comportamento, solo blindatura del manifest cosi' che un
+# batch redeploy non possa flippare il flag di una function non dichiarata.
+# Tutte chiamate CON un JWT valido (anon-key dal browser o JWT utente) + gate
+# interno lato server: verify_jwt=TRUE e' corretto e va conservato.
+# =============================================================================
+
+# OTP login: chiamate dal browser PRIMA del login con l'anon-key (che e' un JWT
+# valido) -> il gateway a verify_jwt=true passa; l'OTP vero e' gate interno.
+[functions.otp-request]
+verify_jwt = true
+
+[functions.otp-verify]
+verify_jwt = true
+
+# andreas-hofer: variante KB Andreas Hofer, chiamata con anon-key/JWT.
+[functions.andreas-hofer]
+verify_jwt = true
+
+# articolo-azione: azioni redazionali, JWT utente + getUser + gate ruolo.
+[functions.articolo-azione]
+verify_jwt = true
+
+# avatar-upload: upload avatar dell'utente loggato (getUser + gate).
+[functions.avatar-upload]
+verify_jwt = true
+
+# carica-media: upload media dell'utente loggato (getUser + gate).
+[functions.carica-media]
+verify_jwt = true
+
+# push-config: espone la config push (VAPID public), chiamata con anon-key.
+[functions.push-config]
+verify_jwt = true
+
+# telegram-link-token: genera il token di collegamento Telegram per l'utente
+# loggato (getUser + gate).
+[functions.telegram-link-token]
+verify_jwt = true
+
+# invia-push: LIVE a verify_jwt=true. NOTA: usa un gate x-webhook-secret; se in
+# futuro dovesse essere invocata server-to-server SENZA JWT (es. da un webhook
+# DB), servira' verify_jwt=false. Verificare col mittente reale prima di
+# cambiarla. Per ora si codifica lo stato che funziona (true). // TODO verify
+[functions.invia-push]
+verify_jwt = true
+
+# wp-import: import WordPress one-off via service role, NON deployata in prod
+# (solo nel repo). Se un giorno la si deploya, il default true e' l'intento:
+# invocazione manuale con service-role key (JWT valido), mai anonima.
+[functions.wp-import]
+verify_jwt = true
+
 # NOTA: test-search e andreas-test sono function scratch (verify_jwt=false in
 # prod) da ELIMINARE, non da blindare. Vanno rimosse dalla dashboard Supabase
 # (azione distruttiva: la fa Cristian). Finche' esistono, non ridistribuirle.
