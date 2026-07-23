@@ -19,6 +19,7 @@ import '../styles/global.css';
 import '../styles/fonts.css';
 import Wordmark from '../components/Wordmark.astro';
 import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
+import FirmaNosLab from '../components/FirmaNosLab.astro';
 import BandieraLadina from '../components/BandieraLadina.astro';
 import Header from '../components/Header.astro';
 import FabAndreas from '../components/FabAndreas.astro';
@@ -235,19 +236,15 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
           <br class="hidden sm:block" /><span class="text-[#F5EEDD]/40">Decorazione: <em>Aquila Tirolensis</em> di Matthias Burgklechner (XVII sec.), opera in pubblico dominio.</span>
         </p>
         {/* AGGIORNAMENTO 8/7/2026 sera (decisione Cristian): credit NosLab
-            col logo ufficiale (bianco su trasparente, ok sul verde scuro
-            del footer) al posto del solo testo. */}
-        <a
-          href="https://noslab.it"
-          target="_blank"
-          rel="noopener"
-          aria-label="NosLab · sviluppo del sito"
-          class="inline-flex items-center gap-2 flex-wrap opacity-80 hover:opacity-100 transition-opacity no-underline mr-20 md:mr-24"
-        >
-          <span class="text-xs text-[#F5EEDD]/70">Sviluppato da</span>
-          <img src="/partner/noslab-logo-footer.png" alt="NosLab" width="110" height="28" loading="lazy" decoding="async" class="h-6 md:h-7 w-auto" />
-          <span class="text-xs text-[#F5EEDD]/70">un contributo <em>pro bono</em> alla comunità delle valli</span>
-        </a>
+            col logo ufficiale al posto del solo testo.
+            AGGIORNAMENTO 23/7/2026: sostituito con la firma di produzione
+            ufficiale del kit NosLab (FirmaNosLab, pulsante con marchio SVG +
+            sfondo lima animato leggero). Conservata la microcopia "pro bono"
+            come didascalia (scelta di Cristian dell'8/7, REGOLA FERREA). */}
+        <div class="flex flex-col items-start md:items-end gap-2 mr-20 md:mr-24">
+          <FirmaNosLab theme="dark" size="md" />
+          <span class="text-[11px] text-[#F5EEDD]/45">un contributo <em>pro bono</em> alla comunità delle valli</span>
+        </div>
       </div>
     </footer>
 

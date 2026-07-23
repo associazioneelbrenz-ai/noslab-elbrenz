@@ -1,0 +1,262 @@
+---
+/**
+ * FirmaNosLab — firma di produzione "Sito realizzato da NosLab S.a.s."
+ *
+ * Marchio ufficiale NosLab (kit "kitnoslabcorretto", variante A React
+ * adattata ad Astro). Namespace `nslbr-` per non collidere con altro CSS.
+ * Zero dipendenze, zero risorse esterne, CSP-safe: SVG inline + system font.
+ *
+ * Il pulsante ("pulsante") monta uno sfondo lima animato leggero
+ * (::before in deriva lenta) che rispetta prefers-reduced-motion.
+ *
+ * Verde ufficiale del marchio: #8FD64E (SOLO grafica/accenti).
+ * Verde-inchiostro #436B1A: SOLO testo/anello di focus su fondo chiaro.
+ */
+
+interface Props {
+  /** Tema del contenitore ospite. Il footer El Brenz e' scuro → 'dark'. */
+  theme?: 'light' | 'dark' | 'auto';
+  /** Taglia del pulsante. 'md' per il footer. */
+  size?: 'sm' | 'md';
+  /** Classi Tailwind aggiuntive sul contenitore (es. margini). */
+  class?: string;
+}
+
+const {
+  theme = 'dark',
+  size = 'md',
+  class: extraClass = '',
+} = Astro.props;
+
+// I 3 path del marchio, dal viewBox originale "21.51 84.85 523.91 397.24".
+const PATH_BODY =
+  'M 475.171875 283.394531 L 475.171875 411.800781 L 373.269531 411.800781 L 373.269531 283.394531 C 373.269531 233.851562 332.945312 193.578125 283.40625 193.578125 C 233.863281 193.578125 193.585938 233.851562 193.585938 283.394531 L 193.585938 475.164062 L 91.6875 475.164062 L 91.6875 283.394531 C 91.6875 177.515625 177.527344 91.679688 283.40625 91.679688 C 389.332031 91.679688 475.171875 177.515625 475.171875 283.394531';
+const PATH_ACCENT_1 =
+  'M 74.226562 475.164062 L 28.34375 475.164062 L 28.34375 429.28125 L 74.226562 429.28125 Z M 74.226562 475.164062';
+const PATH_ACCENT_2 =
+  'M 538.515625 429.300781 L 211.042969 429.300781 L 211.042969 475.179688 L 538.515625 475.179688 Z M 538.515625 429.300781';
+---
+
+<a
+  class:list={['nslbr-sign', `nslbr-sign--${theme}`, `nslbr-sign--${size}`, extraClass]}
+  href="https://noslab.it"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="Sito realizzato da NosLab S.a.s. bottega digitale alpina (si apre in una nuova scheda)"
+>
+  <svg
+    class="nslbr-sign__mark"
+    viewBox="21.51 84.85 523.91 397.24"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d={PATH_BODY} fill="currentColor" fill-rule="nonzero" />
+    <path class="nslbr-sign__accent" d={PATH_ACCENT_1} fill="currentColor" fill-rule="nonzero" />
+    <path class="nslbr-sign__accent" d={PATH_ACCENT_2} fill="currentColor" fill-rule="nonzero" />
+  </svg>
+  <span class="nslbr-sign__text">
+    <span class="nslbr-sign__label">Sito realizzato da</span>
+    <span class="nslbr-sign__name">NosLab S.a.s.</span>
+    <span class="nslbr-sign__payoff">bottega digitale alpina</span>
+  </span>
+</a>
+
+<style>
+  /* ==========================================================================
+     Kit ufficiale NosLab — variante A (namespace nslbr-). Copiato fedelmente
+     da react/noslab-sign.css; aggiunto SOLO lo sfondo lima animato (::before).
+     ========================================================================== */
+  .nslbr-sign {
+    --nslbr-green: #8FD64E;   /* grafica SVG: verde ufficiale, sempre */
+    --nslbr-hi: #436B1A;      /* TESTO nome hover + anello di focus   */
+    --nslbr-ink: #21213F;
+    --nslbr-ivory: #EEF3F6;
+    --nslbr-muted: #55566D;
+    --nslbr-font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --nslbr-font-serif: Georgia, 'Times New Roman', Times, serif;
+
+    position: relative;
+    overflow: hidden; /* clip dello sfondo lima in deriva */
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    direction: ltr;
+    max-width: 100%;
+    margin: 0;
+    border: 1px solid transparent;
+    text-decoration: none;
+    text-align: left;
+    text-transform: none;
+    font-family: var(--nslbr-font-ui);
+    font-size: 13px;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.25;
+    letter-spacing: normal;
+    cursor: pointer;
+    background-image: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color .35s ease, background-color .35s ease, transform .35s ease;
+  }
+  .nslbr-sign * { box-sizing: border-box; }
+
+  /* --- SFONDO LIMA IN MOVIMENTO (aggiunta El Brenz) -----------------------
+     Alone lima morbido che deriva lentamente dietro il contenuto. Leggero:
+     bassa opacita', tinta ufficiale #8FD64E. Il contenuto resta sopra (z-index).
+     --------------------------------------------------------------------- */
+  .nslbr-sign::before {
+    content: "";
+    position: absolute;
+    inset: -50% -30%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(52% 130% at 22% 50%, rgba(143, 214, 78, .24), rgba(143, 214, 78, 0) 62%),
+      radial-gradient(46% 120% at 82% 50%, rgba(143, 214, 78, .14), rgba(143, 214, 78, 0) 60%);
+    animation: nslbr-drift 9s ease-in-out infinite alternate;
+    will-change: transform, opacity;
+  }
+  @keyframes nslbr-drift {
+    0%   { transform: translate3d(-12%, -4%, 0) scale(1);    opacity: .55; }
+    50%  { transform: translate3d(2%, 2%, 0) scale(1.06);    opacity: .95; }
+    100% { transform: translate3d(14%, 4%, 0) scale(1);      opacity: .6; }
+  }
+
+  /* Contenuto sopra l'alone. */
+  .nslbr-sign .nslbr-sign__mark,
+  .nslbr-sign .nslbr-sign__text { position: relative; z-index: 1; }
+
+  /* Reset difensivo (0,1,1) contro il CSS della pagina ospite. */
+  .nslbr-sign span {
+    display: block; margin: 0; padding: 0; border: 0; background: none;
+    color: inherit; text-decoration: none; text-transform: none;
+    font-style: normal; font-weight: 400; letter-spacing: normal; white-space: nowrap;
+  }
+
+  .nslbr-sign .nslbr-sign__mark {
+    display: block; height: auto; max-width: none; flex: 0 0 auto;
+    opacity: .55;
+    transition: opacity .35s ease, transform .45s cubic-bezier(.2, .8, .2, 1);
+  }
+  .nslbr-sign .nslbr-sign__accent {
+    fill: currentColor; opacity: .5;
+    transition: fill .35s ease, opacity .35s ease;
+  }
+
+  .nslbr-sign .nslbr-sign__text {
+    display: flex; flex-direction: column; align-items: flex-start;
+    min-width: 0; margin: 0; padding: 0; line-height: 1.25;
+  }
+  .nslbr-sign .nslbr-sign__label {
+    font-family: var(--nslbr-font-ui); font-weight: 600;
+    line-height: 1.2; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--nslbr-muted); margin: 0 0 3px;
+  }
+  .nslbr-sign .nslbr-sign__name {
+    font-family: var(--nslbr-font-ui); font-weight: 600;
+    line-height: 1.25; letter-spacing: .01em; color: inherit; margin: 0;
+    transition: color .35s ease;
+  }
+  .nslbr-sign .nslbr-sign__payoff {
+    font-family: var(--nslbr-font-serif); font-style: italic; font-weight: 400;
+    line-height: 1.3; letter-spacing: normal;
+    color: var(--nslbr-muted); margin: 2px 0 0;
+  }
+
+  /* --- STATI: :hover e :focus-visible in regole SEPARATE ------------------ */
+  .nslbr-sign:hover { border-color: rgba(135, 207, 59, .45); transform: translateY(-2px); }
+  .nslbr-sign:hover .nslbr-sign__mark { opacity: 1; transform: translateY(-1px); }
+  .nslbr-sign:hover .nslbr-sign__accent { fill: var(--nslbr-green); opacity: 1; }
+  .nslbr-sign:hover .nslbr-sign__name { color: var(--nslbr-hi); }
+
+  .nslbr-sign:focus { outline: 2px solid var(--nslbr-hi); outline-offset: 3px; }
+  .nslbr-sign:focus:not(:focus-visible) { outline: 0; }
+
+  .nslbr-sign:focus-visible {
+    outline: 2px solid var(--nslbr-hi); outline-offset: 3px;
+    border-color: rgba(135, 207, 59, .45); transform: translateY(-2px);
+  }
+  .nslbr-sign:focus-visible .nslbr-sign__mark { opacity: 1; transform: translateY(-1px); }
+  .nslbr-sign:focus-visible .nslbr-sign__accent { fill: var(--nslbr-green); opacity: 1; }
+  .nslbr-sign:focus-visible .nslbr-sign__name { color: var(--nslbr-hi); }
+
+  /* --- TEMI --------------------------------------------------------------- */
+  .nslbr-sign--light,
+  .nslbr-sign--auto {
+    color: var(--nslbr-ink);
+    border-color: rgba(32, 33, 57, .16);
+    background-color: rgba(32, 33, 57, .03);
+    --nslbr-hi: #436B1A;
+    --nslbr-muted: #55566D;
+  }
+  .nslbr-sign--light:hover,
+  .nslbr-sign--auto:hover { background-color: rgba(67, 107, 26, .07); }
+  .nslbr-sign--light:focus-visible,
+  .nslbr-sign--auto:focus-visible { background-color: rgba(67, 107, 26, .07); }
+
+  .nslbr-sign--dark {
+    color: var(--nslbr-ivory);
+    border-color: rgba(238, 243, 246, .16);
+    background-color: rgba(238, 243, 246, .03);
+    --nslbr-hi: #8FD64E;
+    --nslbr-muted: #B8B6C6;
+  }
+  .nslbr-sign--dark:hover { background-color: rgba(135, 207, 59, .10); }
+  .nslbr-sign--dark:focus-visible { background-color: rgba(135, 207, 59, .10); }
+
+  @media (prefers-color-scheme: dark) {
+    .nslbr-sign--auto {
+      color: var(--nslbr-ivory);
+      border-color: rgba(238, 243, 246, .16);
+      background-color: rgba(238, 243, 246, .03);
+      --nslbr-hi: #8FD64E;
+      --nslbr-muted: #B8B6C6;
+    }
+    .nslbr-sign--auto:hover { background-color: rgba(135, 207, 59, .10); }
+    .nslbr-sign--auto:focus-visible { background-color: rgba(135, 207, 59, .10); }
+  }
+
+  /* --- TAGLIE (px: immuni a html{font-size:62.5%}) ------------------------ */
+  .nslbr-sign--md { padding: 10px 18px 10px 14px; border-radius: 10px; }
+  .nslbr-sign--md .nslbr-sign__mark { width: 30px; margin: 0 14px 0 0; }
+  .nslbr-sign--md .nslbr-sign__label { font-size: 10px; }
+  .nslbr-sign--md .nslbr-sign__name { font-size: 13px; }
+  .nslbr-sign--md .nslbr-sign__payoff { font-size: 11px; }
+
+  .nslbr-sign--sm { padding: 8px 14px 8px 11px; border-radius: 8px; }
+  .nslbr-sign--sm .nslbr-sign__mark { width: 24px; margin: 0 11px 0 0; }
+  .nslbr-sign--sm .nslbr-sign__label { font-size: 9px; }
+  .nslbr-sign--sm .nslbr-sign__name { font-size: 12px; }
+  .nslbr-sign--sm .nslbr-sign__payoff { font-size: 10px; }
+
+  /* --- MOVIMENTO RIDOTTO -------------------------------------------------- */
+  @media (prefers-reduced-motion: reduce) {
+    .nslbr-sign,
+    .nslbr-sign .nslbr-sign__mark,
+    .nslbr-sign .nslbr-sign__accent,
+    .nslbr-sign .nslbr-sign__name { transition: none; }
+    .nslbr-sign:hover { transform: none; }
+    .nslbr-sign:focus-visible { transform: none; }
+    .nslbr-sign:hover .nslbr-sign__mark { transform: none; }
+    .nslbr-sign:focus-visible .nslbr-sign__mark { transform: none; }
+    /* sfondo lima fermo ma presente (leggero) */
+    .nslbr-sign::before { animation: none; opacity: .5; transform: none; }
+  }
+
+  /* --- ALTO CONTRASTO ----------------------------------------------------- */
+  @media (forced-colors: active) {
+    .nslbr-sign { border-color: CanvasText; }
+    .nslbr-sign::before { display: none; }
+    .nslbr-sign .nslbr-sign__mark { opacity: 1; }
+    .nslbr-sign .nslbr-sign__accent { fill: CanvasText; opacity: 1; }
+    .nslbr-sign .nslbr-sign__label,
+    .nslbr-sign .nslbr-sign__name,
+    .nslbr-sign .nslbr-sign__payoff { color: LinkText; }
+    .nslbr-sign:hover .nslbr-sign__accent { fill: CanvasText; }
+    .nslbr-sign:focus-visible .nslbr-sign__accent { fill: CanvasText; }
+    .nslbr-sign:hover .nslbr-sign__name { color: LinkText; }
+    .nslbr-sign:focus-visible .nslbr-sign__name { color: LinkText; }
+  }
+</style>
