@@ -1,0 +1,243 @@
+---
+/**
+ * PopupLocandinaRitterspiele — interstitial in home per la gita ai Ritterspiele.
+ *
+ * Lightbox a schermo pieno con la locandina (self-hosted, webp ottimizzata,
+ * srcset 800/1400) + bottone oro verso l'iscrizione. Montato SOLO nella home
+ * (index.astro): così le esclusioni richieste (/gita-giochi-medievali-2026*,
+ * /privacy, /tesseramento, pagine con form, pagine articolo) sono garantite
+ * per costruzione, non da una lista di path.
+ *
+ * Comportamento (deciso con Cristian, brief 26/7/2026):
+ *  - Trigger: dopo 4s OPPURE al 30% di scroll, quello che arriva prima.
+ *  - Frequenza: una volta per visitatore; se chiuso non ricompare per 7 giorni
+ *    (localStorage eb_popup_ritter_chiuso = timestamp).
+ *  - Morte automatica: dopo il 14/8/2026 non appare più (data nel codice);
+ *    a posti esauriti non appare (stessa vista aggregata v_posti_gita della
+ *    barra countdown in home — nessun dato personale).
+ *  - Chiusura: X in alto a destra, ESC, click sull'overlay. Click sulla
+ *    locandina = vai all'iscrizione (stesso link del bottone).
+ *  - A11y: role=dialog + aria-modal + focus trap; prefers-reduced-motion
+ *    rispettato. Immagine lazy/async, overlay hidden di default → zero CLS.
+ *
+ * NON raccoglie dati. Consuma solo il contatore posti, non lo tocca.
+ */
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SB_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+
+// Link unico per bottone e click-sull'immagine (UTM per attribuzione popup).
+const HREF = '/gita-giochi-medievali-2026/iscrizione?utm_source=popup';
+// Morte automatica: primo istante in cui NON deve più apparire (dopo il 14/8).
+const CUTOFF_ISO = '2026-08-15T00:00:00+02:00';
+---
+
+<div
+  id="eb-popup-ritter"
+  class="eb-pr-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="eb-pr-title"
+  hidden
+>
+  <span id="eb-pr-title" class="eb-pr-sr">Gita ai Ritterspiele di Ehrenberg · iscrizioni aperte</span>
+  <div class="eb-pr-box">
+    <button type="button" class="eb-pr-x" aria-label="Chiudi">&#10005;</button>
+    <a class="eb-pr-imglink" href={HREF} aria-label="Vai all'iscrizione alla gita ai Ritterspiele">
+      <img
+        class="eb-pr-img"
+        src="/img/gita/locandina-ritterspiele-2026.webp"
+        srcset="/img/gita/locandina-ritterspiele-2026-800.webp 566w, /img/gita/locandina-ritterspiele-2026.webp 990w"
+        sizes="(max-width: 700px) 92vw, 60vh"
+        width="990"
+        height="1400"
+        alt="Locandina della gita ai Ritterspiele di Ehrenberg — 22 agosto 2026"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+    <a class="eb-pr-cta" href={HREF}>Iscriviti e blocca il posto</a>
+  </div>
+</div>
+
+<style>
+  .eb-pr-sr {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .eb-pr-overlay {
+    position: fixed; inset: 0; z-index: 70;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px 16px;
+  }
+  .eb-pr-overlay[hidden] { display: none; }
+  .eb-pr-box {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    max-width: 100%; max-height: 100%;
+    gap: 14px;
+  }
+  /* La locandina non viene MAI tagliata (contain) e lascia spazio al bottone
+     sotto: cap sull'altezza = viewport meno l'ingombro del CTA + respiro. */
+  .eb-pr-imglink { display: block; line-height: 0; }
+  .eb-pr-img {
+    display: block;
+    max-width: min(92vw, 60vh);
+    max-height: calc(100dvh - 120px);
+    width: auto; height: auto;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    cursor: pointer;
+  }
+  .eb-pr-cta {
+    flex: 0 0 auto;
+    background: #C8923E; color: #1E2E26;
+    font-family: 'Inter', sans-serif; font-weight: 700;
+    font-size: 15px; letter-spacing: 0.02em;
+    text-decoration: none;
+    padding: 13px 30px; border-radius: 999px;
+    box-shadow: 0 8px 22px rgba(200, 146, 62, 0.45);
+    transition: background-color 0.18s ease, transform 0.18s ease;
+  }
+  .eb-pr-cta:hover, .eb-pr-cta:focus-visible {
+    background: #D9A94E; transform: translateY(-1px);
+  }
+  .eb-pr-x {
+    position: absolute; top: -14px; right: -8px; z-index: 2;
+    width: 40px; height: 40px; border: 0; border-radius: 50%;
+    background: rgba(245, 238, 221, 0.95); color: #1E2E26;
+    font-size: 17px; line-height: 1; cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .eb-pr-x:hover, .eb-pr-x:focus-visible { background: #ffffff; }
+
+  @media (max-width: 700px) {
+    .eb-pr-img { max-width: 92vw; max-height: calc(100dvh - 108px); }
+    .eb-pr-x { top: -10px; right: -4px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .eb-pr-cta { transition: none; }
+  }
+</style>
+
+<script is:inline define:vars={{ SB_URL, SB_ANON, HREF, CUTOFF_ISO }}>
+  (function () {
+    var LS_KEY = 'eb_popup_ritter_chiuso';
+    var SETTE_GIORNI = 7 * 24 * 60 * 60 * 1000;
+
+    var overlay = document.getElementById('eb-popup-ritter');
+    if (!overlay) return;
+
+    // 1) Morte automatica per data (dopo il 14/8/2026).
+    if (Date.now() >= new Date(CUTOFF_ISO).getTime()) return;
+
+    // 2) Già chiuso di recente? (7 giorni) — fail-safe se localStorage manca.
+    try {
+      var t = parseInt(localStorage.getItem(LS_KEY) || '0', 10);
+      if (t && Date.now() - t < SETTE_GIORNI) return;
+    } catch (e) { /* private mode: prosegui, si comporterà come 1/sessione */ }
+
+    // 3) Posti esauriti? Consuma la stessa vista aggregata della barra home.
+    //    Fail-open: se la fetch non risponde, il popup resta possibile.
+    var postiEsauriti = false;
+    var postiRisolti = false;
+    if (SB_URL && SB_ANON) {
+      fetch(SB_URL + '/rest/v1/v_posti_gita?select=posti_totali,posti_occupati', {
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON },
+      })
+        .then(function (r) { return r.ok ? r.json() : []; })
+        .then(function (rows) {
+          var row = Array.isArray(rows) ? rows[0] : null;
+          if (row) {
+            var totali = Number(row.posti_totali) || 54;
+            var occupati = Math.min(Number(row.posti_occupati) || 0, totali);
+            if (Math.max(totali - occupati, 0) <= 0) postiEsauriti = true;
+          }
+          postiRisolti = true;
+          if (postiEsauriti) disarma();
+        })
+        .catch(function () { postiRisolti = true; });
+    } else {
+      postiRisolti = true;
+    }
+
+    var mostrato = false;
+    var timer = null;
+    var armato = true;
+    var ultimoFocus = null;
+
+    function disarma() {
+      armato = false;
+      if (timer) { clearTimeout(timer); timer = null; }
+      window.removeEventListener('scroll', suScroll);
+    }
+
+    function suScroll() {
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      if (h > 0 && window.scrollY / h >= 0.3) tentaApertura();
+    }
+
+    function tentaApertura() {
+      if (!armato || mostrato) return;
+      if (postiEsauriti) { disarma(); return; }
+      apri();
+    }
+
+    var box = overlay.querySelector('.eb-pr-box');
+    var btnX = overlay.querySelector('.eb-pr-x');
+
+    function focusabili() {
+      return Array.prototype.slice.call(
+        overlay.querySelectorAll('a[href], button:not([disabled])'),
+      );
+    }
+
+    function suTasto(e) {
+      if (e.key === 'Escape') { chiudi(); return; }
+      if (e.key !== 'Tab') return;
+      var f = focusabili();
+      if (!f.length) return;
+      var primo = f[0], ultimo = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === primo) {
+        e.preventDefault(); ultimo.focus();
+      } else if (!e.shiftKey && document.activeElement === ultimo) {
+        e.preventDefault(); primo.focus();
+      }
+    }
+
+    function apri() {
+      mostrato = true;
+      disarma();
+      ultimoFocus = document.activeElement;
+      overlay.hidden = false;
+      document.documentElement.style.overflow = 'hidden';
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && box.animate) {
+        box.animate(
+          [{ opacity: 0, transform: 'scale(.96)' }, { opacity: 1, transform: 'scale(1)' }],
+          { duration: 200, easing: 'ease-out' },
+        );
+      }
+      document.addEventListener('keydown', suTasto);
+      if (btnX) btnX.focus();
+    }
+
+    function chiudi() {
+      overlay.hidden = true;
+      document.documentElement.style.overflow = '';
+      document.removeEventListener('keydown', suTasto);
+      try { localStorage.setItem(LS_KEY, String(Date.now())); } catch (e) { /* ignora */ }
+      if (ultimoFocus && ultimoFocus.focus) ultimoFocus.focus();
+    }
+
+    if (btnX) btnX.addEventListener('click', chiudi);
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) chiudi();
+    });
+
+    window.addEventListener('scroll', suScroll, { passive: true });
+    timer = setTimeout(tentaApertura, 4000);
+  })();
+</script>

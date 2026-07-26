@@ -13,6 +13,9 @@ import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 // go-live pagamenti attivo (build time, vedi src/lib/pagamenti.ts).
 import { PAGAMENTI_LIVE } from '../lib/pagamenti';
 import LightboxEmbed from '../components/LightboxEmbed.astro';
+// Interstitial locandina Ritterspiele (solo home; si auto-disattiva dopo il
+// 14/8/2026 e a posti esauriti — vedi il componente).
+import PopupLocandinaRitterspiele from '../components/PopupLocandinaRitterspiele.astro';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
 
@@ -1234,6 +1237,8 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
       </div>
     </div>
   </section>
+
+  <PopupLocandinaRitterspiele />
 
 </Layout>
 
