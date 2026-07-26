@@ -32,6 +32,8 @@ import {
 interface Props {
   title?: string;
   description?: string;
+  /** Override esplicito di og:title (senza suffisso brand). Se assente usa fullTitle. */
+  ogTitle?: string;
   ogImage?: string;
   ogType?: 'website' | 'article';
   noindex?: boolean;
@@ -44,6 +46,7 @@ interface Props {
 const {
   title = 'El Brenz da le Val del Nos',
   description = 'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Storia, lingua ladino-anaunica, cultura di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo.',
+  ogTitle,
   ogImage = '/og-image.png',
   ogType = 'website',
   noindex = false,
@@ -117,7 +120,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     ))}
     <link rel="alternate" hreflang="x-default" href={xDefaultHref} />
     <meta property="og:type" content={ogType} />
-    <meta property="og:title" content={fullTitle} />
+    <meta property="og:title" content={ogTitle ?? fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={ogImageURL} />
@@ -129,7 +132,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     <meta property="og:site_name" content="El Brenz · Associazione Storico Culturale" />
     <meta property="og:locale" content={ogLocale[pl]} />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:title" content={ogTitle ?? fullTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImageURL} />
     {/* AUD-E3 (10/7/2026): font self-hosted in /fonts/ via src/styles/fonts.css

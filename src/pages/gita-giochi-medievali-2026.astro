@@ -12,14 +12,26 @@
  */
 
 import Layout from '../layouts/Layout.astro';
+import { getPostiGita, descrizioneGita } from '../lib/postiGita';
+
+// SSR (prerender=false): l'anteprima social mostra i posti REALI del momento.
+// I posti si leggono server-side dalla stessa vista v_posti_gita della home
+// (fail-safe: se la query cade, descrizione generica, MAI 500). Cache breve
+// così gli scraper prendono numeri freschi senza martellare il DB.
+export const prerender = false;
+
+const posti = await getPostiGita();
+const ogDescription = descrizioneGita(posti);
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
 const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]';
 ---
 
 <Layout
   title="Un giorno nel Medioevo · Gita ai Giochi Medievali, 22 agosto 2026"
-  description="Gita sociale El Brenz ai Giochi Medievali dell'Alto Adige, 22 agosto 2026. Posti limitati, soci a tariffa agevolata."
-  ogImage="/og/og-gita-giochi-medievali.jpg"
+  ogTitle="Gita ai Giochi Medievali dell'Alto Adige · 22 agosto 2026"
+  description={ogDescription}
+  ogImage="/og/gita-ritterspiele-2026.jpg"
 >
   {/* ===================== HERO ===================== */}
   <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">

@@ -13,6 +13,14 @@
  * createOrder/onApprove, come su /dona e /tesseramento.
  */
 import Layout from '../../layouts/Layout.astro';
+import { getPostiGita, descrizioneGita } from '../../lib/postiGita';
+
+// SSR (prerender=false): anche condividendo il link di iscrizione, l'anteprima
+// social mostra i posti REALI (stessa vista v_posti_gita della home, fail-safe).
+// Il flusso PayPal e la logica cutoff restano client-side, invariati.
+export const prerender = false;
+const ogDescription = descrizioneGita(await getPostiGita());
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
 // Anon key nelle chiamate (fix E, 21/7): le edge gita sono verify_jwt=true; senza
@@ -39,8 +47,9 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
 
 <Layout
   title="Iscriviti alla gita ai Giochi Medievali · El Brenz"
-  description="Iscriviti alla gita sociale El Brenz ai Giochi Medievali di Sluderno (22 agosto 2026): verifica la tariffa socio, blocca il posto con l'anticipo di 30 €, bonus preorder di 5 € entro il 31 luglio. Posti limitati."
-  ogImage="/og/og-gita-giochi-medievali.jpg"
+  ogTitle="Gita ai Giochi Medievali dell'Alto Adige · 22 agosto 2026"
+  description={ogDescription}
+  ogImage="/og/gita-ritterspiele-2026.jpg"
 >
   <header class="bg-[#1E2E26] text-[#F5EEDD]">
     <div class="max-w-2xl mx-auto px-6 py-12 md:py-16">
