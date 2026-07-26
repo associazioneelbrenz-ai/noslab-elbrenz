@@ -44,15 +44,18 @@ const CUTOFF_ISO = '2026-08-15T00:00:00+02:00';
   <div class="eb-pr-box">
     <button type="button" class="eb-pr-x" aria-label="Chiudi">&#10005;</button>
     <a class="eb-pr-imglink" href={HREF} aria-label="Vai all'iscrizione alla gita ai Ritterspiele">
+      {/* La sorgente NON è nell'HTML: chi non vedrà il popup (soppresso 7gg,
+          data superata, posti esauriti) non scarica nulla. Lo script scalda la
+          cache dopo i gate e assegna src/srcset all'apertura → mostra istantaneo,
+          zero costo per gli altri. width/height fissi = zero CLS. */}
       <img
         class="eb-pr-img"
-        src="/img/gita/locandina-ritterspiele-2026.webp"
-        srcset="/img/gita/locandina-ritterspiele-2026-800.webp 566w, /img/gita/locandina-ritterspiele-2026.webp 990w"
-        sizes="(max-width: 700px) 92vw, 60vh"
+        data-src="/img/gita/locandina-ritterspiele-2026.webp"
+        data-srcset="/img/gita/locandina-ritterspiele-2026-800.webp 566w, /img/gita/locandina-ritterspiele-2026.webp 990w"
+        data-sizes="(max-width: 700px) 92vw, 60vh"
         width="990"
         height="1400"
         alt="Locandina della gita ai Ritterspiele di Ehrenberg — 22 agosto 2026"
-        loading="lazy"
         decoding="async"
       />
     </a>
@@ -140,6 +143,22 @@ const CUTOFF_ISO = '2026-08-15T00:00:00+02:00';
       if (t && Date.now() - t < SETTE_GIORNI) return;
     } catch (e) { /* private mode: prosegui, si comporterà come 1/sessione */ }
 
+    // Gate data + 7gg passati: scalda la cache ADESSO, così durante l'attesa di
+    // 4s la locandina è già pronta e l'apertura è istantanea (niente flash).
+    var img = overlay.querySelector('.eb-pr-img');
+    function montaImg() {
+      if (!img || img.getAttribute('src')) return;
+      if (img.dataset.sizes) img.sizes = img.dataset.sizes;
+      if (img.dataset.srcset) img.srcset = img.dataset.srcset;
+      img.src = img.dataset.src;
+    }
+    if (img && img.dataset.src) {
+      var pre = new Image();
+      if (img.dataset.sizes) pre.sizes = img.dataset.sizes;
+      if (img.dataset.srcset) pre.srcset = img.dataset.srcset;
+      pre.src = img.dataset.src;
+    }
+
     // 3) Posti esauriti? Consuma la stessa vista aggregata della barra home.
     //    Fail-open: se la fetch non risponde, il popup resta possibile.
     var postiEsauriti = false;
@@ -211,6 +230,7 @@ const CUTOFF_ISO = '2026-08-15T00:00:00+02:00';
     function apri() {
       mostrato = true;
       disarma();
+      montaImg();
       ultimoFocus = document.activeElement;
       overlay.hidden = false;
       document.documentElement.style.overflow = 'hidden';
