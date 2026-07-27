@@ -92,6 +92,18 @@ jobs:
           c=$(codice "$FB/newsletter-unsubscribe?token=sonda-probe")
           case "$c" in 200|400|404) ;; *) FAIL="${FAIL}- newsletter-unsubscribe: atteso 200/400/404, ricevuto $c\n";; esac
 
+          # 11) gita-verifica-socio: la catena della verifica socio dell'iscrizione
+          #     alla gita. E' verify_jwt=true, quindi si chiama come fa il browser,
+          #     con l'apikey anon. Email finta di proposito: la risposta corretta e'
+          #     200 con socio:false, senza toccare i dati di nessun socio vero.
+          #     Un 401 qui = catena rotta (apikey non arriva o verify_jwt cambiato):
+          #     e' il guasto che il 26/7 ha fatto vedere ai soci in regola
+          #     l'upsell "non sei socio".
+          c=$(codice -X POST -H "Content-Type: application/json" -H "Origin: https://elbrenz.eu" \
+            -H "apikey: $ANON" -H "Authorization: Bearer $ANON" \
+            -d '{"email":"sonda@example.com"}' "$FB/gita-verifica-socio")
+          case "$c" in 200|400|429) ;; *) FAIL="${FAIL}- gita-verifica-socio: atteso 200/400/429, ricevuto $c\n";; esac
+
           if [ -n "$FAIL" ]; then
             echo "stato=down" >> "$GITHUB_OUTPUT"
             { echo "dettaglio<<EOF"; printf '%b' "$FAIL"; echo "EOF"; } >> "$GITHUB_OUTPUT"
