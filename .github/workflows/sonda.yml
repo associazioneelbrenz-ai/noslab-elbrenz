@@ -141,12 +141,12 @@ jobs:
                 });
                 if (!muta) await telegram(`🔴 Sonda El Brenz: qualcosa non risponde.\n\n${dettaglio}\nDettagli: ${issue.data.html_url}`);
               } else {
-                core.info('Gia' segnalato (issue aperta): nessuna nuova notifica.');
+                core.info("Gia' segnalato (issue aperta): nessuna nuova notifica.");
               }
             } else {
               for (const i of aperte) {
                 await github.rest.issues.createComment({ owner, repo, issue_number: i.number, body: 'Rientrato: la sonda torna verde.' });
                 await github.rest.issues.update({ owner, repo, issue_number: i.number, state: 'closed' });
               }
-              if (aperte.length > 0 && !muta) await telegram('🟢 Sonda El Brenz: tutto e' rientrato, l\'ecosistema risponde di nuovo.');
+              if (aperte.length > 0 && !muta) await telegram("🟢 Sonda El Brenz: tutto e' rientrato, l'ecosistema risponde di nuovo.");
             }
