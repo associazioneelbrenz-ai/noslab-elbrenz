@@ -190,6 +190,23 @@ const durataMarquee = `${filaMarquee.length * 5}s`;
 
 // Guardiani de la lenga: card in home dietro flag (default OFF).
 const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
+
+// RIDISEGNO HOME · Blocco B (27/7/2026) — classi condivise delle card-progetto
+// della griglia DESKTOP (>=1024px). Card ad altezze uguali (flex-col + h-full),
+// immagine ad aspect ratio uniforme (object-cover), testo troncato a 3 righe
+// (line-clamp), CTA sempre in fondo (mt-auto). Hover sobrio + reduced-motion.
+const PCARD = "flex flex-col h-full bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 overflow-hidden transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:border-[#C8923E] hover:shadow-[0_14px_34px_rgba(30,46,38,0.16)] motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+const PMEDIA = "aspect-[16/9] overflow-hidden bg-[#1E2E26]";
+const PIMG = "w-full h-full object-cover";
+const PBODY = "flex flex-col flex-1 p-7";
+const PTITLE = "text-2xl leading-snug m-0 mb-3 text-[#1E2E26]";
+const PTEXT = "text-[15px] text-[#1E2E26]/80 leading-relaxed m-0 line-clamp-3";
+const PFOOT = "mt-auto pt-6";
+const PCTA = "inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]";
+const PEYE = "text-[10px] tracking-[0.18em] uppercase text-[#8a6215] font-semibold m-0 mb-2";
+const PSUB = "mt-3 m-0 text-sm text-[#1E2E26]/60 truncate";
+const PILL_ORO = "text-[11px] tracking-[0.14em] uppercase border border-[#C8923E]/60 text-[#D9A94E] px-3 py-1";
+const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EEDD]/25 text-[#F5EEDD]/75 px-3 py-1";
 ---
 <Layout ogImage="/og/og-home.jpg"
   title="El Brenz da le Val del Nos"
@@ -612,6 +629,13 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
     </div>
   </section>
 
+  {/* ═══ RIDISEGNO HOME · Blocco B (27/7/2026) — fascia progetti ═══
+      Sotto i 1024px NULLA cambia: le 7 sezioni originali (Porta + 6) restano
+      IDENTICHE qui dentro, mostrate solo < lg (wrapper lg:hidden). La versione
+      DESKTOP (>= lg) è la griglia più sotto (hidden lg:block): featured
+      full-width + 2 colonne × 3 righe. Duplicazione voluta e reversibile: se un
+      domani si unifica anche il mobile, si elimina questo wrapper. */}
+  <div class="lg:hidden">
   {/* SPORTELLO (11/7/2026) — card "Porta la tua Storia": posizione scelta da
       Cristian al gate (tra articoli ed eventi). Gemella della card
       Convenzioni (avorio, bordo oro); SVG originale scatola aperta con
@@ -898,6 +922,124 @@ const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
           </a>
         </p>
         </div>
+      </div>
+    </div>
+  </section>
+  </div>{/* /lg:hidden — fine versione mobile/tablet della fascia progetti */}
+
+  {/* ═══ Versione DESKTOP (>=1024px) della fascia progetti ═══
+      Featured "Porta la tua Storia" full-width (apre la fascia, risolve il
+      numero dispari) + griglia 2 colonne × 3 righe. Stessi testi delle sezioni
+      mobile qui sopra (troncati a 3 righe col line-clamp, NON riscritti).
+      Ordine: Guardiani · Non e Sole / Libro · Una terra / Atlante · Convenzioni. */}
+  <section class="hidden lg:block bg-[#F8F1E4] py-14" aria-label="I progetti di El Brenz">
+    <div class="max-w-6xl mx-auto px-6">
+
+      {/* Featured — Porta la tua Storia (full-width, immagine + testo) */}
+      <article class="grid grid-cols-[1.05fr_1fr] bg-[#F5EEDD] rounded-md border border-[#C8923E]/50 overflow-hidden transition-[transform,box-shadow] duration-200 hover:-translate-y-1 hover:border-[#C8923E] hover:shadow-[0_16px_38px_rgba(30,46,38,0.18)] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+        <div class="overflow-hidden">
+          <picture>
+            <source srcset={`${SB_URL}/storage/v1/object/public/assets-pubblici/sportello/card.webp`} type="image/webp" />
+            <img src={`${SB_URL}/storage/v1/object/public/assets-pubblici/sportello/card.jpg`} alt="Fotografie d'epoca e quaderno su un tavolo di stua alpina" class="w-full h-full object-cover min-h-[300px]" width="1200" height="638" loading="lazy" decoding="async" />
+          </picture>
+        </div>
+        <div class="flex flex-col justify-center p-10">
+          <h2 class="text-3xl m-0 mb-3 text-[#1E2E26]" style="font-family: 'Playfair Display', serif; font-weight: 500;">Porta la tua Storia</h2>
+          <div class="w-14 h-[2px] bg-[#C8923E] mb-5" aria-hidden="true"></div>
+          <p class="text-base text-[#1E2E26]/80 leading-relaxed m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">Fotografie, documenti, oggetti, parole: ogni famiglia custodisce un pezzo della <em>nosa storia</em>. Portala allo Sportello El Brenz, anche solo in prestito: la digitalizziamo e torna a casa.</p>
+          <div>
+            <a href="/contatti" class={PCTA}>Racconta o chiedi</a>
+            <p class="mt-4 m-0 truncate">
+              <a href="/contatti#porta" class="text-sm text-[#1E2E26]/60 underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]" style="font-family: 'Inter', sans-serif;">Cosa puoi portare?</a>
+              <span class="text-[#C8923E] mx-1" aria-hidden="true">·</span>
+              <a href="/custodi-della-memoria" class="text-sm text-[#1E2E26]/60 underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]" style="font-family: 'Inter', sans-serif;">Chi sono i Custodi della Memoria?</a>
+            </p>
+          </div>
+        </div>
+      </article>
+
+      {/* Griglia 2×3 */}
+      <div class="grid grid-cols-2 gap-8 mt-8">
+
+        {GUARDIANI_LIVE && (
+        <article class={PCARD}>
+          <div class={PMEDIA}><img src="/img/home/guardiani-de-la-lenga-card.webp" alt="Un'anziana e un ragazzo si parlano sul poggiolo di una casa alpina delle Valli del Noce, i monti sullo sfondo" class={PIMG} width="696" height="383" loading="lazy" decoding="async" /></div>
+          <div class={PBODY}>
+            <h3 class={PTITLE} style="font-family: 'Playfair Display', serif; font-weight: 500;">Guardiani de la lenga</h3>
+            <p class={PTEXT} style="font-family: 'Source Serif 4', Georgia, serif;">Il <em>noneso</em>, il <em>solander</em>, il <em>rabies</em>, il <em>pegaes</em>: proponi le parole della <em>nosa lenga</em> e falle entrare nel glossario vivo delle valli.</p>
+            <div class={PFOOT}><a href="/guardiani-de-la-lenga" class={PCTA}>Diventa Guardian de la lenga</a></div>
+          </div>
+        </article>
+        )}
+
+        <article class={PCARD}>
+          <div class={PMEDIA}><img src="/img/home/grande-guerra-card.webp" alt="Soldati in divisa austro-ungarica salutano dai vagoni di un treno affollato mentre la folla li accompagna, stazione ferroviaria, 1914." class={PIMG} width="1648" height="927" loading="lazy" decoding="async" /></div>
+          <div class={PBODY}>
+            <p class={PEYE} style="font-family: 'Inter', sans-serif;">Una sezione di El Brenz</p>
+            <h3 class={PTITLE} style="font-family: 'Playfair Display', serif; font-weight: 500;">Non e Sole Grande Guerra</h3>
+            <p class={PTEXT} style="font-family: 'Source Serif 4', Georgia, serif;">La Grande Guerra vissuta nelle <em>nostre valli</em>: i soldati trentini nell'esercito austro-ungarico, il fronte della Galizia dal 1914, i profughi, le famiglie. Foto, cartoline e storie da custodire.</p>
+            <div class={PFOOT}><a href="/non-e-sole-grande-guerra" class={PCTA}>Entra nella sezione</a></div>
+          </div>
+        </article>
+
+        <article class={PCARD}>
+          <div class="aspect-[16/9] overflow-hidden bg-[#1E2E26] flex items-center justify-center p-4">
+            <picture>
+              <source srcset="/biblioteca/altmayer-copertina.webp" type="image/webp" />
+              <img src="/biblioteca/altmayer-copertina.jpg" alt="Copertina del libro «A proposito di Tirolo fino al Lago di Garda» di Everton Altmayer" class="h-full w-auto max-h-full rounded shadow-lg" width="180" height="255" loading="lazy" decoding="async" />
+            </picture>
+          </div>
+          <div class={PBODY}>
+            <p class={PEYE} style="font-family: 'Inter', sans-serif;">Un dono dal Tirolo brasiliano</p>
+            <h3 class={PTITLE} style="font-family: 'Playfair Display', serif; font-weight: 500;">A proposito di Tirolo fino al Lago di Garda</h3>
+            <p class={PTEXT} style="font-family: 'Source Serif 4', Georgia, serif;">Da Treze Tílias, cuore del Tirolo brasiliano, il prof. <em>Everton Altmayer</em> dona alle nostre valli la sua opera sul Tirolo storico che un tempo arrivava fino al Garda. Oltre 300 pagine di mappe e documenti, per amicizia: da leggere e scaricare liberamente.</p>
+            <div class={PFOOT}><a href="/a-proposito-di-tirolo" class={PCTA}>Leggi e scarica il libro →</a></div>
+          </div>
+        </article>
+
+        <article class={PCARD}>
+          <div class="aspect-[16/9] overflow-hidden bg-[#1E2E26] flex items-center justify-center gap-2 px-4" aria-hidden="true">
+            <span lang="lld-anau" class={PILL_ORO} style="font-family: 'Inter', sans-serif;">Ladin anaunic</span>
+            <span lang="it" class={PILL_TENUE} style="font-family: 'Inter', sans-serif;">Italiano</span>
+            <span lang="de" class={PILL_TENUE} style="font-family: 'Inter', sans-serif;">Deutsch</span>
+          </div>
+          <div class={PBODY}>
+            <p class={PEYE} style="font-family: 'Inter', sans-serif;">Rubrica · Lingua e ladinità</p>
+            <h3 class={PTITLE} style="font-family: 'Playfair Display', serif; font-weight: 500;">Una terra, <em class="text-[#C8923E]" style="font-style: italic;">cinque lingue</em>.</h3>
+            <p class={PTEXT} style="font-family: 'Source Serif 4', Georgia, serif;">Ogni mese raccontiamo le nostre valli in <em lang="lld-anau">ladin anaunic</em>, italiano e tedesco, perché una terra plurilingue si capisce solo nelle sue lingue. In collaborazione con <strong>UT24, Unser Tirol 24</strong>.</p>
+            <div class={PFOOT}>
+              <a href="/una-terra-cinque-lingue" class={PCTA}>Leggi la rubrica</a>
+              <p class={PSUB}><a href="https://www.unsertirol24.com/" target="_blank" rel="noopener" class="underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]" style="font-family: 'Inter', sans-serif;">In collaborazione con UnserTirol24</a></p>
+            </div>
+          </div>
+        </article>
+
+        <article class={PCARD}>
+          <div class={PMEDIA}><img src="/img/home/atlante-ladino-card.webp" alt="Mappa illustrata in stile antico delle valli del fiume Noce" class={PIMG} width="696" height="383" loading="lazy" decoding="async" /></div>
+          <div class={PBODY}>
+            <h3 class={PTITLE} style="font-family: 'Playfair Display', serif; font-weight: 500;">Le valli nell'Atlante del Ladino</h3>
+            <p class={PTEXT} style="font-family: 'Source Serif 4', Georgia, serif;">Il <em>noneso</em> e il <em>solander</em> delle nostre valli, ascoltati e messi su carta accanto al ladino dolomitico: quasi 2.000 carte linguistiche, con licenza aperta.</p>
+            <div class={PFOOT}><a href="/le-valli-nell-atlante-del-ladino" class={PCTA}>Scopri l'Atlante del Ladino</a></div>
+          </div>
+        </article>
+
+        <article class={PCARD}>
+          <div class={PMEDIA}>
+            <picture>
+              <source srcset={`${SB_URL}/storage/v1/object/public/assets-pubblici/convenzioni/card.webp`} type="image/webp" />
+              <img src={`${SB_URL}/storage/v1/object/public/assets-pubblici/convenzioni/card.jpg`} alt="Portale in pietra di un paese alpino con porta verde aperta e luce calda, panca con prodotti locali" class={PIMG} width="1200" height="638" loading="lazy" decoding="async" />
+            </picture>
+          </div>
+          <div class={PBODY}>
+            <h3 class={PTITLE} style="font-family: 'Playfair Display', serif; font-weight: 500;">Convenzioni Soci</h3>
+            <p class={PTEXT} style="font-family: 'Source Serif 4', Georgia, serif;">La tessera El Brenz apre le porte delle nostre valli: sconti e attenzioni dalle realtà del territorio che sostengono la <em>nosa storia</em>.</p>
+            <div class={PFOOT}>
+              <a href="/convenzioni" class={PCTA}>Scopri le convenzioni</a>
+              <p class={PSUB}><a href="/convenzioni#proponi" class="underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]" style="font-family: 'Inter', sans-serif;">Hai un'attività? Proponi la tua</a></p>
+            </div>
+          </div>
+        </article>
+
       </div>
     </div>
   </section>
