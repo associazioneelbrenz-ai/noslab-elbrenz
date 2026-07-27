@@ -97,6 +97,7 @@ Quando devi modificare un file esistente:
 - Termini in *ladino anaunico* in corsivo, traduzione fra parentesi alla prima occorrenza
 - Mai "dialetto" in senso riduttivo — usare "parlata", "lingua locale", "ladino anaunico"
 - Distinguere **Tirolo storico** (includeva Trentino fino al 1919) da **Tirol** (Land austriaco attuale)
+- **REGOLA FERREA (Cristian, 27/7/2026): per la provincia di Bolzano si scrive SEMPRE "Südtirol"** (con la ü, umlaut), **MAI "Alto Adige"**. Es. "Giochi Medievali dell'Alto Adige" → "Giochi Medievali del Südtirol". Vale per sito, app e testo dentro le OG image. Attenzione: `Südtirol`, non "Sudtirol"/"Suedtirol". (I contenuti d'archivio migrati e le citazioni testuali si valutano caso per caso, non con find-replace cieco.)
 - Nomi storici in grafia originale: Clesio, Gaismair, Andreas Hofer, Maria Teresa d'Austria, Beato Carlo d'Asburgo
 - Date estese nel testo ("21 dicembre 2009"), compatte nelle didascalie ("21/12/2009")
 

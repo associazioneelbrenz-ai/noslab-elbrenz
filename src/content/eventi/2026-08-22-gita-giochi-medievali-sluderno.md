@@ -1,5 +1,5 @@
 ---
-titolo: "Gita sociale ai Giochi Medievali dell'Alto Adige"
+titolo: "Gita sociale ai Giochi Medievali del Südtirol"
 data: 2026-08-22
 luogo: "Sluderno (Val Venosta), ai piedi di Castel Coira"
 descrizioneBreve: "Un giorno nel Medioevo, insieme: 2.000 rievocatori, tornei e mercato ai piedi di Castel Coira. Soci a tariffa agevolata, posti limitati."

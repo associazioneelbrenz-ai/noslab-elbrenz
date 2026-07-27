@@ -48,7 +48,7 @@ export function descrizioneGita(posti: PostiGita | null): string {
   const coda =
     'Viaggio e ingresso 60 euro, iscrizioni entro il 14 agosto. Tornei, corteo storico e villaggio medievale a Castel Coira.';
   if (!posti) {
-    return `Gita sociale El Brenz ai Giochi Medievali dell'Alto Adige, 22 agosto 2026. ${coda}`;
+    return `Gita sociale El Brenz ai Giochi Medievali del Südtirol, 22 agosto 2026. ${coda}`;
   }
   if (posti.disponibili <= 0) {
     return "Posti esauriti. Scrivici per la lista d'attesa.";
