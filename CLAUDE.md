@@ -28,6 +28,33 @@ Sito pubblico in produzione: **`https://elbrenz.eu`** (apex, dominio primario; c
 
 ---
 
+## AGGIUNTA 27 luglio 2026 — due macchine, e i secret vivono nella build
+
+- **Chiedere SEMPRE, a inizio sessione, su che macchina si sta lavorando.** Le
+  postazioni sono tre e non sono equivalenti: **MacBook Air** (uso principale in
+  settimana), **Mac Mini M4** (fine settimana), **sessione cloud** di Claude Code
+  sul web. Non darlo per scontato.
+- **La sessione cloud NON puo' deployare il sito** (verificato 27/7): la policy
+  di rete blocca `elbrenz.eu` e `*.netlify.app` (403 alla CONNECT), quindi niente
+  smoke test ne' collaudo da browser; e `.env.local` non c'e', quindi la build
+  esce monca. Dal cloud si fanno diagnosi, lettura DB/edge via MCP, codice,
+  commit, push, PR. Il deploy si fa da Air o Mac Mini.
+- **Le `PUBLIC_*` sono inlined nella build, non lette a runtime.** Una build
+  senza `.env.local` **riesce lo stesso** ma con anon key vuota: il gateway
+  risponde 401 e la verifica socio della gita mostra al socio in regola
+  l'upsell "non sei socio", in silenzio. Idem convenzioni, posti gita, popup
+  locandina, chat Andreas. E i flag assenti valgono `false`, quindi spengono
+  DE/EN, Google Wallet e Guardiani.
+- **Gate obbligatorio fra `npm run build` e `netlify deploy`**:
+  `grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs`
+  → se stampa `SUPABASE_ANON = ""` **fermarsi**, manca `.env.local`.
+- **Netlify non builda da git** (`deploy_source: cli`): un push su `main` non
+  cambia nulla in produzione finche' non si lancia il deploy da una macchina
+  con i secret.
+- Dettaglio completo e checklist di allineamento: **`docs/runbook-macchine-e-deploy.md`**.
+
+---
+
 ## Stack tecnico (NON discutere senza ragione grave)
 
 | Componente | Tecnologia | Note |
