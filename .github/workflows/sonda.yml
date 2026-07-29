@@ -86,6 +86,15 @@ jobs:
             case "$c" in 200|400|429) ;; *) FAIL="${FAIL}- $fn (honeypot): atteso 200/400/429, ricevuto $c\n";; esac
           done
 
+          # 9-bis) donazione-upload (Museo Grande Guerra): form MULTIPART, quindi
+          #        va provato con -F (non JSON). Honeypot pieno -> 200 silenzioso
+          #        (o 429 rate-limited). verify_jwt=false: 401/403 = catena rotta.
+          #        Come il browser: nessun apikey, con Origin whitelistata.
+          c=$(codice -X POST -H "Origin: https://elbrenz.eu" \
+            -F "_honeypot=sonda" \
+            "$FB/donazione-upload")
+          case "$c" in 200|429) ;; *) FAIL="${FAIL}- donazione-upload (honeypot): atteso 200/429, ricevuto $c\n";; esac
+
           # 10) newsletter-unsubscribe: link cliccato da email, SENZA apikey,
           #     token fasullo -> deve rispondere (400/404/200), MAI 401
           #     (=disiscrizione rotta, problema GDPR).
