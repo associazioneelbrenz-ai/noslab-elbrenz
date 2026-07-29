@@ -212,6 +212,99 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
           </details>
         </div>
       </section>
+
+      {/* DONA MATERIALE — canale UPLOAD (carica le scansioni ora), distinto da
+          "Proponi materiale" qui sopra (canale rapido "raccontaci, ti ricontattiamo").
+          Form pubblico: valida server-side, carica nel bucket PRIVATO, INSERT in
+          attesa, notifica al direttivo. Nulla e' pubblico finche' un curatore non
+          approva e promuove. Edge: donazione-upload (verify_jwt=false). */}
+      <section id="dona-materiale" class="mt-8">
+        <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 md:p-6" style="font-family: 'Inter', sans-serif;">
+          <h3 class="text-lg text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Hai gia' le scansioni? Dona il materiale</h3>
+          <p class="text-sm text-[#1E2E26]/75 leading-relaxed m-0">
+            Se avete gia' digitalizzato foto, lettere, documenti o oggetti della Grande Guerra,
+            caricateli direttamente qui. <strong>Il materiale resta della famiglia: El Brenz lo
+            custodisce e lo racconta.</strong> Ogni donazione viene esaminata dai curatori prima
+            di qualsiasi pubblicazione. Se preferite prima solo segnalarcelo, usate
+            <strong>"Proponi materiale"</strong> qui sopra.
+          </p>
+
+          <details id="don-details" class="mt-4">
+            <summary class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-2.5 text-sm font-medium tracking-wide uppercase rounded cursor-pointer select-none hover:bg-[#D9A94E] transition-colors list-none">Dona materiale</summary>
+
+            <form id="form-donazione" novalidate class="mt-5 grid gap-4">
+              {/* honeypot anti-bot: deve restare vuoto */}
+              <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="don-titolo">Titolo del materiale <span class="text-[#a33]">*</span></label>
+                <input id="don-titolo" name="titolo" type="text" maxlength="140" placeholder="Es. Cartolina dal fronte, 1916" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="don-descr">Descrizione <span class="text-[#a33]">*</span></label>
+                <textarea id="don-descr" name="descrizione" rows="4" maxlength="2000" placeholder="Raccontateci cosa e', a chi apparteneva, cosa sapete della sua storia" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]"></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="don-prov">Provenienza <span class="text-[#a33]">*</span></label>
+                <input id="don-prov" name="provenienza" type="text" maxlength="200" placeholder="Es. Archivio famiglia Rossi, Vermiglio" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="don-tipo">Tipo di materiale <span class="text-[#a33]">*</span></label>
+                <select id="don-tipo" name="tipo" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]">
+                  <option value="foto">Fotografia</option>
+                  <option value="documento">Documento</option>
+                  <option value="lettera">Lettera o cartolina</option>
+                  <option value="oggetto_fotografato">Oggetto fotografato</option>
+                  <option value="altro">Altro</option>
+                </select>
+              </div>
+
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="don-nome">Nome e cognome <span class="text-[#a33]">*</span></label>
+                  <input id="don-nome" name="donatore_nome" type="text" maxlength="100" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+                </div>
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="don-email">Email <span class="text-[#a33]">*</span></label>
+                  <input id="don-email" name="donatore_email" type="email" maxlength="200" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="don-tel">Telefono (facoltativo)</label>
+                <input id="don-tel" name="donatore_telefono" type="tel" maxlength="40" class="w-full border-2 border-[#E5DFCF] bg-white px-3 py-2 rounded text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="file-donazione">File <span class="text-[#a33]">*</span> <span class="text-[#1E2E26]/55">(fino a 5: JPG, PNG, WebP o PDF, max 15 MB ciascuno)</span></label>
+                <input id="file-donazione" name="file" type="file" multiple accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" class="w-full text-sm text-[#1E2E26]" />
+                <small id="file-riepilogo" class="block mt-1 text-[#1E2E26]/60"></small>
+              </div>
+
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80">
+                <input name="consenso_diritti" type="checkbox" value="1" class="mt-1" />
+                <span>Dichiaro di essere titolare dei diritti sul materiale o autorizzato dalla famiglia a donarlo. <span class="text-[#a33]">*</span></span>
+              </label>
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80">
+                <input name="consenso_conservazione" type="checkbox" value="1" class="mt-1" />
+                <span>Autorizzo El Brenz a conservare il materiale e, previa valutazione dei curatori, a pubblicarlo con indicazione della provenienza. <span class="text-[#a33]">*</span></span>
+              </label>
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80">
+                <input name="consenso_privacy" type="checkbox" value="1" class="mt-1" />
+                <span>Ho letto l'<a href="/privacy" target="_blank" rel="noopener" class="text-[#8a6215] underline">informativa privacy</a> e acconsento al trattamento dei dati per la gestione della donazione. <span class="text-[#a33]">*</span></span>
+              </label>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <button id="btn-donazione" type="submit" class="bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded text-sm font-medium hover:bg-[#2a3f34] transition-colors">Invia la donazione</button>
+                <p id="esito-donazione" role="status" aria-live="polite" class="text-sm m-0"></p>
+              </div>
+            </form>
+          </details>
+        </div>
+      </section>
     </div>
 
     {/* Cartellino del pezzo (overlay), popolato lato client */}
@@ -356,5 +449,59 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
         }
       });
     }
+  </script>
+
+  {/* DONA MATERIALE — submit del form upload verso l'edge donazione-upload.
+      Validazione client (specchio del server), time-trap _ts, esito parlante. */}
+  <script define:vars={{ EDGE_URL: SUPABASE_URL + '/functions/v1/donazione-upload' }}>
+    const form = document.getElementById('form-donazione')
+    const btn = document.getElementById('btn-donazione')
+    const esito = document.getElementById('esito-donazione')
+    const fileInput = document.getElementById('file-donazione')
+    const riepilogo = document.getElementById('file-riepilogo')
+    const MAX_FILES = 5, MAX_FILE = 15 * 1024 * 1024, MAX_TOT = 18 * 1024 * 1024
+    const ts = Date.now()
+
+    fileInput.addEventListener('change', () => {
+      const fs = Array.from(fileInput.files || [])
+      const tot = fs.reduce((a, f) => a + f.size, 0)
+      riepilogo.textContent = fs.length
+        ? `${fs.length} file, ${(tot / 1048576).toFixed(1)} MB totali`
+        : ''
+      riepilogo.style.color = (fs.length > MAX_FILES || tot > MAX_TOT || fs.some(f => f.size > MAX_FILE)) ? '#b23b3b' : ''
+    })
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      esito.textContent = ''
+      const fs = Array.from(fileInput.files || [])
+      if (fs.length === 0) { esito.textContent = 'Allega almeno un file.'; return }
+      if (fs.length > MAX_FILES) { esito.textContent = 'Massimo 5 file per invio.'; return }
+      if (fs.some(f => f.size > MAX_FILE)) { esito.textContent = 'Ogni file puo’ pesare al massimo 15 MB.'; return }
+      if (fs.reduce((a, f) => a + f.size, 0) > MAX_TOT) { esito.textContent = 'Invio complessivo oltre 18 MB: dividi in piu’ invii.'; return }
+
+      const fd = new FormData(form)
+      fd.set('_ts', String(ts))
+      btn.disabled = true
+      btn.textContent = 'Invio in corso...'
+      try {
+        const res = await fetch(EDGE_URL, { method: 'POST', body: fd })
+        const out = await res.json().catch(() => ({}))
+        if (res.ok && out.success) {
+          form.reset(); riepilogo.textContent = ''
+          esito.style.color = '#2d8659'
+          esito.textContent = 'Grazie! La donazione e’ arrivata: i curatori la esamineranno e vi ricontatteremo all’email indicata.'
+        } else {
+          esito.style.color = '#b23b3b'
+          esito.textContent = out.error || 'Si e’ verificato un errore. Riprova o scrivi a info@elbrenz.eu.'
+        }
+      } catch {
+        esito.style.color = '#b23b3b'
+        esito.textContent = 'Connessione non riuscita. Riprova o scrivi a info@elbrenz.eu.'
+      } finally {
+        btn.disabled = false
+        btn.textContent = 'Invia la donazione'
+      }
+    })
   </script>
 </Layout>
