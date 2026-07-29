@@ -210,6 +210,10 @@ verify_jwt = true
 [functions.wp-import]
 verify_jwt = true
 
+# Donazioni Museo Grande Guerra: form pubblico multipart (famiglie non loggate).
+[functions.donazione-upload]
+verify_jwt = false
+
 # NOTA: test-search e andreas-test sono function scratch (verify_jwt=false in
 # prod) da ELIMINARE, non da blindare. Vanno rimosse dalla dashboard Supabase
 # (azione distruttiva: la fa Cristian). Finche' esistono, non ridistribuirle.
