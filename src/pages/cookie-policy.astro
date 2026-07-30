@@ -1,38 +1,84 @@
 ---
 /**
- * Cookie policy - 17/7/2026: sostituita con la COOKIE POLICY UNIFICATA (sito +
- * app), testo VERBATIM da TESTI_LEGALI_COMPLETI_elbrenz.md (blocco 2).
- * Pubblicazione autorizzata da Cristian (data 17 luglio 2026), da far rivedere
- * da un professionista. Versione precedente in cookie-policy.astro.bak2.
+ * Cookie policy v2 (30/7/2026): riscritta dal censimento reale di cookie e
+ * archiviazione locale (sito + app soci). Titoli senza numeri (pagina autonoma;
+ * i prefissi 2.1-2.4 erano un residuo del documento unico), tabella degli
+ * strumenti, riferimenti corretti (privacy / termini / regolamento). La categoria
+ * "analytics" e' stata rimossa dal banner (decisione Cristian 30/7: non si chiede
+ * consenso per un GA4 mai attivato). Versioni precedenti in .bak-legaleB1 / .bak2.
  */
 import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout ogImage="/og/og-cookie-policy.jpg" title="Cookie policy" description="Cookie policy dell'ecosistema El Brenz (sito e app soci) · Associazione Storico Culturale Linguistica El Brenz">
   <main class="container mx-auto px-4 py-12 max-w-3xl prose prose-lg">
-    <h1>Cookie Policy</h1>
-    <p class="lead">Ultimo aggiornamento: 17 luglio 2026</p>
+    <h1>Cookie policy</h1>
+    <p class="lead">Ultimo aggiornamento: 30 luglio 2026</p>
 
-    <h2>2.1 Cosa sono</h2>
+    <h2>Cosa sono i cookie</h2>
     <p>
-      I cookie e le tecnologie simili sono piccoli file o dati salvati sul tuo dispositivo per far funzionare i servizi e ricordare alcune scelte.
+      I cookie sono piccoli file di testo che i siti salvano sul tuo dispositivo; tecnologie simili,
+      come l'archiviazione locale e di sessione del browser, svolgono funzioni analoghe. Su
+      <strong>elbrenz.eu</strong> e nell'app soci <strong>community.elbrenz.eu</strong> utilizziamo
+      soltanto strumenti tecnici e di prima parte, necessari al funzionamento dei servizi.
+      Non usiamo cookie analitici, di profilazione né strumenti pubblicitari o di analisi di terze parti.
     </p>
 
-    <h2>2.2 Cosa usiamo</h2>
-    <ul>
-      <li><strong>Strumenti tecnici e necessari.</strong> Sul sito e nell'app usiamo cookie e archiviazione locale tecnici, indispensabili al funzionamento: gestione della sessione e dell'autenticazione, memorizzazione delle preferenze (incluse le preferenze sui cookie). Non richiedono consenso.</li>
-      <li><strong>Nessun cookie di profilazione o marketing di terze parti.</strong> Non utilizziamo cookie pubblicitari né di tracciamento di terzi per profilazione.</li>
-      <li><strong>Contenuti di terze parti "click-to-load".</strong> Alcuni contenuti (ad esempio video di YouTube o Vimeo) vengono caricati solo dopo che tu scegli di avviarli: finché non li avvii, il terzo non riceve i relativi dati.</li>
-    </ul>
+    <h2>Cosa usiamo</h2>
+    <h3>Sito elbrenz.eu</h3>
+    <table>
+      <thead>
+        <tr><th>Nome</th><th>Tipo</th><th>Finalità</th><th>Durata</th><th>Chi lo imposta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>cc_cookie</code></td><td>cookie</td><td>Ricorda le tue preferenze sui cookie</td><td>~6 mesi</td><td>El Brenz</td></tr>
+        <tr><td><code>elbrenz-auth</code></td><td>archiviazione locale</td><td>Sessione e accesso alle pagine riservate del sito</td><td>Fino a logout o scadenza</td><td>El Brenz</td></tr>
+        <tr><td><code>eb_embed_&lt;servizio&gt;</code></td><td>cookie di sessione</td><td>Ricorda il consenso a caricare un contenuto incorporato (Instagram, YouTube)</td><td>Sessione</td><td>El Brenz</td></tr>
+        <tr><td><code>andreas_widget_seen</code></td><td>archiviazione locale</td><td>Ricorda che hai già visto l'assistente Andreas</td><td>Persistente</td><td>El Brenz</td></tr>
+        <tr><td><code>eb_popup_ritter_chiuso</code></td><td>archiviazione locale</td><td>Ricorda la chiusura dell'avviso eventi in home</td><td>7 giorni</td><td>El Brenz</td></tr>
+      </tbody>
+    </table>
 
-    <h2>2.3 Come gestirli</h2>
+    <h3>App soci community.elbrenz.eu</h3>
+    <table>
+      <thead>
+        <tr><th>Nome</th><th>Tipo</th><th>Finalità</th><th>Durata</th><th>Chi lo imposta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>elbrenz-community-auth</code></td><td>archiviazione locale</td><td>Sessione e autenticazione dell'app</td><td>Fino a logout o scadenza</td><td>El Brenz</td></tr>
+        <tr><td><code>elbrenz-resta-connesso</code></td><td>archiviazione locale</td><td>Ricorda la scelta "resta connesso"</td><td>Persistente o fino a revoca</td><td>El Brenz</td></tr>
+        <tr><td><code>elbrenz-sessione-tab</code></td><td>archiviazione di sessione</td><td>Coordina la sessione tra le schede aperte</td><td>Sessione</td><td>El Brenz</td></tr>
+        <tr><td><code>elbrenz-lingua</code></td><td>archiviazione locale</td><td>Ricorda la lingua scelta</td><td>Persistente</td><td>El Brenz</td></tr>
+        <tr><td><code>elbrenz-guida-install-dismessa</code></td><td>archiviazione locale</td><td>Ricorda la chiusura della guida all'installazione</td><td>Persistente</td><td>El Brenz</td></tr>
+        <tr><td><code>elbrenz-invito-ios-dismesso</code></td><td>archiviazione locale</td><td>Ricorda la chiusura dell'invito a installare l'app (iOS)</td><td>14 giorni</td><td>El Brenz</td></tr>
+      </tbody>
+    </table>
+
     <p>
-      Puoi gestire o eliminare i cookie dalle impostazioni del tuo browser e, dove presente, dal pannello delle preferenze cookie del sito. La disattivazione dei cookie tecnici può compromettere il funzionamento dei servizi.
+      I contenuti incorporati da <strong>Instagram (Meta)</strong> e <strong>YouTube (Google)</strong> si
+      caricano solo su tua richiesta: in quel momento quei servizi possono impostare propri cookie,
+      secondo le loro informative. Prima del caricamento nessun dato viene trasmesso a terzi.
     </p>
 
-    <h2>2.4 Riferimenti</h2>
+    <h2>Come gestirli e revocare il consenso</h2>
     <p>
-      Per il trattamento dei dati personali vedi l'<a href="/privacy">Informativa sulla Privacy</a>. Per l'uso dell'app vedi i <a href="/regolamento">Termini d'uso</a>.
+      Puoi riaprire in ogni momento il pannello delle scelte dal link <strong>"Preferenze cookie"</strong>
+      nel footer del sito. Puoi inoltre cancellare o bloccare i cookie dalle impostazioni del tuo browser.
+      La disattivazione degli strumenti tecnici può compromettere il funzionamento dei servizi, ad esempio
+      l'accesso all'area soci.
+    </p>
+    <p>
+      Gli strumenti tecnici elencati sono utilizzati sulla base dell'<strong>art. 122 del Codice privacy</strong>
+      (d.lgs. 196/2003) e del <strong>legittimo interesse</strong> al funzionamento e alla sicurezza del servizio
+      (<strong>art. 6.1.f GDPR</strong>), e non richiedono consenso. Per eventuali strumenti non necessari, ove in
+      futuro attivati, ti chiederemo il consenso preventivo.
+    </p>
+
+    <h2>Riferimenti</h2>
+    <p>
+      Per il trattamento dei dati personali vedi l'<a href="/privacy">Informativa privacy</a>. Per le condizioni
+      d'uso del sito e dell'app vedi i <a href="/termini">Termini di servizio</a>. Per le regole di convivenza
+      nell'area soci vedi il <a href="/regolamento">Regolamento community</a>.
     </p>
   </main>
 </Layout>
