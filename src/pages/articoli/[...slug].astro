@@ -47,7 +47,9 @@ const altCopertina = seo?.immagine_alt || data.hero_alt;
 // A2 — og:image: copertina dell'articolo (gia' su Storage dopo la migrazione).
 // Dove manca (una trentina di articoli) si usa l'immagine di riserva
 // brandizzata: meglio un'anteprima sobria che nessuna anteprima.
-const ogImmagine = seo?.copertina || data.hero_image || OG_DEFAULT;
+// AGGIUNTA 31/7/2026: `og_image` in testa alla catena, per i pezzi con una card
+// social dedicata che NON deve comparire come hero dell'articolo.
+const ogImmagine = (data as any).og_image || seo?.copertina || data.hero_image || OG_DEFAULT;
 const pubblicatoIso = seo?.pubblicato_at
   || (data.data_pubblicazione ? new Date(data.data_pubblicazione).toISOString() : undefined);
 

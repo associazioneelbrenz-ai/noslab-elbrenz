@@ -126,6 +126,15 @@ const articoli = defineCollection({
     excerpt: z.string().max(300).optional(),
 
     /**
+     * AGGIUNTA 31/7/2026 — og:image dedicata, indipendente da hero_image.
+     * Serve ai pezzi che vogliono una card social brandizzata (1200x630, in
+     * /public/og/) SENZA mostrare quella card in cima all'articolo: un'anteprima
+     * col titolo già scritto dentro, ripetuta sopra l'h1, e' rumore.
+     * Se assente, la catena resta quella di prima: hero_image, poi la default.
+     */
+    og_image: z.string().url().or(z.string().startsWith("/")).optional(),
+
+    /**
      * ID originale del post WordPress legacy (es. 3805 per la Guerra Rustica).
      * Solo per gli articoli importati. Ci serve per:
      *   - tracciare la provenienza
