@@ -217,3 +217,18 @@ verify_jwt = false
 # NOTA: test-search e andreas-test sono function scratch (verify_jwt=false in
 # prod) da ELIMINARE, non da blindare. Vanno rimosse dalla dashboard Supabase
 # (azione distruttiva: la fa Cristian). Finche' esistono, non ridistribuirle.
+
+# --- Radar eventi Valli del Noce (BLOCCO 2, 31/7/2026) -------------------
+# harvest e classifica: schedulate, gate x-ingest-token == INGEST_TOKEN, mai
+# invocate da un browser -> verify_jwt=false (il gate e' il token, non il JWT).
+[functions.radar-eventi-harvest]
+verify_jwt = false
+
+[functions.radar-eventi-classifica]
+verify_jwt = false
+
+# radar-eventi-azione: chiamata dalla pagina /radar-eventi col JWT del curatore
+# -> verify_jwt=true, piu' verifica del ruolo lato server (>=20 per curare,
+# >=50 per pubblicare, imposto anche dal trigger di guardia a DB).
+[functions.radar-eventi-azione]
+verify_jwt = true

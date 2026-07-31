@@ -127,6 +127,12 @@ export default defineConfig({
         if (!enLive && page.includes('/en/')) return false;
         // A1: fuori dalla sitemap gli articoli marcati noindex nel DB.
         for (const p of NOINDEX) if (page.endsWith(p) || page.endsWith(p + '/')) return false;
+        // AGGIUNTA 31/7/2026 — /radar-eventi e' un'area riservata, servita con
+        // meta robots noindex: tenerla anche in sitemap darebbe due segnali
+        // opposti. NB: /custodi-curatela e /museo-gg-curatela sono nella stessa
+        // condizione e OGGI sono in sitemap senza noindex; non le tocco di mia
+        // iniziativa, e' una decisione da prendere. // TODO decidere con Cristian
+        if (page.includes('/radar-eventi')) return false;
         return true;
       },
       i18n: {

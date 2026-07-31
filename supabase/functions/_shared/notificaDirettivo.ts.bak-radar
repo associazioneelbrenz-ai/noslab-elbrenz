@@ -41,17 +41,6 @@ function componiTesto(
     case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/guardiani-curatela`); break;
     case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto: ${d.contatto ?? '—'}`, `Gestisci su ${site}/museo-gg-curatela`); break;
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
-    // AGGIUNTA 31/7/2026 — digest settimanale del Radar eventi (GATE 3).
-    // Elenco corto: il dettaglio sta nella pagina di curatela, non nel gruppo.
-    case 'radar_digest': {
-      const lista = Array.isArray(d.eventi) ? d.eventi : [];
-      r.push(`${d.totale ?? lista.length} candidati sopra soglia:`);
-      for (const e of lista.slice(0, 10)) {
-        r.push(`· ${e.punteggio ?? '?'} · ${e.titolo ?? '—'} (${e.comune ?? '?'}, ${e.data ?? '?'})`);
-      }
-      r.push(`Cura su ${site}/radar-eventi`);
-      break;
-    }
     case 'nuova_domanda': {
       // Riga pagamento cosi' il direttivo non approva "al buio" (caso n.26,
       // 21/7). metodo_scelto dalla domanda + eventuale riga pagamenti_tesseramento.
