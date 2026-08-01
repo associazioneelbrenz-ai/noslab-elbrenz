@@ -73,8 +73,17 @@ const ultimiArticoli = articoliProduzione
 // con immagine si notano molto piu' di quelle di solo testo. Chi non ha
 // copertina resta testuale, senza riempitivi finti.
 const seoHome = await mappaSeoArticoli();
+// Il DB ha le copertine dei soli articoli MIGRATI da WordPress, agganciate per
+// legacy_wp_id. Un articolo NUOVO non ha quell'id, quindi restava senza card
+// image e in home spiccava per il vuoto accanto alle altre tre (visto l'1/8).
+// Ricaduta sul frontmatter: prima og_image (la card social brandizzata, che
+// non compare dentro l'articolo ed e' fatta apposta per essere guardata in
+// piccolo), poi hero_image.
 const copertinaDi = (a: any): string | null =>
-  seoHome.get(Number(a.data.legacy_wp_id))?.copertina || null;
+  seoHome.get(Number(a.data.legacy_wp_id))?.copertina
+  || a.data.og_image
+  || a.data.hero_image
+  || null;
 
 /** Tronca l'excerpt a ~160 caratteri per la card, con ellissi. */
 function troncaExcerpt(testo: string): string {
