@@ -1,0 +1,198 @@
+---
+/**
+ * /articoli — l'indice di tutti gli articoli. Fino all'1/8/2026 questa pagina
+ * dava 404: centoquattordici articoli erano raggiungibili solo con l'URL
+ * diretto o da un motore di ricerca. Dieci anni di lavoro scritto e non
+ * navigabile, ed e' anche il motivo per cui il 31 luglio sembrava che un
+ * articolo appena pubblicato non ci fosse.
+ *
+ * PERCHE' LEGGE DAL MARKDOWN E NON DALLA VISTA.
+ * La consegna diceva "indice da v_articoli_pubblici". Verificato prima di
+ * scrivere: la vista ha 134 slug, i file markdown sono 114, e ne coincidono
+ * 107. Ventisette slug della vista NON hanno un file corrispondente (fra questi
+ * gli indici d'annata "anno-2010"…"anno-2014", che articoli non sono). Ma gli
+ * URL del sito nascono dal NOME DEL FILE, non dallo slug a database: un indice
+ * costruito sulla vista avrebbe avuto un link rotto su cinque, e un indice con
+ * link rotti e' peggio di nessun indice.
+ * Quindi: l'elenco viene dal markdown, che e' la sorgente vera degli indirizzi,
+ * ed e' arricchito con copertina e dati SEO dal database attraverso lo stesso
+ * ponte legacy_wp_id che gia' usano la home e la pagina del singolo articolo.
+ *
+ * Effetto collaterale voluto: le bozze presenti solo a database (per esempio il
+ * doppione dell'articolo sull'Adige) non possono comparire, perche' non
+ * esistono come file.
+ */
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { nomePilastro, formatDataIT } from '../../lib/articoli';
+import { mappaSeoArticoli } from '../../lib/seoArticoli';
+import { imgRid, srcSetCard } from '../../lib/immagini';
+
+const PER_PAGINA = 24;
+
+// Tutti i pubblicabili, archivio compreso: questo e' l'indice generale.
+// /archivio-storico resta la vista per anno dei soli legacy.
+const tutti = (await getCollection('articoli', ({ data }) => !data.draft))
+  .slice()
+  .sort((a, b) => b.data.data_pubblicazione.getTime() - a.data.data_pubblicazione.getTime());
+
+const seo = await mappaSeoArticoli();
+const copertina = (a: any): string | null =>
+  seo.get(Number(a.data.legacy_wp_id))?.copertina || a.data.og_image || a.data.hero_image || null;
+
+// Filtri: solo i pilastri davvero presenti, col numero di articoli.
+const perPilastro = new Map<string, number>();
+for (const a of tutti) perPilastro.set(a.data.pilastro, (perPilastro.get(a.data.pilastro) ?? 0) + 1);
+const pilastri = [...perPilastro.entries()]
+  .filter(([p]) => p !== '_da_assegnare')
+  .sort((a, b) => b[1] - a[1]);
+
+/** Estratto per la card, tagliato sull'ultimo spazio per non mozzare parole. */
+function breve(t: string | undefined, max = 150): string {
+  if (!t) return '';
+  if (t.length <= max) return t;
+  const tagliato = t.slice(0, max);
+  const spazio = tagliato.lastIndexOf(' ');
+  return (spazio > 60 ? tagliato.slice(0, spazio) : tagliato).trimEnd() + '…';
+}
+---
+
+<Layout
+  title="Tutti gli articoli · El Brenz"
+  description="L'archivio degli articoli di El Brenz sulle Valli del Noce: storia, lingua ladina anaunica, cultura materiale, rievocazioni, identità e vita associativa."
+  ogImage="/og/og-archivio.jpg"
+>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-5xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3">Archivio</p>
+      <h1 class="text-3xl md:text-4xl leading-tight text-[#1E2E26] m-0 mb-5" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Tutti gli articoli
+      </h1>
+      <p class="text-[#1E2E26]/80 leading-relaxed max-w-2xl m-0 mb-10" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem;">
+        {tutti.length} articoli sulle nostre valli, dal più recente. Storia, lingua, cultura materiale,
+        rievocazioni, identità e vita dell'Associazione: quello che abbiamo scritto in questi anni,
+        tutto in un posto solo.
+      </p>
+
+      {/* FILTRI per pilastro. Semplice mostra-e-nascondi: le voci sono poche
+          centinaia e non vale una pagina per filtro. */}
+      <div class="flex flex-wrap gap-2 mb-8">
+        <button type="button" data-pilastro="" class="art-chip art-attivo text-[13px] px-3 py-1.5 rounded-full border border-[#C8923E]/50 bg-[#C8923E]/15 text-[#1E2E26] cursor-pointer">
+          Tutti · {tutti.length}
+        </button>
+        {pilastri.map(([p, n]) => (
+          <button type="button" data-pilastro={p} class="art-chip text-[13px] px-3 py-1.5 rounded-full border border-[#E5DFCF] bg-white text-[#1E2E26] cursor-pointer">
+            {nomePilastro(p)} · {n}
+          </button>
+        ))}
+      </div>
+
+      <div id="art-griglia" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {tutti.map((a, i) => {
+          const cop = copertina(a);
+          return (
+            <a
+              href={`/articoli/${a.id}`}
+              data-pilastro={a.data.pilastro}
+              data-indice={i}
+              class="art-card group flex flex-col bg-white border border-[#E5DFCF] hover:border-[#C8923E] transition-colors no-underline overflow-hidden rounded"
+              style={i >= PER_PAGINA ? 'display:none' : ''}
+            >
+              {cop ? (
+                <img
+                  src={imgRid(cop, 600)}
+                  srcset={srcSetCard(cop, 400)}
+                  sizes="(min-width: 1024px) 300px, (min-width: 640px) 45vw, 92vw"
+                  alt=""
+                  width="600" height="338"
+                  loading={i < 6 ? 'eager' : 'lazy'}
+                  decoding="async"
+                  class="w-full object-cover"
+                  style="aspect-ratio: 16/9;"
+                />
+              ) : (
+                <div class="w-full bg-[#F5EEDD] border-b border-[#E5DFCF]" style="aspect-ratio: 16/9;" aria-hidden="true"></div>
+              )}
+              <div class="p-5 flex flex-col flex-1">
+                <p class="text-[11px] tracking-[0.14em] uppercase text-[#8a6215] m-0 mb-2">
+                  {formatDataIT(a.data.data_pubblicazione)} · {nomePilastro(a.data.pilastro)}
+                </p>
+                <h2 class="text-lg leading-snug text-[#1E2E26] m-0 mb-2 group-hover:text-[#8a6215] transition-colors" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+                  {a.data.title}
+                </h2>
+                {a.data.excerpt && (
+                  <p class="text-[#1E2E26]/70 text-[14px] leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+                    {breve(a.data.excerpt)}
+                  </p>
+                )}
+              </div>
+            </a>
+          );
+        })}
+      </div>
+
+      <p id="art-vuoto" class="hidden text-[#1E2E26]/70 py-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Nessun articolo in questo pilastro.
+      </p>
+
+      <div class="text-center mt-10">
+        <button type="button" id="art-altri"
+                class="bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors cursor-pointer border-0">
+          Mostra altri articoli
+        </button>
+        <p id="art-quanti" class="text-[13px] text-[#1E2E26]/55 mt-3 m-0"></p>
+      </div>
+
+      <p class="mt-12 text-[13px] text-[#1E2E26]/55 leading-relaxed">
+        Cerchi qualcosa di preciso? Anche <a href="/andreas" class="text-[#8a6215] underline">Andreas</a> risponde
+        attingendo a questi testi. Gli articoli più vecchi hanno una loro pagina per annata
+        in <a href="/archivio-storico" class="text-[#8a6215] underline">archivio storico</a>.
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<script define:vars={{ PER_PAGINA }}>
+  // Filtro + "mostra altri" senza librerie: le card sono gia' nel documento,
+  // qui si decide solo quali far vedere. Cosi' funziona anche a JS lento e
+  // resta tutto indicizzabile, che per un archivio e' il punto.
+  const chips = Array.from(document.querySelectorAll('.art-chip'));
+  const cards = Array.from(document.querySelectorAll('.art-card'));
+  const vuoto = document.getElementById('art-vuoto');
+  const bottone = document.getElementById('art-altri');
+  const quanti = document.getElementById('art-quanti');
+
+  let pilastro = '';
+  let mostrati = PER_PAGINA;
+
+  function applica() {
+    const filtrate = cards.filter((c) => !pilastro || c.dataset.pilastro === pilastro);
+    cards.forEach((c) => { c.style.display = 'none'; });
+    filtrate.slice(0, mostrati).forEach((c) => { c.style.display = ''; });
+
+    const totale = filtrate.length;
+    const visibili = Math.min(mostrati, totale);
+    vuoto?.classList.toggle('hidden', totale > 0);
+    if (bottone) bottone.style.display = visibili < totale ? '' : 'none';
+    if (quanti) quanti.textContent = totale ? `${visibili} di ${totale}` : '';
+  }
+
+  for (const c of chips) {
+    c.addEventListener('click', () => {
+      for (const altro of chips) {
+        altro.classList.remove('art-attivo', 'bg-[#C8923E]/15', 'border-[#C8923E]/50');
+        altro.classList.add('bg-white', 'border-[#E5DFCF]');
+      }
+      c.classList.add('art-attivo', 'bg-[#C8923E]/15', 'border-[#C8923E]/50');
+      c.classList.remove('bg-white', 'border-[#E5DFCF]');
+      pilastro = c.dataset.pilastro || '';
+      mostrati = PER_PAGINA;   // cambiando pilastro si riparte dall'inizio
+      applica();
+    });
+  }
+
+  bottone?.addEventListener('click', () => { mostrati += PER_PAGINA; applica(); });
+
+  applica();
+</script>

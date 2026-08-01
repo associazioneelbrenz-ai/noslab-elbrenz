@@ -116,6 +116,9 @@ const navItems: NavItem[] = [
   {
     label: t('nav.archivio'),
     children: [
+      // AGGIUNTA 1/8/2026: l'indice generale. Prima /articoli dava 404 e i
+      // 108 articoli erano raggiungibili solo con l'URL diretto.
+      { href: '/articoli', label: t('nav.tuttiarticoli') },
       { href: '/archivio-storico', label: t('nav.archiviostorico') },
       { href: '/archivio', label: t('nav.archiviodigitale') },
       { href: '/photogallery', label: t('nav.photogallery') },

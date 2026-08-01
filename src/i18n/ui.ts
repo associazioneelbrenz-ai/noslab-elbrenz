@@ -94,6 +94,7 @@ export const ui = {
     'nav.guardiani': 'Guardiani de la lenga',
     // Nav — Archivio
     'nav.archiviostorico': 'Archivio storico',
+    'nav.tuttiarticoli': 'Tutti gli articoli',
     'nav.archiviodigitale': 'Archivio digitale',
     'nav.photogallery': 'Photogallery',
     // Footer — intestazioni e link
@@ -150,6 +151,7 @@ export const ui = {
     'nav.fioi': 'Fiöi dal Nos',
     'nav.guardiani': 'Guardiani de la lenga',
     'nav.archiviostorico': 'Historisches Archiv',
+    'nav.tuttiarticoli': 'Alle Beiträge',
     'nav.archiviodigitale': 'Digitales Archiv',
     'nav.photogallery': 'Fotogalerie',
     'footer.assoc': 'Verein',
@@ -203,6 +205,7 @@ export const ui = {
     'nav.fioi': 'Fiöi dal Nos',
     'nav.guardiani': 'Guardiani de la lenga',
     'nav.archiviostorico': 'Historical archive',
+    'nav.tuttiarticoli': 'All articles',
     'nav.archiviodigitale': 'Digital archive',
     'nav.photogallery': 'Photo gallery',
     'footer.assoc': 'Association',
