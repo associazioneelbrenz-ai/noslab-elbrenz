@@ -9,7 +9,10 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "og:eventi": "node scripts/genera-og-eventi.mjs",
+    "articoli:esporta": "node scripts/esporta-articoli-db.mjs",
+    "prebuild": "node scripts/genera-og-eventi.mjs || echo \"[og] rigenerazione saltata: restano le immagini committate\""
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
@@ -32,6 +35,7 @@
     "@resvg/resvg-js": "^2.6.2",
     "docx": "^9.7.1",
     "satori": "^0.29.0",
+    "sharp": "^0.35.3",
     "wawoff2": "^2.0.1"
   }
 }

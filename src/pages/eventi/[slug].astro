@@ -88,7 +88,7 @@ const pilastroLabel = evento.pilastro ? PILASTRO[evento.pilastro] ?? '' : '';
 // L'OG dedicata e' un asset statico committato: se l'evento e' stato
 // pubblicato dopo l'ultimo deploy la sua immagine non c'e' ancora, e si
 // ripiega sull'OG del calendario, che e' comunque in stile.
-const ogEvento = `/og/eventi/${evento.slug}.png`;
+const ogEvento = `/og/eventi/${evento.slug}.jpg`;
 
 const descrizioneMeta = (evento.descrizione ?? `${quando}${dove ? ` · ${dove}` : ''}`)
   .replace(/\s+/g, ' ')

@@ -28,6 +28,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { Resvg } from '@resvg/resvg-js';
 import { decompress } from 'wawoff2';
+import sharp from 'sharp';
 
 const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const USCITA = join(RADICE, 'public', 'og', 'eventi');
@@ -199,6 +200,8 @@ async function main() {
 
   mkdirSync(USCITA, { recursive: true });
   let fatte = 0;
+  let pesoOg = 0;
+  let pesoCard = 0;
   for (const e of eventi) {
     if (!e.slug) {
       console.warn(`  · saltato «${e.titolo}»: manca lo slug`);
@@ -208,11 +211,28 @@ async function main() {
       font: { fontDirs: [FONTS], defaultFontFamily: 'Playfair Display', loadSystemFonts: false },
       fitTo: { mode: 'width', value: 1200 },
     }).render().asPng();
-    writeFileSync(join(USCITA, `${e.slug}.png`), png);
+
+    // Due uscite, due mestieri diversi:
+    //   .jpg  1200x630 — quella che va nei meta og:image. I crawler social
+    //         vogliono raster grande; il PNG di resvg pesa ~210 KB, il JPEG a
+    //         qualita' 86 sta sotto la meta' senza differenze visibili su un
+    //         fondo piatto come il nostro.
+    //   -card.webp 560x294 — la miniatura del carosello in home. Le card sono
+    //         larghe 280 px: servire loro l'immagine intera voleva dire ~1,7 MB
+    //         di home per otto eventi.
+    const jpg = await sharp(png).jpeg({ quality: 86, progressive: true }).toBuffer();
+    const card = await sharp(png).resize(560, 294).webp({ quality: 78 }).toBuffer();
+    writeFileSync(join(USCITA, `${e.slug}.jpg`), jpg);
+    writeFileSync(join(USCITA, `${e.slug}-card.webp`), card);
+
     fatte++;
-    console.log(`  · ${e.slug}.png  (${Math.round(png.length / 1024)} KB)  ${e.titolo}`);
+    pesoOg += jpg.length;
+    pesoCard += card.length;
+    console.log(`  · ${e.slug}  og ${Math.round(jpg.length / 1024)} KB · card ${Math.round(card.length / 1024)} KB  ${e.titolo}`);
   }
-  console.log(`\n${fatte} immagini in public/og/eventi/`);
+  console.log(`\n${fatte} eventi illustrati in public/og/eventi/`);
+  console.log(`  og  totale ${Math.round(pesoOg / 1024)} KB`);
+  console.log(`  card totale ${Math.round(pesoCard / 1024)} KB (questo e' cio' che pesa in home)`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
