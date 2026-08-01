@@ -40,7 +40,12 @@ const ALLOWED_ORIGINS = [
 ]
 
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000  // 1 ora
-const RATE_LIMIT_MAX = 3                       // 3 proposte per IP/ora
+// 1/8/2026: da 3 a 5. Ora la quota la consumano solo le proposte VALIDE (vedi
+// la nota al punto in cui viene chiamata), e cinque copre il caso reale di una
+// Pro Loco o di un consorzio che propone per piu' esercizi in una sola sessione,
+// o di piu' attivita' dietro lo stesso IP di paese. Soglia dichiaratamente da
+// tarare sull'uso vero.
+const RATE_LIMIT_MAX = 5                       // proposte VALIDE per IP/ora
 const MIN_FORM_AGE_MS = 3 * 1000               // form aperto da almeno 3s
 
 const FIELD_LIMITS = {
@@ -461,10 +466,9 @@ serve(async (req) => {
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
   const ip = getClientIp(req)
-  const entroLimite = await checkRateLimit(supabase, ip)
-  if (!entroLimite) {
-    return jsonResponse({ error: 'Hai inviato troppe proposte. Riprova più tardi.' }, 429, cors)
-  }
+  // NB: il rate limit NON si consuma qui. Vedi la nota prima dell'insert:
+  // un tentativo respinto per un campo sbagliato non deve bruciare la quota
+  // di chi sta solo cercando di correggere un errore.
 
   let body: Record<string, unknown>
   try { body = await req.json() } catch { return jsonResponse({ error: 'Invalid JSON' }, 400, cors) }
@@ -528,12 +532,31 @@ serve(async (req) => {
     if (!logoTipo) return jsonResponse({ error: 'Formato logo non supportato: usa PNG, JPG o WebP.' }, 400, cors)
   }
 
+  // RATE LIMIT, qui e non in cima (spostato l'1/8/2026 dopo il collaudo).
+  //
+  // PERCHE'. Prima si contava OGNI POST, prima ancora di leggere il corpo:
+  // quindi anche i tentativi respinti per un campo sbagliato, e anche i colpi
+  // dei bot finiti nell'honeypot. Un titolare che sbaglia tre volte un campo si
+  // ritrovava bloccato per un'ora senza aver mai inviato niente, con un
+  // messaggio che non diceva nemmeno quanto aspettare. E dietro un IP condiviso
+  // (wifi di paese, NAT dell'operatore mobile) quella quota e' di tutti.
+  //
+  // Ora la quota la consuma solo una proposta ben formata, cioe' l'unica cosa
+  // che vale la pena limitare: e' quella che scrive a DB e manda due email.
+  // I tentativi malformati restano gratis ma non costano nulla al sistema
+  // (nessuna scrittura, nessuna mail), e honeypot e time-trap sono gia' passati.
+  const entroLimite = await checkRateLimit(supabase, ip)
+  if (!entroLimite) {
+    return jsonResponse({
+      error: `Abbiamo gia' ricevuto ${RATE_LIMIT_MAX} proposte da questo collegamento nell'ultima ora. Riprova fra un'ora, oppure scrivici a info@elbrenz.eu e facciamo noi.`,
+    }, 429, cors)
+  }
+
   // Geocoding (best-effort): solo se c'è un indirizzo. mostra_in_mappa resta
   // false: si accende solo dopo la conferma del segretario nella scheda.
   const geo = indirizzo ? await geocodifica(indirizzo, localita) : null
 
-  // INSERT (service role) — PRIMA della mail (lezione A2). Il client è già
-  // stato creato in cima per il rate limit.
+  // INSERT (service role) — PRIMA della mail (lezione A2).
   const { data: inserted, error: insErr } = await supabase.from('convenzioni').insert({
     nome_attivita, categoria,
     localita: localita || null,
