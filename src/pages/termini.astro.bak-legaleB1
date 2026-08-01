@@ -1,0 +1,134 @@
+---
+/**
+ * Termini di servizio / Condizioni d'uso del sito elbrenz.eu.
+ *
+ * Creata 13/7/2026 (brief compliance B.1). Testo rivisto con Cristian; bozza
+ * di partenza in docs/DRAFT_termini-di-servizio.md. Stile coerente con
+ * /privacy e /cookie-policy. Rinvii interni a Statuto, Privacy, Cookie,
+ * Crediti e licenze. Nessun em-dash (regola di stile).
+ *
+ * NB SEO: manca una OG dedicata (/og/og-termini.jpg): usato og-home come
+ * fallback brand. Da sostituire quando disponibile (regola og-seo-cura).
+ */
+
+import Layout from '../layouts/Layout.astro';
+---
+<Layout ogImage="/og/og-home.jpg"
+  title="Termini di servizio"
+  description="Termini di servizio e condizioni d'uso del sito dell'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce."
+>
+
+  <section class="bg-[#1E2E26] text-[#F5EEDD] py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <span
+        class="inline-block bg-[#C8923E]/15 border border-[#C8923E] text-[#C8923E] px-4 py-1.5 text-[11px] font-medium tracking-[0.2em] uppercase mb-8"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Condizioni d'uso del sito
+      </span>
+      <h1
+        class="text-4xl md:text-5xl font-medium leading-[1.1] tracking-tight"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        Termini di <em class="text-[#C8923E]" style="font-style: italic;">servizio</em>
+      </h1>
+    </div>
+  </section>
+
+  <section class="bg-[#F8F1E4] py-16">
+    <div class="max-w-3xl mx-auto px-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+
+      <p class="text-sm text-[#0F0F0F]/55 mb-12" style="font-family: 'Inter', sans-serif;">
+        Ultimo aggiornamento: 13 luglio 2026
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1. Oggetto e titolare</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        Il presente documento disciplina l'uso del sito <strong>elbrenz.eu</strong> (di seguito "il Sito"), gestito dall'<strong>Associazione Storico Culturale Linguistica "El Brenz" delle Valli del Noce</strong> (di seguito "l'Associazione"), con sede in Via Trento 40, 38027 Malè (TN), Codice Fiscale 92019480224, contattabile all'indirizzo <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a>.
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Il Sito è uno strumento culturale e associativo senza scopo di lucro, dedicato alla storia, alla lingua e all'identità delle Valli del Noce.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">2. Accettazione</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Navigando sul Sito e utilizzandone le funzioni (moduli di contatto, area soci, area redazione, proposte al glossario, iscrizioni a eventi, donazioni) l'utente accetta i presenti Termini. Chi non li accetta è invitato a non utilizzare il Sito.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">3. Uso consentito</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        L'utente si impegna a utilizzare il Sito nel rispetto della legge, del buon costume e delle finalità culturali dell'Associazione. In particolare è vietato:
+      </p>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
+        <li>inviare contenuti illeciti, diffamatori, offensivi, discriminatori o lesivi di diritti altrui;</li>
+        <li>tentare di accedere ad aree riservate senza autorizzazione, o compromettere la sicurezza e il funzionamento del Sito;</li>
+        <li>effettuare raccolta massiva automatizzata di dati (scraping) senza consenso;</li>
+        <li>utilizzare i contenuti in modo contrario a quanto previsto alla sezione 5.</li>
+      </ul>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">4. Contenuti proposti dagli utenti</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        Alcune funzioni consentono all'utente di proporre contenuti: termini e voci per il glossario del ladino anaunico ("Guardiani de la lenga") e articoli redazionali (per chi ha ruolo di collaboratore o socio abilitato).
+      </p>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
+        <li>L'utente <strong>garantisce</strong> di avere il diritto di condividere i contenuti proposti e che questi non violano diritti di terzi.</li>
+        <li>Proponendo un contenuto, l'utente concede all'Associazione una <strong>licenza non esclusiva, gratuita, a tempo indeterminato</strong> per pubblicarlo, conservarlo, adattarlo redazionalmente e diffonderlo sul Sito e sui canali dell'Associazione, nell'ambito delle finalità culturali. L'utente <strong>mantiene la titolarità</strong> dei propri contenuti.</li>
+        <li>L'Associazione si riserva il diritto di rivedere, validare, modificare o non pubblicare i contenuti proposti (per i Guardiani, la validazione è affidata alla Commissione Linguistica dell'Associazione).</li>
+        <li>L'attribuzione pubblica del nome del contributore avviene solo su scelta esplicita dell'utente, come descritto nell'<a href="/privacy" class="text-[#C8923E] no-underline hover:underline">informativa privacy</a>.</li>
+      </ul>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">5. Proprietà intellettuale</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85 mb-3">
+        I contenuti originali del Sito (testi, elaborazioni, grafica, logo e marchio "El Brenz", raccolte documentali curate) sono di titolarità dell'Associazione o dei rispettivi autori e sono protetti dalla normativa sul diritto d'autore.
+      </p>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Ove non diversamente indicato, i contenuti possono essere consultati per uso personale e non commerciale. Qualsiasi riproduzione, ripubblicazione o uso commerciale richiede l'autorizzazione scritta dell'Associazione. I materiali di terzi (immagini, cartografie, citazioni) restano soggetti alle rispettive licenze, indicate nella pagina <a href="/crediti-e-licenze" class="text-[#C8923E] no-underline hover:underline">Crediti e licenze</a>.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">6. Adesione all'Associazione e donazioni</h2>
+      <ul class="list-disc pl-6 text-base leading-relaxed text-[#0F0F0F]/85 mb-4 space-y-1">
+        <li>L'adesione come socio è regolata dallo <a href="/statuto" class="text-[#C8923E] no-underline hover:underline">Statuto</a> dell'Associazione, cui si rinvia integralmente.</li>
+        <li>Le quote associative e le donazioni sono volontarie e sostengono le attività culturali dell'Associazione. I pagamenti online sono gestiti tramite il fornitore PayPal, secondo le condizioni e l'informativa di quest'ultimo; l'Associazione non tratta né conserva i dati completi degli strumenti di pagamento.</li>
+        <li>Salvo diversa previsione di legge, le donazioni a un ente senza scopo di lucro non sono rimborsabili. Per le iscrizioni a eventi con anticipo si applicano le condizioni indicate nella pagina dell'evento.</li>
+      </ul>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">7. Link e servizi esterni</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Il Sito può contenere collegamenti a siti e servizi di terzi (ad esempio YouTube, Instagram, mappe, Telegram) e incorporare contenuti esterni con modalità "carica su richiesta". L'Associazione non è responsabile dei contenuti, delle policy e del funzionamento dei servizi di terzi.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">8. Limitazione di responsabilità</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Il Sito e i suoi contenuti sono forniti "così come sono", a scopo divulgativo e culturale. L'Associazione cura l'accuratezza delle informazioni storiche e linguistiche ma non garantisce che siano prive di errori o sempre aggiornate, né la continuità e l'assenza di interruzioni del servizio. Nei limiti consentiti dalla legge, l'Associazione non risponde di danni derivanti dall'uso del Sito.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">9. Modifiche ai Termini</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        L'Associazione può aggiornare i presenti Termini per adeguarli a esigenze normative o funzionali. La versione vigente è sempre quella pubblicata su questa pagina, con la relativa data di aggiornamento.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">10. Trattamento dei dati personali</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Il trattamento dei dati personali è descritto nell'<a href="/privacy" class="text-[#C8923E] no-underline hover:underline">Informativa sulla privacy</a> e nella <a href="/cookie-policy" class="text-[#C8923E] no-underline hover:underline">Cookie Policy</a>, cui si rinvia.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">11. Legge applicabile e foro competente</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        I presenti Termini sono regolati dalla <strong>legge italiana</strong>. Per ogni controversia relativa all'interpretazione ed esecuzione è competente il <strong>Foro di Trento</strong>, fatte salve le norme inderogabili a tutela del consumatore che prevedano il foro di residenza o domicilio dell'utente.
+      </p>
+
+      <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">12. Contatti</h2>
+      <p class="text-base leading-relaxed text-[#0F0F0F]/85">
+        Per qualsiasi domanda sui presenti Termini: <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a> · Associazione El Brenz, Via Trento 40, 38027 Malè (TN).
+      </p>
+
+      <div class="border-t border-[#E5DFCF] mt-16 pt-8">
+        <p class="text-sm text-[#0F0F0F]/55 leading-relaxed" style="font-family: 'Inter', sans-serif;">
+          Documenti collegati: <a href="/statuto" class="text-[#C8923E] no-underline hover:underline">Statuto</a> · <a href="/privacy" class="text-[#C8923E] no-underline hover:underline">Privacy</a> · <a href="/cookie-policy" class="text-[#C8923E] no-underline hover:underline">Cookie Policy</a> · <a href="/crediti-e-licenze" class="text-[#C8923E] no-underline hover:underline">Crediti e licenze</a>.
+        </p>
+      </div>
+
+    </div>
+  </section>
+
+</Layout>

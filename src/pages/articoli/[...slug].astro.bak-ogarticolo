@@ -1,0 +1,87 @@
+---
+/**
+ * /articoli/[...slug] — pagina di dettaglio di un singolo articolo (M2.2).
+ *
+ * Sorgente: Content Collection `articoli` (glob loader su src/content/articoli/*.md).
+ * Lo slug di rotta è l'id dell'entry (= nome file .md senza estensione).
+ *
+ * Visibilità: getStaticPaths genera SOLO gli articoli con `draft: false`.
+ * Sono leggibili sia gli articoli in produzione sia quelli in archivio storico
+ * (entrambi !draft); le bozze (draft: true) non producono pagina.
+ *
+ * Render del corpo Markdown via render(entry) → <Content />.
+ * I campi legacy vengono mappati su ArticleLayout (hero ora opzionale: nessun
+ * articolo legacy ha hero_image, quindi si usa l'header sobrio testuale).
+ */
+
+import { getCollection, render } from 'astro:content';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { nomePilastro, formatDataIT } from '../../lib/articoli';
+import { mappaSeoArticoli, titoloSeo, OG_DEFAULT } from '../../lib/seoArticoli';
+import { schemaArticle, schemaBreadcrumb } from '../../lib/schema';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths = (async () => {
+  // Solo articoli pubblicabili: !draft. Archivio e produzione sono entrambi leggibili.
+  const articoli = await getCollection('articoli', ({ data }) => !data.draft);
+  return articoli.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}) satisfies GetStaticPaths;
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+
+const pillar = nomePilastro(data.pilastro);
+const dataEstesa = formatDataIT(data.data_pubblicazione);
+
+// A1 — metadati SEO dal DB (ponte: legacy_wp_id <-> articolo.wp_legacy_id).
+// Ricaduta sui dati del frontmatter quando i campi SEO sono vuoti.
+const seo = (await mappaSeoArticoli()).get(Number((data as any).legacy_wp_id));
+const titoloPagina = titoloSeo(seo?.meta_title ?? null, data.title);
+const descrizionePagina = seo?.meta_description || data.excerpt;
+const altCopertina = seo?.immagine_alt || data.hero_alt;
+
+// A2 — og:image: copertina dell'articolo (gia' su Storage dopo la migrazione).
+// Dove manca (una trentina di articoli) si usa l'immagine di riserva
+// brandizzata: meglio un'anteprima sobria che nessuna anteprima.
+const ogImmagine = seo?.copertina || data.hero_image || OG_DEFAULT;
+const pubblicatoIso = seo?.pubblicato_at
+  || (data.data_pubblicazione ? new Date(data.data_pubblicazione).toISOString() : undefined);
+
+// A5 — dati strutturati: Article + percorso di navigazione.
+const urlArticolo = new URL(`/articoli/${entry.id}`, Astro.site).href;
+const ldArticle = schemaArticle({
+  titolo: data.title,
+  descrizione: descrizionePagina,
+  url: urlArticolo,
+  immagine: ogImmagine?.startsWith('http') ? ogImmagine : new URL(ogImmagine, Astro.site).href,
+  pubblicatoIso: pubblicatoIso ?? null,
+  autore: data.autore ?? null,
+  sezione: pillar || null,
+});
+const ldBreadcrumb = schemaBreadcrumb([
+  { nome: 'El Brenz', url: '/' },
+  { nome: 'Archivio', url: '/archivio-storico' },
+  { nome: data.title, url: `/articoli/${entry.id}` },
+]);
+---
+<script type="application/ld+json" set:html={JSON.stringify(ldArticle)} />
+<script type="application/ld+json" set:html={JSON.stringify(ldBreadcrumb)} />
+<ArticleLayout
+  title={data.title}
+  titoloSeo={titoloPagina}
+  pillar={pillar || undefined}
+  author={data.autore}
+  date={dataEstesa}
+  description={descrizionePagina}
+  heroImage={data.hero_image}
+  heroAlt={altCopertina}
+  noindex={seo?.noindex === true}
+  ogImage={ogImmagine}
+  publishedTime={pubblicatoIso}
+>
+  <Content />
+</ArticleLayout>

@@ -1,0 +1,223 @@
+---
+/**
+ * /eventi/<slug> — la scheda di un singolo appuntamento delle valli.
+ *
+ * Perche' esiste: finora gli eventi del Radar vivevano solo dentro la lista di
+ * /eventi. Non erano condivisibili uno per uno (WhatsApp e Facebook pescavano
+ * l'OG generica del calendario) ne' indicizzabili singolarmente. Ora ognuno ha
+ * il suo URL, la sua OG disegnata (public/og/eventi/<slug>.png, generata da
+ * scripts/genera-og-eventi.mjs) e il suo JSON-LD Event.
+ *
+ * SSR come /eventi: il cartellone cambia quando il curatore pubblica dal
+ * pannello, non quando si fa il build. Legge la vista eventi_esterni_pubblici,
+ * che espone SOLO stato='pubblicato' — un evento proposto, approvato o
+ * scartato qui da' 404, e il filtro sta a database, non nel markup.
+ */
+import Layout from '../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+
+const { slug } = Astro.params;
+
+type Evento = {
+  id: string; slug: string; titolo: string; descrizione: string | null;
+  data_inizio: string; data_fine: string | null; ricorrenza: string | null;
+  ora_inizio: string | null; ora_fine: string | null;
+  luogo: string | null; comune: string | null; valle: string | null;
+  organizzatore: string | null; url_fonte: string | null;
+  prezzo: string | null; pilastro: number | null;
+};
+
+let evento: Evento | null = null;
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb
+    .from('eventi_esterni_pubblici')
+    .select('id, slug, titolo, descrizione, data_inizio, data_fine, ricorrenza, ora_inizio, ora_fine, luogo, comune, valle, organizzatore, url_fonte, prezzo, pilastro')
+    .eq('slug', slug)
+    .maybeSingle();
+  evento = (data as Evento) ?? null;
+} catch (e) {
+  console.error('[eventi/slug] lettura fallita:', e);
+}
+
+if (!evento) {
+  return new Response(null, { status: 404, statusText: 'Evento non trovato' });
+}
+
+const VALLE: Record<string, string> = {
+  non: 'Val di Non', sole: 'Val di Sole', rabbi: 'Val di Rabbi', pejo: 'Val di Pejo',
+};
+const PILASTRO: Record<number, string> = {
+  1: 'Storia delle Valli', 2: 'Lingua e ladinità', 3: 'Cultura materiale',
+  4: 'Rievocazioni ed eventi', 5: 'Identità e appartenenza', 6: 'Vita associativa',
+};
+const PREZZO: Record<string, string> = {
+  gratuito: 'Ingresso libero', pagamento: 'A pagamento', offerta: 'A offerta', nd: '',
+};
+const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+  'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+
+/** Data estesa nel testo, come vuole il tono di voce. */
+function dataEstesa(iso: string): string {
+  const d = new Date(`${iso}T00:00:00`);
+  return `${d.getDate()} ${MESI[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+const quando = evento.ricorrenza
+  ? `${evento.ricorrenza.charAt(0).toUpperCase()}${evento.ricorrenza.slice(1)}, dal ${dataEstesa(evento.data_inizio)}${evento.data_fine ? ` al ${dataEstesa(evento.data_fine)}` : ''}`
+  : evento.data_fine && evento.data_fine !== evento.data_inizio
+    ? `Dal ${dataEstesa(evento.data_inizio)} al ${dataEstesa(evento.data_fine)}`
+    : dataEstesa(evento.data_inizio);
+
+const orario = [
+  evento.ora_inizio ? `ore ${evento.ora_inizio.slice(0, 5)}` : '',
+  evento.ora_fine ? `– ${evento.ora_fine.slice(0, 5)}` : '',
+].filter(Boolean).join(' ');
+
+const dove = [evento.luogo, evento.comune, VALLE[evento.valle ?? ''] ?? '']
+  .filter(Boolean).join(' · ');
+
+const prezzoLabel = PREZZO[evento.prezzo ?? ''] ?? '';
+const pilastroLabel = evento.pilastro ? PILASTRO[evento.pilastro] ?? '' : '';
+
+// L'OG dedicata e' un asset statico committato: se l'evento e' stato
+// pubblicato dopo l'ultimo deploy la sua immagine non c'e' ancora, e si
+// ripiega sull'OG del calendario, che e' comunque in stile.
+const ogEvento = `/og/eventi/${evento.slug}.png`;
+
+const descrizioneMeta = (evento.descrizione ?? `${quando}${dove ? ` · ${dove}` : ''}`)
+  .replace(/\s+/g, ' ')
+  .slice(0, 200);
+
+// JSON-LD: l'evento come lo capiscono i motori di ricerca.
+const schemaEvento: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name: evento.titolo,
+  startDate: evento.ora_inizio ? `${evento.data_inizio}T${evento.ora_inizio}` : evento.data_inizio,
+  eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+  eventStatus: 'https://schema.org/EventScheduled',
+  url: new URL(`/eventi/${evento.slug}`, Astro.site).toString(),
+  image: new URL(ogEvento, Astro.site).toString(),
+};
+if (evento.data_fine) schemaEvento.endDate = evento.data_fine;
+if (evento.descrizione) schemaEvento.description = evento.descrizione;
+if (evento.organizzatore) {
+  schemaEvento.organizer = { '@type': 'Organization', name: evento.organizzatore };
+}
+if (dove) {
+  schemaEvento.location = {
+    '@type': 'Place',
+    name: evento.luogo ?? evento.comune ?? 'Valli del Noce',
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: evento.comune ?? undefined,
+      addressRegion: VALLE[evento.valle ?? ''] ?? 'Trentino',
+      addressCountry: 'IT',
+    },
+  };
+}
+---
+
+<Layout
+  title={evento.titolo}
+  description={descrizioneMeta}
+  ogImage={ogEvento}
+  ogType="article"
+>
+  <script type="application/ld+json" set:html={JSON.stringify(schemaEvento)} />
+
+  <article class="bg-[#FDF9F0] py-16 md:py-24">
+    <div class="max-w-3xl mx-auto px-6">
+
+      <p class="m-0 mb-6" style="font-family: 'Inter', sans-serif;">
+        <a href="/eventi" class="text-[13px] tracking-[0.14em] uppercase text-[#8a6215] no-underline hover:underline">
+          &larr; Appuntamenti delle valli
+        </a>
+      </p>
+
+      {pilastroLabel && (
+        <p
+          class="m-0 mb-4 text-[12px] tracking-[0.18em] uppercase text-[#C8923E] font-semibold"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          {pilastroLabel}
+        </p>
+      )}
+
+      <h1
+        class="text-4xl md:text-5xl font-medium text-[#1E2E26] leading-tight m-0"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        {evento.titolo}
+      </h1>
+
+      <div class="mt-8 bg-white border border-[#E5DFCF] rounded-lg p-6 flex flex-col gap-3" style="font-family: 'Inter', sans-serif;">
+        <div class="flex gap-3">
+          <span class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/45 w-24 flex-shrink-0 pt-0.5">Quando</span>
+          <span class="text-[15px] text-[#1E2E26]">
+            {quando}{orario ? `, ${orario}` : ''}
+          </span>
+        </div>
+        {dove && (
+          <div class="flex gap-3">
+            <span class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/45 w-24 flex-shrink-0 pt-0.5">Dove</span>
+            <span class="text-[15px] text-[#1E2E26]">{dove}</span>
+          </div>
+        )}
+        {evento.organizzatore && (
+          <div class="flex gap-3">
+            <span class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/45 w-24 flex-shrink-0 pt-0.5">A cura di</span>
+            <span class="text-[15px] text-[#1E2E26]">{evento.organizzatore}</span>
+          </div>
+        )}
+        {prezzoLabel && (
+          <div class="flex gap-3">
+            <span class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/45 w-24 flex-shrink-0 pt-0.5">Ingresso</span>
+            <span class="text-[15px] text-[#1E2E26]">{prezzoLabel}</span>
+          </div>
+        )}
+      </div>
+
+      {evento.descrizione && (
+        <p
+          class="text-lg text-[#0F0F0F]/80 leading-relaxed mt-8 m-0"
+          style="font-family: 'Source Serif 4', Georgia, serif;"
+        >
+          {evento.descrizione}
+        </p>
+      )}
+
+      {evento.url_fonte && (
+        <p class="mt-8 m-0" style="font-family: 'Inter', sans-serif;">
+          <a
+            href={evento.url_fonte}
+            target="_blank"
+            rel="noopener nofollow"
+            class="text-[15px] text-[#8a6215] no-underline hover:underline"
+          >
+            Scheda dell'organizzatore &rarr;
+          </a>
+        </p>
+      )}
+
+      {/* Non e' un evento nostro: si segnala, non si millanta. La riga qui
+          sotto e' la stessa distinzione che il carosello in home fa col
+          colore, detta a parole per chi arriva qui da un link condiviso. */}
+      <p
+        class="text-[13px] text-[#1E2E26]/50 leading-relaxed mt-10 pt-6 border-t border-[#E5DFCF] m-0"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        Appuntamento segnalato da El Brenz nel cartellone delle Valli del Noce.
+        L'organizzazione non è nostra: per orari, variazioni e prenotazioni fa
+        fede chi promuove l'iniziativa.
+      </p>
+
+    </div>
+  </article>
+</Layout>

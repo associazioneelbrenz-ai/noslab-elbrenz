@@ -76,6 +76,32 @@ async function urlLuoghi() {
 }
 const LUOGHI = await urlLuoghi();
 
+/**
+ * AGGIUNTA 1/8/2026 — stessa storia per gli eventi del Radar: /eventi/<slug> e'
+ * SSR, quindi la sitemap non lo scopre da sola. Solo i pubblicati (la vista
+ * espone solo quelli), cosi' un evento proposto o scartato non finisce mai
+ * dichiarato ai motori. Se il DB non risponde: lista vuota, build salva.
+ */
+async function urlEventi() {
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return [];
+  try {
+    const r = await fetch(`${url}/rest/v1/eventi_esterni_pubblici?select=slug`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return [];
+    const righe = await r.json();
+    return righe
+      .map((x) => x.slug)
+      .filter(Boolean)
+      .map((s) => `https://elbrenz.eu/eventi/${s}`);
+  } catch {
+    return []; // degrado silenzioso
+  }
+}
+const EVENTI = await urlEventi();
+
 // https://astro.build/config
 export default defineConfig({
   // URL canonico del sito in produzione.
@@ -118,8 +144,8 @@ export default defineConfig({
     // Esclude le pagine DE/EN finché le traduzioni non sono "live": restano
     // noindex, quindi non devono comparire nella sitemap (audit 14/7).
     sitemap({
-      // Pagine luogo (SSR): non scoperte in automatico, le aggiungiamo noi.
-      customPages: LUOGHI,
+      // Pagine luogo ed evento (SSR): non scoperte in automatico, le aggiungiamo noi.
+      customPages: [...LUOGHI, ...EVENTI],
       filter: (page) => {
         const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
         const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';

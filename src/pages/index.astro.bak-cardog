@@ -73,17 +73,8 @@ const ultimiArticoli = articoliProduzione
 // con immagine si notano molto piu' di quelle di solo testo. Chi non ha
 // copertina resta testuale, senza riempitivi finti.
 const seoHome = await mappaSeoArticoli();
-// Il DB ha le copertine dei soli articoli MIGRATI da WordPress, agganciate per
-// legacy_wp_id. Un articolo NUOVO non ha quell'id, quindi restava senza card
-// image e in home spiccava per il vuoto accanto alle altre tre (visto l'1/8).
-// Ricaduta sul frontmatter: prima og_image (la card social brandizzata, che
-// non compare dentro l'articolo ed e' fatta apposta per essere guardata in
-// piccolo), poi hero_image.
 const copertinaDi = (a: any): string | null =>
-  seoHome.get(Number(a.data.legacy_wp_id))?.copertina
-  || a.data.og_image
-  || a.data.hero_image
-  || null;
+  seoHome.get(Number(a.data.legacy_wp_id))?.copertina || null;
 
 /** Tronca l'excerpt a ~160 caratteri per la card, con ellissi. */
 function troncaExcerpt(testo: string): string {
@@ -520,111 +511,92 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
         Prossimi eventi
       </h2>
 
-      {/* AGGIUNTA 1/8/2026 — carosello orizzontale con scroll-snap. I nostri
-          appuntamenti aprono la fila e sono vestiti da protagonisti (bordo oro
-          doppio, badge El Brenz, immagine, CTA); le voci del Radar gia'
-          pubblicate le accoda lo script in fondo alla pagina, in una card
-          volutamente piu' sobria e piu' stretta. La gerarchia si vede prima di
-          leggere: nostro = oro su bianco, valli = sabbia con filo sottile. */}
-      <ul
-        id="eb-eventi-carosello"
-        class="list-none m-0 p-0 flex items-start gap-5 overflow-x-auto snap-x snap-mandatory pb-4 -mx-6 px-6"
-      >
-        {eventiFuturi.map((e) => {
-          const dc = dataCompattaEvento(e.data.data);
-          const isGita = !!e.data.link && e.data.link.includes('gita-giochi-medievali-2026');
-          return (
-            <li class="snap-start flex-shrink-0 w-[300px] sm:w-[360px] flex flex-col bg-white border-2 border-[#C8923E] rounded-lg overflow-hidden shadow-[0_8px_24px_rgba(200,146,62,0.20)]">
-              {e.data.immagine && (
-                <img src={e.data.immagine} alt={e.data.imageAlt ?? e.data.titolo} width="360" height="160" class="w-full h-40 object-cover" loading="lazy" decoding="async" />
-              )}
-              <div class="flex flex-col flex-1 p-5">
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3" style="font-family: 'Inter', sans-serif;">
-                  <span class="bg-[#C8923E] text-[#1E2E26] text-[10px] font-semibold tracking-[0.16em] uppercase px-2.5 py-1 rounded">
-                    El Brenz
-                  </span>
-                  <time datetime={e.data.data.toISOString()} class="text-[12px] tracking-[0.14em] uppercase text-[#8a6215] font-semibold">
-                    {dc.giorno} {dc.mese} {dc.anno}
+      {eventiFuturi.length > 0 ? (
+        <ul class="list-none m-0 p-0 flex flex-col gap-6">
+          {eventiFuturi.map((e) => {
+            const dc = dataCompattaEvento(e.data.data);
+            const isGita = !!e.data.link && e.data.link.includes('gita-giochi-medievali-2026');
+            return (
+              <li class="flex items-stretch gap-6 bg-white border border-[#E5DFCF] p-6">
+                {e.data.immagine && (
+                  <img src={e.data.immagine} alt={e.data.imageAlt ?? e.data.titolo} width="120" height="80" class="hidden sm:block flex-shrink-0 w-28 h-full object-cover rounded border border-[#C8923E]/30" loading="lazy" decoding="async" />
+                )}
+                <div
+                  class="flex flex-col items-center justify-center flex-shrink-0 w-24 bg-[#C8923E]/10 border border-[#C8923E] text-[#C8923E] px-3 py-4"
+                  style="font-family: 'Inter', sans-serif;"
+                >
+                  <time datetime={e.data.data.toISOString()} class="contents">
+                    <span class="text-3xl font-semibold leading-none">{dc.giorno}</span>
+                    <span class="text-xs tracking-[0.18em] mt-1.5">{dc.mese}</span>
+                    <span class="text-[11px] text-[#C8923E]/75 mt-0.5">{dc.anno}</span>
                   </time>
                 </div>
-                <h3
-                  class="text-xl sm:text-2xl text-[#1E2E26] font-medium leading-tight m-0"
-                  style="font-family: 'Playfair Display', serif;"
-                >
-                  {e.data.titolo}
-                </h3>
-                {(e.data.oraInizio || e.data.luogo) && (
-                  <p
-                    class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/55 m-0 mt-2"
-                    style="font-family: 'Inter', sans-serif;"
+                <div class="min-w-0">
+                  <h3
+                    class="text-2xl text-[#1E2E26] font-medium leading-tight m-0"
+                    style="font-family: 'Playfair Display', serif;"
                   >
-                    {[e.data.oraInizio ? `ore ${e.data.oraInizio}` : '', e.data.luogo ?? '']
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </p>
-                )}
-                {e.data.descrizioneBreve && (
-                  <p
-                    class="text-[15px] text-[#0F0F0F]/75 leading-relaxed m-0 mt-3"
-                    style="font-family: 'Source Serif 4', Georgia, serif;"
-                  >
-                    {e.data.descrizioneBreve}
-                  </p>
-                )}
-                {isGita ? (
-                  <div class="mt-auto pt-4" data-gita-countdown style="font-family: 'Inter', sans-serif;">
-                    <div class="flex items-baseline justify-between text-[13px] mb-1.5">
-                      <span class="text-[#1E2E26]/70">Posti disponibili</span>
-                      <span class="tabular-nums font-semibold text-[#1E2E26]" data-gita-testo>… di 54</span>
+                    {e.data.titolo}
+                  </h3>
+                  {(e.data.oraInizio || e.data.luogo) && (
+                    <p
+                      class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/55 m-0 mt-2"
+                      style="font-family: 'Inter', sans-serif;"
+                    >
+                      {[e.data.oraInizio ? `ore ${e.data.oraInizio}` : '', e.data.luogo ?? '']
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  )}
+                  {e.data.descrizioneBreve && (
+                    <p
+                      class="text-[#0F0F0F]/75 leading-relaxed m-0 mt-3"
+                      style="font-family: 'Source Serif 4', Georgia, serif;"
+                    >
+                      {e.data.descrizioneBreve}
+                    </p>
+                  )}
+                  {isGita ? (
+                    <div class="mt-4" data-gita-countdown style="font-family: 'Inter', sans-serif;">
+                      <div class="flex items-baseline justify-between text-[13px] mb-1.5">
+                        <span class="text-[#1E2E26]/70">Posti disponibili</span>
+                        <span class="tabular-nums font-semibold text-[#1E2E26]" data-gita-testo>… di 54</span>
+                      </div>
+                      <div class="h-2.5 w-full bg-[#E5DFCF] rounded-full overflow-hidden">
+                        <div class="h-full bg-[#C8923E] rounded-full transition-[width] duration-500" data-gita-barra style="width:0%"></div>
+                      </div>
+                      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
+                        <a href="/gita-giochi-medievali-2026/iscrizione" class="inline-block bg-[#C8923E] text-[#1E2E26] px-5 py-2 text-sm font-semibold no-underline rounded hover:bg-[#D9A94E] transition-colors">Iscriviti e blocca il posto →</a>
+                        <a href={e.data.link} class="text-sm text-[#8a6215] no-underline hover:underline">Tutti i dettagli</a>
+                      </div>
                     </div>
-                    <div class="h-2.5 w-full bg-[#E5DFCF] rounded-full overflow-hidden">
-                      <div class="h-full bg-[#C8923E] rounded-full transition-[width] duration-500" data-gita-barra style="width:0%"></div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3">
-                      <a href="/gita-giochi-medievali-2026/iscrizione" class="inline-block bg-[#C8923E] text-[#1E2E26] px-5 py-2 text-sm font-semibold no-underline rounded hover:bg-[#D9A94E] transition-colors">Iscriviti e blocca il posto →</a>
-                      <a href={e.data.link} class="text-sm text-[#8a6215] no-underline hover:underline">Tutti i dettagli</a>
-                    </div>
-                  </div>
-                ) : e.data.link && (
-                  <a
-                    href={e.data.link}
-                    target="_blank"
-                    rel="noopener"
-                    class="inline-block text-sm text-[#C8923E] no-underline hover:underline mt-auto pt-4"
-                    style="font-family: 'Inter', sans-serif;"
-                  >
-                    Maggiori informazioni →
-                  </a>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      {/* Fallback: resta solo se non c'e' NULLA da mostrare, nostro o delle
-          valli. Lo script lo nasconde appena accoda una voce del Radar. */}
-      <div
-        id="eb-eventi-vuoto"
-        class={eventiFuturi.length > 0 ? 'hidden' : 'max-w-2xl mx-auto text-center bg-white border border-[#E5DFCF] px-8 py-12'}
-      >
-        <p
-          class="text-lg text-[#0F0F0F]/75 leading-relaxed m-0"
-          style="font-family: 'Source Serif 4', Georgia, serif;"
-        >
-          Nessun evento in programma al momento. Segui i nostri canali per
-          gli aggiornamenti sulle prossime iniziative delle nostre valli.
-        </p>
-      </div>
-
-      {/* AGGIUNTA 1/8/2026 — richiamo al calendario completo. La lista NON si
-          replica in home: qui c'e' il nostro prossimo appuntamento, il resto
-          delle valli sta in /eventi. */}
-      <p class="text-center mt-10 m-0" style="font-family: 'Inter', sans-serif;">
-        <a href="/eventi" class="text-[#8a6215] no-underline hover:underline text-[15px]">
-          Tutti gli appuntamenti delle valli &rarr;
-        </a>
-      </p>
+                  ) : e.data.link && (
+                    <a
+                      href={e.data.link}
+                      target="_blank"
+                      rel="noopener"
+                      class="inline-block text-sm text-[#C8923E] no-underline hover:underline mt-3"
+                      style="font-family: 'Inter', sans-serif;"
+                    >
+                      Maggiori informazioni →
+                    </a>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div class="max-w-2xl mx-auto text-center bg-white border border-[#E5DFCF] px-8 py-12">
+          <p
+            class="text-lg text-[#0F0F0F]/75 leading-relaxed m-0"
+            style="font-family: 'Source Serif 4', Georgia, serif;"
+          >
+            Nessun evento in programma al momento. Segui i nostri canali per
+            gli aggiornamenti sulle prossime iniziative delle nostre valli.
+          </p>
+        </div>
+      )}
     </div>
   </section>
 
@@ -1093,19 +1065,19 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
                   class="shrink-0 eb-marquee__logo focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C8923E]"
                   aria-label={`${c.nome}: scopri le convenzioni soci`}
                 >
-                  <img src={c.src} alt={`Logo ${c.nome}`} width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" fetchpriority="low" decoding="async" />
+                  <img src={c.src} alt={`Logo ${c.nome}`} width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
                 </a>
               ))}
               {marqueeRipetute.map((c) => (
                 <a href="/convenzioni" tabindex="-1" aria-hidden="true" class="shrink-0 eb-marquee__logo eb-marquee__rep">
-                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" fetchpriority="low" decoding="async" />
+                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
                 </a>
               ))}
             </div>
             <div class="flex items-center gap-24 md:gap-32 pr-24 md:pr-32 eb-marquee__dup" aria-hidden="true">
               {filaMarquee.map((c) => (
                 <a href="/convenzioni" tabindex="-1" class="shrink-0 eb-marquee__logo">
-                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" fetchpriority="low" decoding="async" />
+                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
                 </a>
               ))}
             </div>
@@ -1130,8 +1102,6 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
               <img
                 src="/gallery/nossa-storia-2013/003.webp"
                 alt="Rievocazione Nossa Storia 2013: gli Schützen in costume sfilano per il paese"
-                width="1600"
-                height="1200"
                 loading="lazy"
                 decoding="async"
                 class="absolute inset-0 w-full h-full object-cover"
@@ -1439,71 +1409,6 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
         } else if (disponibili === 0 && testo) {
           testo.textContent = 'Posti esauriti';
           testo.style.color = '#a33';
-        }
-      })
-      .catch(() => {});
-  })();
-
-  // AGGIUNTA 1/8/2026 — carosello eventi: in coda ai nostri appuntamenti si
-  // accodano le voci del Radar gia' PUBBLICATE, dalla vista
-  // eventi_esterni_pubblici (che espone solo stato='pubblicato', il filtro sta
-  // a database). Si caricano a runtime e non in build perche' il cartellone
-  // cambia quando il curatore pubblica, non quando si fa il deploy. Se la
-  // fetch fallisce la sezione resta com'e': i nostri eventi sono gia' nel
-  // markup servito, non dipendono da questo script.
-  (function () {
-    const lista = document.getElementById('eb-eventi-carosello');
-    if (!lista || !SB_URL || !SB_ANON) return;
-
-    const VALLE = { non: 'Val di Non', sole: 'Val di Sole', rabbi: 'Val di Rabbi', pejo: 'Val di Pejo' };
-    const MESI = ['GEN', 'FEB', 'MAR', 'APR', 'MAG', 'GIU', 'LUG', 'AGO', 'SET', 'OTT', 'NOV', 'DIC'];
-    const oggi = new Date().toISOString().slice(0, 10);
-    const esc = (s) => String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const taglia = (s, n) => (s && s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : (s || ''));
-
-    const campi = 'id,slug,titolo,descrizione,data_inizio,data_fine,ricorrenza,ora_inizio,luogo,comune,valle,url_fonte';
-    fetch(SB_URL + '/rest/v1/eventi_esterni_pubblici?select=' + campi + '&order=data_inizio.asc', {
-      headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON },
-    })
-      .then((r) => (r.ok ? r.json() : []))
-      .then((righe) => {
-        const futuri = (Array.isArray(righe) ? righe : [])
-          .filter((e) => (e.data_fine || e.data_inizio) >= oggi)
-          .slice(0, 8);
-        if (!futuri.length) return;
-
-        const vuoto = document.getElementById('eb-eventi-vuoto');
-        if (vuoto) vuoto.classList.add('hidden');
-
-        for (const e of futuri) {
-          const d = new Date(e.data_inizio + 'T00:00:00');
-          const quando = e.ricorrenza
-            ? esc(e.ricorrenza)
-            : d.getDate() + ' ' + MESI[d.getMonth()] + ' ' + d.getFullYear();
-          const ora = e.ora_inizio ? 'ore ' + String(e.ora_inizio).slice(0, 5) : '';
-          const dove = [e.luogo, e.comune, VALLE[e.valle] || ''].filter(Boolean).join(' · ');
-          const meta = [ora, dove].filter(Boolean).join(' · ');
-
-          const li = document.createElement('li');
-          li.className = 'snap-start flex-shrink-0 w-[250px] sm:w-[280px] flex flex-col bg-[#FAF6EC] border border-[#E5DFCF] rounded-lg p-5';
-          li.innerHTML =
-            '<div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3" style="font-family:\'Inter\',sans-serif;">' +
-              '<span class="border border-[#1E2E26]/25 text-[#1E2E26]/60 text-[10px] tracking-[0.16em] uppercase px-2 py-0.5 rounded">dalle valli</span>' +
-              '<span class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/50">' + quando + '</span>' +
-            '</div>' +
-            '<h3 class="text-[17px] text-[#1E2E26]/85 font-medium leading-snug m-0" style="font-family:\'Playfair Display\',serif;">' +
-              esc(e.titolo) +
-            '</h3>' +
-            (meta
-              ? '<p class="text-[11px] tracking-[0.12em] uppercase text-[#1E2E26]/45 m-0 mt-2" style="font-family:\'Inter\',sans-serif;">' + esc(meta) + '</p>'
-              : '') +
-            (e.descrizione
-              ? '<p class="text-[13px] text-[#0F0F0F]/60 leading-relaxed m-0 mt-3" style="font-family:\'Source Serif 4\',Georgia,serif;">' + esc(taglia(e.descrizione, 110)) + '</p>'
-              : '') +
-            '<a href="' + (e.slug ? '/eventi/' + encodeURIComponent(e.slug) : '/eventi') + '" class="text-[13px] text-[#8a6215] no-underline hover:underline mt-auto pt-4" style="font-family:\'Inter\',sans-serif;">Scopri &rarr;</a>';
-          lista.appendChild(li);
         }
       })
       .catch(() => {});
