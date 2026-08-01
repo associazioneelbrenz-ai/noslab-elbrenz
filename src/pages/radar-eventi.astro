@@ -101,6 +101,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           </div>
         </div>
 
+        <p id="rd-riepilogo" class="text-[13px] text-[#1E2E26]/70 m-0 mb-2"></p>
         <p id="rd-conteggio" class="text-[13px] text-[#1E2E26]/55 m-0 mb-3"></p>
         <div id="rd-lista" class="space-y-3"></div>
       </section>
@@ -179,6 +180,27 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   $('rd-logout')?.addEventListener('click', logout);
   $('rd-logout-2')?.addEventListener('click', logout);
 
+  // ---- RIEPILOGO PER STATO ----
+  // Una riga sola che dice quanti eventi ci sono in ogni stato. Serve a non
+  // perdere di vista le cose approvate ma non ancora pubblicate: e' il punto
+  // in cui il flusso si era inceppato la prima volta.
+  async function aggiornaRiepilogo() {
+    const el = $('rd-riepilogo');
+    if (!el) return;
+    const { data } = await supabase.from('eventi_esterni').select('stato');
+    const righe = (data as { stato: string }[]) ?? [];
+    if (!righe.length) { el.textContent = ''; return; }
+    const conta: Record<string, number> = {};
+    for (const r of righe) conta[r.stato] = (conta[r.stato] ?? 0) + 1;
+    const ordine = ['grezzo', 'proposto', 'approvato', 'pubblicato', 'scartato', 'non_promuovibile'];
+    const etichette: Record<string, string> = {
+      grezzo: 'grezzi', proposto: 'da approvare', approvato: 'approvati, da pubblicare',
+      pubblicato: 'pubblicati', scartato: 'scartati', non_promuovibile: 'non promuovibili',
+    };
+    el.textContent = ordine.filter((s) => conta[s])
+      .map((s) => `${conta[s]} ${etichette[s]}`).join(' · ');
+  }
+
   // ---- LISTA ----
   async function caricaLista() {
     const box = $('rd-lista')!;
@@ -203,6 +225,10 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (error) { box.innerHTML = `<p class="text-[#a33] text-sm">Errore di lettura: ${esc(error.message)}</p>`; return; }
 
     const righe = (data as any[]) ?? [];
+    // Riepilogo per stato, sempre visibile: e' cio' che dice a colpo d'occhio
+    // dove sono finite le cose, senza dover cambiare filtro per scoprirlo.
+    void aggiornaRiepilogo();
+
     ($('rd-conteggio') as HTMLElement).textContent =
       righe.length ? `${righe.length} eventi` : '';
     if (!righe.length) { box.innerHTML = '<p class="text-[#1E2E26]/55 text-sm">Nessun evento con questi filtri.</p>'; return; }
@@ -322,13 +348,35 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         }
 
         el.disabled = false; el.textContent = testo;
+
+        // Un evento cambia stato e quindi ESCE dal filtro corrente: se restassimo
+        // fermi, la riga sparirebbe senza spiegazione e il curatore penserebbe di
+        // aver finito. Invece la si segue: il filtro si sposta sullo stato nuovo,
+        // dove la riga e' ancora li' col bottone del passo dopo.
+        // (1/8/2026: e' esattamente cosi' che la prima pubblicazione non e'
+        //  andata a buon fine. Approvare non e' pubblicare, sono due gesti.)
+        const dopo: Record<string, string> = {
+          approva: 'approvato', pubblica: 'pubblicato', scarta: 'scartato',
+        };
+        const nuovoStato = dopo[azione];
+        const seguo = ok && nuovoStato && val('rd-f-stato') !== nuovoStato;
+
         if (esito) {
           esito.classList.remove('hidden');
-          esito.textContent = messaggio;
+          const dove = azione === 'approva'
+            ? ": da lì si pubblica."
+            : ".";
+          esito.textContent = ok && seguo
+            ? `${messaggio} Ora è in «${nuovoStato}»${dove}`
+            : messaggio;
           esito.style.background = ok ? '#eaf6ef' : '#fbecec';
           esito.style.color = '#1E2E26';
         }
-        if (ok) await caricaLista();
+
+        if (ok) {
+          if (seguo) ($('rd-f-stato') as HTMLSelectElement).value = nuovoStato;
+          await caricaLista();
+        }
       });
     });
   }

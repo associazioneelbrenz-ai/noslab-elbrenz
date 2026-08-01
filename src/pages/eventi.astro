@@ -60,19 +60,6 @@ try {
   console.error('[eventi] lettura fallita:', e);
 }
 
-/**
- * GUARDIA TEMPORANEA (1/8/2026). La riga della gita in `evento` porta ancora
- * «Alto Adige» in titolo e luogo: il sito e l'app sono stati corretti il 27/7,
- * quel record no. La regola non ammette eccezioni, quindi finche' il dato non
- * viene sistemato a monte non lo si pubblica cosi'.
- * // TODO togliere questa funzione dopo aver corretto il dato:
- * //   update public.evento
- * //      set titolo = replace(titolo, 'Alto Adige', 'Südtirol'),
- * //          luogo  = replace(luogo,  'Alto Adige', 'Südtirol')
- * //    where titolo ilike '%alto adige%' or luogo ilike '%alto adige%';
- */
-const sudtirol = (s: string | null) => (s ?? '').replace(/Alto\s+Adige/gi, 'Südtirol');
-
 const VALLE: Record<string, string> = {
   non: 'Val di Non', sole: 'Val di Sole', rabbi: 'Val di Rabbi', pejo: 'Val di Pejo',
 };
@@ -142,14 +129,14 @@ const postiLiberi = posti ? Math.max(0, posti.posti_totali - posti.posti_occupat
                 )}
                 <div class="p-6 md:p-8">
                   <p class="text-[13px] text-[#8a6215] m-0 mb-2">
-                    {periodo(e.inizio, e.fine)}{e.luogo ? ` · ${sudtirol(e.luogo)}` : ''}
+                    {periodo(e.inizio, e.fine)}{e.luogo ? ` · ${e.luogo}` : ''}
                   </p>
                   <h3 class="text-xl md:text-2xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
-                    {sudtirol(e.titolo)}
+                    {e.titolo}
                   </h3>
                   {e.descrizione && (
                     <p class="text-[#1E2E26]/80 leading-relaxed m-0 mb-5" style="font-family: 'Source Serif 4', Georgia, serif;">
-                      {sudtirol(e.descrizione)}
+                      {e.descrizione}
                     </p>
                   )}
 
