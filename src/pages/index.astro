@@ -606,6 +606,15 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
           </p>
         </div>
       )}
+
+      {/* AGGIUNTA 1/8/2026 — richiamo al calendario completo. La lista NON si
+          replica in home: qui c'e' il nostro prossimo appuntamento, il resto
+          delle valli sta in /eventi. */}
+      <p class="text-center mt-10 m-0" style="font-family: 'Inter', sans-serif;">
+        <a href="/eventi" class="text-[#8a6215] no-underline hover:underline text-[15px]">
+          Tutti gli appuntamenti delle valli &rarr;
+        </a>
+      </p>
     </div>
   </section>
 
