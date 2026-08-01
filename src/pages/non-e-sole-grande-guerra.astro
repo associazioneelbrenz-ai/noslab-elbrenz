@@ -22,7 +22,7 @@ const IMG_ALT = 'Soldati in divisa austro-ungarica salutano dai vagoni di un tre
 const DIDASCALIA = 'Partenza per il fronte della Galizia, 1914. Foto d’epoca, Tiroler Landesarchiv (Landesarchiv Innsbruck). Elaborazione digitale di Michele Corradini.';
 
 type Pezzo = {
-  id: string; titolo: string; descrizione: string | null; tipo: string;
+  id: string; titolo: string; descrizione: string | null; racconto: string | null; tipo: string;
   anno: number | null; periodo: string | null; luogo: string | null; valle: string | null;
   fonte: string; elaborazione: string | null; donatore: string | null; immagini_urls: string[];
 };
@@ -31,7 +31,7 @@ try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
   // Solo colonne pubbliche del cartellino; niente caricato_da/validato_da.
   const { data } = await sb.from('museo_gg_pezzo')
-    .select('id, titolo, descrizione, tipo, anno, periodo, luogo, valle, fonte, elaborazione, donatore, immagini_urls')
+    .select('id, titolo, descrizione, racconto, tipo, anno, periodo, luogo, valle, fonte, elaborazione, donatore, immagini_urls')
     .eq('stato', 'pubblicato')
     .order('ordine', { ascending: true }).order('anno', { ascending: true });
   pezzi = (data as Pezzo[]) ?? [];
@@ -315,6 +315,12 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
         <div class="px-6 pb-6">
           <h3 id="museo-titolo" class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;"></h3>
           <p id="museo-descrizione" class="text-[#1E2E26]/85 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;"></p>
+          {/* AGGIUNTA 1/8/2026 — il racconto del curatore. whitespace-pre-wrap
+              perche' gli a capo sono il ritmo del testo: e' la stessa resa di
+              /storie/[id], stessa famiglia e stessa interlinea. Resta nascosto
+              finche' non c'e' un racconto, cosi' i pezzi di solo cartellino non
+              guadagnano uno spazio vuoto. */}
+          <div id="museo-racconto" class="hidden text-[#1E2E26]/85 whitespace-pre-wrap break-words m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem; line-height: 1.7;"></div>
           <dl id="museo-cartellino" class="text-sm text-[#1E2E26]/80 space-y-1.5 border-t border-[#C8923E]/30 pt-4"></dl>
         </div>
       </div>
@@ -346,6 +352,11 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
           .join('');
         elTit.textContent = p.titolo || '';
         elDes.textContent = p.descrizione || '';
+        // textContent, non innerHTML: il racconto e' testo scritto da una
+        // persona e non deve poter iniettare markup.
+        const elRac = document.getElementById('museo-racconto')!;
+        elRac.textContent = p.racconto || '';
+        elRac.classList.toggle('hidden', !p.racconto);
         elCar.innerHTML = [
           riga('Tipo', TIPO_L[p.tipo] || p.tipo),
           riga('Anno', p.anno ? String(p.anno) : (p.periodo || null)),
