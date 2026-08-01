@@ -304,7 +304,10 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       return editingId;
     } else {
       record.slug = slug + '-' + Date.now().toString(36);
-      record.stato = 'bozza'; record.pubblicato = false; record.tipo_contenuto = 'articolo';
+      // 'post', non 'articolo': il CHECK articolo_tipo_contenuto_check ammette
+      // solo 'post' e 'pagina', quindi ogni creazione di un pezzo nuovo dalla
+      // redazione falliva all'insert. (Corretto 2/8/2026.)
+      record.stato = 'bozza'; record.pubblicato = false; record.tipo_contenuto = 'post';
       const { data, error } = await supabase.from('articolo').insert(record).select('id').single();
       if (error || !data) { formEsito('Creazione non riuscita: ' + (error?.message ?? ''), false); return null; }
       editingId = data.id; return data.id;
