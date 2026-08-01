@@ -170,7 +170,7 @@ function preFiltro(ev: Record<string, any>): PreFiltro {
   };
 }
 
-/** L'organizzatore (o un co-organizzatore) è nella lista degli esclusi? */
+/** L'organizzatore (o un co-organizzatore) è nella lista dei segnalati? */
 function escluso(ev: Record<string, any>, patterns: string[]): string | null {
   const campo = `${ev.organizzatore ?? ''} ${ev.titolo ?? ''}`.toLowerCase();
   return patterns.find((p) => campo.includes(p)) ?? null;
@@ -376,9 +376,11 @@ Deno.serve(async (req: Request) => {
       await attesa(PAUSA_MS);
     }
 
-    // L'organizzatore escluso vince su tutto: resta visibile al direttivo, non
-    // esce mai in pubblico.
-    if (patternEscluso) stato = 'non_promuovibile';
+    // Un organizzatore in lista non e' piu' partner operativo, ma la
+    // collaborazione non e' chiusa (decisione di Cristian, 1/8/2026): non
+    // blocca piu' l'evento, lo segnala soltanto. Lo stato resta quello che
+    // merita il contenuto, e la curatela decide caso per caso.
+    if (patternEscluso) flag.push('organizzatore_segnalato');
 
     const motivo = {
       forti: pf.forti,
@@ -389,7 +391,7 @@ Deno.serve(async (req: Request) => {
       punteggio_testo: pf.punteggio_testo,      // indicativo, descrizione compresa
       punteggio_modello: haiku?.punteggio ?? null,
       motivazione,
-      organizzatore_escluso: patternEscluso,
+      organizzatore_segnalato: patternEscluso,
       modello: haiku ? MODELLO : null,
     };
 
