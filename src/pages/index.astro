@@ -1083,19 +1083,19 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
                   class="shrink-0 eb-marquee__logo focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C8923E]"
                   aria-label={`${c.nome}: scopri le convenzioni soci`}
                 >
-                  <img src={c.src} alt={`Logo ${c.nome}`} width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
+                  <img src={c.src} alt={`Logo ${c.nome}`} width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" fetchpriority="low" decoding="async" />
                 </a>
               ))}
               {marqueeRipetute.map((c) => (
                 <a href="/convenzioni" tabindex="-1" aria-hidden="true" class="shrink-0 eb-marquee__logo eb-marquee__rep">
-                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
+                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" fetchpriority="low" decoding="async" />
                 </a>
               ))}
             </div>
             <div class="flex items-center gap-24 md:gap-32 pr-24 md:pr-32 eb-marquee__dup" aria-hidden="true">
               {filaMarquee.map((c) => (
                 <a href="/convenzioni" tabindex="-1" class="shrink-0 eb-marquee__logo">
-                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" decoding="async" />
+                  <img src={c.src} alt="" width={c.w} height={c.h} class="h-16 md:h-20 w-auto object-contain" loading="eager" fetchpriority="low" decoding="async" />
                 </a>
               ))}
             </div>
@@ -1120,6 +1120,8 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
               <img
                 src="/gallery/nossa-storia-2013/003.webp"
                 alt="Rievocazione Nossa Storia 2013: gli Schützen in costume sfilano per il paese"
+                width="1600"
+                height="1200"
                 loading="lazy"
                 decoding="async"
                 class="absolute inset-0 w-full h-full object-cover"
