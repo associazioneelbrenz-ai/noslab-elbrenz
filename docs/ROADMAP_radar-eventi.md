@@ -91,19 +91,35 @@ Il Radar serve solo a **noi** per riempire `/eventi`, o è anche uno **strumento
 
 ---
 
-## 5. Gate di design ancora aperti (BLOCCO 2, sezione 2.0)
+## 5. Gate di design: risposte e stato
 
-Nessuna riga di codice del Radar prima di queste cinque risposte.
+| # | Gate | Risposta |
+|---|---|---|
+| 1 | Frequenza harvest | **Giornaliera notturna** (Cristian, 31/7). Vincolo tecnico sopravvenuto: la fonte torna al massimo 10 eventi per portale e ignora `offset`, quindi la copertura la garantisce la cadenza, non la profondità. La frequenza giornaliera **non è negoziabile al ribasso**. |
+| 2 | Soglia coda curatore | **≥ 60** confermata. 30-59 entra con flag `bassa_priorita`, sotto 30 va in `scartato` ma si conserva per la taratura. |
+| 3 | Notifica Telegram | **Digest settimanale**, lunedì mattina, al gruppo direttivo. Toggle in `telegram_notifica` (tipo `radar_digest`): si spegne con un UPDATE, senza deploy. |
+| 4 | Output pubblico Fase 1 | **Solo il sito** (default assunto, non ancora confermato). Newsletter e bot restano fuori: la newsletter non ha ancora un broadcast vero. |
+| 5 | Chi cura | **Livello ≥ 20** cura (curatore museo, collaboratori, admin); la **pubblicazione** resta al direttivo ≥ 50. Default assunto, non ancora confermato: due mani diverse sull'unico atto che esce in pubblico. |
+| 6 | APT prima o dopo | Aperto. Ora che il Radar funziona, l'argomento "guardate cosa abbiamo fatto" è disponibile: propende per il dopo. |
 
-1. **Frequenza harvest:** giornaliera notturna o bisettimanale?
-2. **Soglia di ingresso in coda curatore:** proposta punteggio ≥ 60. Confermare o correggere.
-3. **Notifica Telegram al direttivo** (`-5532248837`, formato corretto così, non `-100…`): digest settimanale o notifica per singolo evento sopra soglia?
-4. **Output pubblico Fase 1:** solo `/eventi` sul sito, o anche riga in newsletter e bot?
-5. **Chi cura:** solo segretario, o anche curatore museo e collaboratori?
+I gate 4 e 5 sono stati risolti con un default dichiarato per non fermare il lavoro: se la scelta è diversa, il 4 è una riga di codice e il 5 è un numero in una policy.
 
-Sesta domanda aggiunta dal censimento:
+---
 
-6. **Le APT si contattano prima o dopo** che il Radar sia in piedi? Prima significa poter dire "stiamo costruendo", dopo significa poter mostrare qualcosa che funziona. La seconda è più solida ma sposta le lettere a settembre.
+## 5-bis. Stato al 1 agosto 2026
+
+**In piedi e verificato:**
+
+- Migration `20260731120000_radar_eventi.sql` applicata: `eventi_esterni`, `eventi_organizzatori_esclusi`, `eventi_esterni_date`, RLS deny-by-default, vista pubblica `eventi_esterni_pubblici` (solo `pubblicato`, niente colonne personali), trigger di guardia, seed dei due organizzatori esclusi.
+- Tre edge deployate, `verify_jwt` verificato dopo il deploy: `radar-eventi-harvest` e `radar-eventi-classifica` a `false` col gate `x-ingest-token`, `radar-eventi-azione` a `true`. I tre gate rispondono 401 come devono.
+- Pagina `/radar-eventi` live, `noindex`, fuori dalla sitemap, login OTP e gating di ruolo.
+- Sonda estesa ai tre gate.
+
+**Aperto:**
+
+- **Lo scheduling.** `20260801090000_radar_eventi_cron.sql` è scritta ma non applicata: pg_cron deve passare `x-ingest-token` e il token va messo nel Vault. Prerequisito di Cristian, coincide con la rotazione di INGEST_TOKEN già in sospeso dal 29/7.
+- **Il ciclo completo su dati reali** (harvest → classifica → approva → pubblica) non è stato eseguito: senza il token non si può lanciare l'harvest. La logica di raccolta e pre-filtro è però stata provata contro i portali veri riportandola in Python: 17 portali interrogati, 43 eventi futuri, e i falsi positivi trovati sono stati corretti nel codice.
+- **Il primo riempimento sarà magro.** Con 10 eventi per portale e nessun backfill possibile, il Radar si popola nei giorni successivi, man mano che i comuni pubblicano. È un'altra ragione per cui la fonte `manuale` e i rapporti con le APT contano.
 
 ---
 
