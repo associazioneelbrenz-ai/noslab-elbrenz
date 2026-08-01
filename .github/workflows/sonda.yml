@@ -101,6 +101,24 @@ jobs:
           c=$(codice "$FB/newsletter-unsubscribe?token=sonda-probe")
           case "$c" in 200|400|404) ;; *) FAIL="${FAIL}- newsletter-unsubscribe: atteso 200/400/404, ricevuto $c\n";; esac
 
+          # 10-bis) Radar eventi (31/7/2026). Qui la sonda controlla che i GATE
+          #     TENGANO, non che le function facciano il loro lavoro: harvest e
+          #     classifica sono schedulate e gated da x-ingest-token, che la
+          #     sonda non ha e non deve avere. Un 200 senza token vorrebbe dire
+          #     raccolta aperta al mondo; un 401 e' l'esito sano.
+          for fn in radar-eventi-harvest radar-eventi-classifica; do
+            c=$(codice -X POST "$FB/$fn")
+            case "$c" in 401) ;; *) FAIL="${FAIL}- $fn: senza token atteso 401, ricevuto $c (gate aperto?)\n";; esac
+          done
+
+          # radar-eventi-azione e' verify_jwt=true: senza JWT deve fermarsi al
+          # gateway. Un 200 qui significherebbe che chiunque puo' pubblicare un
+          # evento sul sito.
+          c=$(codice -X POST -H "Content-Type: application/json" \
+            -d '{"azione":"pubblica","id":"00000000-0000-0000-0000-000000000000"}' \
+            "$FB/radar-eventi-azione")
+          case "$c" in 401) ;; *) FAIL="${FAIL}- radar-eventi-azione: senza JWT atteso 401, ricevuto $c (chiunque pubblica?)\n";; esac
+
           # 11) gita-verifica-socio: la catena della verifica socio dell'iscrizione
           #     alla gita. E' verify_jwt=true, quindi si chiama come fa il browser,
           #     con l'apikey anon. Email finta di proposito: la risposta corretta e'
