@@ -103,7 +103,32 @@ try {
 // Le card con immagine si notano molto piu' di quelle di solo testo. Chi non
 // ha copertina resta testuale, senza riempitivi finti.
 const copertinaDi = (a: any): string | null => a.data.copertina
-  || null;
+
+// AGGIUNTA 2/8/2026 — la mappa in prima fila (brief attuativo IV.5).
+// Conteggio e pin letti al build da v_luoghi_mappa: il numero non si scrive
+// mai a mano (un numero scritto a mano diventa falso e nessuno se ne
+// accorge), e i pin sono SOLO i sei curati con in_anteprima — la Val di Non
+// pesa 35 luoghi su 57 e un'anteprima non curata mostrerebbe quasi solo lei.
+let luoghiTotale = 0;
+let pinAnteprima: { nome: string; lat: number; lng: number; colore: string }[] = [];
+const COLORE_CAT: Record<string, string> = {
+  castelli_e_residenze: '#8a5a2b', chiese_e_santuari: '#5b6ea8',
+  grande_guerra: '#8a3a3a', cultura_materiale: '#6b8e23',
+  musei_e_collezioni: '#b0872f', luoghi_sacri: '#5b6ea8', memoria_e_comunita: '#b0872f',
+};
+try {
+  const sbLuoghi = createClient(SB_ART_URL, SB_ART_ANON, { auth: { persistSession: false } });
+  const { data } = await sbLuoghi
+    .from('v_luoghi_mappa')
+    .select('nome, categoria, lat, lng, in_anteprima');
+  const righe = (data as any[]) ?? [];
+  luoghiTotale = righe.length;
+  pinAnteprima = righe
+    .filter((l) => l.in_anteprima === true && l.lat && l.lng)
+    .map((l) => ({ nome: l.nome, lat: l.lat, lng: l.lng, colore: COLORE_CAT[l.categoria] ?? '#C8923E' }));
+} catch (e) {
+  console.error('[home] lettura luoghi fallita:', e);
+}
 
 /** Tronca l'excerpt a ~160 caratteri per la card, con ellissi. */
 function troncaExcerpt(testo: string): string {
@@ -429,6 +454,55 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
     </div>
   </section>
 
+  {/* MAPPA — spostata QUI il 2/8/2026 (brief attuativo IV.5: «prima del
+      blocco articoli»; era fra articoli ed eventi dal 18/7) e resa VIVA.
+      Tre stati: (1) prima della visibilita' solo l'ortofoto gia' in pagina,
+      zero JS e zero tile — la home non ingrassa; (2) quando entra nel
+      viewport, IntersectionObserver carica Leaflet SELF-HOSTED da
+      /public/leaflet e accende i sei pin curati (in_anteprima) con dolcezza;
+      (3) tutta la striscia e' un solo bersaglio verso /mappa. Senza
+      JavaScript resta esattamente la sezione statica di prima: ortofoto,
+      testo e link. L'altezza e' riservata dal markup: niente salti. */}
+  <section class="relative overflow-hidden" aria-label="La Mappa delle Valli">
+    <a href="/mappa" class="block relative no-underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8923E]" aria-label={`Apri la mappa delle valli: ${luoghiTotale} luoghi`}>
+      <picture>
+        <source srcset="/mappa-teaser.webp" type="image/webp" />
+        <img
+          src="/mappa-teaser.jpg"
+          alt="Ortofoto delle Valli del Noce con i luoghi della mappa El Brenz"
+          class="w-full h-64 md:h-80 object-cover"
+          width="1600" height="710"
+          loading="lazy"
+          decoding="async"
+        />
+      </picture>
+      {/* La mappa viva si accende sopra l'ortofoto, stessa cornice. */}
+      <div id="eb-mappa-viva" class="absolute inset-0 opacity-0 transition-opacity duration-700" aria-hidden="true"></div>
+      {/* Velo piu' pieno al centro rispetto alla versione su ortofoto: la
+          mappa OSM e' chiara e il titolo crema ci si perdeva sopra. */}
+      <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26]/85 via-[#1E2E26]/45 to-[#1E2E26]/15 pointer-events-none" aria-hidden="true"></div>
+      <div class="absolute inset-x-0 bottom-0 p-6 md:p-8 text-center pointer-events-none">
+        <h2 class="text-2xl md:text-3xl text-[#F5EEDD] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+          La Mappa delle <em class="text-[#C8923E]">Valli</em>
+        </h2>
+        <p class="text-[#F5EEDD]/85 m-0 mb-4 text-sm md:text-base" style="font-family: 'Source Serif 4', Georgia, serif;">
+          {luoghiTotale > 0
+            ? `${luoghiTotale} luoghi tra castelli, chiese, Grande Guerra e cultura materiale, sulla cartografia ufficiale del Trentino.`
+            : 'I luoghi della nosa storia e le convenzioni soci, sulla cartografia ufficiale del Trentino.'}
+        </p>
+        <span
+          class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Esplora la mappa
+        </span>
+        <p class="text-[10px] text-[#F5EEDD]/50 m-0 mt-3" style="font-family: 'Inter', sans-serif;">
+          Cartografia © OpenStreetMap · Ortofoto © Provincia Autonoma di Trento · SIAT (CC BY)
+        </p>
+      </div>
+    </a>
+  </section>
+
   {/* AGGIUNTA M2.4 — blocco "Ultimi articoli": i 4 più recenti di produzione.
       Card sul pattern di ElencoArticoliPerAnno (bianche, bordo E5DFCF, hover
       oro) su sfondo avorio brand. Nessun link "tutti gli articoli": non esiste
@@ -492,40 +566,6 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
           </a>
         ))}
       </div>
-    </div>
-  </section>
-
-  {/* MAPPA (spostata 18/7: tra Ultimi articoli e Prossimi eventi, richiesta Cristian) */}
-  <section class="relative overflow-hidden" aria-label="La Mappa delle Valli">
-    <picture>
-      <source srcset="/mappa-teaser.webp" type="image/webp" />
-      <img
-        src="/mappa-teaser.jpg"
-        alt="Ortofoto delle Valli del Noce con i luoghi della mappa El Brenz"
-        class="w-full h-64 md:h-80 object-cover"
-        width="1600" height="710"
-        loading="lazy"
-        decoding="async"
-      />
-    </picture>
-    <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26]/85 via-[#1E2E26]/25 to-transparent" aria-hidden="true"></div>
-    <div class="absolute inset-x-0 bottom-0 p-6 md:p-8 text-center">
-      <h2 class="text-2xl md:text-3xl text-[#F5EEDD] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
-        La Mappa delle <em class="text-[#C8923E]">Valli</em>
-      </h2>
-      <p class="text-[#F5EEDD]/85 m-0 mb-4 text-sm md:text-base" style="font-family: 'Source Serif 4', Georgia, serif;">
-        I luoghi della <em>nosa storia</em> e le convenzioni soci, sulla cartografia ufficiale del Trentino.
-      </p>
-      <a
-        href="/mappa"
-        class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
-        style="font-family: 'Inter', sans-serif;"
-      >
-        Esplora la mappa
-      </a>
-      <p class="text-[10px] text-[#F5EEDD]/50 m-0 mt-3" style="font-family: 'Inter', sans-serif;">
-        Ortofoto © Provincia Autonoma di Trento · SIAT (CC BY)
-      </p>
     </div>
   </section>
 
@@ -1434,7 +1474,7 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
 
 </Layout>
 
-<script define:vars={{ SB_URL, SB_ANON }}>
+<script define:vars={{ SB_URL, SB_ANON, PIN_ANTEPRIMA: pinAnteprima }}>
   // Countdown posti gita: legge la vista aggregata v_posti_gita (solo numeri).
   (function () {
     const wrap = document.querySelector('[data-gita-countdown]');
@@ -1462,6 +1502,66 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
         }
       })
       .catch(() => {});
+  })();
+
+  // AGGIUNTA 2/8/2026 — la mappa viva (brief attuativo IV.5). Niente Leaflet
+  // e niente tile finche' la striscia non entra nel viewport: la home ha gia'
+  // 3,8 MB e la mappa non deve aggiungere carico eager. Quando si avvicina
+  // (IntersectionObserver, margine 200px) si caricano css+js SELF-HOSTED da
+  // /leaflet e si accendono i sei pin curati sopra l'ortofoto, in dissolvenza.
+  // Ogni interazione della mappa e' spenta: la striscia intera e' un link a
+  // /mappa e non deve combattere con lo scroll. Se qualcosa fallisce resta
+  // l'ortofoto: la mappa viva e' un miglioramento, non un requisito.
+  (function () {
+    const cornice = document.getElementById('eb-mappa-viva');
+    if (!cornice || !window.IntersectionObserver || !PIN_ANTEPRIMA || PIN_ANTEPRIMA.length === 0) return;
+
+    let avviata = false;
+    function accendi() {
+      if (avviata) return;
+      avviata = true;
+      if (!document.getElementById('eb-leaflet-css')) {
+        const css = document.createElement('link');
+        css.id = 'eb-leaflet-css'; css.rel = 'stylesheet'; css.href = '/leaflet/leaflet.css';
+        document.head.appendChild(css);
+      }
+      const s = document.createElement('script');
+      s.src = '/leaflet/leaflet.js';
+      s.onload = function () {
+        try {
+          const L = window.L;
+          const map = L.map(cornice, {
+            zoomControl: false, attributionControl: false,
+            dragging: false, touchZoom: false, scrollWheelZoom: false,
+            doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false,
+          });
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17 }).addTo(map);
+          const goccia = (c) => '<svg viewBox="0 0 32 44" width="26" height="36" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="' + c + '" stroke="#F5EEDD" stroke-width="2"/><circle cx="16" cy="15.5" r="5" fill="#F5EEDD"/></svg>';
+          for (const p of PIN_ANTEPRIMA) {
+            L.marker([p.lat, p.lng], {
+              interactive: false, keyboard: false, title: p.nome,
+              icon: L.divIcon({
+                html: '<span role="img" aria-label="' + String(p.nome).replace(/"/g, '&quot;') + '">' + goccia(p.colore) + '</span>',
+                className: 'eb-mappa-pin', iconSize: [26, 36], iconAnchor: [13, 35],
+              }),
+            }).addTo(map);
+          }
+          map.fitBounds(L.latLngBounds(PIN_ANTEPRIMA.map((p) => [p.lat, p.lng])), { padding: [34, 34] });
+          setTimeout(function () {
+            map.invalidateSize();
+            cornice.style.opacity = '1';
+          }, 80);
+        } catch (e) { /* resta l'ortofoto */ }
+      };
+      document.head.appendChild(s);
+    }
+
+    const oss = new IntersectionObserver(function (voci) {
+      for (const v of voci) {
+        if (v.isIntersecting) { accendi(); oss.disconnect(); return; }
+      }
+    }, { rootMargin: '200px' });
+    oss.observe(cornice);
   })();
 
   // AGGIUNTA 1/8/2026 — carosello eventi: in coda ai nostri appuntamenti si
