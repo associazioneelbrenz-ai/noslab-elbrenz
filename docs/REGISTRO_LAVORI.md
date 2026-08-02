@@ -103,7 +103,7 @@ in testa perché cambiano le priorità.
 
 ## D. Fermo su Cristian
 
-- **[GATE] Rotazione di `INGEST_TOKEN`** — blocca ogni ingestion. Pattern atomico: `openssl rand` → `supabase secrets set` → `curl` di prova. Nella stessa occasione gli altri token esposti.
+- **[GATE SCIOLTO 2/8, ore 15.30] `INGEST_TOKEN` ruotato** col pattern atomico: `openssl rand -hex 32` → `supabase secrets set` → doppio curl di prova (fasullo 403, nuovo 400 dopo l'auth, niente scritto in KB). Token mai apparso in chat; vive nei Secrets e in `.env.local`. Vault e cron verificati prima: nessuna copia altrove. **L'ingestion di Maffei è sbloccata**; prima però va la pulizia della KB (IV.4.3: pagine legacy vuote e l'etichetta dei 113 `articolo_rivista`). Restano da rivedere gli altri token esposti (Netlify `nfp_`, PIN nelle Note): quelli sono di Cristian.
 - **[GATE] Paragrafo su Andreas nell'informativa** — blocca archivio ricerche **e** push. Conviene un unico aggiornamento privacy che copra entrambi.
 - **[GATE SCIOLTO 2/8] Articolo dell'Adige**: Cristian ha deciso che il record a database è la fonte. Era già `pubblicato` dall'1/8 e la pagina legge già dal DB: la decisione conferma lo stato in vigore. La riga di credito («riprodotta con l'autorizzazione della redazione») è in pagina. **Resta un buco**: il corpo referenzia `/img/articoli/adige-2026-07-20.jpg` e quel file non esiste né nel repo né su Storage — la scansione «resta in archivio interno» (nota del brief originale) e non è mai stata caricata. In pagina c'è un'immagine rotta. Serve il file da Cristian; destinazione: `public/img/articoli/adige-2026-07-20.jpg`.
 - **[GATE] Gita**: 4 su 54, chiusura 14 agosto. Numero minimo per il pullman ed eventuale penale.
