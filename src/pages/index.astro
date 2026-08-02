@@ -54,10 +54,17 @@ import { createClient } from '@supabase/supabase-js';
 // getCollection serve ancora, ma solo per la collection `eventi` (i NOSTRI
 // appuntamenti in home): gli articoli non passano piu' di qui.
 import { getCollection } from 'astro:content';
+import { getStatoGita } from '../lib/postiGita';
 import { formatDataIT, nomePilastro } from '../lib/articoli';
 import { schemaOrganization } from '../lib/schema';
 import { imgRid, srcSetCard } from '../lib/immagini';
 import { MIGOLE, miniatura, embed } from '../data/video';
+
+// [3/8/2026] Stato della gita: fonte unica config_app, la stessa che consulta
+// l'edge gita-crea-ordine. La home non deve invitare a pagare un viaggio che
+// non si fa. NB: questa pagina e' prerenderizzata, quindi il valore si fissa
+// al build: per riaprire una gita non basta cambiare il DB, serve un deploy.
+const { annullata: gitaAnnullata } = await getStatoGita();
 
 // MODIFICA 2/8/2026 — anche la home legge dalla vista, come /articoli,
 // /articoli/<slug> e /archivio-storico. Prima passava dal ponte
@@ -631,7 +638,16 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
                     {e.data.descrizioneBreve}
                   </p>
                 )}
-                {isGita ? (
+                {isGita && gitaAnnullata ? (
+                  /* [3/8/2026] Gita annullata: via il contatore posti (non c'e'
+                     piu' niente da contare) e via l'invito a pagare. Il
+                     collegamento alla pagina resta: e' li' che c'e' la
+                     spiegazione. */
+                  <div class="mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-2" style="font-family: 'Inter', sans-serif;">
+                    <span class="inline-block bg-[#8a3a3a] text-[#F5EEDD] px-5 py-2 text-sm font-semibold rounded">Annullata</span>
+                    <a href={e.data.link} class="text-sm text-[#8a6215] no-underline hover:underline">Tutti i dettagli</a>
+                  </div>
+                ) : isGita ? (
                   <div class="mt-auto pt-4" data-gita-countdown style="font-family: 'Inter', sans-serif;">
                     <div class="flex items-baseline justify-between text-[13px] mb-1.5">
                       <span class="text-[#1E2E26]/70">Posti disponibili</span>
@@ -1470,7 +1486,11 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
     </div>
   </section>
 
-  <PopupLocandinaRitterspiele />
+  {/* [3/8/2026] L'interstitial della locandina era l'invito piu' insistente
+      del sito: si apre da solo e porta dritto al pagamento. A gita annullata
+      non deve comparire affatto. Il componente resta in repo, pronto per la
+      prossima edizione. */}
+  {!gitaAnnullata && <PopupLocandinaRitterspiele />}
 
 </Layout>
 

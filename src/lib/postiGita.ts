@@ -41,6 +41,34 @@ export async function getPostiGita(
 }
 
 /**
+ * AGGIUNTA 3/8/2026 — stato della gita da `config_app`.
+ *
+ * Una sola funzione per tutte le superfici del sito (landing, modulo, home,
+ * /eventi), cosi' non puo' succedere che una pagina creda la gita viva e
+ * un'altra la sappia annullata. Stessa chiave che consulta l'edge
+ * gita-crea-ordine prima di creare un ordine PayPal.
+ *
+ * Fail-CLOSED: se la lettura non riesce si risponde "annullata". Fra mostrare
+ * un invito a pagare per un viaggio che non si fa e nascondere per errore un
+ * invito legittimo, il danno recuperabile e' il secondo.
+ */
+export async function getStatoGita(
+  slug = 'gita_giochi_medievali_2026_stato',
+): Promise<{ annullata: boolean }> {
+  try {
+    if (!SB_URL || !SB_ANON) return { annullata: true };
+    const sb = createClient(SB_URL, SB_ANON, { auth: { persistSession: false } });
+    const { data, error } = await sb
+      .from('config_app').select('valore').eq('chiave', slug).maybeSingle();
+    if (error) return { annullata: true };
+    const stato = (data?.valore as Record<string, unknown> | undefined)?.stato;
+    return { annullata: typeof stato === 'string' ? stato !== 'aperta' : true };
+  } catch {
+    return { annullata: true };
+  }
+}
+
+/**
  * Descrizione social/meta per la gita, in funzione dei posti disponibili.
  * `posti === null` → generica (fail-safe). Testi come da brief (26/7/2026).
  */

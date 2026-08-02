@@ -73,6 +73,30 @@ Deno.serve(async (req: Request) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
 
+  // [3/8/2026] Gita annullata: lo stato si LEGGE DA DATABASE
+  // (config_app.gita_giochi_medievali_2026_stato), mai da una costante qui
+  // dentro, cosi' la prossima gita si governa senza toccare il codice.
+  // Chiudere il modulo lato pagina non basta: chi ha la scheda gia' aperta
+  // sul telefono puo' ancora inviare, e si ritroverebbe con un anticipo
+  // versato per un viaggio che non si fa.
+  // In caso di errore di lettura si BLOCCA lo stesso: fra incassare un
+  // anticipo di troppo e rifiutare un'iscrizione legittima, il danno minore
+  // e' il secondo, ed e' recuperabile con una mail.
+  {
+    const { data: cfgGita, error: cfgErr } = await supabase
+      .from('config_app').select('valore')
+      .eq('chiave', 'gita_giochi_medievali_2026_stato').maybeSingle();
+    const stato = (cfgGita?.valore as Record<string, unknown> | undefined)?.stato;
+    if (cfgErr || (typeof stato === 'string' && stato !== 'aperta')) {
+      if (cfgErr) console.error('[gita-crea-ordine] lettura stato gita fallita, blocco per prudenza:', cfgErr);
+      return jsonResponse({
+        error: 'La gita del 22 agosto e\' stata annullata: non e\' stato raggiunto il numero minimo di partecipanti. Chi aveva versato l\'anticipo lo ha ricevuto indietro per intero. Scrivici a info@elbrenz.eu.',
+        annullata: true,
+        chiuse: true,
+      }, 403, cors);
+    }
+  }
+
   // Capienza (server-side, no overbooking): posti già occupati =
   // iscrizioni confermate (anticipo/saldo pagato) + prenotazioni in volo
   // (in_attesa create negli ultimi 20 min, così due persone non si aggiudicano

@@ -16,11 +16,15 @@
  */
 import Layout from '../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
+import { getStatoGita } from '../lib/postiGita';
 
 export const prerender = false;
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+// [3/8/2026] Stato della gita da config_app (fonte unica, come l'edge).
+const { annullata: gitaAnnullata } = await getStatoGita();
 
 type Nostro = {
   id: string; titolo: string; descrizione: string | null; tipo: string | null;
@@ -142,10 +146,16 @@ const postiLiberi = posti ? Math.max(0, posti.posti_totali - posti.posti_occupat
 
                   {e.tipo === 'gita' && (
                     <div class="flex flex-wrap items-center gap-4">
-                      <a href="/gita-giochi-medievali-2026/iscrizione"
-                         class="inline-block bg-[#C8923E] text-[#1E2E26] px-5 py-3 rounded font-semibold text-sm no-underline hover:bg-[#D9A94E] transition-colors">
-                        Iscriviti alla gita
-                      </a>
+                      {gitaAnnullata ? (
+                        <span class="inline-block bg-[#8a3a3a] text-[#F5EEDD] px-5 py-3 rounded font-semibold text-sm">
+                          Annullata
+                        </span>
+                      ) : (
+                        <a href="/gita-giochi-medievali-2026/iscrizione"
+                           class="inline-block bg-[#C8923E] text-[#1E2E26] px-5 py-3 rounded font-semibold text-sm no-underline hover:bg-[#D9A94E] transition-colors">
+                          Iscriviti alla gita
+                        </a>
+                      )}
                       <a href="/gita-giochi-medievali-2026" class="text-sm text-[#8a6215] underline">Tutti i dettagli</a>
                       {postiLiberi !== null && (
                         <span class="text-[13px] text-[#1E2E26]/60">

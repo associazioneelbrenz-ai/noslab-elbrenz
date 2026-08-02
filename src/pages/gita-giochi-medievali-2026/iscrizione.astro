@@ -13,7 +13,7 @@
  * createOrder/onApprove, come su /dona e /tesseramento.
  */
 import Layout from '../../layouts/Layout.astro';
-import { getPostiGita, descrizioneGita } from '../../lib/postiGita';
+import { getPostiGita, descrizioneGita, getStatoGita } from '../../lib/postiGita';
 
 // SSR (prerender=false): anche condividendo il link di iscrizione, l'anteprima
 // social mostra i posti REALI (stessa vista v_posti_gita della home, fail-safe).
@@ -41,6 +41,13 @@ const PREORDER_ATTIVO = Date.now() <= new Date('2026-07-31T23:59:59+02:00').getT
 // server-side dall'edge gita-crea-ordine.
 const ISCRIZIONI_CUTOFF_ISO = '2026-08-14T23:59:59+02:00';
 
+// [3/8/2026] Gita annullata. Lo stato si legge da config_app, SERVER-SIDE:
+// se lo decidesse il JS al load, per un istante il modulo sarebbe visibile e
+// cliccabile. Qui la pagina esce dal server gia' senza modulo.
+// Lettura fallita = annullata: meglio un modulo chiuso di troppo che un
+// anticipo incassato per un viaggio che non si fa.
+const { annullata: gitaAnnullata } = await getStatoGita();
+
 const label = "block text-sm text-[#1E2E26]/70 mb-1.5";
 const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] focus:outline-none focus:border-[#C8923E] rounded";
 ---
@@ -55,23 +62,47 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
     <div class="max-w-2xl mx-auto px-6 py-12 md:py-16">
       <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">Gita sociale · 22 agosto 2026</p>
       <h1 class="text-3xl md:text-4xl leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
-        Blocca il tuo posto per i <em class="text-[#C8923E]" style="font-style: italic;">Giochi Medievali</em>
+        {gitaAnnullata ? (
+          <Fragment>Gita ai <em class="text-[#C8923E]" style="font-style: italic;">Giochi Medievali</em></Fragment>
+        ) : (
+          <Fragment>Blocca il tuo posto per i <em class="text-[#C8923E]" style="font-style: italic;">Giochi Medievali</em></Fragment>
+        )}
       </h1>
-      <p class="text-lg text-[#F5EEDD]/85 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
-        Sluderno, ai piedi di Castel Coira. Posti limitati (pullman da 54): si fermano solo con l'anticipo.
-      </p>
+      {!gitaAnnullata && (
+        <p class="text-lg text-[#F5EEDD]/85 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Sluderno, ai piedi di Castel Coira. Posti limitati (pullman da 54): si fermano solo con l'anticipo.
+        </p>
+      )}
     </div>
   </header>
 
   <main class="bg-[#F8F1E4]">
     <div
-      class="max-w-2xl mx-auto px-6 py-10 md:py-14"
+      class={`max-w-2xl mx-auto px-6 py-10 md:py-14${gitaAnnullata ? ' gita-annullata' : ''}`}
       id="gita-box"
       data-verifica-url={VERIFICA_URL}
       data-create-url={CREATE_URL}
       data-capture-url={CAPTURE_URL}
       data-paypal-client-id={PAYPAL_CLIENT_ID}
     >
+      {/* [3/8/2026] GITA ANNULLATA — reso dal server, non dal JS: gli step
+          restano nascosti dal CSS di questa pagina (classe sul contenitore),
+          quindi non c'e' nessun istante in cui il modulo e' cliccabile. */}
+      {gitaAnnullata && (
+        <div class="bg-white border-l-4 border-[#8a3a3a] rounded p-6 md:p-8" role="status">
+          <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">Gita annullata</h2>
+          <p class="m-0 text-[#1E2E26]/85 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+            La gita del 22 agosto ai Giochi Medievali del Südtirol non si svolgerà:
+            non è stato raggiunto il numero minimo di partecipanti richiesto per il
+            pullman. Chi aveva versato l'anticipo lo ha ricevuto indietro per intero.
+            Ci riproviamo in un periodo che permetta a più persone di esserci.
+          </p>
+          <p class="mt-4 mb-0 text-sm text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">
+            Per qualunque cosa: <a href="mailto:info@elbrenz.eu" class="text-[#8a6215] underline">info@elbrenz.eu</a>
+          </p>
+        </div>
+      )}
+
       {/* ISCRIZIONI CHIUSE — mostrato via JS oltre il termine (14/8), nasconde gli step */}
       <div id="g-chiuse" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 text-center">
         <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">Iscrizioni chiuse</h2>
@@ -172,6 +203,11 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
     const box = document.getElementById('gita-box');
     if (!box) return;
     const $ = (id) => document.getElementById(id);
+
+    // [3/8] Gita annullata: il server ha gia' nascosto gli step e mostrato
+    // l'avviso. Qui ci si ferma prima di toccare PayPal, cosi' l'SDK non
+    // viene nemmeno caricato.
+    if (box.classList.contains('gita-annullata')) return;
 
     // Chiusura iscrizioni oltre il termine (valutata al load, non al build):
     // mostra il banner "Iscrizioni chiuse" e nasconde gli step operativi.
@@ -309,3 +345,10 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
     }
   })();
 </script>
+
+<style>
+  /* [3/8/2026] A gita annullata gli step operativi non escono proprio dal
+     server: la classe la mette Astro in base a config_app, non il JS, quindi
+     non esiste il fotogramma in cui il modulo e' visibile e cliccabile. */
+  #gita-box.gita-annullata section { display: none; }
+</style>
