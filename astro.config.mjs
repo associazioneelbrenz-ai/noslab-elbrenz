@@ -102,6 +102,33 @@ async function urlEventi() {
 }
 const EVENTI = await urlEventi();
 
+/**
+ * AGGIUNTA 2/8/2026 — gli articoli. Passando a leggere dal database la pagina
+ * /articoli/<slug> e' diventata SSR, e la sitemap non scopre le rotte SSR: se
+ * non li aggiungessimo qui, 108 articoli uscirebbero dalla sitemap tutti
+ * insieme. E' il rischio SEO piu' serio del passaggio, e si chiude qui.
+ * Solo i pubblicati (la vista espone solo quelli) e non i noindex, per non
+ * dichiarare ai motori una pagina che poi dice loro di stare alla larga.
+ */
+async function urlArticoli() {
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return [];
+  try {
+    const r = await fetch(`${url}/rest/v1/v_articoli_pubblici?select=slug,noindex`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return [];
+    const righe = await r.json();
+    return righe
+      .filter((x) => x.slug && x.noindex !== true)
+      .map((x) => `https://elbrenz.eu/articoli/${x.slug}`);
+  } catch {
+    return []; // degrado silenzioso
+  }
+}
+const ARTICOLI = await urlArticoli();
+
 // https://astro.build/config
 export default defineConfig({
   // URL canonico del sito in produzione.
@@ -144,8 +171,8 @@ export default defineConfig({
     // Esclude le pagine DE/EN finché le traduzioni non sono "live": restano
     // noindex, quindi non devono comparire nella sitemap (audit 14/7).
     sitemap({
-      // Pagine luogo ed evento (SSR): non scoperte in automatico, le aggiungiamo noi.
-      customPages: [...LUOGHI, ...EVENTI],
+      // Pagine luogo, evento e articolo (SSR): non scoperte in automatico.
+      customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI],
       filter: (page) => {
         const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
         const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';

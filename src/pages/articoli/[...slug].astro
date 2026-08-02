@@ -1,89 +1,120 @@
 ---
 /**
- * /articoli/[...slug] — pagina di dettaglio di un singolo articolo (M2.2).
+ * /articoli/[slug] — pagina di dettaglio di un singolo articolo.
  *
- * Sorgente: Content Collection `articoli` (glob loader su src/content/articoli/*.md).
- * Lo slug di rotta è l'id dell'entry (= nome file .md senza estensione).
+ * SORGENTE: v_articoli_pubblici (decisione del 2/8/2026). Fino a quel giorno
+ * leggeva i file markdown della collection.
  *
- * Visibilità: getStaticPaths genera SOLO gli articoli con `draft: false`.
- * Sono leggibili sia gli articoli in produzione sia quelli in archivio storico
- * (entrambi !draft); le bozze (draft: true) non producono pagina.
+ * PERCHE' E' CAMBIATA. Gli articoli vivevano in due posti che non si
+ * parlavano: il sito rendeva i markdown, la Redazione scriveva a database. Un
+ * pezzo scritto in redazione non compariva da nessuna parte finche' qualcuno
+ * non lanciava a mano uno script di esportazione. Con il database come fonte
+ * unica quel passaggio sparisce.
  *
- * Render del corpo Markdown via render(entry) → <Content />.
- * I campi legacy vengono mappati su ArticleLayout (hero ora opzionale: nessun
- * articolo legacy ha hero_image, quindi si usa l'header sobrio testuale).
+ * IL RISCHIO CHE NON C'ERA. Gli URL nascevano dal nome del file e ora nascono
+ * dallo slug: prima del passaggio sono stati confrontati uno per uno. I 108
+ * URL vivi in markdown e i 108 record della vista coincidono esattamente, zero
+ * differenze, quindi nessun redirect 301 e nessun indirizzo perso.
+ *
+ * SSR e non generazione statica: un articolo pubblicato dalla Redazione deve
+ * vedersi subito, non al prossimo build. La vista espone solo
+ * pubblicato = true AND stato = 'pubblicato' AND tipo_contenuto = 'post',
+ * quindi una bozza qui da' 404 e il filtro sta a database, non nel markup.
+ *
+ * I dati SEO non passano piu' dal ponte legacy_wp_id -> v_articoli_seo: stanno
+ * sulla stessa riga (meta_title, meta_description, immagine_alt, noindex).
+ *
+ * I file markdown NON si cancellano: restano dove sono, semplicemente non li
+ * legge piu' nessuno.
  */
-
-import { getCollection, render } from 'astro:content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { createClient } from '@supabase/supabase-js';
 import { nomePilastro, formatDataIT } from '../../lib/articoli';
-import { mappaSeoArticoli, titoloSeo, OG_DEFAULT } from '../../lib/seoArticoli';
+import { titoloSeo, OG_DEFAULT } from '../../lib/seoArticoli';
 import { schemaArticle, schemaBreadcrumb } from '../../lib/schema';
-import type { GetStaticPaths } from 'astro';
 
-export const getStaticPaths = (async () => {
-  // Solo articoli pubblicabili: !draft. Archivio e produzione sono entrambi leggibili.
-  const articoli = await getCollection('articoli', ({ data }) => !data.draft);
-  return articoli.map((entry) => ({
-    params: { slug: entry.id },
-    props: { entry },
-  }));
-}) satisfies GetStaticPaths;
+export const prerender = false;
 
-const { entry } = Astro.props;
-const { data } = entry;
-const { Content } = await render(entry);
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
 
-const pillar = nomePilastro(data.pilastro);
-const dataEstesa = formatDataIT(data.data_pubblicazione);
+// La rotta e' [...slug] (rest): lo slug puo' arrivare con la barra finale.
+const slug = String(Astro.params.slug ?? '').replace(/\/+$/, '');
 
-// A1 — metadati SEO dal DB (ponte: legacy_wp_id <-> articolo.wp_legacy_id).
-// Ricaduta sui dati del frontmatter quando i campi SEO sono vuoti.
-const seo = (await mappaSeoArticoli()).get(Number((data as any).legacy_wp_id));
-const titoloPagina = titoloSeo(seo?.meta_title ?? null, data.title);
-const descrizionePagina = seo?.meta_description || data.excerpt;
-const altCopertina = seo?.immagine_alt || data.hero_alt;
+type Articolo = {
+  id: string; titolo: string; slug: string; sottotitolo: string | null;
+  estratto: string | null; corpo_html: string | null;
+  immagine_copertina_url: string | null; pilastro: string | null;
+  pubblicato_at: string | null; tempo_lettura_min: number | null;
+  meta_title: string | null; meta_description: string | null;
+  immagine_alt: string | null; noindex: boolean | null;
+  wp_autore_originale: string | null;
+};
 
-// A2 — og:image: copertina dell'articolo (gia' su Storage dopo la migrazione).
-// Dove manca (una trentina di articoli) si usa l'immagine di riserva
+let articolo: Articolo | null = null;
+if (slug) {
+  try {
+    const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+    const { data } = await sb
+      .from('v_articoli_pubblici')
+      .select('id, titolo, slug, sottotitolo, estratto, corpo_html, immagine_copertina_url, pilastro, pubblicato_at, tempo_lettura_min, meta_title, meta_description, immagine_alt, noindex, wp_autore_originale')
+      .eq('slug', slug)
+      .maybeSingle();
+    articolo = (data as Articolo) ?? null;
+  } catch (e) {
+    console.error('[articoli/slug] lettura fallita:', e);
+  }
+}
+
+if (!articolo) {
+  return new Response(null, { status: 404, statusText: 'Articolo non trovato' });
+}
+
+const pillar = nomePilastro(articolo.pilastro ?? '');
+const dataPubblicazione = articolo.pubblicato_at ? new Date(articolo.pubblicato_at) : null;
+const dataEstesa = dataPubblicazione ? formatDataIT(dataPubblicazione) : '';
+
+const titoloPagina = titoloSeo(articolo.meta_title, articolo.titolo);
+const descrizionePagina = articolo.meta_description || articolo.estratto || '';
+const autore = articolo.wp_autore_originale || 'El Brenz';
+
+// La copertina fa anche da og:image. Dove manca si usa l'immagine di riserva
 // brandizzata: meglio un'anteprima sobria che nessuna anteprima.
-// AGGIUNTA 31/7/2026: `og_image` in testa alla catena, per i pezzi con una card
-// social dedicata che NON deve comparire come hero dell'articolo.
-const ogImmagine = (data as any).og_image || seo?.copertina || data.hero_image || OG_DEFAULT;
-const pubblicatoIso = seo?.pubblicato_at
-  || (data.data_pubblicazione ? new Date(data.data_pubblicazione).toISOString() : undefined);
+const ogImmagine = articolo.immagine_copertina_url || OG_DEFAULT;
+const pubblicatoIso = dataPubblicazione ? dataPubblicazione.toISOString() : undefined;
 
-// A5 — dati strutturati: Article + percorso di navigazione.
-const urlArticolo = new URL(`/articoli/${entry.id}`, Astro.site).href;
+const urlArticolo = new URL(`/articoli/${articolo.slug}`, Astro.site).href;
 const ldArticle = schemaArticle({
-  titolo: data.title,
+  titolo: articolo.titolo,
   descrizione: descrizionePagina,
   url: urlArticolo,
   immagine: ogImmagine?.startsWith('http') ? ogImmagine : new URL(ogImmagine, Astro.site).href,
   pubblicatoIso: pubblicatoIso ?? null,
-  autore: data.autore ?? null,
+  autore,
   sezione: pillar || null,
 });
 const ldBreadcrumb = schemaBreadcrumb([
   { nome: 'El Brenz', url: '/' },
   { nome: 'Archivio', url: '/archivio-storico' },
-  { nome: data.title, url: `/articoli/${entry.id}` },
+  { nome: articolo.titolo, url: `/articoli/${articolo.slug}` },
 ]);
 ---
 <script type="application/ld+json" set:html={JSON.stringify(ldArticle)} />
 <script type="application/ld+json" set:html={JSON.stringify(ldBreadcrumb)} />
 <ArticleLayout
-  title={data.title}
+  title={articolo.titolo}
   titoloSeo={titoloPagina}
   pillar={pillar || undefined}
-  author={data.autore}
+  author={autore}
   date={dataEstesa}
   description={descrizionePagina}
-  heroImage={data.hero_image}
-  heroAlt={altCopertina}
-  noindex={seo?.noindex === true}
+  heroAlt={articolo.immagine_alt ?? undefined}
+  noindex={articolo.noindex === true}
   ogImage={ogImmagine}
   publishedTime={pubblicatoIso}
 >
-  <Content />
+  {/* Il corpo arriva gia' in HTML dalla Redazione (corpo_html): e' testo
+      nostro, scritto dai collaboratori e approvato prima della pubblicazione,
+      non contenuto di terzi. */}
+  <div set:html={articolo.corpo_html ?? ''} />
 </ArticleLayout>

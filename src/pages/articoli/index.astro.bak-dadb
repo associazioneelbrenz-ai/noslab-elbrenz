@@ -6,66 +6,39 @@
  * navigabile, ed e' anche il motivo per cui il 31 luglio sembrava che un
  * articolo appena pubblicato non ci fosse.
  *
- * SORGENTE: v_articoli_pubblici (decisione del 2/8/2026).
+ * PERCHE' LEGGE DAL MARKDOWN E NON DALLA VISTA.
+ * La consegna diceva "indice da v_articoli_pubblici". Verificato prima di
+ * scrivere: la vista ha 134 slug, i file markdown sono 114, e ne coincidono
+ * 107. Ventisette slug della vista NON hanno un file corrispondente (fra questi
+ * gli indici d'annata "anno-2010"…"anno-2014", che articoli non sono). Ma gli
+ * URL del sito nascono dal NOME DEL FILE, non dallo slug a database: un indice
+ * costruito sulla vista avrebbe avuto un link rotto su cinque, e un indice con
+ * link rotti e' peggio di nessun indice.
+ * Quindi: l'elenco viene dal markdown, che e' la sorgente vera degli indirizzi,
+ * ed e' arricchito con copertina e dati SEO dal database attraverso lo stesso
+ * ponte legacy_wp_id che gia' usano la home e la pagina del singolo articolo.
  *
- * Fino al 2 agosto questa pagina leggeva i file markdown, perche' gli URL del
- * sito nascevano dal nome del file e non dallo slug a database, e allora i due
- * insiemi non coincidevano. Non e' piu' cosi': verificato slug per slug il
- * 2/8, i 108 URL vivi in markdown e i 108 record della vista coincidono
- * ESATTAMENTE, zero differenze, zero redirect da scrivere. La divergenza
- * apparente erano 27 righe `tipo_contenuto = 'pagina'` (i contenitori del
- * vecchio WordPress) che ora la vista esclude da sola, e 6 bozze.
- *
- * Con il database come fonte unica, un pezzo pubblicato dalla Redazione si
- * vede subito: prima serviva che qualcuno lanciasse a mano uno script di
- * esportazione, e finche' non lo faceva l'articolo restava invisibile.
- *
- * SSR e non generazione statica, per la stessa ragione: il cartellone cambia
- * quando si pubblica, non quando si fa il build.
- *
- * I file markdown NON si cancellano: restano dove sono, semplicemente non li
- * legge piu' nessuno.
+ * Effetto collaterale voluto: le bozze presenti solo a database (per esempio il
+ * doppione dell'articolo sull'Adige) non possono comparire, perche' non
+ * esistono come file.
  */
 import Layout from '../../layouts/Layout.astro';
-import { createClient } from '@supabase/supabase-js';
+import { getCollection } from 'astro:content';
 import { nomePilastro, formatDataIT } from '../../lib/articoli';
+import { mappaSeoArticoli } from '../../lib/seoArticoli';
 import { imgRid, srcSetCard } from '../../lib/immagini';
-
-export const prerender = false;
 
 const PER_PAGINA = 24;
 
-const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
-const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+// Tutti i pubblicabili, archivio compreso: questo e' l'indice generale.
+// /archivio-storico resta la vista per anno dei soli legacy.
+const tutti = (await getCollection('articoli', ({ data }) => !data.draft))
+  .slice()
+  .sort((a, b) => b.data.data_pubblicazione.getTime() - a.data.data_pubblicazione.getTime());
 
-// I record della vista si rimappano nella stessa forma che aveva la collection
-// (`a.id` = slug, `a.data.*` = frontmatter): cosi' il markup della griglia,
-// dei filtri e della paginazione resta identico e non si reintroducono bug in
-// una pagina che funziona.
-let tutti: any[] = [];
-try {
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
-  const { data } = await sb
-    .from('v_articoli_pubblici')
-    .select('slug, titolo, estratto, immagine_copertina_url, pilastro, pubblicato_at, noindex')
-    .order('pubblicato_at', { ascending: false });
-  tutti = ((data as any[]) ?? [])
-    .filter((a) => a.slug && a.noindex !== true)
-    .map((a) => ({
-      id: a.slug,
-      data: {
-        title: a.titolo,
-        excerpt: a.estratto ?? '',
-        pilastro: a.pilastro ?? '_da_assegnare',
-        data_pubblicazione: a.pubblicato_at ? new Date(a.pubblicato_at) : new Date(0),
-        copertina: a.immagine_copertina_url ?? null,
-      },
-    }));
-} catch (e) {
-  console.error('[articoli/index] lettura fallita:', e);
-}
-
-const copertina = (a: any): string | null => a.data.copertina;
+const seo = await mappaSeoArticoli();
+const copertina = (a: any): string | null =>
+  seo.get(Number(a.data.legacy_wp_id))?.copertina || a.data.og_image || a.data.hero_image || null;
 
 // Filtri: solo i pilastri davvero presenti, col numero di articoli.
 const perPilastro = new Map<string, number>();
