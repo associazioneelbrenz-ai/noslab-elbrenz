@@ -101,7 +101,7 @@ in testa perché cambiano le priorità.
 
 - **[GATE] Rotazione di `INGEST_TOKEN`** — blocca ogni ingestion. Pattern atomico: `openssl rand` → `supabase secrets set` → `curl` di prova. Nella stessa occasione gli altri token esposti.
 - **[GATE] Paragrafo su Andreas nell'informativa** — blocca archivio ricerche **e** push. Conviene un unico aggiornamento privacy che copra entrambi.
-- **[GATE] Articolo dell'Adige**: il record `6bfff95d` è quello che mi hai chiesto di pubblicare l'1/8 alle 22:58. Il brief successivo diceva di non pubblicarlo. **Non l'ho riportato in bozza**: dimmi tu.
+- **[GATE SCIOLTO 2/8] Articolo dell'Adige**: Cristian ha deciso che il record a database è la fonte. Era già `pubblicato` dall'1/8 e la pagina legge già dal DB: la decisione conferma lo stato in vigore. La riga di credito («riprodotta con l'autorizzazione della redazione») è in pagina. **Resta un buco**: il corpo referenzia `/img/articoli/adige-2026-07-20.jpg` e quel file non esiste né nel repo né su Storage — la scansione «resta in archivio interno» (nota del brief originale) e non è mai stata caricata. In pagina c'è un'immagine rotta. Serve il file da Cristian; destinazione: `public/img/articoli/adige-2026-07-20.jpg`.
 - **[GATE] Gita**: 4 su 54, chiusura 14 agosto. Numero minimo per il pullman ed eventuale penale.
 - **[GATE] Push: ogni articolo o solo `in_evidenza`?**
 - **[GATE] Utenza di servizio**: serve un campo per marcarla? `cerca_soci` filtra sul livello e un super_admin lo supera.
