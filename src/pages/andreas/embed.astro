@@ -53,6 +53,42 @@ export const prerender = true;
   <div id="andreas-embed">
     <AndreasChat compatto />
   </div>
+  <script is:inline>
+    // [post mortem 2/8/2026] Il ponte della sessione fra app e iframe.
+    //
+    // L'app vive su community.elbrenz.eu, questo embed su elbrenz.eu:
+    // localStorage NON attraversa le origini, quindi il widget qui dentro non
+    // trovava mai il token e trattava anche i soci da anonimi (3 domande al
+    // giorno invece di 100). L'app ci manda la sessione via postMessage
+    // (AndreasPopup.tsx): qui la si accetta SOLO dalle origini fidate, la si
+    // mette dove getAuthToken() del widget la legge, e si espone una promessa
+    // che il widget attende prima di comporre il benvenuto (altrimenti la
+    // sessione arriverebbe a benvenuto gia' scritto da anonimo).
+    //
+    // Questo script sta PRIMA di andreas-chat.js: la promessa deve esistere
+    // quando il widget parte.
+    (function () {
+      var FIDATE = ['https://community.elbrenz.eu', 'http://localhost:3000'];
+      var risolvi;
+      window.__EB_EMBED_WAIT = new Promise(function (res) { risolvi = res; });
+      // Da solo (embed aperto fuori dall'app) nessuno rispondera' al segnale:
+      // si parte comunque dopo mezzo secondo, da anonimo.
+      var timer = setTimeout(function () { risolvi(); }, 500);
+
+      window.addEventListener('message', function (ev) {
+        if (FIDATE.indexOf(ev.origin) === -1) return;
+        var d = ev.data;
+        if (!d || d.tipo !== 'eb-sessione' || typeof d.access_token !== 'string') return;
+        window.__EB_EMBED_SESSION = { access_token: d.access_token, expires_at: d.expires_at || null };
+        clearTimeout(timer);
+        risolvi();
+      });
+
+      // Segnale al genitore: sono pronto a ricevere la sessione. Il contenuto
+      // e' inerte, il targetOrigin resta largo perche' non trasporta nulla.
+      try { window.parent !== window && window.parent.postMessage({ tipo: 'eb-embed-pronto' }, '*'); } catch (_) {}
+    })();
+  </script>
   <script src="/scripts/andreas-chat.js" type="module" is:inline></script>
 </body>
 </html>

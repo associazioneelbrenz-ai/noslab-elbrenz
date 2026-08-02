@@ -137,9 +137,15 @@
   // ---------------------------------------------------------------------------
 
   function renderWelcome() {
-    const welcomeContent = `<span class="ac-bondi">Bondì.</span> Sono <strong>Andreas</strong>, l'assistente digitale dell'Associazione El Brenz. Posso accompagnarti nella storia, nella lingua e nella cultura delle nostre valli — Non, Sole, Rabbi, Pejo: dai Principati Vescovili alla Contea Principesca del Tirolo, dalle Guerre Rustiche al ladino anaunico, dalle stue ai mulini.
+    // [post mortem 2/8/2026] Il benvenuto guarda chi ha davanti: a un socio
+    // gia' autenticato non si dice «hai 3 domande gratuite» ne' gli si
+    // propone di diventare socio. Il paragrafo del pitch compare solo per
+    // l'anonimo; il contatore vero arriva dall'edge alla prima risposta.
+    const pitchAnonimo = `
 
-Hai <strong>3 domande gratuite oggi</strong>. Per andare oltre, <a href="${CONFIG.URL_REGISTRATI}">registrati gratis come ospite</a> o <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (20€/anno).
+Hai <strong>3 domande gratuite oggi</strong>. Per andare oltre, <a href="${CONFIG.URL_REGISTRATI}">registrati gratis come ospite</a> o <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (20€/anno).`;
+
+    const welcomeContent = `<span class="ac-bondi">Bondì.</span> Sono <strong>Andreas</strong>, l'assistente digitale dell'Associazione El Brenz. Posso accompagnarti nella storia, nella lingua e nella cultura delle nostre valli — Non, Sole, Rabbi, Pejo: dai Principati Vescovili alla Contea Principesca del Tirolo, dalle Guerre Rustiche al ladino anaunico, dalle stue ai mulini.${getAuthToken() ? '' : pitchAnonimo}
 
 Da dove vuoi partire?`;
 
@@ -406,6 +412,12 @@ Da dove vuoi partire?`;
         throw new Error(response.message || 'Errore');
       }
 
+      // [post mortem 2/8/2026] Guardia sulla risposta vuota: una bolla senza
+      // testo che resta li' e' indistinguibile da un blocco. Non deve poter
+      // succedere (l'edge ha il suo fallback), ma se succede si dice qualcosa.
+      const testoRisposta = (response.response || '').trim()
+        || 'Non sono riuscito a comporre una risposta. Riprova, o scrivi a [info@elbrenz.eu](mailto:info@elbrenz.eu).';
+
       const article = appendMessage({
         role: 'assistant',
         content: '',
@@ -415,15 +427,29 @@ Da dove vuoi partire?`;
       const sourcesEl = bubble.querySelector('.andreas-msg__sources');
       if (sourcesEl) sourcesEl.remove();
 
-      await renderTypewriter(bubble, response.response);
+      await renderTypewriter(bubble, testoRisposta);
 
       const sources = response.sourcesDedup || response.sources || [];
       if (sources.length > 0) {
         bubble.appendChild(renderSources(sources));
       }
 
-      state.remainingQuota = Math.max(0, state.remainingQuota - 1);
-      updateCounter();
+      // [post mortem 2/8/2026] Il contatore segue l'edge, non un 3 cablato:
+      // usage.limite e' quello del ruolo (3 pubblico, 5 ospite, 100 socio,
+      // -1 admin = senza tetto visibile). Il decremento cieco resta come
+      // ripiego se usage mancasse.
+      if (response.usage && typeof response.usage.limite === 'number') {
+        if (response.usage.limite < 0) {
+          state.remainingQuota = Infinity;
+          $counter.innerHTML = '';
+        } else {
+          state.remainingQuota = Math.max(0, response.usage.limite - (response.usage.msg_oggi || 0));
+          updateCounter();
+        }
+      } else {
+        state.remainingQuota = Math.max(0, state.remainingQuota - 1);
+        updateCounter();
+      }
 
       if (state.remainingQuota === 0) {
         setTimeout(showLimitReached, 600);
@@ -560,13 +586,32 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
     const token = getAuthToken();
     if (token) headers['Authorization'] = 'Bearer ' + token;
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: headers,
-      // Contratto edge function andreas-chat v3 (validato M.A.1 15/15):
-      // body field = "query", non "message".
-      body: JSON.stringify({ query: question }),
-    });
+    // [post mortem 2/8/2026] Timeout esplicito. La fetch non ne aveva, e
+    // quando l'edge stallava (cold start + doppio RPC di recupero + Claude:
+    // il percorso PIU' lento e' proprio quello delle domande fuori KB) il
+    // "sta pensando" restava li' per sempre. 75 secondi coprono il caso
+    // legittimamente lento; oltre, meglio un errore onesto.
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), 75000);
+
+    let res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        // Contratto edge function andreas-chat v3 (validato M.A.1 15/15):
+        // body field = "query", non "message".
+        body: JSON.stringify({ query: question }),
+        signal: abort.signal,
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      if (e && e.name === 'AbortError') {
+        return { ok: false, error: 'timeout', message: 'La risposta sta impiegando troppo. Riprova.' };
+      }
+      throw e;
+    }
+    clearTimeout(timer);
 
     if (res.status === 429) {
       return { ok: false, error: 'rate_limit_daily' };
@@ -604,6 +649,10 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
       ok: true,
       response: responseText,
       sourcesDedup: sources,
+      // [post mortem 2/8/2026] L'edge dice gia' quante domande restano
+      // (usage.msg_oggi e usage.limite): si passa al chiamante, cosi' il
+      // contatore mostra il limite VERO del ruolo invece del 3 cablato.
+      usage: data.usage || null,
     };
   }
 
@@ -622,19 +671,34 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
     cta.className = 'andreas-limit-cta';
     cta.setAttribute('role', 'region');
     cta.setAttribute('aria-label', 'Limite domande raggiunto');
-    cta.innerHTML = `
-      <h3 class="andreas-limit-cta__title">Hai usato le 3 domande gratuite di oggi.</h3>
-      <p class="andreas-limit-cta__text">
-        <a href="${CONFIG.URL_REGISTRATI}">Registrati gratis come ospite</a>
-        per continuare domani con più libertà, oppure
-        <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (20€/anno)
-        per Andreas senza limiti e per sostenere <em>la nosa Sociazion</em>.
-      </p>
-      <div class="andreas-limit-cta__buttons">
-        <a href="${CONFIG.URL_REGISTRATI}" class="andreas-limit-cta__btn andreas-limit-cta__btn--primary">Registrati gratis</a>
-        <a href="${CONFIG.URL_TESSERAMENTO}" class="andreas-limit-cta__btn andreas-limit-cta__btn--secondary">Diventa socio</a>
-      </div>
-    `;
+    // [post mortem 2/8/2026] Due correzioni. La promessa «senza limiti» e'
+    // sparita: cento al giorno e' un tetto, e prometterne l'assenza si paga
+    // proprio col socio piu' appassionato (decisione del 2/8, come in
+    // config_app). E il riquadro ora distingue chi e' gia' dentro: a un socio
+    // che ha usato le sue 100 domande non si propone di diventare socio.
+    if (getAuthToken()) {
+      cta.innerHTML = `
+        <h3 class="andreas-limit-cta__title">Hai raggiunto il limite di domande per oggi.</h3>
+        <p class="andreas-limit-cta__text">
+          Il contatore riparte a mezzanotte. Grazie della curiosità: è il modo
+          giusto di usare Andreas. <em>A doman!</em>
+        </p>
+      `;
+    } else {
+      cta.innerHTML = `
+        <h3 class="andreas-limit-cta__title">Hai usato le 3 domande gratuite di oggi.</h3>
+        <p class="andreas-limit-cta__text">
+          <a href="${CONFIG.URL_REGISTRATI}">Registrati gratis come ospite</a>
+          per continuare, oppure <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a>
+          (20€/anno): i soci hanno 100 domande al giorno e sostengono
+          <em>la nosa Sociazion</em>.
+        </p>
+        <div class="andreas-limit-cta__buttons">
+          <a href="${CONFIG.URL_REGISTRATI}" class="andreas-limit-cta__btn andreas-limit-cta__btn--primary">Registrati gratis</a>
+          <a href="${CONFIG.URL_TESSERAMENTO}" class="andreas-limit-cta__btn andreas-limit-cta__btn--secondary">Diventa socio</a>
+        </div>
+      `;
+    }
     $messages.appendChild(cta);
     scrollToBottom();
   }
@@ -645,6 +709,9 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
 
   function updateCounter() {
     const n = state.remainingQuota;
+    // Quota non finita (loggato in attesa del limite vero, o admin senza
+    // tetto): nessun numero da mostrare.
+    if (!Number.isFinite(n)) { $counter.innerHTML = ''; return; }
     $counter.innerHTML = `<strong>${n}</strong> domand${n === 1 ? 'a rimanente' : 'e rimanenti'} oggi`;
     if (n <= 1) $counter.classList.add('andreas-chat__counter--low');
   }
@@ -694,6 +761,18 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
   // - Token mancante / corrotto → null (utente trattato come anonimo)
   // - Token scaduto → null (più sicuro che ricevere 401 "invalid_jwt")
   function getAuthToken() {
+    // [post mortem 2/8/2026] Prima della localStorage si guarda la sessione
+    // consegnata via postMessage dall'app (window.__EB_EMBED_SESSION, vedi
+    // embed.astro). Serve al caso iframe: l'app vive su community.elbrenz.eu,
+    // l'embed su elbrenz.eu, e localStorage NON attraversa le origini. Senza
+    // questo canale un socio dentro l'app veniva trattato da anonimo: 3
+    // domande al giorno invece delle sue 100.
+    try {
+      const emb = window.__EB_EMBED_SESSION;
+      if (emb && emb.access_token && (!emb.expires_at || emb.expires_at * 1000 > Date.now())) {
+        return emb.access_token;
+      }
+    } catch (_) { /* si prosegue con localStorage */ }
     try {
       const raw = localStorage.getItem('elbrenz-auth');
       if (!raw) return null;
@@ -711,6 +790,20 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
 
   async function init() {
     if (!bindElements()) return;
+    // [post mortem 2/8/2026] Dentro l'iframe dell'app la sessione arriva via
+    // postMessage DOPO il DOMContentLoaded: senza questa attesa il benvenuto
+    // verrebbe composto da anonimo anche per un socio. embed.astro espone la
+    // promessa (sessione arrivata, o scadenza breve); fuori dall'embed e'
+    // undefined e non si aspetta niente.
+    if (window.__EB_EMBED_WAIT) {
+      try { await window.__EB_EMBED_WAIT; } catch (_) { /* si parte comunque */ }
+    }
+    // A sessione presente il «3 domande rimanenti» cablato nel markup non ha
+    // senso: contatore neutro finche' l'edge non dice il limite vero del ruolo.
+    if (getAuthToken()) {
+      state.remainingQuota = Infinity;
+      $counter.innerHTML = '';
+    }
     // ensureLibs carica marked+DOMPurify da CDN per il markdown. Se il caricamento
     // fallisce (CDN irraggiungibile o bloccato da CSP), NON deve impedire l'init:
     // la chat resta interrogabile e le risposte si mostrano in testo semplice
