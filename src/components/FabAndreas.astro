@@ -232,7 +232,7 @@ const MSG_WHATSAPP = encodeURIComponent(
 
         function apri() {
           // Prima apertura: carica lo script chat (che a sua volta carica
-          // marked/DOMPurify da CDN) — MAI al page load, solo su azione.
+          // marked/DOMPurify da CDN): MAI al page load, solo su azione.
           if (!window.__andreasChatScript) {
             window.__andreasChatScript = true;
             var s = document.createElement('script');
@@ -298,7 +298,7 @@ const MSG_WHATSAPP = encodeURIComponent(
       @media (prefers-reduced-motion: reduce) {
         .andreas-widget--in, .fab-badge-pulse { animation: none; }
       }
-      /* Redesign 11/7 (deroga SOLO layout): colonna flex — header fisso,
+      /* Redesign 11/7 (deroga SOLO layout): colonna flex: header fisso,
          messaggi flex-1 SCROLLABILI (è l'unica area che cresce), composer
          fisso in basso. La chat riempie tutta l'altezza del pannello. */
       #andreas-widget .andreas-chat {
