@@ -42,6 +42,7 @@
 
     URL_REGISTRATI: '/registrati',
     URL_TESSERAMENTO: '/tesseramento',
+    URL_DONA: '/dona',
 
     // Asset paths (relativi a /public)
     ASSET_ANDREAS_SORRISO: '/assets/branding/andreas/andreas-sorriso-bubble.png',
@@ -60,6 +61,19 @@
   };
 
   const CONFIG = Object.assign({}, DEFAULT_CONFIG, window.ANDREAS_CONFIG || {});
+
+  // [funnel 2/8] Ogni link che parte da Andreas si porta dietro la sorgente:
+  // le tessere nate da qui saranno contabili con una query
+  // (domande_tesseramento.sorgente_utm), come per la vetrofania.
+  // medium: da dove parla Andreas; campaign: in quale momento del dialogo.
+  function mezzoAndreas() {
+    if (window.__EB_EMBED_WAIT) return 'embed';
+    return location.pathname.indexOf('/andreas') === 0 ? 'pagina' : 'widget';
+  }
+  function linkFunnel(base, campaign) {
+    return base + (base.indexOf('?') === -1 ? '?' : '&')
+      + 'utm_source=andreas&utm_medium=' + mezzoAndreas() + '&utm_campaign=' + campaign;
+  }
 
   // ---------------------------------------------------------------------------
   // LIB LOADER (marked + DOMPurify)
@@ -102,6 +116,9 @@
     remainingQuota: CONFIG.INITIAL_QUOTA,
     isPending: false,
     isLimitReached: false,
+    // [2/8] Riempiti dal ping all'apertura (nome dal profilo, contatore
+    // confermato dal server): mai mostrare un numero che il server non ha detto.
+    nomeUtente: null,
   };
 
   // ---------------------------------------------------------------------------
@@ -143,9 +160,14 @@
     // l'anonimo; il contatore vero arriva dall'edge alla prima risposta.
     const pitchAnonimo = `
 
-Hai <strong>3 domande gratuite oggi</strong>. Per andare oltre, <a href="${CONFIG.URL_REGISTRATI}">registrati gratis come ospite</a> o <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a> (20€/anno).`;
+Hai <strong>3 domande gratuite oggi</strong>. Per andare oltre, <a href="${linkFunnel(CONFIG.URL_REGISTRATI, 'benvenuto')}">registrati gratis come ospite</a> o <a href="${linkFunnel(CONFIG.URL_TESSERAMENTO, 'benvenuto')}">diventa socio</a> (20€/anno).`;
 
-    const welcomeContent = `<span class="ac-bondi">Bondì.</span> Sono <strong>Andreas</strong>, l'assistente digitale dell'Associazione El Brenz. Posso accompagnarti nella storia, nella lingua e nella cultura delle nostre valli — Non, Sole, Rabbi, Pejo: dai Principati Vescovili alla Contea Principesca del Tirolo, dalle Guerre Rustiche al ladino anaunico, dalle stue ai mulini.${getAuthToken() ? '' : pitchAnonimo}
+    // [2/8] Il saluto usa il nome se il ping l'ha portato: «Bondì, Cristian.»
+    // A un socio autenticato niente pitch, per nessuna ragione.
+    const saluto = state.nomeUtente
+      ? `<span class="ac-bondi">Bondì, ${escapeHtml(state.nomeUtente)}.</span>`
+      : `<span class="ac-bondi">Bondì.</span>`;
+    const welcomeContent = `${saluto} Sono <strong>Andreas</strong>, l'assistente digitale dell'Associazione El Brenz. Posso accompagnarti nella storia, nella lingua e nella cultura delle nostre valli — Non, Sole, Rabbi, Pejo: dai Principati Vescovili alla Contea Principesca del Tirolo, dalle Guerre Rustiche al ladino anaunico, dalle stue ai mulini.${getAuthToken() ? '' : pitchAnonimo}
 
 Da dove vuoi partire?`;
 
@@ -685,18 +707,26 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
         </p>
       `;
     } else {
+      // [funnel 2/8] La donazione e' un sostegno puro e si presenta come tale,
+      // separata e senza promesse: per una APS un vantaggio in cambio di una
+      // donazione trasformerebbe la liberalita' in corrispettivo. Cio' che
+      // sblocca e' la tessera, e solo quella.
       cta.innerHTML = `
         <h3 class="andreas-limit-cta__title">Hai usato le 3 domande gratuite di oggi.</h3>
         <p class="andreas-limit-cta__text">
-          <a href="${CONFIG.URL_REGISTRATI}">Registrati gratis come ospite</a>
-          per continuare, oppure <a href="${CONFIG.URL_TESSERAMENTO}">diventa socio</a>
-          (20€/anno): i soci hanno 100 domande al giorno e sostengono
-          <em>la nosa Sociazion</em>.
+          <a href="${linkFunnel(CONFIG.URL_REGISTRATI, 'limite')}">Registrati gratis come ospite</a>
+          per continuare, oppure <a href="${linkFunnel(CONFIG.URL_TESSERAMENTO, 'limite')}">diventa socio</a>
+          (20€/anno): i soci hanno 100 domande al giorno, l'archivio delle
+          proprie ricerche e le fonti riservate.
         </p>
         <div class="andreas-limit-cta__buttons">
-          <a href="${CONFIG.URL_REGISTRATI}" class="andreas-limit-cta__btn andreas-limit-cta__btn--primary">Registrati gratis</a>
-          <a href="${CONFIG.URL_TESSERAMENTO}" class="andreas-limit-cta__btn andreas-limit-cta__btn--secondary">Diventa socio</a>
+          <a href="${linkFunnel(CONFIG.URL_REGISTRATI, 'limite')}" class="andreas-limit-cta__btn andreas-limit-cta__btn--primary">Registrati gratis</a>
+          <a href="${linkFunnel(CONFIG.URL_TESSERAMENTO, 'limite')}" class="andreas-limit-cta__btn andreas-limit-cta__btn--secondary">Diventa socio</a>
         </div>
+        <p class="andreas-limit-cta__text" style="margin-top:10px;font-size:12px;opacity:.85;">
+          Se invece vuoi semplicemente sostenere il progetto, puoi
+          <a href="${linkFunnel(CONFIG.URL_DONA, 'limite')}">fare una donazione</a>.
+        </p>
       `;
     }
     $messages.appendChild(cta);
@@ -800,9 +830,28 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
     }
     // A sessione presente il «3 domande rimanenti» cablato nel markup non ha
     // senso: contatore neutro finche' l'edge non dice il limite vero del ruolo.
-    if (getAuthToken()) {
+    // [2/8] Poi il PING chiede al server ruolo e conteggio SENZA consumare
+    // quota: all'apertura si mostra solo un numero confermato, e il benvenuto
+    // puo' salutare per nome. Se il ping fallisce si resta sul neutro.
+    if (getAuthToken() && !CONFIG.MOCK_MODE) {
       state.remainingQuota = Infinity;
       $counter.innerHTML = '';
+      try {
+        const headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getAuthToken() };
+        const r = await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/andreas-chat`, {
+          method: 'POST', headers: headers, body: JSON.stringify({ ping: true }),
+        });
+        if (r.ok) {
+          const d = await r.json();
+          if (d && d.ok && d.usage && typeof d.usage.limite === 'number') {
+            state.nomeUtente = d.nome || null;
+            if (d.usage.limite >= 0) {
+              state.remainingQuota = Math.max(0, d.usage.limite - (d.usage.msg_oggi || 0));
+              updateCounter();
+            }
+          }
+        }
+      } catch (_) { /* contatore neutro, si va avanti */ }
     }
     // ensureLibs carica marked+DOMPurify da CDN per il markdown. Se il caricamento
     // fallisce (CDN irraggiungibile o bloccato da CSP), NON deve impedire l'init:

@@ -509,8 +509,13 @@ Deno.serve(async (req: Request) => {
       conversazione_id?: string;
       tipo_conversazione?: string;
       turnstile_token?: string;
+      // [2/8] ping: true -> il client chiede solo ruolo e conteggio, per
+      // mostrare all'apertura un numero confermato dal server invece del 3
+      // cablato. Nessun retrieval, nessun modello, NESSUN consumo di quota.
+      ping?: boolean;
     };
-    if (!body.query) {
+    const isPing = body.ping === true;
+    if (!body.query && !isPing) {
       return new Response(JSON.stringify({ ok: false, error: "missing_query" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders(origin) } });
     }
@@ -535,6 +540,7 @@ Deno.serve(async (req: Request) => {
 
     let userId: string | null = null;
     let isPubblico = true;
+    let nomeUtente: string | null = null;
     let nomeRuolo = "pubblico";
     let livelloRuolo = 0;   // livello del ruolo (ruolo.livello); 0 = pubblico
 
@@ -560,6 +566,8 @@ Deno.serve(async (req: Request) => {
       }
       userId = userData.user.id;
       isPubblico = false;
+      // Nome per il saluto del ping (benvenuto consapevole del ruolo).
+      nomeUtente = String((userData.user.user_metadata as any)?.nome ?? "").trim() || null;
 
       // Un utente puo' avere PIU' ruoli: si prende quello a LIVELLO massimo
       // (audit 14/7: prima si ordinava per ruolo_id, che non implica il livello
@@ -612,6 +620,30 @@ Deno.serve(async (req: Request) => {
     let msgOggi = 0;
     let tokensOggi = 0;
 
+    // [2/8] PING: ruolo e conteggio confermati dal server, SENZA consumare.
+    // Serve al client per aprire con il numero vero invece del 3 cablato.
+    // Sta PRIMA del conteggio atomico: un ping non e una domanda.
+    if (isPing && !isTrustedBot) {
+      if (isPubblico) {
+        const ipPing = extractClientIp(req);
+        const hashPing = await sha256Hex(`${ipPing}:${oggi}`);
+        const { data: rl } = await supabase
+          .from("ai_rate_limit_pubblico")
+          .select("messaggi").eq("ip_hash", hashPing).eq("giorno", oggi).maybeSingle();
+        msgOggi = rl?.messaggi ?? 0;
+      } else {
+        const { data: rl } = await supabase
+          .from("ai_rate_limit")
+          .select("messaggi").eq("utente_id", userId!).eq("giorno", oggi).maybeSingle();
+        msgOggi = rl?.messaggi ?? 0;
+      }
+      return new Response(JSON.stringify({
+        ok: true, ping: true, is_pubblico: isPubblico, tier,
+        nome: nomeUtente,
+        usage: { msg_oggi: msgOggi, limite: limitGiorno },
+      }), { headers: { "Content-Type": "application/json", ...corsHeaders(origin) } });
+    }
+
     if (isTrustedBot) {
       // Bot fidato: nessun rate-limit IP né Turnstile qui (li fa il bot per
       // utente Telegram). ipHash resta null, nessuna persistenza più sotto.
@@ -620,17 +652,32 @@ Deno.serve(async (req: Request) => {
       // Hash SHA256 + giorno per deterministico-stesso-giorno (privacy: niente IP in chiaro)
       ipHash = await sha256Hex(`${ip}:${oggi}`);
 
-      const { data: rl } = await supabase
-        .from("ai_rate_limit_pubblico")
-        .select("messaggi, tokens_totali")
-        .eq("ip_hash", ipHash).eq("giorno", oggi).maybeSingle();
-      msgOggi = rl?.messaggi ?? 0;
-      tokensOggi = rl?.tokens_totali ?? 0;
+      // [2/8] CONTEGGIO ATOMICO ALL INGRESSO. Prima il conteggio viveva solo
+      // nei rami di persistenza a fine risposta, e il percorso lento
+      // (vettoriale a vuoto -> full-text -> Claude) non ci passava: le
+      // domande fuori KB erano gratis e illimitate proprio sul percorso piu
+      // costoso. E il check read-then-act lasciava passare le concorrenti.
+      // Ora check e incremento sono UN operazione sola (RPC ai_consuma_quota),
+      // prima di qualsiasi retrieval. Una richiesta fallita consuma un
+      // messaggio: onesto, e il rimborso sull errore si fara solo se servira.
+      const { data: quota } = await supabase.rpc("ai_consuma_quota", {
+        p_utente_id: null, p_ip_hash: ipHash, p_limite: limitGiorno,
+      });
+      const esito = (quota as any[])?.[0];
+      msgOggi = esito?.messaggi ?? 0;   // INCLUSIVO della domanda corrente
 
-      if (limitGiorno > 0 && msgOggi >= limitGiorno) {
+      if (!esito?.concesso) {
+        // Il testo del limite viene dalla policy in config_app (quota 20,
+        // niente "illimitato"), con ripiego su un testo di servizio.
+        let msgLimite = `Hai raggiunto il limite di ${limitGiorno} domande gratuite per oggi.`;
+        try {
+          const { data: cfg } = await supabase
+            .from("config_app").select("valore").eq("chiave", "andreas_access_policy").maybeSingle();
+          msgLimite = (cfg?.valore as any)?.andreas_pubblico?.dopo_raggiunto_limite ?? msgLimite;
+        } catch (_) { /* ripiego */ }
         return new Response(JSON.stringify({
           ok: false, error: "rate_limit_daily",
-          messaggio: `Hai raggiunto il limite di ${limitGiorno} domande gratuite per oggi. Iscriviti gratuitamente sul sito per averne di pi\u00f9 — basta una mail su info@elbrenz.eu.`,
+          messaggio: msgLimite,
           usage: { today: msgOggi, limit: limitGiorno },
           is_pubblico: true,
           tier,
@@ -639,7 +686,7 @@ Deno.serve(async (req: Request) => {
 
       // Turnstile: richiesto dopo TURNSTILE_REQUIRED_AFTER messaggi se secret \u00e8 configurato
       const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY");
-      if (turnstileSecret && msgOggi >= TURNSTILE_REQUIRED_AFTER) {
+      if (turnstileSecret && msgOggi > TURNSTILE_REQUIRED_AFTER) { // msgOggi include la corrente
         if (!body.turnstile_token) {
           return new Response(JSON.stringify({
             ok: false, error: "turnstile_required",
@@ -660,14 +707,13 @@ Deno.serve(async (req: Request) => {
         console.warn("TURNSTILE_SECRET_KEY non configurata: bypass verifica anti-bot.");
       }
     } else {
-      // Path autenticato: ai_rate_limit (legacy, invariato)
-      const { data: rl } = await supabase
-        .from("ai_rate_limit")
-        .select("messaggi, tokens_totali")
-        .eq("utente_id", userId!).eq("giorno", oggi).maybeSingle();
-      msgOggi = rl?.messaggi ?? 0;
-      tokensOggi = rl?.tokens_totali ?? 0;
-      if (limitGiorno > 0 && msgOggi >= limitGiorno) {
+      // Path autenticato: stesso conteggio atomico all ingresso del pubblico.
+      const { data: quota } = await supabase.rpc("ai_consuma_quota", {
+        p_utente_id: userId!, p_ip_hash: null, p_limite: limitGiorno,
+      });
+      const esito = (quota as any[])?.[0];
+      msgOggi = esito?.messaggi ?? 0;   // INCLUSIVO della domanda corrente
+      if (!esito?.concesso) {
         return new Response(JSON.stringify({
           ok: false, error: "rate_limit_daily",
           messaggio: `Hai raggiunto il limite di ${limitGiorno} domande per oggi. Riprova domani.`,
@@ -846,11 +892,11 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      await supabase.from("ai_rate_limit").upsert({
-        utente_id: userId!, giorno: oggi,
-        messaggi: msgOggi + 1,
-        tokens_totali: tokensOggi + tokensIn + tokensOut,
-      }, { onConflict: "utente_id,giorno" });
+      // [2/8] I messaggi sono gia stati contati all ingresso (ai_consuma_quota):
+      // qui si sommano SOLO i token, in modo relativo, su tutti i rami.
+      await supabase.rpc("ai_somma_token", {
+        p_utente_id: userId!, p_ip_hash: null, p_tokens: tokensIn + tokensOut,
+      });
 
       await supabase.from("ai_conversazione")
         .update({ ultima_attivita_at: new Date().toISOString() })
@@ -858,12 +904,10 @@ Deno.serve(async (req: Request) => {
     } else if (!isTrustedBot) {
       // Pubblico: aggiorna solo ai_rate_limit_pubblico, niente persistenza messaggi.
       // Il bot fidato non scrive qui (rate-limit per utente Telegram, lato bot).
-      await supabase.from("ai_rate_limit_pubblico").upsert({
-        ip_hash: ipHash!, giorno: oggi,
-        messaggi: msgOggi + 1,
-        tokens_totali: tokensOggi + tokensIn + tokensOut,
-        ultimo_uso: new Date().toISOString(),
-      }, { onConflict: "ip_hash,giorno" });
+      // [2/8] Conteggio gia fatto all ingresso: qui solo la somma dei token.
+      await supabase.rpc("ai_somma_token", {
+        p_utente_id: null, p_ip_hash: ipHash!, p_tokens: tokensIn + tokensOut,
+      });
     }
 
     // ------------------------------------------------------------------------
@@ -898,7 +942,7 @@ Deno.serve(async (req: Request) => {
         tokens_input: tokensIn,
         tokens_output: tokensOut,
         tempo_ms: Date.now() - t0,
-        msg_oggi: msgOggi + 1,
+        msg_oggi: msgOggi,
         limite: limitGiorno,
       },
     }, null, 2), { headers: { "Content-Type": "application/json", ...corsHeaders(origin) } });

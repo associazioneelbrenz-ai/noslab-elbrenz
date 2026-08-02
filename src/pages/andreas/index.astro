@@ -24,6 +24,15 @@ const ogImage = '/assets/branding/andreas/andreas-sorriso-master.png';
 >
   <main class="andreas-page">
     <AndreasChat />
+    {/* [funnel 2/8] Una riga sola, sempre visibile, mai in mezzo alla
+        conversazione: il momento della richiesta e' il limite o questo pie'
+        di pagina, non la quarta risposta. La donazione e' sostegno puro,
+        senza promesse: cio' che sblocca e' la tessera. */}
+    <p class="andreas-sostegno" style="font-family: 'Inter', sans-serif;">
+      Andreas è gratuito per tutti grazie ai soci e a chi dona.
+      <a href="/tesseramento?utm_source=andreas&utm_medium=pagina&utm_campaign=footer">Diventa socio</a> ·
+      <a href="/dona?utm_source=andreas&utm_medium=pagina&utm_campaign=footer">Sostienici</a>
+    </p>
   </main>
 </Layout>
 
@@ -31,5 +40,15 @@ const ogImage = '/assets/branding/andreas/andreas-sorriso-master.png';
   .andreas-page {
     min-height: calc(100vh - var(--site-header-height, 64px));
     background: var(--eb-crema, #F8F1E4);
+  }
+  .andreas-sostegno {
+    text-align: center;
+    font-size: 12.5px;
+    color: rgba(30, 46, 38, 0.6);
+    margin: 0;
+    padding: 10px 16px 18px;
+  }
+  .andreas-sostegno a {
+    color: #8a6215;
   }
 </style>
