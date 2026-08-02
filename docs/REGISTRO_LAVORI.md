@@ -91,7 +91,9 @@ in testa perché cambiano le priorità.
 5. **[APERTO] CHECK constraint su `museo_gg_pezzo.stato` e `storia.stato`**: oggi non esistono. Servono i valori che il codice scrive davvero.
 6. **[APERTO] Due articoli corti**: `avanti-tutta` (recuperato, 1629 caratteri) e `trailer-documentario-fioi-dal-nos` (331). Il secondo va guardato.
 7. **[APERTO] Peso della home**: `hero-lago.jpg` 743 KB e l'aquila 392 KB su 3,8 MB totali. Ricomprimere, **il marchio non si tocca**.
-8. **[APERTO] Mappa in prima fila**: anteprima viva con i 57 luoghi, in alto in home e nell'app.
+8. **[FATTO 2/8 pomeriggio] Mappa in prima fila nell'app**: MappaTeaser vivo sotto il saluto, 57 pin reali, conteggio, respiro di pan, tocco → /app/mappa. **Resta la parte sito**: la sezione mappa in home c'è già (ortofoto + CTA) ma sta fra articoli ed eventi e senza conteggio; spostarla su e aggiungere «57 luoghi» è il pezzo mancante.
+8-bis. **[FATTO 2/8 pomeriggio] Andreas post mortem** (`docs/POSTMORTEM_2026-08-02_andreas-blocchi-e-quota.md`): ponte della sessione app→iframe (il socio era trattato da anonimo: localStorage non attraversa le origini), contatore dal limite vero dell'edge invece del 3 cablato, timeout 75s sul «sta pensando», guardia sulla bolla vuota, «senza limiti» eliminato dalla CTA, benvenuto e limite distinguono chi è già dentro. **Collaudo da iPhone a Cristian**: benvenuto senza pitch da socio, contatore a 99 dopo la prima domanda, domanda fuori KB che risponde o fallisce entro 75s.
+8-ter. **[FATTO 2/8] Scansione dell'Adige in pagina** (200, 170 KB): il riferimento rotto è chiuso.
 9. **[APERTO] Un solo indirizzo per Andreas** che si adatta a chi lo apre, invece di `/andreas` e `/app/andreas`.
 10. **[APERTO] File `.bak` nel repo**: decine, non tracciati. O `.gitignore` o cestino.
 
