@@ -8,6 +8,7 @@ archivio: false
 autore: "Cristian Bresadola"
 excerpt: "L'Associazione desidera condividere con voi l'ultimo lavoro eseguito in collaborazione con il mensile \"Il Melo\" teso a informare, con gli estratti delle nostre ricerche, tutta la popolazione della Valli di Sole, Rabbi e Pejo. E' stato distribuito a tutte le famiglie. Circa 7500 copie. Un…"
 legacy_wp_id: 3564
+og_image: "/og/articoli/speciale-censimento-linguistico-2021.jpg"
 ---
 
 L'Associazione desidera condividere con voi l'ultimo lavoro eseguito in collaborazione con il mensile "Il Melo" teso a informare, con gli estratti delle nostre ricerche, tutta la popolazione della Valli di Sole, Rabbi e Pejo. E' stato distribuito a tutte le famiglie. Circa 7500 copie. Un grande sforzo per la nostra piccola associazione che ci auguriamo porti a grandi risultati per le nostre genti. Buona lettura e .... compilate il questionario del censimento entro il 20 dicembre!!!

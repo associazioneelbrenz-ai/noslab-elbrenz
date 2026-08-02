@@ -8,6 +8,7 @@ archivio: false
 autore: "Cristian Bresadola"
 excerpt: "Finalmente il Trailer del documentario \" Fioi dal Nos \", disponibile a breve! Godetevi questo anteprima nell'attesa dell'uscita ufficiale! Stay Tuned! [embed]https://www.youtube.com/watch?v=IDmC7WiPNwo&feature=youtu.be[/embed]"
 legacy_wp_id: 3099
+og_image: "/og/articoli/trailer-documentario-fioi-dal-nos.jpg"
 ---
 
 Finalmente il Trailer del documentario "Fioi dal Nos", disponibile a breve! Godetevi questo anteprima nell'attesa dell'uscita ufficiale! Stay Tuned! 

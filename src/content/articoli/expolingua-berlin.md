@@ -8,6 +8,7 @@ archivio: false
 autore: "Cristian Bresadola"
 excerpt: "Il S alone Internazionale delle lingue e delle culture festeggia quest'anno la sua 26ma edizione, a Berlino dal 15 al 17 novembre Il Salone Internazionale delle lingue e delle culture focalizza la sua 26ma edizione sulle tecniche efficaci e divertenti che facilitano l’apprendimento di una…"
 legacy_wp_id: 1290
+og_image: "/og/articoli/expolingua-berlin.jpg"
 ---
 
 **Il Salone Internazionale delle lingue e delle culture festeggia quest'anno la sua 26ma edizione, a Berlino dal 15 al 17 novembre**

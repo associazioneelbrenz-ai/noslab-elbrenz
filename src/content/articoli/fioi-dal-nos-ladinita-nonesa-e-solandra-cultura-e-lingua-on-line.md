@@ -8,6 +8,7 @@ archivio: false
 autore: "Cristian Bresadola"
 excerpt: "[embed]https://youtu.be/JjYKr7hCRz0[/embed] Frutto di oltre 2 anni di lavoro e ricerche, il documentario Fioi dal Nos nasce dall'esigenza di restituire alle popolazione delle Valli del Noce la storia e la cultura secolare narrata nelle varianti principali delle parlate retoromanze delle Valli…"
 legacy_wp_id: 3355
+og_image: "/og/articoli/fioi-dal-nos-ladinita-nonesa-e-solandra-cultura-e-lingua-on-line.jpg"
 ---
 
 \[embed\]https://youtu.be/JjYKr7hCRz0\[/embed\]

@@ -8,6 +8,7 @@ archivio: false
 autore: "Cristian Bresadola"
 excerpt: "Dopo il grande evento di Os dal Nos 2018, lo staff del Brenz si è preso un periodo di vacanza per rigenerarsi e prepararsi ad un autunno che sarà ricco di sorprese e proposte. In questi giorni stiamo preparando i video delle esibizioni che saranno caricati sul nostro canale YouTube a partire…"
 legacy_wp_id: 3337
+og_image: "/og/articoli/after-movie-os-dal-nos-2018.jpg"
 ---
 
 Dopo il grande evento di Os dal Nos 2018, lo staff del Brenz si è preso un periodo di vacanza per rigenerarsi e prepararsi ad un autunno che sarà ricco di sorprese e proposte. In questi giorni stiamo preparando i video delle esibizioni che saranno caricati sul nostro canale YouTube a partire da lunedì 24 settembre. 

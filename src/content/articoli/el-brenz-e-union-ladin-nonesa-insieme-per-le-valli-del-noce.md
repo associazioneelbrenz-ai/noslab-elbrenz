@@ -8,6 +8,7 @@ archivio: false
 autore: "Cristian Bresadola"
 excerpt: "I CONTENUTI DELLE NOSTRE SERATE SUL TERRITORIO A partire dal mese di ottobre sono state organizzate dalle Associazioni del territorio delle Valli del Noce diverse serata di sensibilizzazione sul tema linguistico. Il censimento 2021 è un'importante opportunità per le popolazioni anauniche (Val…"
 legacy_wp_id: 3573
+og_image: "/og/articoli/el-brenz-e-union-ladin-nonesa-insieme-per-le-valli-del-noce.jpg"
 ---
 
 ## I CONTENUTI DELLE NOSTRE SERATE SUL TERRITORIO
