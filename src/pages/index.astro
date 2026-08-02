@@ -50,39 +50,59 @@ const MIGOLE_ETICHETTE = ['Storia delle valli', 'Parlate ladine', 'Memoria e rad
 // AGGIUNTA M2.4 (home ricca): blocco "Ultimi articoli".
 // Riusa gli helper di lib/articoli e lo stesso filtro produzione di
 // PaginaPilastro (!draft && !archivio). Ordinamento data desc, primi 4.
+import { createClient } from '@supabase/supabase-js';
+// getCollection serve ancora, ma solo per la collection `eventi` (i NOSTRI
+// appuntamenti in home): gli articoli non passano piu' di qui.
 import { getCollection } from 'astro:content';
 import { formatDataIT, nomePilastro } from '../lib/articoli';
-import { mappaSeoArticoli } from '../lib/seoArticoli';
 import { schemaOrganization } from '../lib/schema';
 import { imgRid, srcSetCard } from '../lib/immagini';
 import { MIGOLE, miniatura, embed } from '../data/video';
 
-const articoliProduzione = await getCollection(
-  'articoli',
-  ({ data }) => !data.draft && !data.archivio,
-);
-const ultimiArticoli = articoliProduzione
-  .slice()
-  .sort(
-    (a, b) =>
-      b.data.data_pubblicazione.getTime() - a.data.data_pubblicazione.getTime(),
-  )
-  .slice(0, 4);
+// MODIFICA 2/8/2026 — anche la home legge dalla vista, come /articoli,
+// /articoli/<slug> e /archivio-storico. Prima passava dal ponte
+// legacy_wp_id -> v_articoli_seo per recuperare le copertine, ed era rimasta
+// la seconda strada verso gli stessi dati: due sorgenti che possono divergere
+// sono un guasto che aspetta il suo giorno.
+//
+// Il ponte non serve piu': `immagine_copertina_url` sta sulla stessa riga, e
+// vale sia per gli articoli migrati sia per quelli nuovi. Era proprio il
+// problema visto l'1/8, quando un pezzo appena scritto restava senza immagine
+// in mezzo alle altre tre perche' non aveva un legacy_wp_id.
+//
+// Stesso filtro di prima: produzione, cioe' non archiviati.
+const SB_ART_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SB_ART_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Copertine degli articoli dal DB (post-migrazione sono su Storage): le card
-// con immagine si notano molto piu' di quelle di solo testo. Chi non ha
-// copertina resta testuale, senza riempitivi finti.
-const seoHome = await mappaSeoArticoli();
-// Il DB ha le copertine dei soli articoli MIGRATI da WordPress, agganciate per
-// legacy_wp_id. Un articolo NUOVO non ha quell'id, quindi restava senza card
-// image e in home spiccava per il vuoto accanto alle altre tre (visto l'1/8).
-// Ricaduta sul frontmatter: prima og_image (la card social brandizzata, che
-// non compare dentro l'articolo ed e' fatta apposta per essere guardata in
-// piccolo), poi hero_image.
-const copertinaDi = (a: any): string | null =>
-  seoHome.get(Number(a.data.legacy_wp_id))?.copertina
-  || a.data.og_image
-  || a.data.hero_image
+let ultimiArticoli: any[] = [];
+try {
+  const sbArt = createClient(SB_ART_URL, SB_ART_ANON, { auth: { persistSession: false } });
+  const { data } = await sbArt
+    .from('v_articoli_pubblici')
+    .select('slug, titolo, estratto, immagine_copertina_url, pilastro, pubblicato_at, noindex, archivio')
+    .eq('archivio', false)
+    .order('pubblicato_at', { ascending: false })
+    .limit(8);
+  ultimiArticoli = ((data as any[]) ?? [])
+    .filter((a) => a.slug && a.noindex !== true)
+    .slice(0, 4)
+    .map((a) => ({
+      id: a.slug,
+      data: {
+        title: a.titolo,
+        excerpt: a.estratto ?? '',
+        pilastro: a.pilastro ?? '_da_assegnare',
+        data_pubblicazione: a.pubblicato_at ? new Date(a.pubblicato_at) : new Date(0),
+        copertina: a.immagine_copertina_url ?? null,
+      },
+    }));
+} catch (e) {
+  console.error('[home] lettura articoli fallita:', e);
+}
+
+// Le card con immagine si notano molto piu' di quelle di solo testo. Chi non
+// ha copertina resta testuale, senza riempitivi finti.
+const copertinaDi = (a: any): string | null => a.data.copertina
   || null;
 
 /** Tronca l'excerpt a ~160 caratteri per la card, con ellissi. */

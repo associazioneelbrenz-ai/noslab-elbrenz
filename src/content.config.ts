@@ -35,7 +35,10 @@ const pilastroEnum = z.enum([
 // Default `draft: true` è consapevole: protegge dal pubblicare per errore.
 // Il flip a false è un atto editoriale esplicito (ADR-0001 D3=C "primo").
 const articoli = defineCollection({
-  loader: glob({ pattern: "**/*.md", base: "./src/content/articoli" }),
+  // Il README.md della cartella spiega che dal 2/8/2026 il sito non legge piu'
+  // da qui: e' una nota per chi apre la cartella, non un articolo, e va esclusa
+  // dal glob o il loader prova a validarla contro lo schema e la build cade.
+  loader: glob({ pattern: ["**/*.md", "!README.md"], base: "./src/content/articoli" }),
 
   schema: z.object({
     // OBBLIGATORI ----------------------------------------------------------

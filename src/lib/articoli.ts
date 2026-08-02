@@ -27,6 +27,19 @@ export const PILLAR_LABELS: Record<string, string> = {
   '5_identita_appartenenza': 'Identità',
   '6_vita_associativa': 'Vita associativa',
   '_da_assegnare': '',
+  // AGGIUNTA 2/8/2026 — le stesse etichette con le chiavi del DATABASE.
+  // Il frontmatter markdown usa l'enum numerato, la colonna `articolo.pilastro`
+  // usa slug piani. Da quando le pagine leggono dalla vista arrivavano qui i
+  // secondi, e nomePilastro() restituiva stringa vuota: in produzione i filtri
+  // dell'indice e la riga sopra il titolo delle card sono usciti senza nome di
+  // pilastro. Le due famiglie di chiavi non si sovrappongono, quindi convivono
+  // nella stessa mappa e i consumatori del markdown non cambiano.
+  'storia': 'Storia',
+  'lingua': 'Lingua',
+  'cultura-materiale': 'Cultura materiale',
+  'rievocazioni': 'Rievocazioni',
+  'identita': 'Identità',
+  'vita-associativa': 'Vita associativa',
 };
 
 /** Nome leggibile del pilastro, o stringa vuota se sconosciuto/_da_assegnare. */

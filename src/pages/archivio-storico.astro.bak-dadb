@@ -13,52 +13,17 @@
  *
  * Rendering: ElencoArticoliPerAnno con sobrio=true (compatto, muted, niente
  * excerpt). Palette brand coerente col resto del display layer.
- *
- * SORGENTE: v_articoli_pubblici (2/8/2026). Prima leggeva i file markdown, ed
- * era rimasta l'ultima pagina a farlo: una sorgente che nessuno aggiorna piu'.
- * Il flag `archivio`, che esisteva solo nel frontmatter, e' stato portato sulla
- * tabella `articolo` e travasato (56 articoli in sala di lettura, 52 in
- * produzione: gli stessi numeri di prima, verificati).
- *
- * NB: non si e' usato wp_legacy_id come criterio, che sarebbe stato comodo.
- * Ce l'hanno 107 righe su 108: non e' sinonimo di «archiviato», e' solo la
- * traccia dell'importazione da WordPress.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { getCollection } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
 import ElencoArticoliPerAnno from '../components/ElencoArticoliPerAnno.astro';
 
-export const prerender = false;
-
-const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
-const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
-
-// I record si rimappano nella forma che il componente si aspetta
-// (`a.id` = slug, `a.data.*` = frontmatter): ElencoArticoliPerAnno resta
-// intatto e continua a servire anche PaginaPilastro.
-let articoli: any[] = [];
-try {
-  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
-  const { data } = await sb
-    .from('v_articoli_pubblici')
-    .select('slug, titolo, estratto, pilastro, pubblicato_at, noindex, archivio')
-    .eq('archivio', true)
-    .order('pubblicato_at', { ascending: false });
-  articoli = ((data as any[]) ?? [])
-    .filter((a) => a.slug && a.noindex !== true)
-    .map((a) => ({
-      id: a.slug,
-      data: {
-        title: a.titolo,
-        excerpt: a.estratto ?? '',
-        pilastro: a.pilastro ?? '_da_assegnare',
-        data_pubblicazione: a.pubblicato_at ? new Date(a.pubblicato_at) : new Date(0),
-      },
-    }));
-} catch (e) {
-  console.error('[archivio-storico] lettura fallita:', e);
-}
+// Solo articoli archiviati e pubblicabili (!draft).
+const articoli = await getCollection(
+  'articoli',
+  ({ data }) => data.archivio && !data.draft,
+);
 const totale = articoli.length;
 ---
 <Layout ogImage="/og/og-archivio-storico.jpg"
