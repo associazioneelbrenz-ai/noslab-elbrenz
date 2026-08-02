@@ -89,3 +89,14 @@ begin
 end $$;
 
 revoke execute on function public.ai_somma_token(uuid, text, int) from anon, authenticated, public;
+
+-- Aggiunta dello stesso pomeriggio (collaudo di Cristian dall'app): il ruolo
+-- admin_capo (livello 75) non aveva riga in ai_config_ruolo. L'edge risolve il
+-- ruolo a livello massimo, cercava "admin_capo", non lo trovava e cascava sul
+-- fallback del codice (5 al giorno): cosi' un admin_capo autenticato si vedeva
+-- dire «2 domande rimanenti». Stessa politica di admin e super_admin: nessun
+-- tetto, i token si contano comunque.
+insert into public.ai_config_ruolo (ruolo_nome, limite_giornaliero, modello_preferito, rag_abilitato)
+select 'admin_capo', -1, modello_preferito, rag_abilitato
+from public.ai_config_ruolo where ruolo_nome = 'admin'
+on conflict (ruolo_nome) do update set limite_giornaliero = -1;

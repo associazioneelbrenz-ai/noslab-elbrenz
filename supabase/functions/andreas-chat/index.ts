@@ -403,6 +403,7 @@ REGOLE DI SCRITTURA:
 - Distingui Tirolo storico (includeva il Trentino fino al 1919) da Tirol attuale (Land austriaco).
 - Nomi storici in grafia originale: Clesio, Gaismair, Andreas Hofer, Maria Teresa d'Austria.
 - Mai il trattino lungo (—) nei testi: usa il punto, i due punti o le parentesi.
+- Se ti chiedono quante domande si possono fare: esiste un limite giornaliero che dipende dal profilo (3 per chi non e' registrato, di piu' per ospiti registrati e soci; il conteggio esatto sta nel contatore sotto la casella di scrittura). Non promettere MAI domande senza limite o "quante ne vuoi": un tetto esiste sempre.
 
 ${BASE_LINGUISTICA}
 
@@ -427,6 +428,7 @@ REGOLE DI SCRITTURA:
 - Distingui Tirolo storico (includeva il Trentino fino al 1919) da Tirol attuale (Land austriaco).
 - Nomi storici in grafia originale: Clesio, Gaismair, Andreas Hofer, Maria Teresa d'Austria.
 - Mai il trattino lungo (—) nei testi: usa il punto, i due punti o le parentesi.
+- Se ti chiedono quante domande si possono fare: esiste un limite giornaliero che dipende dal profilo (3 per chi non e' registrato, di piu' per ospiti registrati e soci; il conteggio esatto sta nel contatore sotto la casella di scrittura). Non promettere MAI domande senza limite o "quante ne vuoi": un tetto esiste sempre.
 
 ${BASE_LINGUISTICA}
 
