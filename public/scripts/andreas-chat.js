@@ -119,6 +119,7 @@
     // [2/8] Riempiti dal ping all'apertura (nome dal profilo, contatore
     // confermato dal server): mai mostrare un numero che il server non ha detto.
     nomeUtente: null,
+    conversazioneId: null,
   };
 
   // ---------------------------------------------------------------------------
@@ -623,7 +624,13 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
         headers: headers,
         // Contratto edge function andreas-chat v3 (validato M.A.1 15/15):
         // body field = "query", non "message".
-        body: JSON.stringify({ query: question }),
+        // [archivio 2/8] conversazione_id: senza, ogni domanda apriva una
+        // conversazione nuova a database e l'archivio del socio diventava un
+        // elenco di coppie slegate. L'edge lo restituisce alla prima risposta
+        // e da li' in poi la chat prosegue nella stessa conversazione.
+        body: JSON.stringify(state.conversazioneId
+          ? { query: question, conversazione_id: state.conversazioneId }
+          : { query: question }),
         signal: abort.signal,
       });
     } catch (e) {
@@ -666,6 +673,8 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
       data.risposta || data.messaggio || data.answer || data.text || '';
     const sources =
       data.fonti || data.sources || data.citations || [];
+
+    if (data.conversazione_id) state.conversazioneId = data.conversazione_id;
 
     return {
       ok: true,

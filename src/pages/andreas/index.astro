@@ -33,6 +33,23 @@ const ogImage = '/assets/branding/andreas/andreas-sorriso-master.png';
       <a href="/tesseramento?utm_source=andreas&utm_medium=pagina&utm_campaign=footer">Diventa socio</a> ·
       <a href="/dona?utm_source=andreas&utm_medium=pagina&utm_campaign=footer">Sostienici</a>
     </p>
+    {/* [archivio 2/8] Il collegamento all'archivio compare solo a sessione
+        viva: a un anonimo non si mostra una porta che non puo' aprire. */}
+    <p id="andreas-link-archivio" class="andreas-sostegno" style="font-family: 'Inter', sans-serif; display: none; padding-top: 0;">
+      <a href="/andreas/archivio">Le tue ricerche salvate →</a>
+    </p>
+    <script is:inline>
+      (function () {
+        try {
+          var raw = localStorage.getItem('elbrenz-auth');
+          if (!raw) return;
+          var s = JSON.parse(raw);
+          if (s && s.access_token && (!s.expires_at || s.expires_at * 1000 > Date.now())) {
+            document.getElementById('andreas-link-archivio').style.display = 'block';
+          }
+        } catch (_) {}
+      })();
+    </script>
   </main>
 </Layout>
 

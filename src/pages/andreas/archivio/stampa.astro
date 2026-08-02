@@ -1,0 +1,121 @@
+---
+/**
+ * /andreas/archivio/stampa?id=<conversazione> — il foglio di stampa.
+ *
+ * Il PDF lo produce il sistema operativo dell'utente via window.print():
+ * zero dipendenze lato server, accenti del ladino e del tedesco perfetti
+ * (scelta esplicita del brief: niente librerie PDF in edge function).
+ *
+ * Con Maffei in KB, questo foglio e' una piccola ricerca documentata che un
+ * socio puo' portare a una serata: intestazione col marchio, il dialogo, le
+ * fonti citate in calce, la nota di responsabilita' e il motto, mai tradotto.
+ *
+ * L'accesso ai dati passa dalle stesse RLS dell'archivio: un id altrui
+ * restituisce zero righe, non un errore.
+ */
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout
+  title="Stampa conversazione · Andreas · El Brenz"
+  description="Foglio di stampa di una conversazione con Andreas."
+  noindex={true}
+>
+  <main class="stampa-foglio bg-white min-h-screen">
+    <div class="max-w-2xl mx-auto px-6 py-10">
+
+      <header class="flex items-center gap-4 pb-4 mb-6 border-b-2 border-[#C8923E]">
+        <img src="/logo-eb-header.png" alt="El Brenz" width="52" height="52" />
+        <div>
+          <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0">Associazione Storico Culturale Linguistica El Brenz</p>
+          <h1 id="st-titolo" class="text-2xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif; font-weight: 500;">Conversazione con Andreas</h1>
+          <p id="st-data" class="text-[12px] text-[#1E2E26]/60 m-0 mt-1" style="font-family: 'Inter', sans-serif;"></p>
+        </div>
+      </header>
+
+      <div id="st-corpo" style="font-family: 'Source Serif 4', Georgia, serif;">
+        <p class="text-[#1E2E26]/60">Carico la conversazione…</p>
+      </div>
+
+      <div id="st-fonti" class="hidden mt-8 pt-4 border-t border-[#E5DFCF]">
+        <h2 class="text-base text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif;">Fonti citate</h2>
+        <ul id="st-fonti-lista" class="m-0 pl-5 text-[13px] text-[#1E2E26]/80" style="font-family: 'Inter', sans-serif;"></ul>
+      </div>
+
+      <footer class="mt-10 pt-4 border-t border-[#E5DFCF] text-center" style="font-family: 'Inter', sans-serif;">
+        <p class="text-[12px] text-[#1E2E26]/60 m-0">
+          elbrenz.eu · Le risposte di Andreas si basano sull'archivio
+          dell'Associazione e possono contenere imprecisioni: info@elbrenz.eu
+        </p>
+        <p class="text-[13px] text-[#8a6215] m-0 mt-2" style="font-style: italic;">Raìs fonde no le 'nglacia.</p>
+      </footer>
+
+      <p class="st-nascondi-in-stampa text-center mt-8">
+        <button id="st-stampa" class="bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 text-sm tracking-wider uppercase rounded cursor-pointer border-0" style="font-family: 'Inter', sans-serif;">Stampa o salva PDF</button>
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<style is:global>
+  @media print {
+    /* Solo il foglio: via header del sito, footer, FAB, cookie, bottone. */
+    header:not(.stampa-foglio header), nav, footer:not(.stampa-foglio footer),
+    .st-nascondi-in-stampa, #cc-main, .andreas-fab, [id^="menu-"] { display: none !important; }
+    .stampa-foglio { background: white !important; }
+    a { text-decoration: none; color: inherit; }
+  }
+</style>
+
+<script>
+  import { supabase } from '../../../lib/supabase';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  async function init() {
+    const id = new URLSearchParams(location.search).get('id') ?? '';
+    if (!/^[0-9a-f-]{36}$/i.test(id)) { $('st-corpo').innerHTML = '<p>Conversazione non indicata.</p>'; return; }
+
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) {
+      $('st-corpo').innerHTML = '<p>Accedi per stampare le tue conversazioni: <a href="/accedi?dopo=/andreas/archivio" style="color:#8a6215;">accedi</a>.</p>';
+      return;
+    }
+
+    const { data: conv } = await supabase
+      .from('ai_conversazione')
+      .select('titolo, ultima_attivita_at, created_at')
+      .eq('id', id).maybeSingle();
+    if (!conv) { $('st-corpo').innerHTML = '<p>Conversazione non trovata.</p>'; return; }
+
+    $('st-titolo').textContent = conv.titolo || 'Conversazione con Andreas';
+    $('st-data').textContent = new Date(conv.ultima_attivita_at ?? conv.created_at)
+      .toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    const { data: msgs } = await supabase
+      .from('ai_messaggio')
+      .select('id, ruolo, contenuto')
+      .eq('conversazione_id', id)
+      .order('created_at', { ascending: true });
+
+    $('st-corpo').innerHTML = (msgs ?? []).map((m: any) => `
+      <div style="margin-bottom:14px;">
+        <p style="font-family:'Inter',sans-serif;font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 3px;color:${m.ruolo === 'assistant' ? '#8a6215' : 'rgba(30,46,38,.55)'};">${m.ruolo === 'assistant' ? 'Andreas' : 'Domanda'}</p>
+        <p style="font-size:14px;line-height:1.65;margin:0;white-space:pre-wrap;color:rgba(15,15,15,.88);">${esc(m.contenuto)}</p>
+      </div>`).join('') || '<p>Nessun messaggio.</p>';
+
+    const ids = (msgs ?? []).map((m: any) => m.id);
+    if (ids.length) {
+      const { data: fonti } = await supabase
+        .from('ai_sorgente_citata').select('titolo').in('messaggio_id', ids);
+      const uniche = [...new Set((fonti ?? []).map((f: any) => f.titolo).filter(Boolean))];
+      if (uniche.length) {
+        $('st-fonti').classList.remove('hidden');
+        $('st-fonti-lista').innerHTML = uniche.map((f) => `<li>${esc(f)}</li>`).join('');
+      }
+    }
+  }
+
+  $('st-stampa').addEventListener('click', () => window.print());
+  init();
+</script>

@@ -191,6 +191,10 @@ export default defineConfig({
         // opposti confondono e basta. Non c'e' niente da indicizzare in un
         // modulo di accesso.
         if (page.includes('/accedi')) return false;
+        // AGGIUNTA 2/8/2026 sera — l'archivio delle ricerche e il suo foglio
+        // di stampa sono area riservata, noindex: fuori dalla sitemap per la
+        // stessa ragione di /accedi.
+        if (page.includes('/andreas/archivio')) return false;
         return true;
       },
       i18n: {

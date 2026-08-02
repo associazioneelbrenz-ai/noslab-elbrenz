@@ -1,0 +1,239 @@
+---
+/**
+ * /andreas/archivio — l'archivio delle ricerche del socio.
+ *
+ * Il principio (brief risolutivo IV.4.5): non «il non socio non puo'
+ * salvare», ma «il socio HA il suo archivio di ricerca». Con Maffei in KB un
+ * export non e' il salvataggio di una chat: e' una piccola ricerca
+ * documentata da portare a una serata. E' cio' che giustifica la tessera.
+ *
+ * Il gate privacy e' stato chiuso PRIMA di costruire questa pagina:
+ * l'informativa del 2/8/2026 descrive l'archivio al punto 1.3 e la
+ * conservazione al punto 1.7.
+ *
+ * ARCHITETTURA. Pagina statica, tutto client-side col client condiviso
+ * (src/lib/supabase, sessione in localStorage elbrenz-auth). Nessuna edge
+ * nuova e nessuna migration: le policy RLS esistono gia' (ciascuno vede,
+ * aggiorna e cancella solo le proprie; il livello 50 tutto) e le FK sono
+ * ON DELETE CASCADE su tutta la catena conversazione -> messaggi -> fonti,
+ * quindi la cancellazione dal client e' completa per costruzione. La
+ * cascata FK non passa dalle policy dei figli: e' un'azione referenziale
+ * di Postgres, ed e' il comportamento voluto.
+ *
+ * Esportazione a costo server zero (scelta del brief): la stampa usa
+ * @media print e window.print() (il PDF lo produce il sistema operativo
+ * dell'utente, con gli accenti del ladino perfetti), il Markdown esce da un
+ * Blob. Niente librerie PDF in edge function.
+ */
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout
+  title="Il tuo archivio · Andreas · El Brenz"
+  description="Le tue conversazioni con Andreas: ritrovale, riprendile, esportale."
+  noindex={true}
+>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-12" style="font-family: 'Inter', sans-serif;">
+
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3">Andreas · Area soci</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Il tuo archivio di ricerca
+      </h1>
+      <p class="text-[15px] text-[#1E2E26]/75 leading-relaxed m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Le conversazioni con Andreas restano qui, visibili soltanto a te. Puoi
+        ritrovarle, rinominarle, esportarle o cancellarle quando vuoi, come
+        descritto nell'<a href="/privacy" class="text-[#8a6215] underline">informativa privacy</a>.
+      </p>
+
+      {/* Stato: non autenticato */}
+      <div id="arch-anonimo" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-8 text-center">
+        <p class="m-0 mb-4 text-[15px] text-[#1E2E26]/80">
+          L'archivio è riservato a chi ha effettuato l'accesso.
+        </p>
+        <a href="/accedi?dopo=/andreas/archivio" class="inline-block bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 text-sm tracking-wider uppercase no-underline rounded hover:bg-[#2a3f34]">Accedi</a>
+      </div>
+
+      {/* Barra strumenti */}
+      <div id="arch-strumenti" class="hidden mb-5 flex flex-wrap items-center gap-3">
+        <input id="arch-cerca" type="search" placeholder="Cerca nei titoli…"
+               class="flex-1 min-w-[200px] border border-[#E5DFCF] rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#C8923E]/50" />
+        <label class="flex items-center gap-2 text-[13px] text-[#1E2E26]/70 cursor-pointer">
+          <input id="arch-mostra-archiviate" type="checkbox" />
+          mostra le archiviate
+        </label>
+      </div>
+
+      <div id="arch-vuoto" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-8 text-center text-[15px] text-[#1E2E26]/70">
+        Ancora nessuna conversazione salvata. Parla con
+        <a href="/andreas" class="text-[#8a6215] underline">Andreas</a>: le tue
+        ricerche compariranno qui.
+      </div>
+
+      <div id="arch-lista" class="flex flex-col gap-3"></div>
+
+      <p id="arch-errore" class="hidden text-[14px] text-[#a33] mt-4"></p>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  type Conv = { id: string; titolo: string | null; archiviata: boolean; ultima_attivita_at: string | null; created_at: string };
+  let conversazioni: Conv[] = [];
+
+  function dataIt(iso: string | null): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return d.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })
+      + ', ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function errore(msg: string) {
+    const e = $('arch-errore');
+    e.textContent = msg;
+    e.classList.remove('hidden');
+  }
+
+  function rendi() {
+    const filtro = ($('arch-cerca') as HTMLInputElement).value.trim().toLowerCase();
+    const conArchiviate = ($('arch-mostra-archiviate') as HTMLInputElement).checked;
+    const visibili = conversazioni
+      .filter((c) => conArchiviate || !c.archiviata)
+      .filter((c) => !filtro || (c.titolo ?? '').toLowerCase().includes(filtro));
+
+    $('arch-vuoto').classList.toggle('hidden', visibili.length > 0);
+    const lista = $('arch-lista');
+    lista.innerHTML = visibili.map((c) => `
+      <article class="bg-white border ${c.archiviata ? 'border-[#E5DFCF] opacity-70' : 'border-[#E5DFCF]'} rounded-lg p-5" data-id="${c.id}">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 class="text-lg text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+            ${esc(c.titolo || 'Conversazione senza titolo')}${c.archiviata ? ' <span class="text-[11px] uppercase tracking-wider text-[#8a6215]">(archiviata)</span>' : ''}
+          </h2>
+          <span class="text-[12px] text-[#1E2E26]/50">${esc(dataIt(c.ultima_attivita_at ?? c.created_at))}</span>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[13px]">
+          <button data-az="apri" class="text-[#8a6215] underline cursor-pointer bg-transparent border-0 p-0">Apri</button>
+          <button data-az="stampa" class="text-[#8a6215] underline cursor-pointer bg-transparent border-0 p-0">Stampa o PDF</button>
+          <button data-az="markdown" class="text-[#8a6215] underline cursor-pointer bg-transparent border-0 p-0">Scarica Markdown</button>
+          <button data-az="rinomina" class="text-[#1E2E26]/60 underline cursor-pointer bg-transparent border-0 p-0">Rinomina</button>
+          <button data-az="archivia" class="text-[#1E2E26]/60 underline cursor-pointer bg-transparent border-0 p-0">${c.archiviata ? 'Ripristina' : 'Archivia'}</button>
+          <button data-az="elimina" class="text-[#a33] underline cursor-pointer bg-transparent border-0 p-0">Elimina</button>
+        </div>
+        <div class="arch-dettaglio hidden mt-4 pt-4 border-t border-[#E5DFCF]"></div>
+      </article>`).join('');
+  }
+
+  async function caricaMessaggi(convId: string) {
+    const { data: msgs, error } = await supabase
+      .from('ai_messaggio')
+      .select('id, ruolo, contenuto, created_at')
+      .eq('conversazione_id', convId)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    const ids = (msgs ?? []).map((m: any) => m.id);
+    let fonti: any[] = [];
+    if (ids.length) {
+      const { data: f } = await supabase
+        .from('ai_sorgente_citata')
+        .select('messaggio_id, titolo')
+        .in('messaggio_id', ids);
+      fonti = f ?? [];
+    }
+    return { msgs: msgs ?? [], fonti };
+  }
+
+  async function apri(card: HTMLElement, convId: string) {
+    const box = card.querySelector('.arch-dettaglio') as HTMLElement;
+    if (!box.classList.contains('hidden')) { box.classList.add('hidden'); return; }
+    box.innerHTML = '<p class="text-[13px] text-[#1E2E26]/50 m-0">Carico…</p>';
+    box.classList.remove('hidden');
+    try {
+      const { msgs, fonti } = await caricaMessaggi(convId);
+      box.innerHTML = msgs.map((m: any) => `
+        <div class="mb-3">
+          <p class="text-[11px] uppercase tracking-wider m-0 mb-1 ${m.ruolo === 'assistant' ? 'text-[#8a6215]' : 'text-[#1E2E26]/50'}">${m.ruolo === 'assistant' ? 'Andreas' : 'Tu'}</p>
+          <p class="text-[14px] leading-relaxed text-[#0F0F0F]/85 m-0 whitespace-pre-wrap" style="font-family: 'Source Serif 4', Georgia, serif;">${esc(m.contenuto)}</p>
+        </div>`).join('')
+        + (fonti.length ? `<p class="text-[12px] text-[#1E2E26]/55 m-0 mt-2">Fonti citate: ${esc([...new Set(fonti.map((f: any) => f.titolo).filter(Boolean))].join('; '))}</p>` : '');
+    } catch {
+      box.innerHTML = '<p class="text-[13px] text-[#a33] m-0">Non riesco a caricare i messaggi. Riprova.</p>';
+    }
+  }
+
+  async function scaricaMarkdown(conv: Conv) {
+    const { msgs, fonti } = await caricaMessaggi(conv.id);
+    const fontiUniche = [...new Set(fonti.map((f: any) => f.titolo).filter(Boolean))];
+    const md = `# ${conv.titolo || 'Conversazione con Andreas'}\n\n`
+      + `El Brenz · Andreas · ${dataIt(conv.ultima_attivita_at ?? conv.created_at)}\n\n---\n\n`
+      + msgs.map((m: any) => `**${m.ruolo === 'assistant' ? 'Andreas' : 'Tu'}:** ${m.contenuto}`).join('\n\n')
+      + (fontiUniche.length ? `\n\n---\n\n## Fonti citate\n\n${fontiUniche.map((f) => `- ${f}`).join('\n')}` : '')
+      + `\n\n---\n\nelbrenz.eu · Le risposte si basano sull'archivio dell'Associazione e possono contenere imprecisioni (info@elbrenz.eu).\n\n*Raìs fonde no le 'nglacia.*\n`;
+    const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(conv.titolo || 'conversazione-andreas').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function init() {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      $('arch-anonimo').classList.remove('hidden');
+      return;
+    }
+    $('arch-strumenti').classList.remove('hidden');
+
+    const { data: conv, error } = await supabase
+      .from('ai_conversazione')
+      .select('id, titolo, archiviata, ultima_attivita_at, created_at')
+      .order('ultima_attivita_at', { ascending: false, nullsFirst: false });
+    if (error) { errore('Non riesco a caricare l\'archivio. Riprova fra poco.'); return; }
+    conversazioni = (conv ?? []) as Conv[];
+    rendi();
+
+    $('arch-cerca').addEventListener('input', rendi);
+    $('arch-mostra-archiviate').addEventListener('change', rendi);
+
+    $('arch-lista').addEventListener('click', async (e) => {
+      const btn = (e.target as HTMLElement).closest('button[data-az]') as HTMLElement | null;
+      if (!btn) return;
+      const card = btn.closest('article') as HTMLElement;
+      const id = card.dataset.id!;
+      const conv = conversazioni.find((c) => c.id === id)!;
+      const az = btn.dataset.az;
+
+      if (az === 'apri') return apri(card, id);
+      if (az === 'stampa') { window.open(`/andreas/archivio/stampa?id=${encodeURIComponent(id)}`, '_blank'); return; }
+      if (az === 'markdown') return scaricaMarkdown(conv).catch(() => errore('Esportazione non riuscita. Riprova.'));
+
+      if (az === 'rinomina') {
+        const nuovo = prompt('Nuovo titolo della conversazione:', conv.titolo ?? '');
+        if (nuovo === null) return;
+        const titolo = nuovo.trim().slice(0, 120) || null;
+        const { error: e2 } = await supabase.from('ai_conversazione').update({ titolo }).eq('id', id);
+        if (e2) return errore('Rinomina non riuscita.');
+        conv.titolo = titolo; rendi(); return;
+      }
+      if (az === 'archivia') {
+        const { error: e2 } = await supabase.from('ai_conversazione').update({ archiviata: !conv.archiviata }).eq('id', id);
+        if (e2) return errore('Operazione non riuscita.');
+        conv.archiviata = !conv.archiviata; rendi(); return;
+      }
+      if (az === 'elimina') {
+        // Conferma esplicita, cancellazione riga per riga con cascata FK su
+        // messaggi e fonti. MAI TRUNCATE (regola del brief).
+        if (!confirm('Eliminare questa conversazione? Messaggi e fonti citate saranno cancellati. L\'operazione non si può annullare.')) return;
+        const { error: e2 } = await supabase.from('ai_conversazione').delete().eq('id', id);
+        if (e2) return errore('Cancellazione non riuscita.');
+        conversazioni = conversazioni.filter((c) => c.id !== id); rendi(); return;
+      }
+    });
+  }
+
+  init();
+</script>
