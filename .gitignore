@@ -50,3 +50,11 @@ ma1_results/
 supabase/.temp/
 .backups/
 *.bak
+
+# I backup pre-modifica (regola ferma: .bak prima di ogni intervento) restano
+# sul disco come rete di sicurezza ma non sporcano piu' git status: erano
+# arrivati a 23 file non tracciati. Niente rimozioni: solo invisibilita'.
+*.bak
+*.bak-*
+*.bak2
+*.bak3
