@@ -186,6 +186,11 @@ export default defineConfig({
         // condizione e OGGI sono in sitemap senza noindex; non le tocco di mia
         // iniziativa, e' una decisione da prendere. // TODO decidere con Cristian
         if (page.includes('/radar-eventi')) return false;
+        // AGGIUNTA 2/8/2026 — /accedi e' la porta d'ingresso all'area
+        // riservata, servita con noindex: stessa ragione di sopra, due segnali
+        // opposti confondono e basta. Non c'e' niente da indicizzare in un
+        // modulo di accesso.
+        if (page.includes('/accedi')) return false;
         return true;
       },
       i18n: {

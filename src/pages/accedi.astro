@@ -1,0 +1,234 @@
+---
+/**
+ * /accedi — la porta d'ingresso del sito.
+ *
+ * PERCHE' ESISTE. Il widget di Andreas promette «diventa socio per avere piu'
+ * domande», ma dal sito un socio non aveva alcun modo di autenticarsi: si
+ * entrava solo conoscendo a memoria /redazione o /radar-eventi. La promessa si
+ * rompeva nel momento in cui la persona pagava.
+ *
+ * Verificato prima di scrivere (2/8/2026), perche' le ipotesi erano tre e solo
+ * una era vera:
+ *   1. La sessione NON sta in un cookie ma in localStorage, chiave
+ *      `elbrenz-auth` (src/lib/supabase.ts). localStorage e' per-origine,
+ *      quindi elbrenz.eu e community.elbrenz.eu hanno store separati e non
+ *      condivisibili: portare il dominio di un cookie a `.elbrenz.eu` non
+ *      avrebbe risolto niente, perche' quel cookie non esiste.
+ *   2. Il widget di Andreas ALLEGA GIA' il token se lo trova
+ *      (public/scripts/andreas-chat.js, patch M.A.2.6): non era li' il buco.
+ *   3. Mancava solo questo: un posto dove creare la sessione.
+ *
+ * NON costruisce un secondo sistema di autenticazione: usa le stesse edge
+ * `otp-request` e `otp-verify` di /registrati, con scope 'login', e la stessa
+ * istanza condivisa del client (che scrive nella chiave giusta). Fatto questo,
+ * Andreas riconosce il socio senza che si tocchi una riga del widget.
+ */
+import Layout from '../layouts/Layout.astro';
+---
+<Layout
+  title="Accedi · El Brenz"
+  description="Accedi all'area riservata di El Brenz con il tuo indirizzo email. Ti inviamo un codice a sei cifre, senza password da ricordare."
+  ogImage="/og/og-registrati.jpg"
+  noindex={true}
+>
+  <section class="bg-gradient-to-b from-amber-50 to-white py-16 px-6">
+    <div class="max-w-2xl mx-auto text-center">
+      <p class="text-amber-700 uppercase tracking-widest text-sm mb-4">Area riservata</p>
+      <h1 class="font-serif text-4xl md:text-5xl text-stone-900 mb-6">Accedi</h1>
+      <p class="text-lg text-stone-700">
+        Nessuna password da ricordare: scrivi il tuo indirizzo email e ti mandiamo
+        un codice di sei cifre.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-12 px-6">
+    <div class="max-w-md mx-auto">
+
+      <div id="error-box" class="hidden bg-red-50 border border-red-200 text-red-800 rounded-lg px-4 py-3 mb-4 text-sm"></div>
+
+      {/* PASSO 1 — email */}
+      <form id="form-step-1" class="bg-white rounded-2xl border border-amber-200 shadow-sm p-6 md:p-8 space-y-4" novalidate>
+        <h2 class="font-serif text-2xl text-stone-900 mb-2">Il tuo indirizzo</h2>
+        <div>
+          <label for="email" class="block text-sm font-medium text-stone-700 mb-1">Email</label>
+          <input id="email" name="email" type="email" required autocomplete="email" maxlength="160"
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
+        </div>
+        <button id="submit-1" type="submit"
+                class="w-full bg-[#1E2E26] text-[#F5EEDD] rounded-lg px-4 py-3 font-medium hover:bg-[#2a3f34] transition-colors">
+          Invia codice
+        </button>
+        <p class="text-sm text-stone-500 text-center m-0">
+          Non hai ancora un accesso? <a href="/registrati" class="text-[#8a6215] underline">Registrati</a>
+        </p>
+      </form>
+
+      {/* PASSO 2 — codice */}
+      <form id="form-step-2" class="hidden bg-white rounded-2xl border border-amber-200 shadow-sm p-6 md:p-8 space-y-4" novalidate>
+        <h2 class="font-serif text-2xl text-stone-900 mb-2">Il codice</h2>
+        <p class="text-sm text-stone-500 m-0">
+          Lo abbiamo mandato a <strong id="email-conferma"></strong>. Arriva in un minuto;
+          se non lo vedi, controlla la posta indesiderata.
+        </p>
+        <div>
+          <label for="codice" class="block text-sm font-medium text-stone-700 mb-1">Codice a sei cifre</label>
+          <input id="codice" name="codice" type="text" inputmode="numeric" autocomplete="one-time-code"
+                 maxlength="6" required
+                 class="w-full border border-stone-300 rounded-lg px-3 py-2 tracking-[0.4em] text-center text-lg focus:ring-2 focus:ring-amber-400 focus:border-amber-400 outline-none" />
+        </div>
+        <button id="submit-2" type="submit"
+                class="w-full bg-[#C8923E] text-[#1E2E26] rounded-lg px-4 py-3 font-semibold hover:bg-[#D9A94E] transition-colors">
+          Entra
+        </button>
+        <button id="indietro" type="button" class="w-full text-sm text-stone-500 underline">
+          Cambia indirizzo
+        </button>
+      </form>
+
+    </div>
+  </section>
+
+  <section class="pb-16 px-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <p class="font-serif italic text-stone-500 text-lg">«Radici profonde non gelano.»</p>
+      <p class="text-stone-400 text-sm mt-1"><em>Raìs fonde no le 'nglacia.</em></p>
+    </div>
+  </section>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+  const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+  const $ = (id: string) => document.getElementById(id)!;
+  const $i = (id: string) => document.getElementById(id) as HTMLInputElement;
+
+  const step1 = $('form-step-1');
+  const step2 = $('form-step-2');
+  const errorBox = $('error-box');
+  let savedEmail = '';
+
+  function showError(msg: string) {
+    errorBox.textContent = msg;
+    errorBox.classList.remove('hidden');
+  }
+  function hideError() {
+    errorBox.classList.add('hidden');
+  }
+
+  /** Chiamata alle edge OTP: solo apikey, come fa /registrati. */
+  async function callEdge(nome: string, payload: Record<string, unknown>) {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/functions/v1/${nome}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      return { ok: r.ok, data: await r.json().catch(() => null) };
+    } catch {
+      return { ok: false, data: { error: 'network_error' } };
+    }
+  }
+
+  /** Dove tornare dopo l'accesso: ?dopo=/percorso, solo interno. */
+  function destinazione(): string {
+    const p = new URLSearchParams(location.search).get('dopo') ?? '';
+    return p.startsWith('/') && !p.startsWith('//') ? p : '/';
+  }
+
+  step1.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+    const email = $i('email').value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showError('Inserisci un indirizzo email valido.');
+      return;
+    }
+
+    const btn = $('submit-1') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Invio in corso…';
+    const { ok, data } = await callEdge('otp-request', { email, scope: 'login' });
+    btn.disabled = false;
+    btn.textContent = 'Invia codice';
+
+    if (!ok || !data?.ok) {
+      const code = data?.error;
+      if (code === 'invalid_email') showError('Indirizzo email non valido.');
+      else if (code === 'email_send_failed') showError("Non riusciamo a mandare l'email in questo momento. Riprova fra qualche minuto.");
+      else if (code === 'network_error') showError('Errore di connessione. Controlla la rete e riprova.');
+      else showError('Errore durante la richiesta. Riprova.');
+      return;
+    }
+
+    savedEmail = email;
+    step1.classList.add('hidden');
+    step2.classList.remove('hidden');
+    $('email-conferma').textContent = email;
+    setTimeout(() => $i('codice').focus(), 100);
+  });
+
+  step2.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideError();
+    const codice = $i('codice').value.trim().replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) {
+      showError('Il codice è di sei cifre.');
+      return;
+    }
+
+    const btn = $('submit-2') as HTMLButtonElement;
+    btn.disabled = true;
+    btn.textContent = 'Verifica in corso…';
+    const { ok, data } = await callEdge('otp-verify', { email: savedEmail, codice, scope: 'login' });
+
+    if (!ok || !data?.ok) {
+      btn.disabled = false;
+      btn.textContent = 'Entra';
+      const motivo = data?.motivo;
+      if (motivo === 'codice_errato') showError("Codice errato. Controlla l'email e riprova.");
+      else if (motivo === 'scaduto') showError('Codice scaduto. Torna indietro e chiedine uno nuovo.');
+      else if (motivo === 'tentativi_esauriti') showError('Tentativi esauriti. Torna indietro e chiedi un codice nuovo.');
+      else if (motivo === 'gia_usato') showError('Questo codice è già stato usato. Torna indietro e chiedine uno nuovo.');
+      else if (data?.error === 'network_error') showError('Errore di connessione. Controlla la rete e riprova.');
+      else showError('Verifica non riuscita. Riprova.');
+      return;
+    }
+
+    // La sessione finisce in localStorage 'elbrenz-auth' tramite il client
+    // condiviso: e' la chiave che il widget di Andreas legge per allegare il
+    // token e farsi riconoscere come socio.
+    const { error: sessionErr } = await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+    if (sessionErr) {
+      btn.disabled = false;
+      btn.textContent = 'Entra';
+      showError("Errore nel completamento dell'accesso. Riprova.");
+      return;
+    }
+
+    window.location.href = destinazione();
+  });
+
+  $('indietro')?.addEventListener('click', () => {
+    hideError();
+    step2.classList.add('hidden');
+    step1.classList.remove('hidden');
+    $i('email').focus();
+  });
+
+  $i('codice')?.addEventListener('input', (e) => {
+    const t = e.target as HTMLInputElement;
+    const pulito = t.value.replace(/\D/g, '').slice(0, 6);
+    if (pulito !== t.value) t.value = pulito;
+  });
+</script>

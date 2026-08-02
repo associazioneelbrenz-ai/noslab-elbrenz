@@ -209,6 +209,20 @@ const navItems: NavItem[] = [
       <LanguageSwitcher variant="desktop" />
     </div>
 
+    {/* AGGIUNTA 2/8/2026 — la porta d'ingresso. Prima si entrava solo
+        conoscendo a memoria /redazione o /radar-eventi, e il widget di Andreas
+        prometteva al socio piu' domande senza che il sito gli desse modo di
+        autenticarsi. Il testo lo scambia lo script in coda leggendo la
+        sessione da localStorage: la pagina e' statica, lo stato no. */}
+    <div class="hidden md:flex items-center flex-shrink-0 ml-4">
+      <a
+        id="eb-accedi"
+        href="/accedi"
+        class="text-[13px] tracking-[0.12em] uppercase text-[#1E2E26]/70 hover:text-[#8a6215] no-underline border border-[#E5DFCF] hover:border-[#C8923E] rounded-full px-4 py-1.5 transition-colors"
+        style="font-family: 'Inter', sans-serif;"
+      >Accedi</a>
+    </div>
+
     <button
       id="menu-toggle"
       type="button"
@@ -316,6 +330,13 @@ const navItems: NavItem[] = [
   </nav>
 
   <div class="px-6 py-6 mt-4 border-t border-[#F5EEDD]/15">
+    {/* Accedi anche nel drawer: su telefono e' l'unico posto dove si vede. */}
+    <a
+      id="eb-accedi-mobile"
+      href="/accedi"
+      class="block text-center text-[13px] tracking-[0.12em] uppercase text-[#F5EEDD] no-underline border border-[#F5EEDD]/30 rounded-full px-4 py-2.5 mb-5"
+      style="font-family: 'Inter', sans-serif;"
+    >Accedi</a>
     {/* i18n (Fase 1a): selettore lingua nel drawer mobile. */}
     <div class="mb-5 pb-5 border-b border-[#F5EEDD]/10">
       <LanguageSwitcher variant="drawer" />
@@ -324,6 +345,42 @@ const navItems: NavItem[] = [
     <p class="text-xs text-[#F5EEDD]/55 m-0 mt-2" style="font-family: 'Inter', sans-serif; font-style: italic;">Raìs fonde no le 'nglacia</p>
   </div>
 </aside>
+
+{/* AGGIUNTA 2/8/2026 — stato dell'accesso nell'header.
+    Le pagine sono statiche, quindi il server non sa chi sta guardando: lo
+    stato si legge qui dal client. La sessione sta in localStorage con chiave
+    `elbrenz-auth` (src/lib/supabase.ts), la STESSA che il widget di Andreas
+    controlla per allegare il token. Niente import di supabase-js: si legge la
+    chiave e basta, per non caricare una libreria su ogni pagina del sito. */}
+<script is:inline>
+  (function () {
+    function sessioneViva() {
+      try {
+        const raw = localStorage.getItem('elbrenz-auth');
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        if (s && s.expires_at && s.expires_at * 1000 < Date.now()) return false;
+        return !!(s && s.access_token);
+      } catch (_) {
+        return false;
+      }
+    }
+    if (!sessioneViva()) return;
+    // Chi e' gia' dentro non ha bisogno di un invito ad entrare: il bottone
+    // diventa l'uscita. Il profilo vero sta nell'app, qui basta poter uscire.
+    for (const id of ['eb-accedi', 'eb-accedi-mobile']) {
+      const a = document.getElementById(id);
+      if (!a) continue;
+      a.textContent = 'Esci';
+      a.setAttribute('href', '#');
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        try { localStorage.removeItem('elbrenz-auth'); } catch (_) {}
+        location.href = '/';
+      });
+    }
+  })();
+</script>
 
 <script is:inline>
   (function() {
