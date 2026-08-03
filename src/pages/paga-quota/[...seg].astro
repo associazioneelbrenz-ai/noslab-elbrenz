@@ -1,0 +1,153 @@
+---
+/**
+ * /paga-quota/{domandaId}/{exp}/{token} — pagamento della quota per una domanda
+ * GIA' INVIATA.
+ *
+ * [3/8/2026] Prima questa pagina non esisteva, e la mancanza costava caro: per
+ * pagare bisognava tornare su /tesseramento e ricompilare tutto, e nasceva una
+ * seconda domanda per la stessa persona. Chi riceveva la tessera senza aver
+ * versato non aveva nessuna strada onesta per mettersi in regola.
+ *
+ * Qui la domanda e' una sola, quella indicata dal token firmato, e
+ * paypal-create-order la riconosce dal `domanda_id`: nessun doppione, e il
+ * pagamento si aggancia da subito alla domanda giusta.
+ *
+ * Token HMAC nel PATH, mai in query string (il `=` piu' due esadecimali si
+ * corrompe nell'encoding quoted-printable delle email). SSR, noindex.
+ * Gemella di /scheda-domanda e /integrazione.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJc1GPwUL2wgh64lSCKfaEkKZlaC';
+
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+const uuid = /^[0-9a-f-]{36}$/i, num = /^\d+$/, hex = /^[0-9a-f]+$/i;
+
+let peekUrl = '';
+if (uuid.test(seg[0] ?? '') && num.test(seg[1] ?? '') && hex.test(seg[2] ?? '')) {
+  peekUrl = `${SB_URL}/functions/v1/scheda-domanda/json/paga-quota/${seg[0]}/${seg[1]}/${seg[2]}`;
+}
+const CREATE_URL = `${SB_URL}/functions/v1/paypal-create-order`;
+const CAPTURE_URL = `${SB_URL}/functions/v1/paypal-capture-order`;
+---
+
+<Layout title="Completa la quota · El Brenz" description="Pagamento della quota sociale per una domanda già inviata." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen flex items-start justify-center px-4 py-12">
+    <div
+      class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9"
+      style="font-family: 'Inter', sans-serif;"
+      id="pq-card"
+      data-peek={peekUrl}
+      data-create-url={CREATE_URL}
+      data-capture-url={CAPTURE_URL}
+      data-paypal-client-id={PAYPAL_CLIENT_ID}
+    >
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · quota sociale</p>
+      <div id="pq-body"><p class="text-[#1E2E26]/70 m-0">Carico…</p></div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const card = document.getElementById('pq-card')!;
+    const body = document.getElementById('pq-body')!;
+    const peekUrl = card.getAttribute('data-peek') || '';
+    const createUrl = card.getAttribute('data-create-url') || '';
+    const captureUrl = card.getAttribute('data-capture-url') || '';
+    const clientId = card.getAttribute('data-paypal-client-id') || '';
+
+    const H = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const titolo = (t: string) => `<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 10px;">${t}</h1>`;
+    const testo = (t: string) => `<p style="color:#1E2E26;opacity:.85;margin:0 0 10px;line-height:1.6;">${t}</p>`;
+
+    if (!peekUrl) {
+      body.innerHTML = titolo('Collegamento non valido') + testo('Il collegamento non è valido. Apri quello che trovi nella mail più recente, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.');
+      return;
+    }
+
+    function mostraEsito(msg: string, ok: boolean) {
+      const e = document.getElementById('pq-esito');
+      if (!e) return;
+      e.style.display = 'block';
+      e.style.background = ok ? '#eaf3ee' : '#fbecec';
+      e.style.borderLeft = `4px solid ${ok ? '#1d4d3a' : '#a33'}`;
+      e.textContent = msg;
+    }
+
+    function renderPaga(d: any) {
+      body.innerHTML = titolo(`Ciao ${H(d.nome)}`)
+        + testo(`Per completare la tua adesione al ${H(d.anno ?? 2026)} manca la quota sociale di <strong>${H(d.quota)} €</strong>. Puoi versarla qui con PayPal o carta: non serve avere un conto PayPal.`)
+        + testo('Il pagamento si collega da solo alla domanda che hai già inviato, quindi non devi ricompilare niente.')
+        + `<div id="pq-paypal" style="min-height:45px;margin-top:18px;"></div>`
+        + `<div id="pq-esito" style="display:none;margin-top:14px;padding:12px 14px;border-radius:4px;font-size:14px;color:#1E2E26;"></div>`
+        + `<p style="color:#666;font-size:13px;line-height:1.6;margin:18px 0 0;padding-top:14px;border-top:1px solid #E5DFCF;">Preferisci il bonifico? Cassa Rurale Val di Sole, filiale di Mezzana<br/><strong>IT84 U081 6335 0100 0019 0116 255</strong><br/>Causale: «Quota socio ${H(d.anno ?? 2026)} ${H(d.nome)}»</p>`
+        + `<p style="color:#666;font-size:13px;line-height:1.6;margin:8px 0 0;">Oppure in contanti, di persona al segretario.</p>`;
+
+      const sdk = document.createElement('script');
+      sdk.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(clientId)
+        + '&currency=EUR&intent=capture&components=buttons&enable-funding=card&locale=it_IT';
+      sdk.onload = () => {
+        const pp = (window as any).paypal;
+        if (!pp) return;
+        pp.Buttons({
+          createOrder: async () => {
+            const resp = await fetch(createUrl, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              // `domanda_id` e' la chiave di tutto: senza, l'edge cercherebbe
+              // per email e in mancanza creerebbe una domanda nuova.
+              body: JSON.stringify({
+                tipo: 'quota', nome: d.nome, email: d.email,
+                domanda_id: d.domanda_id, consenso_privacy: true,
+              }),
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.id) {
+              mostraEsito(data.error || 'Errore nella preparazione del pagamento.', false);
+              throw new Error(data.error || 'createOrder failed');
+            }
+            return data.id;
+          },
+          onApprove: async (data: any) => {
+            const resp = await fetch(captureUrl, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderID: data.orderID }),
+            });
+            const out = await resp.json();
+            if (resp.ok && out.success) {
+              mostraEsito('Quota ricevuta, grazie! Ora sei in regola per l\'anno in corso. Raìs fonde no le \'nglacia.', true);
+            } else {
+              mostraEsito(out.error || 'Il pagamento non risulta completato. Scrivici a info@elbrenz.eu.', false);
+            }
+          },
+          onError: () => mostraEsito('Errore durante il pagamento. Riprova, oppure scrivici a info@elbrenz.eu.', false),
+        }).render('#pq-paypal');
+      };
+      document.head.appendChild(sdk);
+    }
+
+    (async function peek() {
+      try {
+        const r = await fetch(peekUrl, { headers: { Accept: 'application/json' } });
+        const d = await r.json();
+        if (!d.ok) {
+          body.innerHTML = titolo('Collegamento non valido o scaduto')
+            + testo('I collegamenti valgono 30 giorni. Scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a> e te ne mandiamo uno nuovo.');
+          return;
+        }
+        if (d.incassata) {
+          // Meglio dirlo che far pagare due volte la stessa quota.
+          body.innerHTML = titolo('Sei già in regola ✓')
+            + testo(`La quota per la tua domanda risulta già versata${d.numero_tessera ? `, tessera n. <strong>${H(d.numero_tessera)}</strong>` : ''}. Non serve fare altro, e grazie.`);
+          return;
+        }
+        renderPaga(d);
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Non riesco a caricare la pagina. Riprova tra poco.');
+      }
+    })();
+  })();
+</script>

@@ -22,8 +22,12 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { firmaToken, verificaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
 import { ensureCodiceEQr, tesseraEmailHtml } from '../_shared/tessera.ts';
+import { sollecitoQuotaHtml } from '../_shared/sollecitoQuota.ts';
 
 const ANNO = 2026;
+// Quota sociale dell'anno. Sta qui e non nel testo della mail perche' il numero
+// mostrato a un socio non si scrive due volte in due posti diversi.
+const QUOTA_EURO = 20;
 
 function esc(s: unknown): string {
   return String(s ?? '')
@@ -92,14 +96,42 @@ function jsonR(obj: unknown, status = 200): Response {
   });
 }
 
+// [3/8/2026] Lo stato dell'incasso, letto con la STESSA regola del trigger
+// blocca_approvazione_senza_incasso: pagamento completato, tipo quota o
+// integrazione, agganciato alla domanda. Se pagina e database applicassero
+// regole diverse direbbero cose diverse sulla stessa persona, ed e' esattamente
+// il guaio da cui veniamo.
+//
+// I tentativi NON riusciti si riportano a parte: dicono che la persona ci ha
+// provato, ed e' un'informazione diversa dal non aver fatto nulla.
+async function statoIncasso(supabase: any, id: string, email: string | null) {
+  const { data } = await supabase.from('pagamenti_tesseramento')
+    .select('stato, metodo, importo, anomalia, capture_id, created_at, domanda_id')
+    .or(email ? `domanda_id.eq.${id},email.ilike.${email}` : `domanda_id.eq.${id}`)
+    .in('tipo', ['quota', 'integrazione'])
+    .order('created_at', { ascending: false }).limit(10);
+  const righe = (data ?? []) as Array<Record<string, unknown>>;
+  // Per dire "incassata" si pretende l'aggancio alla domanda, non la sola
+  // omonimia di email: e' cio' che guarda il trigger, e un pagamento agganciato
+  // a un'altra domanda della stessa persona non vale per questa.
+  const incassati = righe.filter((r) => r.stato === 'completato' && r.domanda_id === id);
+  const tentativi = righe.filter((r) => r.stato !== 'completato');
+  // Righe completate ma NON agganciate: vanno mostrate, perche' quasi sempre
+  // sono il pagamento giusto che ha perso il collegamento, e il segretario deve
+  // poterlo vedere invece di ritrovarsi un "nessun pagamento" che mente.
+  const daAgganciare = righe.filter((r) => r.stato === 'completato' && r.domanda_id !== id);
+  return { incassata: incassati.length > 0, incassati, tentativi, daAgganciare };
+}
+
 // Esecuzione azioni: logica di business condivisa tra il ramo HTML (POST) e il
 // ramo JSON. Ritorna dati strutturati; il chiamante formatta HTML o JSON.
 type EsitoApprova =
   | { errore: string }
+  | { bloccato: string }
   | { ok: false; gia: { stato: string; numero_tessera: number | null } }
-  | { ok: true; nome: string; email: string; numero: number; tessereLive: boolean; invio: 'inviata' | 'off' | 'no-secret' | 'fallita'; urlVerifica: string | null };
+  | { ok: true; nome: string; email: string; numero: number; tessereLive: boolean; invio: 'inviata' | 'off' | 'no-secret' | 'fallita'; urlVerifica: string | null; deroga: boolean };
 
-async function eseguiApprova(supabase: any, secret: string, d: string): Promise<EsitoApprova> {
+async function eseguiApprova(supabase: any, secret: string, d: string, derogaMotivo?: string): Promise<EsitoApprova> {
   const seed = parseInt(Deno.env.get('TESSERA_SEED') ?? '', 10);
   if (!Number.isFinite(seed)) return { errore: 'TESSERA_SEED non configurato: approvazione bloccata per proteggere la numerazione del Libro Soci.' };
 
@@ -108,13 +140,31 @@ async function eseguiApprova(supabase: any, secret: string, d: string): Promise<
     .order('numero_tessera', { ascending: false }).limit(1).maybeSingle();
   const numero = Math.max(seed, (maxRow?.numero_tessera ?? 0) + 1);
 
-  const { data: agg } = await supabase.from('domande_tesseramento')
-    .update({
-      stato: 'approvata', numero_tessera: numero, scadenza: `${ANNO}-12-31`,
-      approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString(),
-    })
+  // La deroga viaggia NELLA STESSA update dello stato: il trigger guarda la
+  // riga che sta per essere scritta, quindi scriverla dopo non servirebbe a
+  // niente e scriverla prima lascerebbe una deroga appesa a una domanda che poi
+  // non viene approvata.
+  const deroga = (derogaMotivo ?? '').trim().slice(0, 1000);
+  const patch: Record<string, unknown> = {
+    stato: 'approvata', numero_tessera: numero, scadenza: `${ANNO}-12-31`,
+    approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString(),
+  };
+  if (deroga) patch.deroga_pagamento_motivo = deroga;
+
+  const { data: agg, error: aggErr } = await supabase.from('domande_tesseramento')
+    .update(patch)
     .eq('id', d).eq('stato', 'in_attesa')
     .select('id, nome, email');
+
+  // Il trigger rifiuta con un messaggio scritto per una persona: va riportato
+  // cosi' com'e', non tradotto in "gia' gestita", che sarebbe una bugia e
+  // manderebbe il segretario a cercare un problema che non esiste.
+  if (aggErr) {
+    console.error('[scheda-domanda] approvazione rifiutata:', aggErr);
+    const msg = String((aggErr as Record<string, unknown>).message ?? '');
+    if (msg.includes('Approvazione bloccata')) return { bloccato: msg };
+    return { errore: 'Non e\' stato possibile approvare la domanda. Riprova, e se insiste segnalalo.' };
+  }
 
   if (!agg || agg.length === 0) {
     const { data: gia } = await supabase.from('domande_tesseramento').select('stato, numero_tessera').eq('id', d).maybeSingle();
@@ -138,9 +188,20 @@ async function eseguiApprova(supabase: any, secret: string, d: string): Promise<
       try {
         const { urlVerifica: uv, qrUrl } = await ensureCodiceEQr(supabase, { id: d, numero_tessera: numero, anno: ANNO, codice_tessera: null }, secret);
         urlVerifica = uv;
+        // In deroga la mail porta il collegamento per pagare QUELLA domanda:
+        // mandare la persona su /tesseramento le farebbe ricompilare tutto e
+        // nascerebbe un doppione.
+        const expPaga = Date.now() + TOKEN_TTL_MS;
+        const urlPagaQuota = deroga
+          ? `https://elbrenz.eu/paga-quota/${d}/${expPaga}/${await firmaToken(secret, 'paga-quota', d, expPaga)}`
+          : undefined;
         const tesseraHtml = tesseraEmailHtml({
           nome: socio.nome, numero, anno: ANNO, qrUrl, urlVerifica: uv,
           intro: `Benvenuto nella <em>nosa Sociazion</em>! La tua domanda è stata approvata dal Consiglio Direttivo: questa email vale come tessera digitale per l'anno ${ANNO}.`,
+          // In deroga la tessera parte lo stesso, ma la mail dice che la quota
+          // manca: tacerlo e' cio' che ha lasciato Schwarz convinto di essere a
+          // posto per tredici giorni.
+          ...(deroga ? { quotaDaSaldare: { importo: QUOTA_EURO, urlPagamento: urlPagaQuota } } : {}),
         });
         const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
           method: 'POST',
@@ -154,7 +215,7 @@ async function eseguiApprova(supabase: any, secret: string, d: string): Promise<
       } catch { invio = 'fallita'; }
     }
   }
-  return { ok: true, nome: socio.nome, email: socio.email, numero, tessereLive, invio, urlVerifica };
+  return { ok: true, nome: socio.nome, email: socio.email, numero, tessereLive, invio, urlVerifica, deroga: !!deroga };
 }
 
 async function eseguiRespingi(supabase: any, d: string, motivo: string): Promise<{ fatto: boolean }> {
@@ -186,9 +247,59 @@ Deno.serve(async (req: Request) => {
       } });
     }
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const jPaga = url.pathname.match(/\/json\/paga-quota\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+    const jSoll = url.pathname.match(/\/json\/sollecita\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jVista = url.pathname.match(/\/json\/vista\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jEmail = url.pathname.match(/\/json\/email-azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jAz = url.pathname.match(/\/json\/azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+
+    // [3/8/2026] Link di pagamento per una domanda GIA' INVIATA. Prima non
+    // esisteva: per pagare bisognava tornare su /tesseramento e ricompilare, e
+    // nasceva una seconda domanda per la stessa persona. Qui la domanda e'
+    // quella, indicata dal token, e paypal-create-order la riconosce dal
+    // domanda_id senza crearne un'altra.
+    if (jPaga && req.method === 'GET') {
+      const [, id, e, tok] = jPaga;
+      if (!(await verificaToken(secret, 'paga-quota', id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
+      const { data: dom } = await sb.from('domande_tesseramento')
+        .select('nome, email, stato, numero_tessera').eq('id', id).maybeSingle();
+      if (!dom) return jsonR({ ok: false, error: 'not_found' });
+      const inc = await statoIncasso(sb, id, dom.email);
+      return jsonR({
+        ok: true, tipo: 'paga-quota', domanda_id: id,
+        nome: dom.nome, email: dom.email, stato: dom.stato,
+        numero_tessera: dom.numero_tessera, quota: QUOTA_EURO, incassata: inc.incassata,
+      });
+    }
+
+    // POST: sollecito del pagamento al richiedente. Lo lancia il segretario da
+    // un bottone, una domanda alla volta: non e' una spedizione di massa e non
+    // passa dalla coda email_outbox.
+    if (jSoll && req.method === 'POST') {
+      const [, id, e, tok] = jSoll;
+      if (!(await verificaToken(secret, 'azione-approva', id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
+      const { data: dom } = await sb.from('domande_tesseramento')
+        .select('nome, email, stato').eq('id', id).maybeSingle();
+      if (!dom) return jsonR({ ok: false, error: 'not_found' });
+      const inc = await statoIncasso(sb, id, dom.email);
+      if (inc.incassata) return jsonR({ ok: false, error: 'gia_incassata', message: 'La quota per questa domanda risulta gia\' incassata: nessun sollecito inviato.' });
+      const sharedSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
+      if (!sharedSecret) return jsonR({ ok: false, error: 'config', message: 'SEND_EMAIL_SHARED_SECRET non configurato: sollecito non inviato.' });
+      const expP = Date.now() + TOKEN_TTL_MS;
+      const urlPaga = `https://elbrenz.eu/paga-quota/${id}/${expP}/${await firmaToken(secret, 'paga-quota', id, expP)}`;
+      const html = sollecitoQuotaHtml({ nome: dom.nome, anno: ANNO, importo: QUOTA_EURO, urlPagamento: urlPaga });
+      try {
+        const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },
+          body: JSON.stringify({ to: dom.email, subject: `La tua quota ${ANNO} in El Brenz: come completarla`, html, tags: [{ name: 'source', value: 'sollecito-quota' }] }),
+        });
+        if (!resp.ok) return jsonR({ ok: false, error: 'invio', message: 'Invio non riuscito, riprova fra poco.' });
+      } catch {
+        return jsonR({ ok: false, error: 'invio', message: 'Invio non riuscito, riprova fra poco.' });
+      }
+      return jsonR({ ok: true, azione: 'sollecita', message: `Sollecito inviato a ${dom.email}, con il collegamento per pagare la sua domanda.` });
+    }
 
     // POST: esecuzione azione (stessa logica business dei rami HTML)
     if (jAz && req.method === 'POST') {
@@ -200,10 +311,13 @@ Deno.serve(async (req: Request) => {
         const { fatto } = await eseguiRespingi(sb, id, motivo);
         return jsonR({ ok: true, azione: 'respingi', fatto, message: fatto ? 'Domanda segnata come respinta. Nessuna comunicazione automatica al richiedente.' : 'La domanda non era più in attesa (già gestita).' });
       }
-      const r = await eseguiApprova(sb, secret, id);
+      let derogaMotivo = '';
+      try { const b = await req.json(); derogaMotivo = String(b?.deroga_motivo ?? '').trim().slice(0, 1000); } catch { /* no body */ }
+      const r = await eseguiApprova(sb, secret, id, derogaMotivo);
+      if ('bloccato' in r) return jsonR({ ok: false, error: 'senza_incasso', message: r.bloccato });
       if ('errore' in r) return jsonR({ ok: false, error: 'config', message: r.errore });
       if (!r.ok) return jsonR({ ok: false, error: 'gia_gestito', stato: r.gia.stato, numero_tessera: r.gia.numero_tessera });
-      const message = r.invio === 'inviata' ? `Tessera n. ${r.numero} assegnata e inviata a ${r.email}.`
+      const message = r.invio === 'inviata' ? `Tessera n. ${r.numero} assegnata e inviata a ${r.email}.${r.deroga ? ' Nella mail e\' spiegato che la quota va ancora versata, con tutte e tre le modalita\'.' : ''}`
         : r.invio === 'fallita' ? `Tessera n. ${r.numero} assegnata, ma l'invio email è fallito: riprovare o inviare a mano.`
         : `Tessera n. ${r.numero} assegnata. Invio email tessera disattivato (TESSERE_LIVE spento).`;
       return jsonR({ ok: true, azione: 'approva', stato: 'approvata', nome: r.nome, numero_tessera: r.numero, invio: r.invio, urlVerifica: r.urlVerifica, message });
@@ -215,10 +329,7 @@ Deno.serve(async (req: Request) => {
       if (!(await verificaToken(secret, 'vista', id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
       const { data: dom } = await sb.from('domande_tesseramento').select('*').eq('id', id).maybeSingle();
       if (!dom) return jsonR({ ok: false, error: 'not_found' });
-      const { data: pagamenti } = await sb.from('pagamenti_tesseramento')
-        .select('stato, metodo, importo, anomalia, created_at')
-        .or(`domanda_id.eq.${id},email.ilike.${dom.email}`).eq('tipo', 'quota')
-        .order('created_at', { ascending: false }).limit(3);
+      const inc = await statoIncasso(sb, id, dom.email);
       const expAz = Date.now() + TOKEN_TTL_MS;
       const postApprova = { id, exp: expAz, t: await firmaToken(secret, 'azione-approva', id, expAz) };
       const postRespingi = { id, exp: expAz, t: await firmaToken(secret, 'azione-respingi', id, expAz) };
@@ -228,8 +339,17 @@ Deno.serve(async (req: Request) => {
           nome: dom.nome, email: dom.email, stato: dom.stato, numero_tessera: dom.numero_tessera,
           data_nascita: dom.data_nascita, comune_nascita: dom.comune_nascita, sesso: dom.sesso,
           messaggio: dom.messaggio, created_at: dom.created_at, approvata_il: dom.approvata_il, approvata_da: dom.approvata_da,
+          metodo_scelto: dom.metodo_scelto, deroga_pagamento_motivo: dom.deroga_pagamento_motivo,
         },
-        pagamenti: pagamenti ?? [], tessereLive: Deno.env.get('TESSERE_LIVE') === 'true', postApprova, postRespingi,
+        // `incassata` la decide il SERVER con la stessa regola del trigger: la
+        // pagina non deve dedurla contando righe, o prima o poi dedurra' male.
+        incassata: inc.incassata,
+        incassati: inc.incassati, tentativi: inc.tentativi, daAgganciare: inc.daAgganciare,
+        quota: QUOTA_EURO,
+        // Stesso token dell'approvazione: chi puo' approvare puo' sollecitare,
+        // e sollecitare e' l'azione meno impegnativa delle due.
+        postSollecita: postApprova,
+        tessereLive: Deno.env.get('TESSERE_LIVE') === 'true', postApprova, postRespingi,
       });
     }
 
@@ -237,12 +357,25 @@ Deno.serve(async (req: Request) => {
     if (jEmail && req.method === 'GET') {
       const [, az, id, e, tok] = jEmail;
       if (!(await verificaToken(secret, `email-${az}`, id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
-      const { data: dom } = await sb.from('domande_tesseramento').select('nome, stato, numero_tessera').eq('id', id).maybeSingle();
+      const { data: dom } = await sb.from('domande_tesseramento').select('nome, email, stato, numero_tessera, metodo_scelto').eq('id', id).maybeSingle();
       if (!dom) return jsonR({ ok: false, error: 'not_found' });
       if (dom.stato !== 'in_attesa') return jsonR({ ok: false, error: 'gia_gestito', stato: dom.stato, numero_tessera: dom.numero_tessera, nome: dom.nome });
       const expAz = Date.now() + TOKEN_TTL_MS;
       const post = { id, exp: expAz, t: await firmaToken(secret, `azione-${az}`, id, expAz) };
-      return jsonR({ ok: true, tipo: 'email-azione', azione: az, nome: dom.nome, post });
+      // [3/8/2026] Questa e' la schermata che il 3 agosto ha emesso la tessera
+      // 29 senza quota: prometteva «verranno assegnati numero di tessera e QR»
+      // e del pagamento non diceva una parola. Ora l'incasso viaggia con la
+      // conferma, e la pagina lo mette prima di qualunque bottone.
+      const inc = az === 'approva' ? await statoIncasso(sb, id, dom.email) : null;
+      return jsonR({
+        ok: true, tipo: 'email-azione', azione: az, nome: dom.nome, post,
+        ...(inc ? {
+          incassata: inc.incassata, incassati: inc.incassati,
+          tentativi: inc.tentativi, daAgganciare: inc.daAgganciare,
+          metodo_scelto: dom.metodo_scelto, quota: QUOTA_EURO,
+          postSollecita: post,
+        } : {}),
+      });
     }
 
     return jsonR({ ok: false, error: 'bad_request' });

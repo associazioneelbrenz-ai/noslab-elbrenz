@@ -203,6 +203,12 @@ export default defineConfig({
         // opposti confondono e basta. Non c'e' niente da indicizzare in un
         // modulo di accesso.
         if (page.includes('/accedi')) return false;
+        // AGGIUNTA 3/8/2026 — /paga-quota e /scheda-domanda sono pagine
+        // personali raggiungibili solo con un token firmato: non c'e' niente
+        // da indicizzare, e dichiararle ai motori sarebbe solo un invito a
+        // provarci.
+        if (page.includes('/paga-quota')) return false;
+        if (page.includes('/scheda-domanda')) return false;
         // AGGIUNTA 2/8/2026 sera — l'archivio delle ricerche e il suo foglio
         // di stampa sono area riservata, noindex: fuori dalla sitemap per la
         // stessa ragione di /accedi.

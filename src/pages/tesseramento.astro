@@ -390,6 +390,33 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           <p class="text-xs text-[#F5EEDD]/45 mt-2" style="font-family: 'Inter', sans-serif;">Se nato all'estero, scrivi nome dello stato</p>
         </div>
 
+        {/* [3/8/2026] La SCELTA del metodo diventa obbligatoria, il VERSAMENTO
+            no. Chi sceglie bonifico o contanti paga dopo per definizione, e
+            pretendere il pagamento all'invio taglierebbe fuori i soci meno
+            digitali, che nelle nostre valli non sono pochi.
+            Perche' serve: su 35 domande, 30 avevano metodo_scelto vuoto,
+            perche' il selettore compariva solo DOPO l'invio e quasi nessuno ci
+            arrivava. Cosi' in curatela non si sapeva nemmeno cosa la persona
+            avesse intenzione di fare. */}
+        <div class="mb-8">
+          <span class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Come pensi di versare la quota di 20 €</span>
+          <div class="grid sm:grid-cols-3 gap-3" style="font-family: 'Inter', sans-serif;">
+            <label class="flex items-center gap-2 cursor-pointer text-[#F5EEDD] border border-[#F5EEDD]/20 rounded px-4 py-3 hover:border-[#C8923E] transition-colors">
+              <input type="radio" name="metodo_scelto" value="paypal" required class="w-4 h-4 accent-[#C8923E]" />
+              <span class="text-sm">PayPal o carta</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-[#F5EEDD] border border-[#F5EEDD]/20 rounded px-4 py-3 hover:border-[#C8923E] transition-colors">
+              <input type="radio" name="metodo_scelto" value="bonifico" required class="w-4 h-4 accent-[#C8923E]" />
+              <span class="text-sm">Bonifico</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-[#F5EEDD] border border-[#F5EEDD]/20 rounded px-4 py-3 hover:border-[#C8923E] transition-colors">
+              <input type="radio" name="metodo_scelto" value="contanti" required class="w-4 h-4 accent-[#C8923E]" />
+              <span class="text-sm">Contanti</span>
+            </label>
+          </div>
+          <p class="text-xs text-[#F5EEDD]/45 mt-2" style="font-family: 'Inter', sans-serif;">Serve solo per sapere come aspettarci la quota: potrai comunque cambiare idea.</p>
+        </div>
+
         <div class="mb-8">
           <span class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-3" style="font-family: 'Inter', sans-serif;">Sesso</span>
           <div class="flex gap-6" style="font-family: 'Inter', sans-serif;">
@@ -922,6 +949,7 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         data_nascita: (formData.get('data_nascita') as string || '').trim(),
         comune_nascita: (formData.get('comune_nascita') as string || '').trim(),
         sesso: (formData.get('sesso') as string || '').trim(),
+        metodo_scelto: (formData.get('metodo_scelto') as string || '').trim(),
         gdpr: formData.get('gdpr') === 'on',
         _honeypot: (formData.get('_honeypot') as string || ''),
         _ts: formOpenedAt,
@@ -963,6 +991,10 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         showFeedback('Seleziona il sesso.', 'error');
         return;
       }
+      if (!['paypal', 'bonifico', 'contanti'].includes(payload.metodo_scelto)) {
+        showFeedback('Scegli come pensi di versare la quota: PayPal o carta, bonifico, oppure contanti.', 'error');
+        return;
+      }
       if (!payload.gdpr) {
         showFeedback('Devi accettare l\'informativa privacy per procedere.', 'error');
         return;
@@ -981,7 +1013,15 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         const data = await resp.json().catch(() => ({}));
 
         if (resp.ok && data.success) {
-          showFeedback('Domanda inviata, grazie! Ora scegli qui sotto come versare la quota di 20 € (passo 2). Il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.', 'success');
+          // [3/8/2026] La conferma parla del metodo che la persona ha scelto,
+          // non di un generico "scegli qui sotto": chi ha detto bonifico deve
+          // vedere l'IBAN e la causale adesso, senza cercarli.
+          const CONFERMA: Record<string, string> = {
+            paypal: 'Domanda inviata, grazie! Qui sotto puoi versare subito i 20 € con PayPal o carta. Il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.',
+            bonifico: 'Domanda inviata, grazie! Per completarla fai un bonifico di 20 € alla Cassa Rurale Val di Sole, filiale di Mezzana, IBAN IT84 U081 6335 0100 0019 0116 255, causale «Quota socio 2026 ' + payload.nome + '». Trovi tutto anche nell\'email di conferma. Il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.',
+            contanti: 'Domanda inviata, grazie! I 20 € si consegnano al segretario, di persona a un incontro o in sede. La domanda resta in attesa finché la quota non è stata incassata. Il Direttivo esaminerà la domanda e riceverai conferma via email da info@elbrenz.eu.',
+          };
+          showFeedback(CONFERMA[payload.metodo_scelto] || CONFERMA.paypal, 'success');
           // M2.6-bis: il riquadro di conferma "diventa" il selettore del
           // passo 2 — reveal + memorizza nome/email per la ricevuta
           // (il form sta per essere resettato).

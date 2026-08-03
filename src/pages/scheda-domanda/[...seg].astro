@@ -58,18 +58,28 @@ if (seg[0] === 'vista' && uuid.test(seg[1] ?? '') && num.test(seg[2] ?? '') && h
 
     if (!peekUrl) { body.innerHTML = titolo('Link non valido') + testo('Il link non è valido. Apri la mail più recente della domanda.'); return; }
 
-    async function esegui(azione: string, post: { id: string; exp: number; t: string }, motivo?: string) {
+    async function esegui(azione: string, post: { id: string; exp: number; t: string }, motivo?: string, deroga?: string) {
       const go = document.getElementById('cur-go') as HTMLButtonElement | null;
       if (go) { go.disabled = true; go.textContent = 'Attendi…'; }
       try {
+        const corpo: Record<string, string> = {};
+        if (motivo != null) corpo.motivo = motivo;
+        if (deroga) corpo.deroga_motivo = deroga;
         const r = await fetch(`${postBase}/${azione}/${post.id}/${post.exp}/${post.t}`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(motivo != null ? { motivo } : {}),
+          body: JSON.stringify(corpo),
         });
         const d = await r.json();
         if (d.ok) {
           body.innerHTML = titolo(azione === 'approva' ? 'Domanda approvata ✓' : 'Domanda respinta') + testo(H(d.message || 'Fatto.'))
             + (d.urlVerifica ? `<p style="margin-top:12px;"><a href="${H(d.urlVerifica)}" style="color:#2d8659;font-weight:600;">Vedi la tessera pubblica →</a></p>` : '');
+        } else if (d.error === 'senza_incasso') {
+          /* Il rifiuto del trigger si mostra com'e': e' scritto per una persona
+             e dice cosa fare. Trasformarlo in un errore generico rimanderebbe
+             il segretario a cercare un guasto che non c'e'. */
+          body.innerHTML = titolo('Approvazione bloccata')
+            + testo(H(d.message))
+            + testo('Registra il pagamento, oppure torna indietro e usa «Approva comunque, in deroga» spiegando il motivo.');
         } else if (d.error === 'gia_gestito') {
           body.innerHTML = titolo('Già gestita') + testo(`La domanda risulta già <strong>${H(d.stato || 'gestita')}</strong>${d.numero_tessera ? ` (tessera n. ${H(d.numero_tessera)})` : ''}. Nessun numero bruciato.`);
         } else {
@@ -80,24 +90,102 @@ if (seg[0] === 'vista' && uuid.test(seg[1] ?? '') && num.test(seg[2] ?? '') && h
       }
     }
 
+    /* [3/8/2026] La fascia dell'incasso. Sta in cima, prima di ogni bottone,
+       perche' e' l'unica informazione che serve per decidere e finora non
+       c'era: la schermata di conferma da email non nominava affatto il
+       pagamento, e cosi' sono uscite due tessere senza quota. */
+    function fasciaIncasso(d: any) {
+      const q = d.quota ?? 20;
+      const riga = (p: any, ok: boolean) => `<div style="font-size:14px;margin-top:6px;">${ok ? '✓' : '⏳'} <strong>${H(p.stato)}</strong> — ${H(p.importo ?? '?')} € via ${p.metodo === 'paypal' ? 'PayPal/carta' : H(p.metodo || 'non indicato')}${p.capture_id ? ` <span style="color:#666;">· transazione ${H(p.capture_id)}</span>` : ''}${p.anomalia ? ' · <strong style="color:#a33">ANOMALIA</strong>' : ''} <span style="color:#666;">· ${H(dataIt(p.created_at))}</span></div>`;
+
+      if (d.incassata) {
+        return `<div style="background:#eaf3ee;border-left:4px solid #2d8659;border-radius:4px;padding:14px 16px;margin:0 0 18px;">
+          <p style="margin:0;font-weight:600;color:#1E2E26;font-size:15px;">Quota incassata</p>
+          ${(d.incassati || []).map((p: any) => riga(p, true)).join('')}
+        </div>`;
+      }
+
+      const metodo = d.metodo_scelto
+        ? `Il richiedente ha scelto <strong>${H(d.metodo_scelto === 'paypal' ? 'PayPal o carta' : d.metodo_scelto)}</strong>.`
+        : `Il richiedente <strong>non ha scelto nessun metodo</strong> di pagamento.`;
+      const provato = (d.tentativi && d.tentativi.length)
+        ? `<p style="margin:10px 0 0;font-size:14px;color:#1E2E26;">Ci ha provato: ${d.tentativi.length} tentativo/i non andato/i a buon fine.</p>${(d.tentativi || []).map((p: any) => riga(p, false)).join('')}`
+        : `<p style="margin:10px 0 0;font-size:14px;color:#1E2E26;">Nessun tentativo di pagamento risulta avviato.</p>`;
+      const orfani = (d.daAgganciare && d.daAgganciare.length)
+        ? `<p style="margin:10px 0 0;font-size:14px;color:#8a6215;"><strong>Attenzione:</strong> risultano pagamenti completati con questa email ma non collegati a questa domanda. Potrebbe essere la quota giusta che ha perso l'aggancio.</p>${(d.daAgganciare || []).map((p: any) => riga(p, true)).join('')}`
+        : '';
+
+      return `<div style="background:#fbecec;border-left:4px solid #a33;border-radius:4px;padding:14px 16px;margin:0 0 18px;">
+        <p style="margin:0;font-weight:700;color:#a33;font-size:15px;">Nessuna quota incassata</p>
+        <p style="margin:8px 0 0;font-size:14px;color:#1E2E26;">Non risulta alcun versamento dei ${H(q)} € per questa domanda. ${metodo}</p>
+        ${provato}${orfani}
+      </div>`;
+    }
+
+    /* I due percorsi di approvazione. Con la quota incassata il bottone e'
+       quello di sempre. Senza, quel bottone NON esiste: al suo posto il
+       sollecito, che e' l'azione giusta nove volte su dieci, e in secondo piano
+       l'approvazione in deroga, che pretende di essere motivata per iscritto.
+       Il motivo non e' burocrazia: e' la traccia che al RUNTS serve per
+       spiegare come mai un socio risulta ammesso senza versamento. */
+    function bottoniApprovazione(d: any, conRespingi = true) {
+      const respingi = conRespingi
+        ? `<button id="cur-respingi" style="${btnCss('background:#fff;color:#a33;border:2px solid #d97a7a;')}">Segna respinta</button>`
+        : '';
+      if (d.incassata) {
+        return `<div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;">
+            <button id="cur-approva" style="${btnCss('background:#C8923E;color:#1E2E26;')}">Approva e invia tessera</button>
+            ${respingi}
+          </div>`;
+      }
+      return `<div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+          <button id="cur-sollecita" style="${btnCss('background:#C8923E;color:#1E2E26;')}">Sollecita il pagamento</button>
+          ${respingi}
+        </div>
+        <p style="margin:20px 0 0;padding-top:14px;border-top:1px solid #E5DFCF;font-size:13px;color:#666;">Se la quota e' gia' stata raccolta fuori dal sistema, per esempio in contanti, puoi approvare lo stesso spiegando il motivo.</p>
+        <div style="margin-top:8px;"><button id="cur-deroga" style="${btnCss('background:#fff;color:#666;border:1px solid #ccc;font-weight:500;')}">Approva comunque, in deroga</button></div>
+        <div id="cur-deroga-box" style="display:none;margin-top:12px;background:#FDF9F0;border:1px solid #E8DFC7;border-radius:6px;padding:14px 16px;">
+          <label for="cur-deroga-motivo" style="display:block;font-size:13px;color:#1E2E26;margin-bottom:6px;font-weight:600;">Perche' approvi senza incasso registrato?</label>
+          <textarea id="cur-deroga-motivo" rows="3" maxlength="1000" placeholder="esempio: contanti gia' raccolti al direttivo del 12 luglio" style="width:100%;box-sizing:border-box;border:1px solid #E5DFCF;border-radius:4px;padding:10px;font-family:inherit;font-size:14px;"></textarea>
+          <p id="cur-deroga-errore" style="display:none;color:#a33;font-size:13px;margin:8px 0 0;">Serve una riga di spiegazione: resta agli atti.</p>
+          <div style="margin-top:12px;"><button id="cur-deroga-go" style="${btnCss('background:#8a6215;color:#F5EEDD;')}">Approva in deroga e invia la tessera</button></div>
+        </div>`;
+    }
+
     function bottoniVista(d: any) {
       if (d.domanda.stato !== 'in_attesa') {
         return testo(`Domanda già <strong>${H(d.domanda.stato)}</strong>${d.domanda.numero_tessera ? ` — tessera n. <strong>${H(d.domanda.numero_tessera)}</strong>` : ''}${d.domanda.approvata_il ? `<br/><span style="color:#999;font-size:12px;">il ${H(dataIt(d.domanda.approvata_il))} (${H(d.domanda.approvata_da || '')})</span>` : ''}.`);
       }
       const avviso = d.tessereLive ? '' : `<p style="color:#8a6215;font-size:12px;margin-top:10px;">⚠ TESSERE_LIVE spento: approvando si assegna il numero ma l'email tessera NON parte.</p>`;
-      return `<div style="margin-top:18px;display:flex;flex-wrap:wrap;gap:12px;">
-          <button id="cur-approva" style="${btnCss('background:#C8923E;color:#1E2E26;')}">Approva e invia tessera</button>
-          <button id="cur-respingi" style="${btnCss('background:#fff;color:#a33;border:2px solid #d97a7a;')}">Segna respinta</button>
-        </div>${avviso}`;
+      return bottoniApprovazione(d) + avviso;
+    }
+
+    async function sollecita(d: any) {
+      const b = document.getElementById('cur-sollecita') as HTMLButtonElement | null;
+      const post = d.postSollecita;
+      if (!post) return;
+      if (b) { b.disabled = true; b.textContent = 'Invio…'; }
+      try {
+        const r = await fetch(`${postBase.replace(/\/azione$/, '')}/sollecita/${post.id}/${post.exp}/${post.t}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+        });
+        const j = await r.json();
+        if (j.ok) {
+          body.innerHTML = titolo('Sollecito inviato ✓') + testo(H(j.message));
+        } else {
+          body.innerHTML = titolo('Sollecito non inviato') + testo(H(j.message || 'Riprova fra poco.'));
+        }
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Errore di connessione. Riprova tra poco.');
+      }
     }
 
     function renderVista(d: any) {
       const dom = d.domanda;
-      const pag = (d.pagamenti && d.pagamenti.length)
-        ? d.pagamenti.map((p: any) => `<div style="background:${p.stato === 'completato' ? '#eaf3ee' : '#FDF9F0'};border-left:3px solid ${p.stato === 'completato' ? '#2d8659' : '#C8923E'};padding:10px 14px;margin-bottom:6px;font-size:14px;">${p.stato === 'completato' ? '✓' : '⏳'} <strong>${H(p.stato)}</strong> — ${H(p.importo ?? '?')} € via ${p.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico'}${p.anomalia ? ' · <strong style="color:#a33">ANOMALIA</strong>' : ''} <span style="color:#999;font-size:12px;">· ${H(dataIt(p.created_at))}</span></div>`).join('')
-        : `<div style="background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;font-size:14px;">Nessun pagamento quota trovato per questa email (può arrivare più tardi).</div>`;
       body.innerHTML = titolo(H(dom.nome))
         + `<p style="margin:0 0 12px;"><span style="display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:600;background:#fdf3df;color:#8a6215;">${H(dom.stato)}</span></p>`
+        + (dom.stato === 'in_attesa' ? fasciaIncasso(d) : '')
+        + (dom.deroga_pagamento_motivo ? `<div style="background:#FDF9F0;border-left:4px solid #8a6215;border-radius:4px;padding:12px 16px;margin:0 0 18px;font-size:14px;"><strong>Approvata in deroga.</strong> ${H(dom.deroga_pagamento_motivo)}</div>` : '')
         + `<table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:14px;">
              <tr><td style="color:#666;padding:7px 0;width:150px;">Email</td><td><a href="mailto:${H(dom.email)}">${H(dom.email)}</a></td></tr>
              <tr><td style="color:#666;padding:7px 0;">Data di nascita</td><td>${dom.data_nascita ? H(new Date(dom.data_nascita).toLocaleDateString('it-IT')) : '—'}</td></tr>
@@ -105,24 +193,58 @@ if (seg[0] === 'vista' && uuid.test(seg[1] ?? '') && num.test(seg[2] ?? '') && h
              <tr><td style="color:#666;padding:7px 0;">Sesso</td><td>${dom.sesso === 'M' ? 'Maschile' : dom.sesso === 'F' ? 'Femminile' : '—'}</td></tr>
              <tr><td style="color:#666;padding:7px 0;">Messaggio</td><td>${H(dom.messaggio || '—')}</td></tr>
              <tr><td style="color:#666;padding:7px 0;">Domanda inviata</td><td>${H(dataIt(dom.created_at))}</td></tr>
-           </table>
-           <p style="font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:#8a6215;border-bottom:2px solid #C8923E;padding-bottom:6px;margin:0 0 8px;">Pagamento quota</p>${pag}`
+           </table>`
         + bottoniVista(d);
+      agganciaBottoni(d, d.postApprova, d.postRespingi);
+    }
+
+    /* Un solo posto in cui i bottoni prendono vita, cosi' la vista e la
+       conferma da email non possono comportarsi in modo diverso. */
+    function agganciaBottoni(d: any, postApprova: any, postRespingi: any) {
       const a = document.getElementById('cur-approva');
       const rj = document.getElementById('cur-respingi');
-      if (a) a.addEventListener('click', () => { (a as HTMLButtonElement).id = 'cur-go'; esegui('approva', d.postApprova); });
-      if (rj) rj.addEventListener('click', () => {
+      const sol = document.getElementById('cur-sollecita');
+      const der = document.getElementById('cur-deroga');
+      const derGo = document.getElementById('cur-deroga-go');
+      if (a) a.addEventListener('click', () => { (a as HTMLButtonElement).id = 'cur-go'; esegui('approva', postApprova); });
+      if (rj && postRespingi) rj.addEventListener('click', () => {
         if (!confirm('Segnare la domanda come respinta?')) return;
-        (rj as HTMLButtonElement).id = 'cur-go'; esegui('respingi', d.postRespingi, '');
+        (rj as HTMLButtonElement).id = 'cur-go'; esegui('respingi', postRespingi, '');
+      });
+      if (sol) sol.addEventListener('click', () => sollecita(d));
+      if (der) der.addEventListener('click', () => {
+        const box = document.getElementById('cur-deroga-box')!;
+        box.style.display = 'block';
+        (document.getElementById('cur-deroga-motivo') as HTMLTextAreaElement).focus();
+        (der as HTMLButtonElement).style.display = 'none';
+      });
+      if (derGo) derGo.addEventListener('click', () => {
+        const ta = document.getElementById('cur-deroga-motivo') as HTMLTextAreaElement;
+        const err = document.getElementById('cur-deroga-errore')!;
+        const motivo = (ta.value || '').trim();
+        // Senza motivo non si procede, e il controllo sta anche a database:
+        // qui e' cortesia, li' e' garanzia.
+        if (motivo.length < 5) { err.style.display = 'block'; ta.focus(); return; }
+        err.style.display = 'none';
+        (derGo as HTMLButtonElement).id = 'cur-go';
+        esegui('approva', postApprova, undefined, motivo);
       });
     }
 
     function renderEmailAzione(d: any) {
       if (d.azione === 'approva') {
+        /* Qui prima c'era solo «Verranno assegnati numero di tessera e QR» e
+           un bottone. Del pagamento non si diceva niente, ed e' cosi' che sono
+           uscite due tessere senza quota. Adesso la prima cosa che si legge e'
+           se la quota e' entrata. */
         body.innerHTML = titolo(`Confermi l'approvazione di ${H(d.nome)}?`)
-          + testo('Verranno assegnati numero di tessera e QR, e partirà l\'email con la tessera digitale.')
-          + `<div style="margin-top:16px;"><button id="cur-go" style="${btnCss('background:#C8923E;color:#1E2E26;')}">Sì, approva e invia la tessera</button></div>`;
-        document.getElementById('cur-go')!.addEventListener('click', () => esegui('approva', d.post));
+          + fasciaIncasso(d)
+          /* La frase sull'assegnazione della tessera vale solo se si sta per
+             assegnarla davvero. Sopra una fascia rossa e senza il bottone che
+             la produce era la stessa promessa a vuoto di prima. */
+          + (d.incassata ? testo('Verranno assegnati numero di tessera e QR, e partirà l\'email con la tessera digitale.') : '')
+          + bottoniApprovazione(d, false);
+        agganciaBottoni(d, d.post, null);
       } else {
         body.innerHTML = titolo(`Confermi il rifiuto della domanda di ${H(d.nome)}?`)
           + `<label style="display:block;font-size:13px;color:#666;margin:8px 0 6px;">Motivo (facoltativo, resta interno)</label>`

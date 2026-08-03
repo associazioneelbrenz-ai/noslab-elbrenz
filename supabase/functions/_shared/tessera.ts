@@ -74,6 +74,16 @@ export function tesseraEmailHtml(p: {
   intro: string;
   avviso?: string;
   integrazioneUrl?: string; // se presente: blocco CTA integrazione 10 € (link personale)
+  // [3/8/2026] Tessera emessa in DEROGA, cioe' senza quota incassata a
+  // database. La tessera parte lo stesso perche' il Direttivo ha ammesso la
+  // persona, ma la mail deve dirlo: finora taceva, e chi la riceveva senza
+  // aver pagato credeva in buona fede di essere a posto. E' successo il 21
+  // luglio con la tessera 26 e il 3 agosto con la 29.
+  // `quotaDaSaldare` porta l'importo (20) e, se c'e', il link per pagare
+  // online quella domanda; senza link si chiede di rispondere alla mail,
+  // perche' mandare la persona su /tesseramento le farebbe ricompilare tutto
+  // e nascerebbe una domanda doppia.
+  quotaDaSaldare?: { importo: number; urlPagamento?: string };
 }): string {
   return `<!DOCTYPE html><html><head>
 <meta name="color-scheme" content="light">
@@ -126,6 +136,13 @@ export function tesseraEmailHtml(p: {
       <p style="color:#1E2E26;font-size:15px;line-height:1.6;margin:0;">Per completare la quota ${p.anno} ti manca l'<strong>integrazione di 10 €</strong> (la quota è passata da 10 a 20 €).</p>
       <p style="text-align:center;margin:14px 0;"><a href="${p.integrazioneUrl}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:13px 26px;text-decoration:none;font-weight:600;font-size:15px;border-radius:4px;">Integra 10 € (tessera n. ${p.numero})</a></p>
       <p style="color:#666;font-size:13px;line-height:1.6;margin:0;">In alternativa, bonifico su <strong>Cassa Rurale Val di Sole IT84U0816335010000190116255</strong>, causale «Integrazione quota ${p.anno}». Grazie di cuore.</p>
+    </div>` : ''}
+    ${p.quotaDaSaldare ? `<div style="margin:18px 8px 0;background:#FDF9F0;border:1px solid #E8DFC7;border-radius:8px;padding:16px 18px;">
+      <p style="color:#1E2E26;font-size:15px;line-height:1.6;margin:0 0 10px;"><strong>Manca il versamento della quota ${p.anno}</strong>, ${p.quotaDaSaldare.importo} €. La tessera e' gia' valida, ma la quota va saldata: puoi farlo in uno di questi tre modi.</p>
+      ${p.quotaDaSaldare.urlPagamento ? `<p style="text-align:center;margin:14px 0;"><a href="${p.quotaDaSaldare.urlPagamento}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:13px 26px;text-decoration:none;font-weight:600;font-size:15px;border-radius:4px;">Paga ${p.quotaDaSaldare.importo} € con PayPal o carta</a></p>
+      <p style="color:#1E2E26;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>1. Online</strong>, col pulsante qui sopra. Non serve avere un conto PayPal.</p>` : `<p style="color:#1E2E26;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>1. Online.</strong> Rispondi a questa email e ti mandiamo il collegamento per pagare, gia' collegato alla tua domanda: cosi' non devi ricompilare niente.</p>`}
+      <p style="color:#1E2E26;font-size:14px;line-height:1.6;margin:0 0 8px;"><strong>2. Bonifico.</strong> Cassa Rurale Val di Sole, filiale di Mezzana<br/><strong>IT84 U081 6335 0100 0019 0116 255</strong><br/>Causale: «Quota socio ${p.anno} ${esc(p.nome)}»</p>
+      <p style="color:#1E2E26;font-size:14px;line-height:1.6;margin:0;"><strong>3. Contanti.</strong> Di persona al segretario, a un incontro o in sede.</p>
     </div>` : ''}
     ${p.avviso ? `<p style="color:#8a6215;font-size:13px;margin:12px 8px 0;background:#FDF9F0;border-left:3px solid #C8923E;padding:10px 14px;">${esc(p.avviso)}</p>` : ''}
     <p style="color:#999;font-size:11px;margin:16px 8px 0;">Associazione El Brenz · Via Trento 40, 38027 Malè (TN) · info@elbrenz.eu</p>

@@ -28,6 +28,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { firmaToken, TOKEN_TTL_MS } from "../_shared/admin.ts"
 import { notificaDirettivo } from "../_shared/notificaDirettivo.ts"
+import { confermaDomandaHtml } from '../_shared/sollecitoQuota.ts'
 
 // =============================================================================
 // CONFIG
@@ -64,6 +65,10 @@ const MAX_AGE_YEARS = 120
 const SEND_EMAIL_URL =
   'https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/send-email'
 const RECIPIENT_EMAIL = 'info@elbrenz.eu'
+// Anno e quota sociale in corso: il numero mostrato a un socio non si scrive
+// due volte in due posti diversi.
+const ANNO_QUOTA = 2026
+const QUOTA_EURO = 20
 
 // =============================================================================
 // CORS — risposta dinamica in base a Origin presente nella request
@@ -325,6 +330,15 @@ serve(async (req) => {
     typeof body.comune_nascita === 'string' ? body.comune_nascita.trim() : ''
   const sesso =
     typeof body.sesso === 'string' ? body.sesso.trim().toUpperCase() : ''
+  // [3/8/2026] Metodo scelto: obbligatorio all'invio. E' la SCELTA a essere
+  // obbligatoria, non il versamento: chi indica bonifico o contanti paga dopo.
+  // Difesa server-side oltre al gate del modulo, cosi' vale anche per chiamate
+  // dirette all'edge.
+  const metodiAmmessi = ['paypal', 'bonifico', 'contanti']
+  const metodoScelto =
+    typeof body.metodo_scelto === 'string' && metodiAmmessi.includes(body.metodo_scelto.trim())
+      ? body.metodo_scelto.trim()
+      : ''
   const gdpr = body.gdpr === true
   const honeypot = typeof body._honeypot === 'string' ? body._honeypot : ''
   const ts = typeof body._ts === 'number' ? body._ts : 0
@@ -354,6 +368,14 @@ serve(async (req) => {
   if (!gdpr) {
     return jsonResponse(
       { error: 'Devi accettare l\'informativa privacy per procedere.' },
+      400,
+      cors,
+    )
+  }
+
+  if (!metodoScelto) {
+    return jsonResponse(
+      { error: 'Scegli come pensi di versare la quota: PayPal o carta, bonifico, oppure contanti.' },
       400,
       cors,
     )
@@ -442,6 +464,7 @@ serve(async (req) => {
         // persistiamo nella colonna strutturata. Additivo, migration 13/07.
         consenso_privacy: true,
         sorgente_utm: sorgenteUtm,
+        metodo_scelto: metodoScelto || null,
       })
       .select('id')
       .single()
@@ -466,7 +489,10 @@ serve(async (req) => {
     if (domanda) {
       await notificaDirettivo(supabase, 'nuova_domanda', {
         nome, email,
-        metodo_scelto: (pag as any)?.metodo ?? null,
+        // Ora il metodo lo dichiara il richiedente all'invio: si preferisce
+        // quello, e si ripiega sul metodo di un eventuale pagamento gia'
+        // abbinato per email.
+        metodo_scelto: metodoScelto || (pag as any)?.metodo || null,
         pag_stato: (pag as any)?.stato ?? null,
       })
     }
@@ -561,6 +587,29 @@ serve(async (req) => {
     }
 
     console.log(`[contact-form] sent id=${sendResult.id} ip=${ip}`)
+
+    // [3/8/2026] Conferma a CHI HA INVIATO la domanda. Prima non partiva
+    // niente: l'unica email andava al Direttivo, e le istruzioni di pagamento
+    // viste a schermo sparivano al primo ricaricamento della pagina.
+    // Best-effort: se fallisce la domanda resta valida e il Direttivo l'ha
+    // comunque ricevuta. Non blocca la risposta al modulo.
+    try {
+      const confermaResp = await fetch(SEND_EMAIL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sharedSecret },
+        body: JSON.stringify({
+          to: email,
+          subject: `La tua domanda di adesione a El Brenz ${ANNO_QUOTA}`,
+          html: confermaDomandaHtml({ nome, anno: ANNO_QUOTA, importo: QUOTA_EURO, metodo: metodoScelto }),
+          reply_to: RECIPIENT_EMAIL,
+          tags: [{ name: 'source', value: 'conferma-domanda' }],
+        }),
+      })
+      if (!confermaResp.ok) console.error('[contact-form] conferma al richiedente fallita:', confermaResp.status)
+    } catch (e) {
+      console.error('[contact-form] conferma al richiedente fallita:', e)
+    }
+
     return jsonResponse({ success: true, domanda_id: domandaIdCreated }, 200, cors)
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
