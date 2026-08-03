@@ -106,11 +106,13 @@ Deno.serve(async (req: Request) => {
       consenso_modalita: modalita,
       metodo_scelto: "contanti", // brief 21/7: traccia il metodo sulla domanda
       // [3/8/2026] Era una stringa nuda, "contanti_di_persona", nella stessa
-      // colonna in cui contact-form scrive un oggetto. Due forme diverse nello
-      // stesso campo rendono impossibile qualunque conteggio: adesso e' un
-      // oggetto anche qui. Il canale resta "contanti", che e' quello che e':
-      // quota versata in mano, allo sportello o a un incontro.
-      sorgente_utm: { utm_source: "contanti_di_persona", utm_medium: "di_persona" },
+      // colonna in cui tutto il resto scrive un oggetto. Due forme diverse
+      // nello stesso campo rendono impossibile qualunque conteggio.
+      // Le chiavi sono source/medium/campaign come ovunque: un secondo
+      // vocabolario nella stessa colonna sarebbe stato lo stesso problema
+      // travestito da soluzione. Il canale e' quello che e': quota versata in
+      // mano, allo sportello o a un incontro.
+      sorgente_utm: { source: "contanti_di_persona", medium: "di_persona", campaign: "" },
     }).select("id").single();
     if (eDom || !creata) return J({ error: "domanda_fallita", detail: eDom?.message }, 500);
     domandaId = (creata as any).id;

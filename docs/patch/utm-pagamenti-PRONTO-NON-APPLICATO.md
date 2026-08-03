@@ -154,12 +154,13 @@ Nient'altro. `paypal-capture-order:84-94` non si tocca.
 
 ---
 
-## Una cosa da decidere prima, che non è tecnica
+## Le chiavi, ormai decise
 
-`contact-form` e il codice qui sopra usano le chiavi `source`, `medium`,
-`campaign`. `contanti-registra`, dopo la correzione di oggi, usa `utm_source` e
-`utm_medium`, perché così le prescriveva il brief alla lettera.
+Tutto il funnel usa `source`, `medium`, `campaign`: le tre pagine dei
+Guardiani, `contact-form`, `guardiani-contributo`, `gita-crea-ordine`,
+`contanti-registra` e il codice qui sopra. Nella querystring i parametri
+restano quelli standard (`utm_source` e compagnia): è la lettura che li
+traduce, una volta sola, all'ingresso.
 
-Sono due vocabolari nella stessa colonna, e il conteggio che il blocco 5
-voleva rendere possibile resta impossibile finché sono due. Vanno unificati:
-è una riga di codice, ma è una decisione di chi poi leggerà quei numeri.
+Un secondo vocabolario nella stessa colonna sarebbe stato lo stesso problema
+travestito da soluzione.

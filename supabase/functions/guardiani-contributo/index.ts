@@ -187,7 +187,18 @@ Deno.serve(async (req: Request) => {
   const consensoMarketing = body.consenso_marketing === true;
   const consensoFirma = body.consenso_firma === true;
   const licenza = body.licenza_accettata === true;
-  const utm = (body.utm && typeof body.utm === 'object') ? body.utm as Record<string, string> : null;
+  // [3/8/2026] Prima l'oggetto del client entrava in colonna cosi' com'era:
+  // qualunque chiave, qualunque lunghezza. Adesso passano solo i tre campi che
+  // servono, con le stesse chiavi usate ovunque nel funnel, ripuliti come gia'
+  // fa contact-form. Niente di utile dentro = null, non un oggetto vuoto, che
+  // sarebbe rumore travestito da dato.
+  let utm: Record<string, string> | null = null;
+  if (body.utm && typeof body.utm === 'object') {
+    const u = body.utm as Record<string, unknown>;
+    const pulisci = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 100) : '');
+    const cand = { source: pulisci(u.source), medium: pulisci(u.medium), campaign: pulisci(u.campaign) };
+    if (cand.source || cand.medium || cand.campaign) utm = cand;
+  }
 
   if (termine.length < 1) return json({ error: 'Scrivi il termine o la frase.' }, 400, c);
   if (!VARIANTI.includes(variante)) return json({ error: 'Scegli una variante valida.' }, 400, c);
