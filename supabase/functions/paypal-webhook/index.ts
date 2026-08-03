@@ -33,10 +33,49 @@ const STATI: Record<string, string> = {
 // quota senza domanda agganciabile → "pagamento orfano, verificare".
 // L'email si marca notificato SOLO a invio riuscito (retry al prossimo
 // evento in caso di errore transitorio).
+// [3/8/2026] Un incasso puo' arrivare da flussi diversi, e PayPal non lo dice.
+// Questa funzione chiede a `iscrizioni_gita` se quella cattura e' gia' sua.
+// Serve perche' il 26 luglio e il 1 agosto due anticipi della gita sono finiti
+// in `pagamenti_tesseramento` come quote associative 2026, portandosi dietro
+// due domande di tesseramento fantasma rimaste in coda per giorni: il registro
+// delle quote diceva 280 euro invece di 160, e si stavano per emettere due
+// tessere a due persone che non esistono.
+// Fail-safe al contrario del solito: se la lettura fallisce si risponde
+// "non lo so", cioe' `false`. Preferisco un pagamento in piu' da riconciliare
+// a mano che un incasso perso perche' il database non ha risposto.
+async function catturaDiUnaGita(
+  supabase: ReturnType<typeof createClient>,
+  captureId: string | null,
+  orderId: string | null,
+): Promise<boolean> {
+  try {
+    if (captureId) {
+      const { data } = await supabase.from('iscrizioni_gita')
+        .select('id').eq('paypal_capture_id', captureId).maybeSingle();
+      if (data) return true;
+    }
+    if (orderId) {
+      const { data } = await supabase.from('iscrizioni_gita')
+        .select('id').eq('paypal_order_id', orderId).maybeSingle();
+      if (data) return true;
+    }
+  } catch (e) {
+    console.error('[paypal-webhook] verifica iscrizioni_gita fallita:', e);
+  }
+  return false;
+}
+
+// `preesistente` dice se la riga di pagamento esisteva PRIMA di questo webhook,
+// cioe' se e' stata creata da paypal-create-order partendo da una pagina del
+// tesseramento. E' il segnale esplicito che mancava: prima bastava che `tipo`
+// valesse 'quota', ma `tipo` ha `default 'quota'`, quindi qualunque incasso di
+// cui il webhook non sapesse nulla diventava una quota per omissione. Un flusso
+// deve dichiararsi, non essere dedotto da un valore predefinito.
 async function notificaCompletato(
   supabase: ReturnType<typeof createClient>,
   captureId: string | null,
   orderId: string | null,
+  preesistente: boolean,
 ): Promise<void> {
   let q = supabase.from('pagamenti_tesseramento')
     .select('id, tipo, anonimo, nome, email, payer_email, importo, metodo, notificato, domanda_id');
@@ -55,7 +94,19 @@ async function notificaCompletato(
   //    dalla scheda.
   let domandaId: string | null = riga.domanda_id ?? null;
   let domandaCreata = false;
-  if (riga.tipo === 'quota' && !domandaId && riga.email) {
+  // [3/8/2026] Il paracadute scatta SOLO per il tesseramento, e il flusso deve
+  // dichiararsi: riga nata da paypal-create-order (quindi preesistente a questo
+  // webhook), tipo dichiarato 'quota', e la cattura non gia' rivendicata da
+  // un'iscrizione a un evento.
+  const dallaGita = await catturaDiUnaGita(supabase, captureId, orderId);
+  const daTesseramento = riga.tipo === 'quota' && preesistente && !dallaGita;
+  if (riga.tipo === 'quota' && !daTesseramento) {
+    console.warn(
+      `[paypal-webhook] quota NON attribuibile al tesseramento (riga ${riga.id}): ` +
+      `preesistente=${preesistente} dallaGita=${dallaGita}. Nessuna domanda creata.`,
+    );
+  }
+  if (daTesseramento && !domandaId && riga.email) {
     const { data: dom } = await supabase.from('domande_tesseramento')
       .select('id')
       .ilike('email', riga.email)
@@ -65,7 +116,7 @@ async function notificaCompletato(
       .maybeSingle();
     if (dom) domandaId = dom.id;
   }
-  if (riga.tipo === 'quota' && !domandaId) {
+  if (daTesseramento && !domandaId) {
     const emailDomanda = riga.email || riga.payer_email || 'da-completare@elbrenz.eu';
     const nomeDomanda = riga.nome || riga.payer_email || '(da identificare)';
     const { data: nuova, error: insErr } = await supabase
@@ -84,7 +135,7 @@ async function notificaCompletato(
       console.error('[paypal-webhook] auto-creazione domanda fallita:', insErr);
     }
   }
-  if (riga.tipo === 'quota' && domandaId && domandaId !== riga.domanda_id) {
+  if (daTesseramento && domandaId && domandaId !== riga.domanda_id) {
     await supabase.from('pagamenti_tesseramento')
       .update({ domanda_id: domandaId, updated_at: new Date().toISOString() })
       .eq('id', riga.id);
@@ -99,9 +150,19 @@ async function notificaCompletato(
   const chi = riga.anonimo ? 'Donatore anonimo' : (riga.nome || riga.email || riga.payer_email || 'in verifica (dati dal pagamento PayPal)');
   const cosa = riga.tipo === 'quota' ? 'Quota sociale 2026'
     : riga.tipo === 'integrazione' ? 'Integrazione quota 2026 (10 €)'
+    : riga.tipo === 'anticipo_gita' ? 'Anticipo gita'
     : 'Donazione';
   let aggancio = '';
-  if (riga.tipo === 'quota') {
+  // Una quota che il webhook non riesce ad attribuire al tesseramento va detta
+  // al Direttivo per quello che e': non una domanda da completare, ma un
+  // incasso da capire. Il silenzio qui e' la cosa che e' costata due domande
+  // fantasma e otto giorni di coda.
+  if (riga.tipo === 'quota' && !daTesseramento) {
+    const motivo = dallaGita
+      ? ': la cattura risulta gia&#39; di un&#39;iscrizione a un evento'
+      : '';
+    aggancio = `<p style="color:#a33;"><strong>⚠ Incasso non attribuibile al tesseramento.</strong> Nessuna domanda e&#39; stata creata di proposito${motivo}. Verificare da quale flusso arriva prima di registrarlo come quota.</p>`;
+  } else if (daTesseramento) {
     if (domandaCreata) {
       aggancio = `<p style="color:#8a6215;"><strong>⚠ Domanda creata automaticamente dal pagamento</strong> (#${domandaId!.slice(0, 8)}): completare i dati anagrafici dalla scheda prima dell'approvazione.</p>`;
     } else if (domandaId) {
@@ -152,9 +213,16 @@ async function notificaCompletato(
         : 'pagamento_quota';
       notificaDirettivo(supabase, tipoNotifica, { nome: chi, importo: riga.importo }).catch(() => {});
       // Alert al direttivo se una quota resta orfana (né agganciata né creabile).
-      if (riga.tipo === 'quota' && !domandaId) {
+      if (daTesseramento && !domandaId) {
         notificaDirettivo(supabase, 'alert_anomalia', {
           dettaglio: `Pagamento quota orfano (${riga.importo} € da ${chi}): nessuna domanda agganciata o creata, verificare.`,
+        }).catch(() => {});
+      }
+      // [3/8] E se una riga si presenta come quota ma non viene dal
+      // tesseramento, e' un sintomo a monte: va detto forte, non archiviato.
+      if (riga.tipo === 'quota' && !daTesseramento) {
+        notificaDirettivo(supabase, 'alert_anomalia', {
+          dettaglio: `Incasso di ${riga.importo} € registrato come quota ma non attribuibile al tesseramento${dallaGita ? ' (la cattura e\' gia\' di un\'iscrizione a un evento)' : ''}: nessuna domanda creata, verificare il flusso di origine.`,
         }).catch(() => {});
       }
 
@@ -310,7 +378,9 @@ Deno.serve(async (req: Request) => {
         .eq('capture_id', captureId)
         .select('id');
       if (byCapture && byCapture.length > 0) {
-        if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId);
+        // `true`: la riga esisteva gia', quindi l'ha creata paypal-create-order
+        // partendo da una pagina nostra. E' il flusso che si dichiara.
+        if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId, true);
         return ok(eventType, nuovoStato);
       }
     }
@@ -325,12 +395,31 @@ Deno.serve(async (req: Request) => {
         .eq('order_id', orderId)
         .select('id');
       if (byOrder && byOrder.length > 0) {
-        if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId);
+        if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId, true);
         return ok(eventType, nuovoStato);
       }
     }
     // 3°: nessuna riga trovata — inserisci (upsert su capture_id evita
     // duplicati al replay). Nessun dato personale.
+    //
+    // [3/8/2026] Prima si chiede a `iscrizioni_gita` se questa cattura e' gia'
+    // sua. Se lo e', qui NON si scrive niente: quel denaro e' gia' registrato
+    // nella sua tabella, con importo e capture_id, e duplicarlo qui vuol dire
+    // contarlo due volte nel rendiconto. E' esattamente quello che e'
+    // successo il 26 luglio e il 1 agosto, con l'aggravante che la riga
+    // nasceva con `tipo` al suo valore predefinito, cioe' 'quota'.
+    // Lo stato dell'iscrizione NON si tocca da qui: lo scrive il segretario
+    // leggendo gli esiti reali dal pannello PayPal.
+    if (captureId || orderId) {
+      const dellaGita = await catturaDiUnaGita(supabase, captureId, orderId);
+      if (dellaGita) {
+        console.log(
+          `[paypal-webhook] ${eventType} appartiene a un'iscrizione gita ` +
+          `(capture ${captureId ?? 'n/d'}): nessuna riga creata in pagamenti_tesseramento.`,
+        );
+        return ok(eventType, nuovoStato);
+      }
+    }
     if (captureId) {
       await supabase.from('pagamenti_tesseramento').upsert(
         {
@@ -342,7 +431,9 @@ Deno.serve(async (req: Request) => {
         { onConflict: 'capture_id' },
       );
     }
-    if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId);
+    // `false`: questa riga l'abbiamo appena creata noi, non viene da una
+    // pagina del tesseramento. Nessun paracadute.
+    if (nuovoStato === 'completato') await notificaCompletato(supabase, captureId, orderId, false);
     return ok(eventType, nuovoStato);
   } catch (err) {
     console.error('[paypal-webhook] errore riconciliazione:', err);

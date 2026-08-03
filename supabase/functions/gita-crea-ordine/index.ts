@@ -50,7 +50,18 @@ Deno.serve(async (req: Request) => {
   const posti = Math.trunc(Number(body.posti ?? 1));
   const codice = typeof body.codice_tessera === 'string' ? body.codice_tessera.trim() : '';
   const consenso = body.consenso_privacy === true;
-  const utm = body.sorgente_utm && typeof body.sorgente_utm === 'object' ? body.sorgente_utm : null;
+  // [3/8/2026] Prima si prendeva l'oggetto del client cosi' com'era: qualunque
+  // chiave, qualunque lunghezza, dritto in colonna. Adesso passano solo i tre
+  // campi che servono, ripuliti, come gia' fa contact-form. Se non resta
+  // niente di utile si scrive null invece di un oggetto vuoto, che sarebbe
+  // rumore travestito da dato.
+  let utm: Record<string, string> | null = null;
+  if (body.sorgente_utm && typeof body.sorgente_utm === 'object') {
+    const u = body.sorgente_utm as Record<string, unknown>;
+    const pulisci = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 100) : '');
+    const cand = { source: pulisci(u.source), medium: pulisci(u.medium), campaign: pulisci(u.campaign) };
+    if (cand.source || cand.medium || cand.campaign) utm = cand;
+  }
 
   if (!nome || !cognome) return jsonResponse({ error: 'Nome e cognome sono obbligatori.' }, 400, cors);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonResponse({ error: 'Email non valida.' }, 400, cors);
