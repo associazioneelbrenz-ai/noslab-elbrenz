@@ -245,11 +245,17 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   const wrap = document.getElementById('mappa-wrap');
 
   let mappa: import('leaflet').Map | null = null;
-  let markers: { tipo: string; valle: string; categoria?: string; m: import('leaflet').Marker }[] = [];
+  let markers: { tipo: string; valle: string; categoria?: string; slug?: string; m: import('leaflet').Marker }[] = [];
   let cluster: any = null;
   let filtroTipo = 'tutti';
   let filtroValle = 'tutte';
   let filtroCat = 'tutte';
+
+  // [3/8/2026] Il luogo chiesto dal deep-link si legge UNA VOLTA, qui: piu'
+  // avanti aggiornaBottoni() riscrive la querystring con i soli filtri, e
+  // leggerlo dopo darebbe sempre vuoto. Era il motivo per cui ?luogo= spariva
+  // dall'URL senza aprire niente.
+  const LUOGO_URL = new URLSearchParams(location.search).get('luogo') ?? '';
 
   // stato filtri da querystring (link condivisibili)
   // Lettura dello stato dall'URL: usata al primo caricamento e a ogni popstate,
@@ -298,6 +304,9 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
     if (filtroTipo !== 'tutti') p.set('tipo', filtroTipo);
     if (filtroValle !== 'tutte') p.set('valle', filtroValle);
     if (filtroCat !== 'tutte') p.set('categoria', filtroCat);
+    // Il luogo del deep-link resta nell'indirizzo: chi condivide il link che
+    // ha ricevuto deve condividere la stessa vista, non la mappa generica.
+    if (LUOGO_URL) p.set('luogo', LUOGO_URL);
     const url = p.toString() ? `?${p}` : location.pathname;
     // push sul click (il tasto «indietro» torna al filtro precedente),
     // replace all'avvio per non sporcare la cronologia.
@@ -449,7 +458,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
           ${l.slug ? `<p style="margin:8px 0 0;"><a href="/luoghi/${l.slug}" style="color:#8a6215;font-weight:600;">Scheda del luogo →</a></p>` : ''}
           ${l.url_articolo ? `<p style="margin:6px 0 0;"><a href="${l.url_articolo}" style="color:#8a6215;">Leggi la storia →</a></p>` : ''}
         </div>`);
-      markers.push({ tipo: 'luoghi', valle: l.valle, categoria: l.categoria, m });
+      markers.push({ tipo: 'luoghi', valle: l.valle, categoria: l.categoria, slug: l.slug, m });
     }
     for (const c of dati.convenzioni ?? []) {
       // Multi-punto: un marker per ogni sede pubblicata; se non ci sono punti
@@ -473,6 +482,39 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       }
     }
     applicaFiltri();
+    apriLuogoDaUrl();
+  }
+
+  // [3/8/2026] Deep-link `?luogo=<slug>`: e' la destinazione delle schede
+  // della vetrina in home, e senza questo ci arriverebbero su una mappa
+  // indistinguibile da /mappa. Qui il luogo si apre gia': la mappa si centra
+  // su di lui e il suo fumetto e' aperto. Se lo slug non esiste (luogo
+  // spubblicato, link vecchio) non succede niente di male: resta la mappa
+  // intera, che e' comunque una pagina utile.
+  function apriLuogoDaUrl() {
+    const slug = LUOGO_URL;
+    if (!slug || !mappa || !cluster) return;
+    const voce = markers.find((x) => x.slug === slug);
+    if (!voce) return;
+    const apri = () => { mappa!.setView(voce.m.getLatLng(), 14); voce.m.openPopup(); };
+    // Il marker vive dentro il cluster: se e' raggruppato va prima srotolato,
+    // altrimenti openPopup() parla a un elemento che non e' in pagina.
+    if (typeof cluster.zoomToShowLayer === 'function') cluster.zoomToShowLayer(voce.m, apri);
+    else apri();
+    // L'elenco a fianco si allinea: chi arriva dalla home ritrova la scheda
+    // da cui ha cliccato, non deve ricercarla.
+    const li = document.querySelector<HTMLLIElement>(`#mappa-elenco > li[data-slug="${CSS.escape(slug)}"]`);
+    if (li) li.classList.add('bg-[#FDF9F0]');
+    // Si porta in vista la MAPPA, non la voce dell'elenco: chi ha cliccato la
+    // scheda in home vuole vedere dov'e' il luogo, e una scrollIntoView sulla
+    // voce lo scaricava molto piu' in basso, oltre la mappa appena aperta.
+    document.getElementById('mappa-wrap')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  // Il caricamento su gesto resta la regola (nessun tile senza volerlo), ma
+  // chi arriva con ?luogo= il gesto lo ha gia' fatto: cliccare la scheda.
+  if (LUOGO_URL) {
+    initMappa().catch((e) => console.error('[mappa] init da deep-link fallita:', e));
   }
 
   btnCarica?.addEventListener('click', () => {

@@ -117,22 +117,49 @@ const copertinaDi = (a: any): string | null => a.data.copertina
 // accorge), e i pin sono SOLO i sei curati con in_anteprima — la Val di Non
 // pesa 35 luoghi su 57 e un'anteprima non curata mostrerebbe quasi solo lei.
 let luoghiTotale = 0;
-let pinAnteprima: { nome: string; lat: number; lng: number; colore: string }[] = [];
-const COLORE_CAT: Record<string, string> = {
-  castelli_e_residenze: '#8a5a2b', chiese_e_santuari: '#5b6ea8',
-  grande_guerra: '#8a3a3a', cultura_materiale: '#6b8e23',
-  musei_e_collezioni: '#b0872f', luoghi_sacri: '#5b6ea8', memoria_e_comunita: '#b0872f',
+type LuogoVetrina = {
+  nome: string; slug: string; categoria: string; valle: string;
+  descrizione_breve: string | null; lat: number; lng: number; colore: string;
 };
+let pinAnteprima: LuogoVetrina[] = [];
+// Tavolozza per categoria (brief 3/8): castelli oro scuro, chiese verde,
+// Grande Guerra mattone, cultura materiale bruno, natura verde chiaro,
+// musei grigio ardesia. Sobria di proposito: non deve litigare col marchio.
+const COLORE_CAT: Record<string, string> = {
+  castelli_e_residenze: '#b0872f', chiese_e_santuari: '#4b6b42',
+  grande_guerra: '#8a3a3a', cultura_materiale: '#7a5c3a',
+  natura_e_paesaggio: '#7fa05a', musei_e_collezioni: '#5c6b73',
+};
+// Nomi leggibili: sul sito non compaiono mai gli identificativi del database.
+const NOME_CAT: Record<string, string> = {
+  castelli_e_residenze: 'Castelli e residenze', chiese_e_santuari: 'Chiese e santuari',
+  grande_guerra: 'Grande Guerra', natura_e_paesaggio: 'Natura e paesaggio',
+  cultura_materiale: 'Cultura materiale', musei_e_collezioni: 'Musei',
+};
+const NOME_VALLE: Record<string, string> = {
+  val_di_non: 'Val di Non', val_di_sole: 'Val di Sole',
+  val_di_rabbi: 'Val di Rabbi', val_di_pejo: 'Val di Pejo',
+};
+// Le pastiglie sono l'ordine deciso nel brief, non l'ordine del database.
+const PASTIGLIE_CAT = [
+  'castelli_e_residenze', 'chiese_e_santuari', 'grande_guerra',
+  'natura_e_paesaggio', 'cultura_materiale', 'musei_e_collezioni',
+];
 try {
   const sbLuoghi = createClient(SB_ART_URL, SB_ART_ANON, { auth: { persistSession: false } });
   const { data } = await sbLuoghi
     .from('v_luoghi_mappa')
-    .select('nome, categoria, lat, lng, in_anteprima');
+    .select('nome, slug, categoria, valle, descrizione_breve, lat, lng, in_anteprima')
+    .order('valle').order('nome');
   const righe = (data as any[]) ?? [];
   luoghiTotale = righe.length;
   pinAnteprima = righe
     .filter((l) => l.in_anteprima === true && l.lat && l.lng)
-    .map((l) => ({ nome: l.nome, lat: l.lat, lng: l.lng, colore: COLORE_CAT[l.categoria] ?? '#C8923E' }));
+    .map((l) => ({
+      nome: l.nome, slug: l.slug, categoria: l.categoria, valle: l.valle,
+      descrizione_breve: l.descrizione_breve,
+      lat: l.lat, lng: l.lng, colore: COLORE_CAT[l.categoria] ?? '#C8923E',
+    }));
 } catch (e) {
   console.error('[home] lettura luoghi fallita:', e);
 }
@@ -470,44 +497,88 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
       (3) tutta la striscia e' un solo bersaglio verso /mappa. Senza
       JavaScript resta esattamente la sezione statica di prima: ortofoto,
       testo e link. L'altezza e' riservata dal markup: niente salti. */}
-  <section class="relative overflow-hidden" aria-label="La Mappa delle Valli">
-    <a href="/mappa" class="block relative no-underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#C8923E]" aria-label={`Apri la mappa delle valli: ${luoghiTotale} luoghi`}>
-      <picture>
-        <source srcset="/mappa-teaser.webp" type="image/webp" />
-        <img
-          src="/mappa-teaser.jpg"
-          alt="Ortofoto delle Valli del Noce con i luoghi della mappa El Brenz"
-          class="w-full h-64 md:h-80 object-cover"
-          width="1600" height="710"
-          loading="lazy"
-          decoding="async"
-        />
-      </picture>
-      {/* La mappa viva si accende sopra l'ortofoto, stessa cornice. */}
-      <div id="eb-mappa-viva" class="absolute inset-0 opacity-0 transition-opacity duration-700" aria-hidden="true"></div>
-      {/* Velo piu' pieno al centro rispetto alla versione su ortofoto: la
-          mappa OSM e' chiara e il titolo crema ci si perdeva sopra. */}
-      <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26]/85 via-[#1E2E26]/45 to-[#1E2E26]/15 pointer-events-none" aria-hidden="true"></div>
-      <div class="absolute inset-x-0 bottom-0 p-6 md:p-8 text-center pointer-events-none">
-        <h2 class="text-2xl md:text-3xl text-[#F5EEDD] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
-          La Mappa delle <em class="text-[#C8923E]">Valli</em>
-        </h2>
-        <p class="text-[#F5EEDD]/85 m-0 mb-4 text-sm md:text-base" style="font-family: 'Source Serif 4', Georgia, serif;">
-          {luoghiTotale > 0
-            ? `${luoghiTotale} luoghi tra castelli, chiese, Grande Guerra e cultura materiale, sulla cartografia ufficiale del Trentino.`
-            : 'I luoghi della nosa storia e le convenzioni soci, sulla cartografia ufficiale del Trentino.'}
+  <section class="bg-[#F8F1E4] py-16 md:py-20" aria-labelledby="eb-mappa-titolo">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="mb-8 max-w-2xl">
+        <p class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-semibold m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+          La mappa delle valli
         </p>
-        <span
-          class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase"
-          style="font-family: 'Inter', sans-serif;"
-        >
-          Esplora la mappa
-        </span>
-        <p class="text-[10px] text-[#F5EEDD]/50 m-0 mt-3" style="font-family: 'Inter', sans-serif;">
-          Cartografia © OpenStreetMap · Ortofoto © Provincia Autonoma di Trento · SIAT (CC BY)
+        <h2 id="eb-mappa-titolo" class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3 leading-tight" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+          I luoghi che raccontano <em class="text-[#C8923E]" style="font-style: italic;">la nosa storia</em>
+        </h2>
+        <p class="text-base md:text-lg text-[#1E2E26]/80 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Castelli, santuari, trincee, segherie e masi delle quattro valli del Noce.
+          Ogni luogo con la sua scheda.
         </p>
       </div>
-    </a>
+
+      {/* Da 1024px: colonna schede 300px a sinistra, mappa a destra alta 340px.
+          Sotto: mappa 200px e schede in scorrimento orizzontale con snap. */}
+      <div class="eb-vetrina-mappa">
+        <div class="eb-vetrina-mappa-cornice">
+          {/* Segnaposto avorio col marchio: finche' la sezione non entra nel
+              viewport non parte ne' lo script ne' un solo tile. */}
+          <div id="eb-mappa-viva" class="absolute inset-0 bg-[#F5EEDD]"></div>
+          <div id="eb-mappa-segnaposto" class="absolute inset-0 grid place-items-center pointer-events-none" aria-hidden="true">
+            <img src="/decoro/aquila-oro-filigrana.png" alt="" width="180" height="180" class="opacity-[0.18] w-[120px] md:w-[180px] h-auto" loading="lazy" decoding="async" />
+          </div>
+        </div>
+
+        <ul id="eb-vetrina-schede" class="eb-vetrina-schede list-none m-0 p-0">
+          {pinAnteprima.map((l) => (
+            <li class="eb-vetrina-scheda-li">
+              <a
+                href={`/mappa?luogo=${l.slug}`}
+                class="eb-vetrina-scheda group flex gap-3 items-start bg-white border border-[#E5DFCF] hover:border-[#C8923E] focus-visible:border-[#C8923E] rounded px-4 py-3 no-underline transition-colors"
+                data-slug={l.slug}
+              >
+                <span class="mt-[3px] shrink-0 w-3 h-3 rounded-full border-2 border-[#F5EEDD]" style={`background:${l.colore};box-shadow:0 0 0 1px ${l.colore}66;`} aria-hidden="true"></span>
+                <span class="min-w-0">
+                  <span class="block text-[15px] text-[#1E2E26] font-medium leading-snug group-hover:text-[#8a6215] transition-colors" style="font-family: 'Playfair Display', serif;">{l.nome}</span>
+                  <span class="block text-[11px] tracking-[0.12em] uppercase text-[#1E2E26]/50 mt-0.5" style="font-family: 'Inter', sans-serif;">
+                    {NOME_VALLE[l.valle] ?? l.valle} · {NOME_CAT[l.categoria] ?? l.categoria}
+                  </span>
+                  {l.descrizione_breve && (
+                    <span class="eb-una-riga block text-[13px] text-[#1E2E26]/70 mt-1" style="font-family: 'Source Serif 4', Georgia, serif;">
+                      {l.descrizione_breve}
+                    </span>
+                  )}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Pastiglie dei filtri, senza conteggi: ognuna e' un link vero. */}
+      <div class="flex flex-wrap gap-2 mt-6" style="font-family: 'Inter', sans-serif;">
+        {PASTIGLIE_CAT.map((c) => (
+          <a
+            href={`/mappa?categoria=${c}`}
+            class="inline-block text-[13px] text-[#1E2E26] bg-white border border-[#C8923E]/40 hover:border-[#C8923E] hover:bg-[#FDF9F0] rounded-full px-4 py-1.5 no-underline transition-colors"
+          >
+            {NOME_CAT[c]}
+          </a>
+        ))}
+      </div>
+
+      <div class="mt-8 flex flex-col sm:flex-row sm:items-center gap-x-6 gap-y-3">
+        <a
+          href="/mappa"
+          class="inline-block self-start bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Apri la mappa completa
+        </a>
+        <a
+          href="/contatti?utm_source=mappa-home&utm_medium=sito&utm_campaign=segnalazione-luoghi"
+          class="text-sm text-[#8a6215] no-underline hover:underline"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          Manca un luogo del tuo paese? Segnalacelo
+        </a>
+      </div>
+    </div>
   </section>
 
   {/* AGGIUNTA M2.4 — blocco "Ultimi articoli": i 4 più recenti di produzione.
@@ -1524,17 +1595,26 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
       .catch(() => {});
   })();
 
-  // AGGIUNTA 2/8/2026 — la mappa viva (brief attuativo IV.5). Niente Leaflet
-  // e niente tile finche' la striscia non entra nel viewport: la home ha gia'
-  // 3,8 MB e la mappa non deve aggiungere carico eager. Quando si avvicina
-  // (IntersectionObserver, margine 200px) si caricano css+js SELF-HOSTED da
-  // /leaflet e si accendono i sei pin curati sopra l'ortofoto, in dissolvenza.
-  // Ogni interazione della mappa e' spenta: la striscia intera e' un link a
-  // /mappa e non deve combattere con lo scroll. Se qualcosa fallisce resta
-  // l'ortofoto: la mappa viva e' un miglioramento, non un requisito.
+  // [3/8/2026] La mappa della vetrina (brief blocco 2). Sostituisce la
+  // striscia-teaser: prima erano sei pin muti su una vista che arrivava dal
+  // Bernina alle Pale di San Martino, quattro volte l'estensione che serviva,
+  // e nessun nome era leggibile senza cliccare. Adesso i nomi stanno nelle
+  // schede accanto, e la mappa fa solo la prova.
+  //
+  // Leaflet resta SELF-HOSTED da /public/leaflet, zero CDN. Ne' lo script ne'
+  // un tile partono prima che la sezione entri nel viewport: fino ad allora
+  // c'e' il segnaposto avorio col marchio. Se qualcosa fallisce restano le
+  // schede, che sono gia' nel markup servito: la mappa e' la prova, non il
+  // contenuto.
   (function () {
     const cornice = document.getElementById('eb-mappa-viva');
     if (!cornice || !window.IntersectionObserver || !PIN_ANTEPRIMA || PIN_ANTEPRIMA.length === 0) return;
+
+    const segnaposto = document.getElementById('eb-mappa-segnaposto');
+    // Le etichette permanenti sotto i 768px si accavallerebbero: si spengono.
+    const etichette = window.matchMedia('(min-width: 768px)').matches;
+    // L'evidenziazione a due vie ha senso col puntatore; su touch si salta.
+    const puntatore = window.matchMedia('(hover: hover)').matches;
 
     let avviata = false;
     function accendi() {
@@ -1550,28 +1630,97 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
       s.onload = function () {
         try {
           const L = window.L;
+          // Vetrina, non strumento: niente trascinamento, niente zoom, niente
+          // tastiera. Cosi' sul telefono non ruba lo scorrimento della pagina.
           const map = L.map(cornice, {
-            zoomControl: false, attributionControl: false,
+            zoomControl: false, attributionControl: true,
             dragging: false, touchZoom: false, scrollWheelZoom: false,
             doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false,
           });
-          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 17 }).addTo(map);
+          // Attribuzione OSM VISIBILE: e' una condizione della licenza.
+          L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 17,
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          }).addTo(map);
           const goccia = (c) => '<svg viewBox="0 0 32 44" width="26" height="36" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="' + c + '" stroke="#F5EEDD" stroke-width="2"/><circle cx="16" cy="15.5" r="5" fill="#F5EEDD"/></svg>';
+
+          const perSlug = {};
           for (const p of PIN_ANTEPRIMA) {
-            L.marker([p.lat, p.lng], {
-              interactive: false, keyboard: false, title: p.nome,
+            const m = L.marker([p.lat, p.lng], {
+              interactive: puntatore, keyboard: false, title: p.nome,
               icon: L.divIcon({
-                html: '<span role="img" aria-label="' + String(p.nome).replace(/"/g, '&quot;') + '">' + goccia(p.colore) + '</span>',
+                html: '<span class="eb-pin-vetrina" role="img" aria-label="' + String(p.nome).replace(/"/g, '&quot;') + '">' + goccia(p.colore) + '</span>',
                 className: 'eb-mappa-pin', iconSize: [26, 36], iconAnchor: [13, 35],
               }),
             }).addTo(map);
+            if (etichette) {
+              m.bindTooltip(p.nome, { permanent: true, direction: 'right', className: 'eb-vetrina-etichetta', offset: [10, -14] });
+            }
+            perSlug[p.slug] = m;
           }
-          map.fitBounds(L.latLngBounds(PIN_ANTEPRIMA.map((p) => [p.lat, p.lng])), { padding: [34, 34] });
-          setTimeout(function () {
+
+          // Inquadratura sui sei marker: nessun centro e nessuno zoom cablati,
+          // se i luoghi in anteprima cambiano la vista si adatta da sola.
+          // invalidateSize() PRIMA di fitBounds: la cornice viene misurata
+          // quando la sezione e' appena entrata in pagina, e se Leaflet ha in
+          // mano una dimensione vecchia calcola un inquadramento che taglia
+          // fuori i luoghi ai bordi. Con la colonna che accompagna le schede
+          // la differenza e' di parecchie centinaia di pixel.
+          // Il padding del brief e' [40, 40]. Con le etichette accese pero' il
+          // nome sta a DESTRA del pin, e quello piu' a est (Castel Thun)
+          // finiva mezzo fuori dalla cornice: fitBounds inquadra i marker, non
+          // i loro cartellini. Si aggiunge spazio solo a destra, e solo quando
+          // le etichette ci sono davvero.
+          const respiro = etichette
+            ? { paddingTopLeft: [40, 40], paddingBottomRight: [180, 40] }
+            : { padding: [40, 40] };
+          const inquadra = () => {
             map.invalidateSize();
-            cornice.style.opacity = '1';
-          }, 80);
-        } catch (e) { /* resta l'ortofoto */ }
+            map.fitBounds(L.latLngBounds(PIN_ANTEPRIMA.map((p) => [p.lat, p.lng])), {
+              ...respiro, maxZoom: 11,
+            });
+          };
+          inquadra();
+          // Le schede caricano i loro caratteri dopo: quando l'altezza della
+          // colonna si assesta, si rimisura. Una volta sola, non a ogni frame.
+          if (window.ResizeObserver) {
+            let ultima = cornice.clientHeight;
+            const ro = new ResizeObserver(() => {
+              if (Math.abs(cornice.clientHeight - ultima) < 8) return;
+              ultima = cornice.clientHeight;
+              inquadra();
+            });
+            ro.observe(cornice);
+          }
+
+          if (puntatore) {
+            const schede = document.querySelectorAll('.eb-vetrina-scheda');
+            const pinDi = (slug) => {
+              const m = perSlug[slug];
+              const el = m && m.getElement();
+              return el && el.querySelector('.eb-pin-vetrina');
+            };
+            schede.forEach(function (a) {
+              const slug = a.getAttribute('data-slug');
+              const accendiPin = () => { const s = pinDi(slug); if (s) s.classList.add('eb-in-evidenza'); };
+              const spegniPin = () => { const s = pinDi(slug); if (s) s.classList.remove('eb-in-evidenza'); };
+              a.addEventListener('mouseenter', accendiPin);
+              a.addEventListener('focus', accendiPin);
+              a.addEventListener('mouseleave', spegniPin);
+              a.addEventListener('blur', spegniPin);
+              const m = perSlug[slug];
+              if (!m) return;
+              m.on('mouseover', function () { a.classList.add('eb-in-evidenza'); });
+              m.on('mouseout', function () { a.classList.remove('eb-in-evidenza'); });
+              m.on('click', function () { window.location.href = a.getAttribute('href'); });
+            });
+          }
+
+          setTimeout(function () {
+            inquadra();
+            if (segnaposto) segnaposto.style.display = 'none';
+          }, 120);
+        } catch (e) { /* restano schede e segnaposto */ }
       };
       document.head.appendChild(s);
     }
@@ -1729,4 +1878,82 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
     50%     { box-shadow: 0 8px 26px rgba(200,146,62,0.6),  0 0 0 12px rgba(217,169,78,0); }
   }
   @media (prefers-reduced-motion: reduce) { .eb-side-cta { animation: none; } }
+</style>
+
+<style>
+  /* [3/8/2026] Vetrina della mappa in home (brief blocco 2).
+     Da 1024px: colonna schede fissa a 300px + mappa per il resto, alta 340px.
+     Sotto: la mappa sta sopra (200px) e le schede scorrono in orizzontale con
+     lo snap, una e mezza per volta, cosi' si capisce a occhio che si scorre. */
+  .eb-vetrina-mappa { display: grid; gap: 16px; }
+  .eb-vetrina-mappa-cornice {
+    position: relative; overflow: hidden; border-radius: 6px;
+    border: 1px solid #E5DFCF; background: #F5EEDD; height: 200px;
+  }
+  .eb-vetrina-schede {
+    display: flex; gap: 12px; overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    margin-inline: -24px; padding-inline: 24px; padding-bottom: 6px;
+  }
+  .eb-vetrina-scheda-li { scroll-snap-align: start; flex: 0 0 66%; min-width: 0; }
+  .eb-vetrina-scheda { height: 100%; }
+  /* Una riga sola, tagliata dal browser: mai troncare a mano nel codice, il
+     testo a database resta intero e chi legge con lo screen reader lo sente. */
+  .eb-una-riga {
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  @media (min-width: 1024px) {
+    .eb-vetrina-mappa {
+      grid-template-columns: 300px 1fr;
+      grid-template-areas: "schede mappa";
+      align-items: start; gap: 24px;
+    }
+    /* Il brief fissa 340px. Con sei schede da tre righe la colonna arriva a
+       circa 620px, e una mappa alta 340 lascia un buco a destra grande quanto
+       due schede. Qui 340 diventa il MINIMO e la mappa accompagna la colonna:
+       il numero del brief e' rispettato come pavimento, non come gabbia. */
+    .eb-vetrina-mappa { align-items: stretch; }
+    .eb-vetrina-mappa-cornice { grid-area: mappa; height: auto; min-height: 340px; }
+    .eb-vetrina-schede {
+      grid-area: schede; display: flex; flex-direction: column;
+      overflow: visible; margin-inline: 0; padding-inline: 0; padding-bottom: 0;
+    }
+    .eb-vetrina-scheda-li { flex: 0 0 auto; }
+  }
+  /* Evidenziazione a due vie fra scheda e marker: sulla scheda in evidenza il
+     bordo si accende, sul marker corrispondente il pin cresce. Su touch non
+     scatta ed e' giusto cosi', non e' essenziale. */
+  .eb-vetrina-scheda.eb-in-evidenza { border-color: #C8923E; background: #FDF9F0; }
+</style>
+
+<style is:global>
+  /* Etichette permanenti accanto ai pin della vetrina: leggibili sull'OSM
+     chiaro senza il fumetto pieno di Leaflet, che sarebbe troppo pesante per
+     sei nomi tutti accesi insieme. Sotto i 768px non vengono nemmeno create
+     (lo decide lo script), qui restano solo le regole d'aspetto. */
+  .eb-vetrina-etichetta {
+    background: rgba(245, 238, 221, .92);
+    border: 1px solid rgba(200, 146, 62, .55);
+    border-radius: 4px;
+    color: #1E2E26;
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    box-shadow: 0 1px 4px rgba(30, 46, 38, .18);
+    white-space: nowrap;
+  }
+  .eb-vetrina-etichetta::before { display: none; }
+
+  /* Queste due vivono qui e non nel blocco scopato perche' gli elementi a cui
+     si applicano li crea Leaflet a runtime: non portano l'attributo di scope
+     di Astro, e una regola scopata non li toccherebbe mai. */
+  .eb-pin-vetrina { transition: transform .18s ease; transform-origin: 50% 100%; display: inline-block; }
+  .eb-pin-vetrina.eb-in-evidenza { transform: scale(1.35); }
+  /* L'attribuzione OSM resta VISIBILE: e' una condizione della licenza, non
+     un dettaglio estetico. Solo rimpicciolita per non rubare la scena. */
+  #eb-mappa-viva .leaflet-control-attribution {
+    font-size: 9px; background: rgba(245, 238, 221, .82);
+  }
 </style>
