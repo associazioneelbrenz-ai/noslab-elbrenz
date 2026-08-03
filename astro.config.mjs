@@ -154,6 +154,18 @@ export default defineConfig({
       status: 301,
       destination: '/fioi-dal-nos',
     },
+    // [3/8/2026] Le pagine DE ed EN della gita rimandavano a un modulo di
+    // iscrizione che non e' mai esistito: 404 secco. Ora che l'evento e'
+    // annullato mandano alla pagina dell'evento, dove c'e' l'avviso nella
+    // lingua giusta. Meglio una spiegazione che una pagina inesistente.
+    '/de/gita-giochi-medievali-2026/iscrizione': {
+      status: 301,
+      destination: '/de/gita-giochi-medievali-2026',
+    },
+    '/en/gita-giochi-medievali-2026/iscrizione': {
+      status: 301,
+      destination: '/en/gita-giochi-medievali-2026',
+    },
   },
 
   // i18n (Fase 1a): IT alla radice, DE/EN sotto /de/ e /en/. pt/es predisposte

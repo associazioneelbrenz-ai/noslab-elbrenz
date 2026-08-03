@@ -1752,6 +1752,22 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const taglia = (s, n) => (s && s.length > n ? s.slice(0, n - 1).trimEnd() + '…' : (s || ''));
 
+    // [3/8/2026] Lo stato vuoto guarda le CARD IN PAGINA, non un conteggio
+    // fatto al build sui soli eventi nostri. Prima erano due contatori diversi:
+    // il messaggio "Nessun evento in programma" nasceva dal numero dei nostri
+    // appuntamenti futuri, le card potevano arrivare anche dal Radar, e bastava
+    // marcare annullato l'unico evento nostro perche' la pagina mostrasse
+    // insieme un cartellone pieno e la riga che dice che non c'e' niente.
+    // Una sola fonte: se sullo schermo c'e' almeno una card, il messaggio non
+    // esiste. Non e' una condizione da ricordarsi, e' una condizione che vale.
+    function allineaStatoVuoto() {
+      const vuoto = document.getElementById('eb-eventi-vuoto');
+      if (!vuoto) return;
+      const quante = lista.querySelectorAll(':scope > li').length;
+      vuoto.classList.toggle('hidden', quante > 0);
+    }
+    allineaStatoVuoto();
+
     const campi = 'id,slug,titolo,descrizione,data_inizio,data_fine,ricorrenza,ora_inizio,luogo,comune,valle,url_fonte';
     fetch(SB_URL + '/rest/v1/eventi_esterni_pubblici?select=' + campi + '&order=data_inizio.asc', {
       headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON },
@@ -1761,10 +1777,7 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
         const futuri = (Array.isArray(righe) ? righe : [])
           .filter((e) => (e.data_fine || e.data_inizio) >= oggi)
           .slice(0, 8);
-        if (!futuri.length) return;
-
-        const vuoto = document.getElementById('eb-eventi-vuoto');
-        if (vuoto) vuoto.classList.add('hidden');
+        if (!futuri.length) { allineaStatoVuoto(); return; }
 
         for (const e of futuri) {
           const d = new Date(e.data_inizio + 'T00:00:00');
@@ -1805,8 +1818,9 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
             '</div>';
           lista.appendChild(li);
         }
+        allineaStatoVuoto();
       })
-      .catch(() => {});
+      .catch(() => { allineaStatoVuoto(); });
   })();
 </script>
 

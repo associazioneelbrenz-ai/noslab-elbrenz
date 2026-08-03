@@ -2,6 +2,14 @@
 /* /en/gita-giochi-medievali-2026 — English translation (Phase 1b). Review in progress. */
 
 import Layout from '../../layouts/Layout.astro';
+import { getStatoGita } from '../../lib/postiGita';
+
+// [3/8/2026] Lo stato della gita si legge da config_app, la stessa chiave
+// che consultano la pagina italiana e l'edge che crea l'ordine PayPal: un
+// lettore di lingua tedesca o inglese non deve leggere un invito a
+// iscriversi a qualcosa che non si fa. Lettura fallita = annullata.
+export const prerender = false;
+const { annullata: gitaAnnullata } = await getStatoGita();
 
 const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]';
 ---
@@ -9,9 +17,22 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
 <Layout
   lang="en"
   title="A Day in the Middle Ages · Trip to the Südtiroler Ritterspiele, 22 August 2026"
-  description="El Brenz group trip to the Südtiroler Ritterspiele (South Tyrolean Medieval Games), 22 August 2026. Limited places, reduced rate for members."
+  description={gitaAnnullata ? "The 22 August trip to the South Tyrolean Medieval Games has been cancelled: the minimum number of participants was not reached." : "El Brenz group trip to the Südtiroler Ritterspiele (South Tyrolean Medieval Games), 22 August 2026. Limited places, reduced rate for members."}
   ogImage="/og/og-gita-giochi-medievali.jpg"
 >
+  {/* Avviso di annullamento, verbatim dal brief del 3/8. La pagina resta
+      pubblicata: chi ha il collegamento salvato deve trovare la spiegazione. */}
+  {gitaAnnullata && (
+    <aside class="bg-[#8a3a3a] text-[#F5EEDD]" role="status" aria-live="polite">
+      <div class="max-w-3xl mx-auto px-6 py-6 md:py-7">
+        <p class="text-base md:text-lg leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+          <strong style="font-family: 'Inter', sans-serif;">Trip cancelled.</strong>
+          The 22 August trip to the South Tyrolean Medieval Games will not take place: the minimum number of participants required for the coach was not reached. Anyone who had paid a deposit has been fully refunded. We will try again at a time that allows more people to join.
+        </p>
+      </div>
+    </aside>
+  )}
+
   {/* ===================== HERO ===================== */}
   <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
     <div class="absolute inset-0 opacity-[0.06] pointer-events-none" aria-hidden="true"
@@ -25,8 +46,11 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         At the foot of Churburg castle (Castel Coira), in Val Venosta (Vinschgau), the Alpine region's largest historical
         reenactment comes to life. El Brenz takes you where historical Tyrol lives again.
       </p>
-      <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sign up and secure your place →</a>
-      <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">Only 54 places · reduced rate for members · early-bird bonus until 31 July</p>
+      {gitaAnnullata ? (
+        <p class="text-base text-[#F5EEDD]/70 m-0" style="font-family: 'Inter', sans-serif;">2026 edition cancelled</p>
+      ) : (
+        <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sign up and secure your place →</a>
+      )}
     </div>
   </section>
 
@@ -95,7 +119,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         ))}
       </ul>
       <div class="text-center mt-10">
-        <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Secure your place →</a>
+        {!gitaAnnullata && <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Secure your place →</a>}
       </div>
     </div>
   </section>
@@ -164,7 +188,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         During sign-up you can check your rate and, if you like, join on the spot.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sign up for the trip →</a>
+        {!gitaAnnullata && <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sign up for the trip →</a>}
         <a href="mailto:info@elbrenz.eu" class="inline-block border-2 border-[#C8923E] text-[#F5EEDD] px-7 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors" style="font-family: 'Inter', sans-serif;">Questions? Write to us</a>
       </div>
       <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">
@@ -175,10 +199,14 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
     </div>
   </section>
 
-  {/* CTA sticky su mobile */}
+  {/* La barra fissa sparisce a gita annullata: un invito a iscriversi
+      incollato in fondo allo schermo sopra un avviso di annullamento e'
+      il modo piu' rapido per far pagare qualcuno per sbaglio. */}
+  {!gitaAnnullata && (
   <div class="md:hidden fixed inset-x-0 bottom-0 z-30 bg-[#1E2E26]/95 backdrop-blur border-t border-[#C8923E]/40 px-4 py-3" style="padding-bottom:max(0.75rem,env(safe-area-inset-bottom));">
     <a href="/en/gita-giochi-medievali-2026/iscrizione" class="block text-center bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold uppercase tracking-wide text-sm no-underline" style="font-family: 'Inter', sans-serif;">Sign up for the trip →</a>
   </div>
+  )}
 </Layout>
 
 <script>
