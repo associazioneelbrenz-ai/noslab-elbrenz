@@ -296,13 +296,31 @@ async function eseguiApprova(supabase: any, secret: string, d: string, derogaMot
     .order('numero_tessera', { ascending: false }).limit(1).maybeSingle();
   const numero = Math.max(seed, (maxRow?.numero_tessera ?? 0) + 1);
 
+  // [4/8/2026] IL NUMERO DI SOCIO, che non e' il numero di tessera.
+  // Il libro degli associati usa il progressivo del registro cartaceo tenuto
+  // dal 2009, non il numero stampato sulla tessera: Cristian Bresadola e' il
+  // socio 1 e ha la tessera 4.
+  //
+  // Si prende SEMPRE il massimo piu' uno, MAI il primo buco libero: i buchi
+  // (4, 5, 16, 40, 95 e altri novanta) appartengono a soci storici che non
+  // sono a database, e riassegnarli farebbe raccontare al registro una cosa
+  // falsa su due persone insieme. Il numero di un socio resta suo anche quando
+  // esce. La regola vive nella funzione a database, in un posto solo.
+  const { data: prossimoSocio, error: errNumSocio } = await supabase.rpc('prossimo_numero_socio');
+  if (errNumSocio || typeof prossimoSocio !== 'number') {
+    // Senza numero di socio non si approva: una riga nel libro degli associati
+    // senza il suo progressivo e' una riga che poi qualcuno numera a mano, ed
+    // e' cosi' che nascono i doppioni.
+    return { errore: 'Non riesco ad assegnare il numero di socio: approvazione bloccata per proteggere il libro degli associati.' };
+  }
+
   // La deroga viaggia NELLA STESSA update dello stato: il trigger guarda la
   // riga che sta per essere scritta, quindi scriverla dopo non servirebbe a
   // niente e scriverla prima lascerebbe una deroga appesa a una domanda che poi
   // non viene approvata.
   const deroga = (derogaMotivo ?? '').trim().slice(0, 1000);
   const patch: Record<string, unknown> = {
-    stato: 'approvata', numero_tessera: numero, scadenza: `${ANNO}-12-31`,
+    stato: 'approvata', numero_tessera: numero, numero_socio: prossimoSocio, scadenza: `${ANNO}-12-31`,
     approvata_da: 'via email-link segretario', approvata_il: new Date().toISOString(), updated_at: new Date().toISOString(),
   };
   if (deroga) patch.deroga_pagamento_motivo = deroga;
@@ -690,6 +708,8 @@ Deno.serve(async (req: Request) => {
         .select('domanda_id, nome, email, anno, numero_tessera, codice_tessera, stato, approvata_il, posizione, quota_dovuta, totale_incassato, manca, in_deroga, deroga_pagamento_motivo, ultimo_incasso_il, metodi_incasso, socio_storico')
         .eq('stato', 'approvata')
         .neq('posizione', 'account_di_sistema');
+      // `Brenz Meister` e ogni altro account di servizio restano fuori: la
+      // vista li riconosce dal numero di tessera 0, e non sono associati.
       if (errSoci) return jsonR({ ok: false, error: 'lettura', message: errSoci.message }, 500);
 
       // L'anagrafica sta sulla domanda, non nella vista. Si prende solo per le
@@ -697,7 +717,7 @@ Deno.serve(async (req: Request) => {
       // chiede: non si porta dietro tutto il resto per comodita'.
       const ids = (soci ?? []).map((s: Record<string, any>) => s.domanda_id);
       const { data: anag } = await sb.from('domande_tesseramento')
-        .select(`id, data_nascita, comune_nascita, sesso, ${CAMPI_ANAGRAFICI.join(', ')}`).in('id', ids);
+        .select(`id, data_nascita, comune_nascita, sesso, numero_socio, ${CAMPI_ANAGRAFICI.join(', ')}`).in('id', ids);
       const perId = new Map(((anag ?? []) as Array<Record<string, any>>).map((a) => [a.id, a]));
 
       const righe = ((soci ?? []) as Array<Record<string, any>>).map((s) => {
@@ -712,10 +732,12 @@ Deno.serve(async (req: Request) => {
           anagrafica_completa: anagraficaCompleta(unita),
         };
       }).sort((x, y) => {
-        // Per numero di tessera, che e' l'ordine con cui un registro si legge.
-        // Chi non ce l'ha ancora va in fondo, non in testa con uno zero finto.
-        const nx = x.numero_tessera ?? Number.MAX_SAFE_INTEGER;
-        const ny = y.numero_tessera ?? Number.MAX_SAFE_INTEGER;
+        // [4/8/2026] Per NUMERO DI SOCIO, non piu' per numero di tessera: e'
+        // quello il progressivo del libro degli associati, ed e' l'ordine in
+        // cui il registro cartaceo si legge dal 2009. Chi non ce l'ha ancora va
+        // in fondo, non in testa con uno zero finto.
+        const nx = x.numero_socio ?? Number.MAX_SAFE_INTEGER;
+        const ny = y.numero_socio ?? Number.MAX_SAFE_INTEGER;
         if (nx !== ny) return nx - ny;
         return String(x.nome ?? '').localeCompare(String(y.nome ?? ''));
       });
@@ -747,6 +769,7 @@ Deno.serve(async (req: Request) => {
           || vuoto(r.residenza_comune) || vuoto(r.residenza_provincia)).length,
         senza_categoria: righe.filter((r) => vuoto(r.categoria_socio)).length,
         senza_codice_fiscale: righe.filter((r) => vuoto(r.codice_fiscale)).length,
+        senza_numero_socio: righe.filter((r) => r.numero_socio == null).length,
         // Il numero che conta: quante schede non reggerebbero il confronto con
         // il registro cartaceo, campo per campo.
         schede_incomplete: righe.filter((r) => !r.anagrafica_completa).length,

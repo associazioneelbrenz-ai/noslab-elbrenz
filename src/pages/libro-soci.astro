@@ -192,7 +192,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       const td = 'padding:6px 8px;border-bottom:1px solid #E5DFCF;';
       const res = residenza(x);
       return `<tr${x.stato_socio === 'cessato' ? ' style="opacity:.6;"' : ''}>
-        <td style="${td}text-align:right;white-space:nowrap;">${x.numero_tessera != null ? esc(x.numero_tessera) : mancante('da assegnare')}</td>
+        <td style="${td}text-align:right;white-space:nowrap;font-weight:600;">${x.numero_socio != null ? esc(x.numero_socio) : mancante('da assegnare')}</td>
         <td style="${td}">${x.cognome ? esc(x.cognome) : mancante()}</td>
         <td style="${td}">${esc(x.nome)}</td>
         <td style="${td}white-space:nowrap;">${x.categoria_socio ? esc(x.categoria_socio) : mancante()}</td>
@@ -205,6 +205,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         <td style="${td}white-space:nowrap;">${x.stato_socio === 'cessato'
           ? `<span style="color:#a33;">cessato il ${esc(dataIt(x.cessazione_data))}</span>`
           : 'attivo'}</td>
+        <td style="${td}text-align:right;white-space:nowrap;color:#4a4a4a;">${x.numero_tessera != null ? esc(x.numero_tessera) : '<span style="color:#999;">—</span>'}</td>
         <td style="${td}white-space:nowrap;">${esc(POSIZIONE[x.posizione] ?? x.posizione)}</td>
         <td style="${td}font-size:.92em;color:#4a4a4a;">${nota}</td>
       </tr>`;
@@ -221,6 +222,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (r.ammesso_senza_incasso > 0) buchi.push(`<li><strong>${esc(r.ammesso_senza_incasso)}</strong> ${r.ammesso_senza_incasso === 1 ? 'posizione risulta ammessa senza che risulti' : 'posizioni risultano ammesse senza che risulti'} il versamento della quota.</li>`);
     if (l.senza_residenza > 0) buchi.push(`<li><strong>${esc(l.senza_residenza)}</strong> ${l.senza_residenza === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} residenza completa. Il modulo di adesione non l’ha mai richiesta: non è un dato andato perduto, è un dato mai raccolto, in corso di integrazione dal registro cartaceo.</li>`);
     if (l.senza_cognome > 0) buchi.push(`<li><strong>${esc(l.senza_cognome)}</strong> ${l.senza_cognome === 1 ? 'posizione ha' : 'posizioni hanno'} nome e cognome ancora in un campo unico, in corso di separazione.</li>`);
+    if (l.senza_numero_socio > 0) buchi.push(`<li><strong>${esc(l.senza_numero_socio)}</strong> ${l.senza_numero_socio === 1 ? 'posizione è priva del' : 'posizioni sono prive del'} numero di socio: va assegnato dal registro storico, non inventato.</li>`);
     if (l.senza_codice_fiscale > 0) buchi.push(`<li><strong>${esc(l.senza_codice_fiscale)}</strong> ${l.senza_codice_fiscale === 1 ? 'posizione è priva del' : 'posizioni sono prive del'} <strong>codice fiscale</strong>, che il modulo di adesione non ha mai richiesto ed è dato obbligatorio per il registro: è la lacuna da colmare per prima.</li>`);
     if (l.senza_categoria > 0) buchi.push(`<li><strong>${esc(l.senza_categoria)}</strong> ${l.senza_categoria === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} categoria di socio, da riportare dal registro cartaceo.</li>`);
 
@@ -234,14 +236,14 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 8px;color:#1E2E26;">Soci cessati nell’anno ${esc(doc.anno)}</h2>
           <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">
             <thead><tr style="background:#F8F1E4;text-align:left;">
-              <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">Tessera</th>
+              <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">N. socio</th>
               <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome e nome</th>
               <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Iscritto/a il</th>
               <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cessato/a il</th>
               <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Motivo</th>
             </tr></thead>
             <tbody>${doc.cessati.map((x: any) => `<tr>
-              <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;text-align:right;">${x.numero_tessera != null ? esc(x.numero_tessera) : ''}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;text-align:right;">${x.numero_socio != null ? esc(x.numero_socio) : ''}</td>
               <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc([x.cognome, x.nome].filter(Boolean).join(' '))}</td>
               <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(dataIt(x.approvata_il))}</td>
               <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(dataIt(x.cessazione_data))}</td>
@@ -283,10 +285,23 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         <strong>${esc(r.ammesso_senza_incasso)}</strong> senza che risulti il versamento.
       </p>
 
+      <p style="font-size:11.5px;color:#6B6B6B;margin:0 0 10px;line-height:1.55;">
+        Il <strong>numero di socio</strong> è il progressivo del registro degli associati tenuto dall'Associazione dal 2009
+        e identifica la persona per sempre: non cambia e non viene riassegnato quando un socio cessa.
+        Il <strong>numero di tessera</strong> è il numero stampato sulla tessera dell'anno ed è un dato diverso:
+        le due numerazioni non coincidono.
+      </p>
+
       <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">
         <thead>
           <tr style="background:#F8F1E4;text-align:left;">
-            <th style="padding:8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">Tessera</th>
+            {/* [4/8] Il NUMERO DI SOCIO apre la tabella: è quello il
+                progressivo del registro tenuto dal 2009, ed è l'identità della
+                persona nel libro degli associati. Il numero di tessera è un
+                dato utile ma è un'altra cosa, e scende in fondo: le due
+                numerazioni non coincidono, e chi affianca i due registri deve
+                capire subito quale sta leggendo. */}
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">N. socio</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Nome</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Categoria</th>
@@ -297,6 +312,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Telefono</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Iscritto/a il</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Stato</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">Tessera</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Quota ${esc(doc.anno)}</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Note</th>
           </tr>
@@ -349,11 +365,11 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
      virgola come separatore e il segnabyte iniziale, altrimenti Excel in
      italiano mette tutto in una colonna sola e storpia le lettere accentate. */
   function scaricaCsv() {
-    const testa = ['Numero tessera', 'Cognome', 'Nome', 'Categoria', 'Email',
+    const testa = ['Numero socio', 'Cognome', 'Nome', 'Categoria', 'Email',
       'Comune di nascita', 'Data di nascita',
       'Via', 'Civico', 'CAP', 'Comune di residenza', 'Provincia',
       'Telefono', 'Codice fiscale',
-      'Data di iscrizione', 'Stato', 'Data di cessazione', 'Motivo di cessazione',
+      'Data di iscrizione', 'Stato', 'Numero tessera', 'Data di cessazione', 'Motivo di cessazione',
       'Posizione quota', 'Quota dovuta', 'Versato', 'Manca', 'Motivo della deroga',
       'Note di segreteria', 'Scheda completa'];
     const cella = (v: unknown) => {
@@ -361,13 +377,13 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const corpo = doc.righe.map((x: any) => [
-      x.numero_tessera ?? '', x.cognome ?? '', x.nome ?? '', x.categoria_socio ?? '', x.email ?? '',
+      x.numero_socio ?? '', x.cognome ?? '', x.nome ?? '', x.categoria_socio ?? '', x.email ?? '',
       x.comune_nascita ?? '', x.data_nascita ?? '',
       x.residenza_via ?? '', x.residenza_civico ?? '', x.residenza_cap ?? '',
       x.residenza_comune ?? '', x.residenza_provincia ?? '',
       x.telefono ?? '', x.codice_fiscale ?? '',
       x.approvata_il ? String(x.approvata_il).slice(0, 10) : '',
-      x.stato_socio ?? '', x.cessazione_data ?? '', x.cessazione_motivo ?? '',
+      x.stato_socio ?? '', x.numero_tessera ?? '', x.cessazione_data ?? '', x.cessazione_motivo ?? '',
       POSIZIONE[x.posizione] ?? x.posizione,
       Number(x.quota_dovuta ?? 0).toFixed(2).replace('.', ','),
       Number(x.totale_incassato ?? 0).toFixed(2).replace('.', ','),

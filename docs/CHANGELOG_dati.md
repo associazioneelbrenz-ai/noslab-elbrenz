@@ -60,3 +60,56 @@ qualunque riga il webhook chiede a `iscrizioni_gita` se quel `capture_id` o
 quell'`order_id` è già suo, e la creazione della domanda segnaposto ora
 richiede un segnale esplicito del flusso di tesseramento invece di accontentarsi
 di un `tipo` arrivato da un valore predefinito.
+
+---
+
+## 4 agosto 2026 · i numeri di socio dal registro cartaceo
+
+**Deciso da:** Cristian Bresadola (segretario).
+**Eseguito da:** la chat, che ha in mano il registro cartaceo tenuto dal 2009.
+**Tabelle toccate:** `domande_tesseramento` (`numero_socio`, `categoria_socio`).
+
+### Perché serviva
+
+Il libro degli associati usava `numero_tessera` come identificativo, e non può.
+L'Associazione tiene dal 2009 un registro cartaceo con un proprio progressivo
+di iscrizione che arriva a centodieci, e le due numerazioni non coincidono
+nemmeno da lontano: Cristian Bresadola è il socio **1** e ha la tessera **4**,
+Diego Magnoni è il socio **11** e ha la tessera **1**, Michele Corradini è il
+socio **15** e ha la tessera **30**.
+
+Un funzionario che affianca i due registri trova la stessa persona con due
+numeri diversi. È il tipo di discrepanza che fa mettere in dubbio anche ciò che
+è corretto.
+
+### Che cosa è stato caricato
+
+- **18 soci** agganciati al loro progressivo storico del registro cartaceo.
+- **12 soci** numerati da **111 a 122**, in ordine di adesione, perché nel
+  registro cartaceo non comparivano.
+- `categoria_socio` popolata per tutti: **3 fondatori**, **27 ordinari**.
+- `Brenz Meister`, l'account di servizio, resta **senza numero** e fuori dal
+  libro: non è un associato.
+
+Risultato: trenta assegnazioni, valori da 1 a 122, nessun duplicato.
+
+### I buchi restano buchi, ed è la parte da non dimenticare
+
+Fra 1 e 122 mancano **92 numeri**: il 4, il 5, il 16, il 40, il 95 e altri.
+Appartengono a soci iscritti dal 2009 che non sono più attivi e che a database
+non ci sono.
+
+Il contatore `prossimo_numero_socio()` prende **sempre il massimo più uno**,
+mai il primo libero. Se assegnasse il primo libero, un socio nuovo del 2027
+riceverebbe il 4, che dal 2009 è di Daprà Andrea, e il registro racconterebbe
+una cosa falsa su due persone insieme. Il numero di un socio resta suo anche
+quando esce, anche quando muore.
+
+**Il prossimo numero disponibile è il 123.**
+
+### Cosa NON va rieseguito
+
+Questo caricamento. Lo schema, cioè la colonna, l'indice unico parziale e il
+contatore, sta in `supabase/migrations/20260804200000_numero_socio.sql` e si può
+rieseguire quante volte si vuole perché non tocca nessun valore. I trenta numeri
+no: rieseguirli su un database nuovo li inventerebbe.
