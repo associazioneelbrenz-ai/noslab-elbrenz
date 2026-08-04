@@ -137,6 +137,26 @@ in testa perché cambiano le priorità.
 
 ## F. Trappole imparate sul campo
 
+### Notte 3-4 agosto 2026 (dettaglio in `HANDOFF_2026-08-04_tesseramento.md`)
+
+- **`revoke execute ... from anon` non basta**: Postgres concede `EXECUTE` a
+  `PUBLIC` per difetto e `anon` lo eredita. Va revocato anche da `public`,
+  e va verificato chiamando la funzione da fuori.
+- **Supabase vieta la `DELETE` diretta su `storage.objects`**: serve l'API di
+  Storage, quindi una edge, perche' la service role vive solo li'.
+- **`create or replace view` non inserisce colonne in mezzo**: o si appende in
+  fondo o si fa `drop` e si ricrea.
+- **Un esito non gestito in un ramo puo' esserlo in un altro**: `eseguiApprova`
+  ha quattro esiti, il ramo HTML ne gestiva due e cadeva sul terzo.
+- **Una regola applicata in due posti diverge**: la vecchia scheda contava solo
+  `tipo='quota'`, la nuova anche `'integrazione'`, e per sedici soci le due
+  schermate si contraddicevano.
+- **`.or()` di PostgREST separa le condizioni con la virgola**: un'email
+  concatenata dentro la stringa del filtro e' una bomba a orologeria.
+- **Il vincolo `pagamenti_contanti_coerenza` pretende `incassato_da`**: senza,
+  la riga viene rifiutata, ed e' giusto cosi'.
+
+
 - **`create or replace view` azzera i grant.** Ripetere sempre il REVOKE.
 - **`utente.cognome` è NOT NULL**: stringa vuota, non NULL.
 - **Il glob della collection cattura anche il README**: va escluso nel pattern o la build cade.
