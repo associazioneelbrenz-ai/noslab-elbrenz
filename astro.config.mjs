@@ -209,6 +209,9 @@ export default defineConfig({
         // provarci.
         if (page.includes('/paga-quota')) return false;
         if (page.includes('/scheda-domanda')) return false;
+        // La curatela del tesseramento e' area riservata come le sue gemelle:
+        // fuori dalla sitemap, non c'e' niente da indicizzare.
+        if (page.includes('/tesseramento-curatela')) return false;
         // AGGIUNTA 2/8/2026 sera — l'archivio delle ricerche e il suo foglio
         // di stampa sono area riservata, noindex: fuori dalla sitemap per la
         // stessa ragione di /accedi.

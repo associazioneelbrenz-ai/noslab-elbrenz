@@ -247,6 +247,77 @@ Deno.serve(async (req: Request) => {
       } });
     }
     const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    // [4/8/2026] La CODA: l'elenco delle domande da lavorare.
+    //
+    // Finora al segretario ci si arrivava solo dai collegamenti nelle email.
+    // Se una mail finiva nello spam, o veniva archiviata per sbaglio, quella
+    // domanda spariva dai radar: e' successo, ed e' il motivo per cui tre
+    // domande erano rimaste ferme sei giorni a luglio.
+    //
+    // Qui la porta e' la SESSIONE, non un token firmato: si legge il Bearer,
+    // si verifica l'utente e si controlla il livello di ruolo lato server.
+    // Non si passa dalle policy RLS perche' quelle pretendono aal2, cioe' il
+    // secondo fattore, che la sessione OTP non ha: leggere di qui con il
+    // service role e un gate esplicito e' piu' onesto che abbassare le RLS.
+    //
+    // I token per agire su ciascuna domanda si coniano qui, freschi: la lista
+    // e' solo una lista, ogni azione porta la sua firma.
+    if (url.pathname.endsWith('/json/coda') && req.method === 'POST') {
+      const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+      if (!bearer) return jsonR({ ok: false, error: 'no_token' }, 401);
+      const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      });
+      const { data: { user }, error: uerr } = await asUser.auth.getUser();
+      if (uerr || !user) return jsonR({ ok: false, error: 'unauthorized' }, 401);
+      const { data: ruoli } = await sb.from('utente_ruolo')
+        .select('ruolo:ruolo_id(nome, livello)').eq('utente_id', user.id);
+      const livello = Math.max(0, ...(((ruoli ?? []) as Array<Record<string, any>>).map((r) => r?.ruolo?.livello ?? 0)));
+      if (livello < 50) return jsonR({ ok: false, error: 'non_autorizzato' }, 403);
+
+      const { data: domande } = await sb.from('domande_tesseramento')
+        .select('id, nome, email, stato, numero_tessera, metodo_scelto, deroga_pagamento_motivo, created_at, approvata_il, tessera_inviata')
+        .order('created_at', { ascending: false }).limit(200);
+
+      // Un solo giro sui pagamenti invece di uno per domanda: con duecento
+      // righe la differenza fra una query e duecento e' fra un pannello che
+      // si apre e uno che si fa aspettare.
+      const { data: pagamenti } = await sb.from('pagamenti_tesseramento')
+        .select('domanda_id, stato, metodo, importo, capture_id, created_at')
+        .in('tipo', ['quota', 'integrazione']);
+      const perDomanda = new Map<string, Array<Record<string, unknown>>>();
+      for (const p of (pagamenti ?? []) as Array<Record<string, unknown>>) {
+        const k = String(p.domanda_id ?? '');
+        if (!k) continue;
+        if (!perDomanda.has(k)) perDomanda.set(k, []);
+        perDomanda.get(k)!.push(p);
+      }
+
+      const exp = Date.now() + TOKEN_TTL_MS;
+      const righe = [];
+      for (const d of (domande ?? []) as Array<Record<string, any>>) {
+        const suoi = perDomanda.get(d.id) ?? [];
+        const incassati = suoi.filter((p) => p.stato === 'completato');
+        const tentativi = suoi.filter((p) => p.stato !== 'completato');
+        const deroga = !!(d.deroga_pagamento_motivo && String(d.deroga_pagamento_motivo).trim());
+        righe.push({
+          ...d,
+          incassata: incassati.length > 0,
+          totale_incassato: incassati.reduce((t, p) => t + Number(p.importo ?? 0), 0),
+          ultimo_incasso: incassati[0]?.created_at ?? null,
+          metodo_incasso: incassati[0]?.metodo ?? null,
+          tentativi: tentativi.length,
+          in_deroga: deroga,
+          posizione: d.stato !== 'approvata' ? 'non_ammesso'
+            : incassati.length > 0 ? 'in_regola'
+            : deroga ? 'in_regola_per_deroga'
+            : 'ammesso_senza_incasso',
+          vista: `https://elbrenz.eu/scheda-domanda/vista/${d.id}/${exp}/${await firmaToken(secret, 'vista', d.id, exp)}`,
+        });
+      }
+      return jsonR({ ok: true, tipo: 'coda', livello, quota: QUOTA_EURO, righe });
+    }
+
     const jPaga = url.pathname.match(/\/json\/paga-quota\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jSoll = url.pathname.match(/\/json\/sollecita\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jVista = url.pathname.match(/\/json\/vista\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);

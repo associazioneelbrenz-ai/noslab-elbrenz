@@ -1,0 +1,233 @@
+---
+/**
+ * /tesseramento-curatela — il pannello del segretario: tutte le domande in un
+ * posto solo, con lo stato della quota accanto a ciascuna.
+ *
+ * [4/8/2026] Perche' esiste. Finora alle domande ci si arrivava SOLO dai
+ * collegamenti nelle email di notifica. Se una mail finiva nello spam o veniva
+ * archiviata per sbaglio, quella domanda spariva dai radar: a luglio tre sono
+ * rimaste ferme sei giorni cosi'. E non esisteva nessun posto dove vedere,
+ * insieme, chi ha pagato e chi no: quella mancanza il 21 luglio e il 3 agosto
+ * e' costata due tessere emesse senza quota.
+ *
+ * Accesso: sessione OTP + livello di ruolo >= 50, verificato LATO SERVER
+ * dall'edge (ramo /json/coda). Non si legge da RLS perche' le policy di
+ * domande_tesseramento pretendono aal2, che la sessione OTP non ha: passare
+ * dall'edge con un gate esplicito e' piu' onesto che abbassare le policy.
+ *
+ * Le AZIONI non stanno qui: ogni riga porta al suo /scheda-domanda/vista/...
+ * con il token firmato, che e' la strada gia' collaudata. Questo e' un indice,
+ * non un secondo pannello di comando: due posti da cui approvare sono due
+ * posti da tenere allineati.
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const CODA_URL = `${SB_URL}/functions/v1/scheda-domanda/json/coda`;
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Curatela tesseramento · El Brenz" description="Coda delle domande di tesseramento, riservata al Direttivo." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen" data-coda-url={CODA_URL} id="tc-root">
+    <div class="max-w-5xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8" style="font-family: 'Playfair Display', serif; font-weight: 500;">Curatela · Tesseramento</h1>
+
+      <p id="tc-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* LOGIN */}
+      <section id="tc-login" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 max-w-md">
+        <div id="tc-login-1">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti invieremo un codice di verifica.</p>
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-email">Email</label>
+          <input class={inputCls} type="email" id="tc-email" autocomplete="email" placeholder="nome@esempio.it" />
+          <button type="button" id="tc-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors">Invia codice</button>
+        </div>
+        <div id="tc-login-2" class="hidden">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice a 6 cifre inviato a <strong id="tc-email-echo"></strong>.</p>
+          <input class={`${inputCls} tracking-[0.4em] text-center text-xl`} type="text" id="tc-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+          <button type="button" id="tc-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Verifica e accedi</button>
+          <button type="button" id="tc-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        </div>
+        <div id="tc-login-err" class="hidden mt-3 text-sm rounded px-3 py-2" style="background:#fbecec;color:#1E2E26;"></div>
+      </section>
+
+      {/* NO ACCESS */}
+      <section id="tc-noaccess" class="hidden bg-white border border-[#E5DFCF] rounded p-6 max-w-md">
+        <p class="m-0 text-[#1E2E26]/80">Questa area è riservata al direttivo (segretario o amministratore). Se pensi di dover avere accesso, chiedilo al segretario.</p>
+        <button type="button" id="tc-logout-2" class="mt-4 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+      </section>
+
+      {/* PANNELLO */}
+      <section id="tc-app" class="hidden">
+        <div class="flex items-center justify-between mb-6">
+          <p class="text-sm text-[#1E2E26]/70 m-0">Ciao <strong id="tc-utente"></strong></p>
+          <button type="button" id="tc-logout" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+        </div>
+
+        {/* I numeri che contano, letti dai dati e mai scritti a mano */}
+        <div id="tc-riepilogo" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8"></div>
+
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <button type="button" data-filtro="da_lavorare" class="tc-filtro bg-[#1E2E26] text-[#F5EEDD] border border-[#1E2E26] rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Da lavorare</button>
+          <button type="button" data-filtro="senza_incasso" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Ammessi senza incasso</button>
+          <button type="button" data-filtro="in_regola" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">In regola</button>
+          <button type="button" data-filtro="tutte" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Tutte</button>
+          <input id="tc-cerca" type="search" placeholder="Cerca nome o email…" class="ml-auto border border-[#E5DFCF] bg-white rounded px-3 py-1.5 text-[13px] text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
+        </div>
+
+        <div id="tc-lista" class="grid gap-3"></div>
+        <p id="tc-vuoto" class="hidden text-[#1E2E26]/60 bg-white border border-[#E5DFCF] rounded p-6 text-center m-0">Niente in questa selezione.</p>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  import { proteggiCuratela2fa } from '../lib/curatela2fa';
+
+  const $ = (id: string) => document.getElementById(id);
+  const show = (id: string) => $(id)?.classList.remove('hidden');
+  const hide = (id: string) => $(id)?.classList.add('hidden');
+  const val = (id: string) => ($(id) as HTMLInputElement)?.value ?? '';
+  const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const dataIt = (s: string | null) => { if (!s) return '—'; try { return new Date(s).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }); } catch { return s; } };
+  const giorniDa = (s: string | null) => { if (!s) return 0; return Math.floor((Date.now() - new Date(s).getTime()) / 86400000); };
+
+  const CODA_URL = $('tc-root')!.getAttribute('data-coda-url')!;
+  let righe: any[] = [];
+  let filtro = 'da_lavorare';
+
+  const POSIZIONE: Record<string, { testo: string; sfondo: string; colore: string }> = {
+    in_regola: { testo: 'In regola', sfondo: '#eaf3ee', colore: '#2d8659' },
+    in_regola_per_deroga: { testo: 'In deroga', sfondo: '#FDF9F0', colore: '#8a6215' },
+    ammesso_senza_incasso: { testo: 'Ammesso senza incasso', sfondo: '#fbecec', colore: '#a33' },
+    non_ammesso: { testo: 'Da lavorare', sfondo: '#fdf3df', colore: '#8a6215' },
+  };
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    hide('tc-loading');
+    if (!session) { show('tc-login'); return; }
+    if (!(await proteggiCuratela2fa())) { window.location.reload(); return; }
+
+    const r = await fetch(CODA_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: '{}',
+    });
+    const d = await r.json();
+    // Il "non autorizzato" lo decide il server, non questa pagina: nascondere
+    // un pannello lato client non protegge niente.
+    if (!d.ok) { show(d.error === 'non_autorizzato' ? 'tc-noaccess' : 'tc-login'); return; }
+
+    righe = d.righe ?? [];
+    ($('tc-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
+    show('tc-app');
+    riepilogo();
+    render();
+  }
+
+  function riepilogo() {
+    const conta = (p: string) => righe.filter((x) => x.posizione === p).length;
+    const daLavorare = righe.filter((x) => x.stato === 'in_attesa').length;
+    const senzaIncasso = conta('ammesso_senza_incasso');
+    const incassato = righe.reduce((t, x) => t + Number(x.totale_incassato || 0), 0);
+    const card = (n: string | number, testo: string, colore: string) =>
+      `<div class="bg-white border border-[#E5DFCF] rounded p-4">
+         <p class="text-2xl m-0" style="font-family:'Playfair Display',serif;color:${colore};">${esc(n)}</p>
+         <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">${esc(testo)}</p>
+       </div>`;
+    $('tc-riepilogo')!.innerHTML =
+      card(daLavorare, 'in coda', daLavorare > 0 ? '#8a6215' : '#1E2E26')
+      + card(conta('in_regola'), 'soci in regola', '#2d8659')
+      + card(senzaIncasso, 'ammessi senza incasso', senzaIncasso > 0 ? '#a33' : '#1E2E26')
+      + card(`${incassato.toFixed(0)} €`, 'quote incassate', '#1E2E26');
+  }
+
+  function passa(x: any) {
+    const q = val('tc-cerca').trim().toLowerCase();
+    if (q && !`${x.nome} ${x.email}`.toLowerCase().includes(q)) return false;
+    if (filtro === 'tutte') return true;
+    if (filtro === 'da_lavorare') return x.stato === 'in_attesa';
+    if (filtro === 'senza_incasso') return x.posizione === 'ammesso_senza_incasso';
+    if (filtro === 'in_regola') return x.posizione === 'in_regola' || x.posizione === 'in_regola_per_deroga';
+    return true;
+  }
+
+  function render() {
+    const visibili = righe.filter(passa);
+    $('tc-vuoto')!.classList.toggle('hidden', visibili.length > 0);
+    $('tc-lista')!.innerHTML = visibili.map((x) => {
+      const p = POSIZIONE[x.posizione] ?? POSIZIONE.non_ammesso;
+      const giorni = giorniDa(x.stato === 'in_attesa' ? x.created_at : x.approvata_il);
+      /* Un'attesa lunga si dice, non si lascia dedurre da una data: e' il
+         segnale che a luglio e' mancato per sei giorni. */
+      const attesa = (x.stato === 'in_attesa' || x.posizione === 'ammesso_senza_incasso') && giorni >= 3
+        ? `<span class="text-[12px] font-semibold" style="color:#a33;">da ${giorni} giorni</span>` : '';
+      const quota = x.incassata
+        ? `<span style="color:#2d8659;">✓ ${esc(Number(x.totale_incassato).toFixed(0))} € via ${esc(x.metodo_incasso === 'paypal' ? 'PayPal/carta' : x.metodo_incasso || 'n/d')}, ${esc(dataIt(x.ultimo_incasso))}</span>`
+        : x.in_deroga
+          ? `<span style="color:#8a6215;">in deroga · ${esc(x.deroga_pagamento_motivo)}</span>`
+          : `<span style="color:#a33;">nessun incasso${x.metodo_scelto ? ` · ha scelto ${esc(x.metodo_scelto)}` : ' · nessun metodo scelto'}${x.tentativi ? ` · ${x.tentativi} tentativo/i non riuscito/i` : ''}</span>`;
+      return `<a href="${esc(x.vista)}" class="block bg-white border border-[#E5DFCF] hover:border-[#C8923E] rounded p-4 no-underline transition-colors">
+        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span class="text-[16px] text-[#1E2E26] font-medium" style="font-family:'Playfair Display',serif;">${esc(x.nome)}</span>
+          <span class="text-[12px] px-2 py-0.5 rounded-full" style="background:${p.sfondo};color:${p.colore};">${esc(p.testo)}</span>
+          ${x.numero_tessera != null ? `<span class="text-[12px] text-[#1E2E26]/55">tessera n. ${esc(x.numero_tessera)}</span>` : ''}
+          ${attesa}
+        </div>
+        <p class="text-[13px] text-[#1E2E26]/60 m-0 mt-1">${esc(x.email)} · domanda del ${esc(dataIt(x.created_at))}</p>
+        <p class="text-[13px] m-0 mt-1.5">${quota}</p>
+      </a>`;
+    }).join('');
+  }
+
+  document.querySelectorAll('.tc-filtro').forEach((b) => b.addEventListener('click', () => {
+    filtro = (b as HTMLElement).dataset.filtro!;
+    document.querySelectorAll('.tc-filtro').forEach((o) => {
+      const attivo = o === b;
+      o.classList.toggle('bg-[#1E2E26]', attivo); o.classList.toggle('text-[#F5EEDD]', attivo);
+      o.classList.toggle('border-[#1E2E26]', attivo);
+      o.classList.toggle('bg-white', !attivo); o.classList.toggle('text-[#1E2E26]', !attivo);
+      o.classList.toggle('border-[#C8923E]/40', !attivo);
+    });
+    render();
+  }));
+  $('tc-cerca')?.addEventListener('input', render);
+
+  // ---- LOGIN (stesso flusso delle altre curatele) ----
+  const loginErr = (t: string) => { const e = $('tc-login-err')!; e.classList.remove('hidden'); e.textContent = t; };
+  $('tc-send')?.addEventListener('click', async () => {
+    const email = val('tc-email').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('Email non valida.'); return; }
+    $('tc-login-err')?.classList.add('hidden');
+    const btn = $('tc-send') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    btn.disabled = false; btn.textContent = 'Invia codice';
+    if (error || !data?.ok) { loginErr('Impossibile inviare il codice. Riprova.'); return; }
+    (window as any)._tcEmail = email;
+    ($('tc-email-echo') as HTMLElement).textContent = email;
+    hide('tc-login-1'); show('tc-login-2');
+    setTimeout(() => ($('tc-code') as HTMLInputElement)?.focus(), 100);
+  });
+  $('tc-back')?.addEventListener('click', () => { hide('tc-login-2'); show('tc-login-1'); });
+  $('tc-verify')?.addEventListener('click', async () => {
+    const codice = val('tc-code').replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) { loginErr('Il codice deve essere di 6 cifre.'); return; }
+    $('tc-login-err')?.classList.add('hidden');
+    const btn = $('tc-verify') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Verifica…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._tcEmail, codice, scope: 'login' } });
+    if (error || !data?.ok || !data?.session) { btn.disabled = false; btn.textContent = 'Verifica e accedi'; loginErr('Codice errato o scaduto.'); return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+  const logout = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  $('tc-logout')?.addEventListener('click', logout);
+  $('tc-logout-2')?.addEventListener('click', logout);
+
+  init();
+</script>
