@@ -171,9 +171,16 @@ const CUTOFF_ISO = '2026-08-15T00:00:00+02:00';
         .then(function (rows) {
           var row = Array.isArray(rows) ? rows[0] : null;
           if (row) {
-            var totali = Number(row.posti_totali) || 54;
-            var occupati = Math.min(Number(row.posti_occupati) || 0, totali);
-            if (Math.max(totali - occupati, 0) <= 0) postiEsauriti = true;
+            // [4/8/2026 sera] Via il `|| 54`: qui il totale non si stampa, ma
+            // serviva a DECIDERE se i posti sono finiti, e decidere su una
+            // cifra inventata e' come stamparla. Se non e' un numero valido
+            // non si conclude niente: il popup resta come se non lo sapessimo,
+            // che e' esattamente quello che succedeva prima.
+            var totali = Number(row.posti_totali);
+            if (isFinite(totali) && totali > 0) {
+              var occupati = Math.min(Number(row.posti_occupati) || 0, totali);
+              if (Math.max(totali - occupati, 0) <= 0) postiEsauriti = true;
+            }
           }
           postiRisolti = true;
           if (postiEsauriti) disarma();

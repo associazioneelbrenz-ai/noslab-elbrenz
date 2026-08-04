@@ -1609,7 +1609,13 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
         // Non e' una bugia, ma non e' nemmeno un'informazione: si dice che il
         // dato non c'e'.
         if (!row) throw new Error('nessuna riga in v_posti_gita');
-        const totali = Number(row.posti_totali) || 54;
+        // [4/8/2026 sera] Qui c'era `|| 54`: se la vista avesse mai restituito
+        // un totale vuoto, la pagina avrebbe stampato una cifra che nessuno le
+        // aveva detto, e sarebbe sembrata il dato vero. Il totale o si legge o
+        // non c'e': in quel caso si finisce nel catch, che scrive
+        // «non disponibile». (JavaScript e basta: siamo in un define:vars.)
+        const totali = Number(row.posti_totali);
+        if (!Number.isFinite(totali) || totali <= 0) throw new Error('posti_totali non leggibile');
         const occupati = Math.min(Number(row.posti_occupati) || 0, totali);
         const disponibili = Math.max(totali - occupati, 0);
         if (testo) testo.textContent = `${disponibili} di ${totali}`;

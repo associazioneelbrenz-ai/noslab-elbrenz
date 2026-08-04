@@ -19,7 +19,12 @@ import { getPostiGita, descrizioneGita, statoGita } from '../../lib/postiGita';
 // social mostra i posti REALI (stessa vista v_posti_gita della home, fail-safe).
 // Il flusso PayPal e la logica cutoff restano client-side, invariati.
 export const prerender = false;
-const ogDescription = descrizioneGita(await getPostiGita());
+// [4/8/2026 sera] Una sola lettura, riusata: prima serviva solo all'anteprima
+// social, mentre nel testo il numero del pullman era scritto a mano. Se la
+// lettura non riesce la frase dice «posti limitati» senza inventare la cifra.
+const posti = await getPostiGita();
+const totaliNoti = posti?.totali ?? null;
+const ogDescription = descrizioneGita(posti);
 Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
@@ -81,7 +86,7 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
       </h1>
       {gitaAperta && (
         <p class="text-lg text-[#F5EEDD]/85 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
-          Sluderno, ai piedi di Castel Coira. Posti limitati (pullman da 54): si fermano solo con l'anticipo.
+          Sluderno, ai piedi di Castel Coira. Posti limitati{totaliNoti ? ` (pullman da ${totaliNoti})` : ''}: si fermano solo con l'anticipo.
         </p>
       )}
     </div>

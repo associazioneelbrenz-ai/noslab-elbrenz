@@ -37,6 +37,16 @@ const gitaAperta = stato === 'aperta';
 const chiusura = await chiusuraIscrizioniGita();
 const bonusVivo = bonusPreorderAttivo();
 
+// [4/8/2026 sera] I POSTI TOTALI VENGONO DALLA VISTA, NON DAL TESTO.
+// In due punti di questa pagina il 54 era scritto a mano. Oggi e' il numero
+// giusto, ma e' vero per coincidenza: il giorno che il pullman cambia, la
+// pagina continua a dirlo e nessuno se ne accorge, come e' successo con la
+// data di chiusura cablata al 14 agosto mentre la vera era il 15.
+// `getPostiGita()` torna `null` se la lettura non riesce: in quel caso la
+// frase NON inventa una cifra, dice «posti limitati» e basta. Si tace, non si
+// mente, anche quando a mancare e' solo mezza parola.
+const totaliNoti = posti?.totali ?? null;
+
 const ogDescription = gitaAnnullata
   ? 'La gita del 22 agosto ai Giochi Medievali del Südtirol e\' stata annullata: non e\' stato raggiunto il numero minimo di partecipanti.'
   : descrizioneGita(posti);
@@ -98,7 +108,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
       {gitaAperta && (
         <>
           <a href="/gita-giochi-medievali-2026/iscrizione" class={CTA}>Iscriviti e blocca il posto →</a>
-          <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">Solo 54 posti · soci a tariffa agevolata{bonusVivo ? ' · bonus preorder entro il 31 luglio' : ''}</p>
+          <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">{totaliNoti ? `Solo ${totaliNoti} posti` : 'Posti limitati'} · soci a tariffa agevolata{bonusVivo ? ' · bonus preorder entro il 31 luglio' : ''}</p>
         </>
       )}
     </div>
@@ -224,7 +234,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         </div>
         <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
           <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Iscrizioni</dt>
-          <dd class="m-0 text-[#1E2E26]/90">{chiusura ? `Aperte fino a ${dataLunga(chiusura, 'it')}. ` : ''}Posti limitati: pullman da 54.</dd>
+          <dd class="m-0 text-[#1E2E26]/90">{chiusura ? `Aperte fino a ${dataLunga(chiusura, 'it')}. ` : ''}{totaliNoti ? `Posti limitati: pullman da ${totaliNoti}.` : 'Posti limitati.'}</dd>
         </div>
       </dl>
     </div>
@@ -238,7 +248,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
       )}
       {gitaAperta && (
         <>
-          <p class="text-sm tracking-[0.2em] uppercase text-[#D9A94E] font-semibold m-0 mb-4" style="font-family: 'Inter', sans-serif;">54 posti. Non aspettare.</p>
+          <p class="text-sm tracking-[0.2em] uppercase text-[#D9A94E] font-semibold m-0 mb-4" style="font-family: 'Inter', sans-serif;">{totaliNoti ? `${totaliNoti} posti. Non aspettare.` : 'Posti limitati. Non aspettare.'}</p>
           <h2 class="text-3xl md:text-5xl m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Assicurati il tuo posto</h2>
           <p class="text-lg text-[#F5EEDD]/85 max-w-2xl mx-auto m-0 mb-9" style="font-family: 'Source Serif 4', Georgia, serif;">
             I soci El Brenz partono a <strong>tariffa agevolata</strong>; per i non soci è previsto il prezzo pieno.
