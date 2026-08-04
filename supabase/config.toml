@@ -232,3 +232,9 @@ verify_jwt = false
 # >=50 per pubblicare, imposto anche dal trigger di guardia a DB).
 [functions.radar-eventi-azione]
 verify_jwt = true
+
+# Manutenzione amministrativa: il gate e' INGEST_TOKEN nell'header, non il JWT.
+# Senza questa dichiarazione il deploy CLI rimetterebbe verify_jwt=true e la
+# funzione risponderebbe 401 al gateway (Trappola 12).
+[functions.tessere-qr-orfani]
+verify_jwt = false
