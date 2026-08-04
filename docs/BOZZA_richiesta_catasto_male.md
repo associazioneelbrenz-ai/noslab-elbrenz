@@ -1,22 +1,11 @@
-# Bozza · richiesta al Servizio catasto per le mappe d'impianto di Malé
+# Bozza · richiesta al Servizio catasto per le mappe d'impianto di Malè
 
 **Da approvare e inviare da Cristian.** Non è stata spedita: una lettera a un
 ufficio pubblico la firma il segretario, non il sistema.
 
 - **A:** `servizio.catasto@provincia.tn.it`
 - **Da:** `info@elbrenz.eu`
-- **Oggetto:** Richiesta mappe d'impianto del Comune catastale di Malé
-
-Prima di inviare, due cose da controllare:
-
-1. **La grafia del comune.** Qui è scritto **Malé** con l'accento acuto, come
-   nei dati anagrafici dell'Associazione e negli elenchi ufficiali. Se il
-   catasto usa un'altra forma, adeguarla: in una richiesta a un ufficio il
-   nome deve combaciare con il loro archivio.
-2. **Se preferisci togliere il capoverso sul collegamento non raggiungibile.**
-   L'ho messo perché è un'informazione utile a loro e spiega perché stiamo
-   scrivendo invece di scaricare. Se ti sembra che suoni come un rilievo,
-   basta toglierlo: la richiesta regge lo stesso.
+- **Oggetto:** Richiesta mappe d'impianto del Comune catastale di Malè
 
 ---
 
@@ -25,12 +14,12 @@ Prima di inviare, due cose da controllare:
 Spettabile Servizio catasto,
 
 vi scriviamo dall'**Associazione Storico Culturale Linguistica El Brenz delle
-Valli del Noce**, associazione di promozione sociale con sede a Malé, in via
+Valli del Noce**, associazione di promozione sociale con sede a Malè, in via
 Trento 40, attiva dal dicembre 2009 nella ricerca e nella divulgazione della
 storia, della lingua e della cultura materiale delle Valli del Noce.
 
 Vorremmo chiedervi come ottenere le **mappe d'impianto del Comune catastale di
-Malé**: il quadro d'unione e i fogli, nella forma con i file di
+Malè**: il quadro d'unione e i fogli, nella forma con i file di
 georeferenziazione, così come li distribuite per comune catastale.
 
 **A che cosa ci servono.** Stiamo costruendo una mappa dei luoghi storici delle
@@ -41,7 +30,7 @@ dell'Ottocento. Per un'associazione come la nostra è il modo più diretto di fa
 vedere a chi ci vive quanto è cambiato il territorio, e di farlo su una fonte
 d'archivio invece che su un racconto.
 
-Cominceremmo da Malé, che è anche il comune dove l'Associazione ha sede, per
+Cominceremmo da Malè, che è anche il comune dove l'Associazione ha sede, per
 capire come funziona prima di estendere agli altri comuni delle valli.
 
 **Sull'uso.** Abbiamo verificato che il dataset «Mappe storiche d'impianto» è
@@ -59,11 +48,6 @@ diversa formula di citazione, ce lo dite e la adottiamo.
 
 Nessun uso commerciale: il sito è senza pubblicità e la consultazione è libera.
 
-**Perché vi scriviamo invece di scaricare.** Il collegamento indicato nella
-scheda del dataset, `catastotn.it/mappeStoriche.html`, oggi rimanda al portale
-OPENkat, che richiede autenticazione, e non siamo riusciti a raggiungere il
-servizio di scaricamento aperto. Ve lo segnaliamo nel caso vi sia utile.
-
 Restiamo a disposizione per qualunque chiarimento sull'uso che ne faremo, e vi
 ringraziamo per il lavoro di pubblicazione di questo patrimonio.
 
@@ -72,7 +56,7 @@ Cordiali saluti,
 **Cristian Bresadola**
 Segretario
 Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce
-Via Trento 40, 38027 Malé (TN)
+Via Trento 40, 38027 Malè (TN)
 info@elbrenz.eu · +39 347 107 7636 · elbrenz.eu
 
 *Raìs fonde no le 'nglacia*
