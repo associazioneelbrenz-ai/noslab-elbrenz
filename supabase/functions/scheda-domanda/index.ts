@@ -80,6 +80,96 @@ function erroreHtml(msg: string): Response {
     <p class="nota">Se il link è scaduto, apri la mail più recente della domanda o scrivi a info@elbrenz.eu.</p>`);
 }
 
+// [4/8/2026] I campi anagrafici che il registro cartaceo ha e il database non
+// aveva. L'elenco vive in un posto solo ed e' anche la lista bianca di cosa si
+// puo' scrivere dal pannello: se fosse scritto due volte, prima o poi una delle
+// due copie lascerebbe passare un campo che non deve passare, per esempio lo
+// stato della domanda o il numero di tessera.
+const CAMPI_ANAGRAFICI = [
+  'cognome',
+  'residenza_via', 'residenza_civico', 'residenza_cap', 'residenza_comune', 'residenza_provincia',
+  'telefono', 'categoria_socio', 'stato_socio',
+  'cessazione_data', 'cessazione_motivo',
+  'note_segreteria', 'codice_fiscale',
+] as const;
+
+const CATEGORIE_SOCIO = ['ordinario', 'fondatore', 'onorario', 'sostenitore'];
+const STATI_SOCIO = ['attivo', 'cessato'];
+const MOTIVI_CESSAZIONE = ['recesso', 'decadenza_morosita', 'esclusione', 'decesso'];
+
+// I campi che il libro degli associati pretende. Il TELEFONO non c'e' apposta:
+// e' un recapito, utile all'Associazione, ma un registro non e' incompleto
+// perche' manca un numero di telefono.
+const CAMPI_LIBRO_ASSOCIATI = [
+  'cognome', 'data_nascita', 'comune_nascita',
+  'residenza_via', 'residenza_civico', 'residenza_cap', 'residenza_comune', 'residenza_provincia',
+  'categoria_socio', 'approvata_il',
+];
+
+const vuoto = (v: unknown) => v === null || v === undefined || String(v).trim() === '';
+
+function anagraficaCompleta(riga: Record<string, unknown>): boolean {
+  return CAMPI_LIBRO_ASSOCIATI.every((c) => !vuoto(riga[c]));
+}
+
+// Quante schede mancano di ciascun campo. Serve a sapere DA DOVE cominciare:
+// «trenta schede incomplete» non dice niente, «trenta senza residenza e una
+// senza data di ammissione» dice che il lavoro e' uno solo.
+function contaMancanti(righe: Array<Record<string, unknown>>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const c of CAMPI_LIBRO_ASSOCIATI) {
+    const quante = righe.filter((r) => vuoto(r[c])).length;
+    if (quante > 0) out[c] = quante;
+  }
+  return out;
+}
+
+// Pulizia e controllo di un campo in arrivo. Torna il valore da scrivere,
+// oppure un Error con una frase leggibile: il vincolo esiste anche a database,
+// ma un messaggio di Postgres letto da un segretario non aiuta nessuno.
+function normalizzaCampo(campo: string, grezzo: unknown): unknown | Error {
+  if (grezzo === null || grezzo === undefined) return null;
+  let v = String(grezzo).trim();
+  // La casella svuotata significa «questo dato non lo so»: si scrive vuoto, non
+  // stringa vuota, cosi' i conteggi di completezza tornano.
+  if (v === '') return null;
+
+  switch (campo) {
+    case 'residenza_cap':
+      if (!/^[0-9]{5}$/.test(v)) return new Error('Il CAP deve essere di cinque cifre.');
+      return v;
+    case 'residenza_provincia':
+      v = v.toUpperCase();
+      if (!/^[A-Z]{2}$/.test(v)) return new Error('La provincia va scritta con due lettere, per esempio TN.');
+      return v;
+    case 'codice_fiscale':
+      v = v.toUpperCase().replace(/\s+/g, '');
+      if (!/^[A-Z0-9]{11,16}$/.test(v)) return new Error('Il codice fiscale non sembra scritto bene.');
+      return v;
+    case 'categoria_socio':
+      if (!CATEGORIE_SOCIO.includes(v)) return new Error('Categoria di socio non prevista.');
+      return v;
+    case 'stato_socio':
+      if (!STATI_SOCIO.includes(v)) return new Error('Stato del socio non previsto.');
+      return v;
+    case 'cessazione_motivo':
+      if (!MOTIVI_CESSAZIONE.includes(v)) return new Error('Motivo di cessazione non previsto dallo statuto.');
+      return v;
+    case 'cessazione_data':
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Error('La data di cessazione va scritta per intero.');
+      return v;
+    case 'telefono':
+      // Larghi di proposito: i numeri del registro cartaceo sono scritti in
+      // dieci modi diversi e rifiutarli costringerebbe a riscriverli tutti.
+      if (v.length > 40) return new Error('Il numero di telefono e troppo lungo.');
+      return v;
+    case 'note_segreteria':
+      return v.slice(0, 2000);
+    default:
+      return v.slice(0, 200);
+  }
+}
+
 // Ramo JSON (16/7): la pagina Astro /scheda-domanda renderizza nativamente su
 // elbrenz.eu (la piattaforma Supabase forza text/plain sull'HTML delle edge →
 // download .txt). Qui rispondiamo JSON sui path con prefisso /json/…, lasciando
@@ -325,16 +415,41 @@ Deno.serve(async (req: Request) => {
         perDomanda.get(k)!.push(r);
       }
 
+      // [4/8/2026] L'anagrafica del registro cartaceo. Sta sulla domanda e non
+      // nella vista, perche' la vista risponde alla domanda «e' in regola con
+      // la quota», che e' un'altra cosa. Serve al pannello per riempire il
+      // modulo di completamento senza far ridigitare quello che gia' c'e'.
+      const { data: anagrafiche } = await sb.from('domande_tesseramento')
+        .select(`id, ${CAMPI_ANAGRAFICI.join(', ')}, data_nascita, comune_nascita, sesso, anagrafica_aggiornata_il, anagrafica_aggiornata_da`);
+      const anagPerId = new Map(((anagrafiche ?? []) as Array<Record<string, any>>).map((a) => [a.id, a]));
+
       const exp = Date.now() + TOKEN_TTL_MS;
       const righe = [];
       for (const x of (soci ?? []) as Array<Record<string, any>>) {
+        const a = anagPerId.get(x.domanda_id) ?? {};
         righe.push({
           ...x,
+          ...a,
+          // `a` porta con se' la sua `id`, che e' la stessa: la si riafferma
+          // dopo lo spread per non dipendere dall'ordine delle chiavi.
           id: x.domanda_id,
+          anagrafica_completa: anagraficaCompleta({ ...x, ...a }),
           promemoria: (perDomanda.get(x.domanda_id) ?? []).sort((a, b) => Number(a.numero) - Number(b.numero)),
           vista: `https://elbrenz.eu/scheda-domanda/vista/${x.domanda_id}/${exp}/${await firmaToken(secret, 'vista', x.domanda_id, exp)}`,
         });
       }
+
+      // La completezza si conta sulla stessa popolazione del libro soci: i
+      // soci ammessi, senza l'account di servizio. Contarla su tutte e
+      // trentacinque le domande, annullate comprese, darebbe un numero che non
+      // corrisponde a nessun lavoro reale da fare.
+      const daCompletare = righe.filter((r: Record<string, any>) =>
+        r.stato === 'approvata' && r.posizione !== 'account_di_sistema');
+      const completezza = {
+        totale: daCompletare.length,
+        complete: daCompletare.filter((r: Record<string, any>) => r.anagrafica_completa).length,
+        mancanti: contaMancanti(daCompletare),
+      };
 
       // La cassa, dalla vista che tiene insieme quote, integrazioni e anticipi
       // delle gite senza duplicare una riga. Nessun totale calcolato qui: si
@@ -366,7 +481,97 @@ Deno.serve(async (req: Request) => {
         righe,
         incassi: incassi ?? [],
         incassanti,
+        completezza,
         io: user.id,
+      });
+    }
+
+    // [4/8/2026] COMPLETAMENTO ANAGRAFICO. E' qui che si recupera il registro
+    // cartaceo tenuto dal 2009, una persona alla volta.
+    //
+    // PERCHE' QUI E NON NELLA SCHEDA A TOKEN. La scheda `/scheda-domanda/vista/`
+    // si apre con un collegamento firmato, che dimostra da dove viene il link ma
+    // non chi lo sta usando: chiunque abbia inoltrato quella mail potrebbe
+    // aprirlo. Per i dati anagrafici serve sapere CHI scrive, quindi si passa
+    // dalla sessione e dal ruolo, come per la coda e il libro soci.
+    //
+    // I DATI ANAGRAFICI SI CORREGGONO, al contrario degli incassi: un indirizzo
+    // cambia, un cognome era scritto male. Proprio per questo si tiene lo
+    // storico di chi ha cambiato cosa: senza, una correzione sbagliata e'
+    // indistinguibile da un dato che e' sempre stato cosi'.
+    if (url.pathname.endsWith('/json/anagrafica') && req.method === 'POST') {
+      const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+      if (!bearer) return jsonR({ ok: false, error: 'no_token' }, 401);
+      const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      });
+      const { data: { user }, error: uerr } = await asUser.auth.getUser();
+      if (uerr || !user) return jsonR({ ok: false, error: 'unauthorized' }, 401);
+      const { data: ruoli } = await sb.from('utente_ruolo')
+        .select('ruolo:ruolo_id(livello)').eq('utente_id', user.id);
+      const livello = Math.max(0, ...(((ruoli ?? []) as Array<Record<string, any>>).map((r) => r?.ruolo?.livello ?? 0)));
+      if (livello < 50) return jsonR({ ok: false, error: 'non_autorizzato' }, 403);
+
+      let corpo: Record<string, any>;
+      try { corpo = await req.json(); } catch { return jsonR({ ok: false, error: 'json_non_valido' }, 400); }
+
+      const domandaId = String(corpo?.domanda_id ?? '');
+      if (!/^[0-9a-f-]{36}$/i.test(domandaId)) return jsonR({ ok: false, error: 'domanda_non_valida' }, 400);
+
+      const { data: prima, error: errPrima } = await sb.from('domande_tesseramento')
+        .select(`id, nome, ${CAMPI_ANAGRAFICI.join(', ')}`).eq('id', domandaId).maybeSingle();
+      if (errPrima || !prima) return jsonR({ ok: false, error: 'domanda_inesistente' }, 404);
+
+      // Solo i campi dell'elenco si possono scrivere da qui. Accettare quello
+      // che arriva e passarlo all'update vorrebbe dire lasciare che questa
+      // chiamata cambi lo stato della domanda o il numero di tessera.
+      const modifiche: Record<string, unknown> = {};
+      const campiIn = (corpo?.campi ?? {}) as Record<string, unknown>;
+      for (const campo of CAMPI_ANAGRAFICI) {
+        if (!(campo in campiIn)) continue;
+        const pulito = normalizzaCampo(campo, campiIn[campo]);
+        if (pulito instanceof Error) return jsonR({ ok: false, error: 'campo_non_valido', campo, message: pulito.message }, 400);
+        // Il confronto e' con il valore gia' a database: un campo rimandato
+        // identico non e' una modifica e non deve sporcare lo storico.
+        if (pulito !== ((prima as Record<string, any>)[campo] ?? null)) modifiche[campo] = pulito;
+      }
+
+      if (Object.keys(modifiche).length === 0) {
+        return jsonR({ ok: true, invariato: true, message: 'Nessun campo cambiato.' });
+      }
+
+      // Il vincolo di coerenza sta a database, ma un errore di Postgres letto
+      // da un segretario non aiuta nessuno: la stessa regola, detta prima e in
+      // italiano.
+      const statoDopo = 'stato_socio' in modifiche ? modifiche.stato_socio : (prima as Record<string, any>).stato_socio;
+      const dataDopo = 'cessazione_data' in modifiche ? modifiche.cessazione_data : (prima as Record<string, any>).cessazione_data;
+      const motivoDopo = 'cessazione_motivo' in modifiche ? modifiche.cessazione_motivo : (prima as Record<string, any>).cessazione_motivo;
+      if (statoDopo === 'cessato' && (!dataDopo || !motivoDopo)) {
+        return jsonR({
+          ok: false, error: 'cessazione_incompleta',
+          message: 'Per registrare una cessazione servono la data e il motivo: un socio che esce senza che si sappia quando e perche non e una cessazione registrata.',
+        }, 400);
+      }
+
+      const adesso = new Date().toISOString();
+      const { error: errUp } = await sb.from('domande_tesseramento')
+        .update({ ...modifiche, anagrafica_aggiornata_il: adesso, anagrafica_aggiornata_da: user.id })
+        .eq('id', domandaId);
+      if (errUp) return jsonR({ ok: false, error: 'aggiornamento_fallito', message: errUp.message }, 500);
+
+      // Lo storico tiene i soli campi toccati, con il prima e il dopo: cosi' si
+      // legge, invece di andare confrontato a mano contro l'intera riga.
+      const primaSoloToccati: Record<string, unknown> = {};
+      for (const k of Object.keys(modifiche)) primaSoloToccati[k] = (prima as Record<string, any>)[k] ?? null;
+      await sb.from('anagrafica_modifica').insert({
+        domanda_id: domandaId, modificato_da: user.id,
+        prima: primaSoloToccati, dopo: modifiche,
+      });
+
+      return jsonR({
+        ok: true, domanda_id: domandaId,
+        campi_cambiati: Object.keys(modifiche),
+        aggiornata_il: adesso,
       });
     }
 
@@ -413,16 +618,19 @@ Deno.serve(async (req: Request) => {
       // chiede: non si porta dietro tutto il resto per comodita'.
       const ids = (soci ?? []).map((s: Record<string, any>) => s.domanda_id);
       const { data: anag } = await sb.from('domande_tesseramento')
-        .select('id, data_nascita, comune_nascita, sesso').in('id', ids);
+        .select(`id, data_nascita, comune_nascita, sesso, ${CAMPI_ANAGRAFICI.join(', ')}`).in('id', ids);
       const perId = new Map(((anag ?? []) as Array<Record<string, any>>).map((a) => [a.id, a]));
 
       const righe = ((soci ?? []) as Array<Record<string, any>>).map((s) => {
         const a = perId.get(s.domanda_id) ?? {};
+        const unita = { ...s, ...a, domanda_id: s.domanda_id };
         return {
-          ...s,
-          data_nascita: a.data_nascita ?? null,
-          comune_nascita: a.comune_nascita ?? null,
-          sesso: a.sesso ?? null,
+          ...unita,
+          // Vuoto vuol dire attivo, per un socio ammesso: finche' non si
+          // dichiara una cessazione, con la sua data e il suo motivo, il socio
+          // e' dentro. La regola sta scritta qui e non presunta altrove.
+          stato_socio: unita.stato_socio ?? 'attivo',
+          anagrafica_completa: anagraficaCompleta(unita),
         };
       }).sort((x, y) => {
         // Per numero di tessera, che e' l'ordine con cui un registro si legge.
@@ -443,15 +651,26 @@ Deno.serve(async (req: Request) => {
       }
 
       const conta = (p: string) => righe.filter((r) => r.posizione === p).length;
+      // Gli attivi e i cessati sono due elenchi, non uno con una colonna in
+      // piu': un libro degli associati che registra solo gli ingressi e'
+      // incompleto per definizione, e chi e' uscito va letto tutto insieme.
+      const attivi = righe.filter((r) => r.stato_socio !== 'cessato');
+      const cessati = righe.filter((r) => r.stato_socio === 'cessato');
+
       const lacune = {
         senza_data_ammissione: righe.filter((r) => !r.approvata_il).length,
         senza_numero_tessera: righe.filter((r) => r.numero_tessera == null).length,
         senza_data_nascita: righe.filter((r) => !r.data_nascita).length,
         senza_comune_nascita: righe.filter((r) => !r.comune_nascita).length,
-        // La residenza non e' mai stata chiesta nel modulo: non e' un dato
-        // perso, e' un dato che non e' mai esistito. Dirlo e' diverso dal
-        // lasciare una colonna vuota e sperare che nessuno la guardi.
-        residenza_mai_raccolta: righe.length,
+        senza_cognome: righe.filter((r) => vuoto(r.cognome)).length,
+        senza_residenza: righe.filter((r) =>
+          vuoto(r.residenza_via) || vuoto(r.residenza_civico) || vuoto(r.residenza_cap)
+          || vuoto(r.residenza_comune) || vuoto(r.residenza_provincia)).length,
+        senza_categoria: righe.filter((r) => vuoto(r.categoria_socio)).length,
+        // Il numero che conta: quante schede non reggerebbero il confronto con
+        // il registro cartaceo, campo per campo.
+        schede_incomplete: righe.filter((r) => !r.anagrafica_completa).length,
+        per_campo: contaMancanti(righe),
       };
 
       return jsonR({
@@ -460,8 +679,12 @@ Deno.serve(async (req: Request) => {
         estratto_il: new Date().toISOString(),
         estratto_da: user.email ?? '',
         righe,
+        cessati,
         riepilogo: {
           iscritti: righe.length,
+          attivi: attivi.length,
+          cessati: cessati.length,
+          complete: righe.filter((r) => r.anagrafica_completa).length,
           in_regola: conta('in_regola') + conta('in_regola_per_deroga'),
           parziale: conta('parziale'),
           da_regolarizzare: conta('da_regolarizzare'),

@@ -343,6 +343,28 @@ serve(async (req) => {
       ? body.metodo_scelto.trim()
       : ''
   const gdpr = body.gdpr === true
+
+  // [4/8/2026] Anagrafica per il libro degli associati. Tutto FACOLTATIVO qui
+  // dentro, di proposito: i campi compaiono nel modulo pubblico solo quando
+  // l'informativa su /privacy li dichiara (vedi src/lib/anagrafica.ts), e fino
+  // ad allora arrivano vuoti. Accettarli gia' adesso vuol dire che il giorno
+  // che si accende il modulo non c'e' altro da cambiare qui, e che nel
+  // frattempo una domanda inviata senza questi campi entra esattamente come
+  // prima.
+  const testo = (v: unknown, max = 200) =>
+    typeof v === 'string' && v.trim() !== '' ? v.trim().slice(0, max) : null
+  const cognome = testo(body.cognome, 100)
+  const residenzaVia = testo(body.residenza_via)
+  const residenzaCivico = testo(body.residenza_civico, 20)
+  // I formati si controllano anche qui, non solo nel modulo: un CAP di tre
+  // cifre farebbe fallire l'insert sul vincolo e la domanda andrebbe persa
+  // dopo che la persona ha gia' compilato tutto.
+  const capGrezzo = testo(body.residenza_cap, 5)
+  const residenzaCap = capGrezzo && /^[0-9]{5}$/.test(capGrezzo) ? capGrezzo : null
+  const residenzaComune = testo(body.residenza_comune)
+  const provGrezza = testo(body.residenza_provincia, 2)?.toUpperCase() ?? null
+  const residenzaProvincia = provGrezza && /^[A-Z]{2}$/.test(provGrezza) ? provGrezza : null
+  const telefono = testo(body.telefono, 40)
   const honeypot = typeof body._honeypot === 'string' ? body._honeypot : ''
   const ts = typeof body._ts === 'number' ? body._ts : 0
   // VETR 2/3 (11/7): sorgente utm opzionale (source/medium/campaign, stringhe
@@ -474,6 +496,16 @@ serve(async (req) => {
         consenso_privacy: true,
         sorgente_utm: sorgenteUtm,
         metodo_scelto: metodoScelto || null,
+        // Vuoti finche' il modulo non li chiede: le colonne accettano il vuoto
+        // apposta, e una scheda incompleta si vede nel libro soci invece di
+        // sparire.
+        cognome,
+        residenza_via: residenzaVia,
+        residenza_civico: residenzaCivico,
+        residenza_cap: residenzaCap,
+        residenza_comune: residenzaComune,
+        residenza_provincia: residenzaProvincia,
+        telefono,
       })
       .select('id')
       .single()

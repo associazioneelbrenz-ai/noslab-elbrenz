@@ -165,6 +165,119 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
             </div>
           </div>
         </div>
+        {/* MODULO: completare l'anagrafica dal registro cartaceo.
+            E' qui che si recupera il registro tenuto dal 2009, una persona
+            alla volta, e deve essere veloce: molti campi, poche pressioni.
+            I campi vuoti restano visibili perche' il valore di questa
+            schermata e' dire COSA MANCA ANCORA. */}
+        <div id="tc-ana" class="hidden fixed inset-0 z-50 bg-[#1E2E26]/60 overflow-y-auto p-4 md:p-8">
+          <div class="bg-white rounded-lg border-t-4 border-[#C8923E] max-w-2xl mx-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-1">
+              <h3 class="text-xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif;">Completa la scheda del socio</h3>
+              <button type="button" id="tc-ana-chiudi" class="text-[#1E2E26]/50 bg-transparent border-0 text-2xl leading-none cursor-pointer" aria-label="Chiudi">&times;</button>
+            </div>
+            <p id="tc-ana-chi" class="text-[13px] text-[#1E2E26]/65 m-0 mb-1"></p>
+            <p id="tc-ana-manca" class="text-[13px] m-0 mb-5"></p>
+
+            <div class="grid gap-4">
+              <div class="grid md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-cognome">Cognome</label>
+                  <input class={inputCls} type="text" id="tc-ana-cognome" maxlength="200" />
+                  {/* Il campo `nome` storico contiene nome e cognome insieme:
+                      lo si mostra accanto, in sola lettura, cosi' chi compila
+                      copia da li' invece di andare a memoria. */}
+                  <p class="text-[12px] text-[#1E2E26]/50 m-0 mt-1">Come risulta oggi: <span id="tc-ana-nome-attuale" class="text-[#1E2E26]/75"></span></p>
+                </div>
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-categoria">Categoria di socio</label>
+                  <select class={inputCls} id="tc-ana-categoria">
+                    <option value="">da completare</option>
+                    <option value="ordinario">ordinario</option>
+                    <option value="fondatore">fondatore</option>
+                    <option value="onorario">onorario</option>
+                    <option value="sostenitore">sostenitore</option>
+                  </select>
+                </div>
+              </div>
+
+              <fieldset class="border border-[#E5DFCF] rounded p-4 m-0">
+                <legend class="text-[13px] text-[#8a6215] font-semibold px-2">Residenza</legend>
+                <div class="grid grid-cols-6 gap-3">
+                  <div class="col-span-4">
+                    <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-via">Via o località</label>
+                    <input class={inputCls} type="text" id="tc-ana-via" maxlength="200" />
+                  </div>
+                  <div class="col-span-2">
+                    <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-civico">Civico</label>
+                    <input class={inputCls} type="text" id="tc-ana-civico" maxlength="20" />
+                  </div>
+                  <div class="col-span-2">
+                    <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-cap">CAP</label>
+                    <input class={inputCls} type="text" id="tc-ana-cap" inputmode="numeric" maxlength="5" placeholder="38023" />
+                  </div>
+                  <div class="col-span-3">
+                    <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-comune">Comune</label>
+                    <input class={inputCls} type="text" id="tc-ana-comune" maxlength="200" />
+                  </div>
+                  <div class="col-span-1">
+                    <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-prov">Prov.</label>
+                    <input class={inputCls} type="text" id="tc-ana-prov" maxlength="2" placeholder="TN" />
+                  </div>
+                </div>
+              </fieldset>
+
+              <div class="grid md:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-telefono">Telefono</label>
+                  <input class={inputCls} type="tel" id="tc-ana-telefono" maxlength="40" />
+                </div>
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-cf">Codice fiscale <span class="text-[#1E2E26]/45">(facoltativo)</span></label>
+                  <input class={`${inputCls} uppercase`} type="text" id="tc-ana-cf" maxlength="16" />
+                </div>
+              </div>
+
+              {/* La cessazione. Sta in fondo e chiusa, perche' e' l'azione rara
+                  e non deve stare sulla strada di chi compila un indirizzo. */}
+              <div class="border-t border-[#E5DFCF] pt-4">
+                <label class="flex items-center gap-2 text-sm text-[#1E2E26]/85 cursor-pointer">
+                  <input type="checkbox" id="tc-ana-cessato" class="w-4 h-4 accent-[#a33]" />
+                  <span>Questo socio è <strong>cessato</strong></span>
+                </label>
+                <div id="tc-ana-cessazione" class="hidden grid md:grid-cols-2 gap-3 mt-3">
+                  <div>
+                    <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-cess-data">Data della cessazione</label>
+                    <input class={inputCls} type="date" id="tc-ana-cess-data" />
+                  </div>
+                  <div>
+                    <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-cess-motivo">Motivo, fra quelli dello statuto</label>
+                    <select class={inputCls} id="tc-ana-cess-motivo">
+                      <option value="">scegli</option>
+                      <option value="recesso">recesso</option>
+                      <option value="decadenza_morosita">decadenza per morosità</option>
+                      <option value="esclusione">esclusione</option>
+                      <option value="decesso">decesso</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-note">Note di segreteria <span class="text-[#1E2E26]/45">(restano interne)</span></label>
+                <textarea class={inputCls} id="tc-ana-note" rows="2" maxlength="2000"></textarea>
+              </div>
+
+              <div id="tc-ana-esito" class="hidden rounded px-4 py-3 text-sm"></div>
+
+              <div class="flex flex-wrap gap-3 items-center">
+                <button type="button" id="tc-ana-salva" class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 rounded font-semibold text-sm cursor-pointer border-0 hover:bg-[#D9A94E] transition-colors">Salva la scheda</button>
+                <span id="tc-ana-ultima" class="text-[12px] text-[#1E2E26]/55"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <p id="tc-vuoto" class="hidden text-[#1E2E26]/60 bg-white border border-[#E5DFCF] rounded p-6 text-center m-0">Niente in questa selezione.</p>
 
         {/* CASSA — da v_incassi, che tiene insieme quote, integrazioni e
@@ -217,7 +330,20 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   let incassanti: any[] = [];
   let io = '';
   let socioCorrente: any = null;
+  let completezza: any = null;
+  let anaCorrente: any = null;
   const REGISTRA_URL = 'https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/contanti-registra';
+  const ANAGRAFICA_URL = CODA_URL.replace(/\/coda$/, '/anagrafica');
+
+  /* Come si chiamano in italiano i campi del libro degli associati. Servono a
+     dire alla persona che ha davanti la scheda COSA manca, invece del nome
+     della colonna del database. */
+  const NOME_CAMPO: Record<string, string> = {
+    cognome: 'cognome', data_nascita: 'data di nascita', comune_nascita: 'comune di nascita',
+    residenza_via: 'via', residenza_civico: 'civico', residenza_cap: 'CAP',
+    residenza_comune: 'comune di residenza', residenza_provincia: 'provincia',
+    categoria_socio: 'categoria', approvata_il: 'data di ammissione',
+  };
 
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -238,6 +364,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     righe = d.righe ?? [];
     incassi = d.incassi ?? [];
     incassanti = d.incassanti ?? [];
+    completezza = d.completezza ?? null;
     io = d.io ?? '';
     ($('tc-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
     show('tc-app');
@@ -293,6 +420,23 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (servizio > 0) coda.push(`${servizio} account di servizio`);
     if (coda.length) {
       pezzi.push(`Fuori dai riquadri: ${coda.join(' e ')}. In tutto le domande sono <strong>${righe.length}</strong>.`);
+    }
+
+    /* [4/8] Quanto manca alla fine del recupero del registro cartaceo. Il
+       numero arriva dal server, che lo calcola sulla stessa popolazione del
+       libro soci: contarlo qui vorrebbe dire avere due definizioni di
+       «scheda completa» e vederle divergere il giorno che se ne cambia una. */
+    if (completezza && completezza.totale > 0) {
+      const mancanti = completezza.totale - completezza.complete;
+      if (mancanti > 0) {
+        const campi = Object.entries(completezza.mancanti ?? {})
+          .sort((a: any, b: any) => b[1] - a[1])
+          .map(([c, n]) => `${esc(NOME_CAMPO[c] ?? c)} in ${esc(n)}`)
+          .join(', ');
+        pezzi.push(`<span style="color:#8a6215;">Anagrafica per il libro associati: <strong>${esc(completezza.complete)} schede su ${esc(completezza.totale)}</strong> sono complete, ne mancano ${esc(mancanti)}${campi ? ` (manca ${campi})` : ''}.</span>`);
+      } else {
+        pezzi.push(`<span style="color:#2d8659;">Anagrafica completa su tutte e ${esc(completezza.totale)} le schede.</span>`);
+      }
     }
     nota.innerHTML = pezzi.join(' ');
   }
@@ -477,9 +621,16 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
          il segretario si accorge che manca un incasso, non in un modulo a
          parte dove poi deve ridigitare nome ed email. */
       const registrabile = ['parziale', 'da_regolarizzare', 'ammesso_senza_incasso', 'in_regola'].includes(x.posizione);
-      const azioni = registrabile
-        ? `<button type="button" data-registra="${esc(x.domanda_id)}" class="mt-3 text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Registra un incasso già avvenuto</button>`
-        : '';
+      /* Il completamento anagrafico vale per chi e' socio davvero: sulle
+         annullate e sull'account di servizio non c'e' niente da completare. */
+      const completabile = x.stato === 'approvata' && x.posizione !== 'account_di_sistema';
+      const etichettaAna = x.anagrafica_completa
+        ? 'Scheda anagrafica'
+        : '<span style="color:#8a6215;">Completa la scheda</span>';
+      const azioni = `<div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
+          ${registrabile ? `<button type="button" data-registra="${esc(x.domanda_id)}" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Registra un incasso già avvenuto</button>` : ''}
+          ${completabile ? `<button type="button" data-anagrafica="${esc(x.domanda_id)}" class="text-[13px] underline bg-transparent border-0 p-0 cursor-pointer text-[#8a6215]">${etichettaAna}</button>` : ''}
+        </div>`;
       return `<div class="bg-white border border-[#E5DFCF] hover:border-[#C8923E] rounded p-4 transition-colors">
         <a href="${esc(x.vista)}" class="block no-underline">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -498,7 +649,122 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     document.querySelectorAll('[data-registra]').forEach((b) => b.addEventListener('click', () => {
       apriRegistrazione(String((b as HTMLElement).dataset.registra));
     }));
+    document.querySelectorAll('[data-anagrafica]').forEach((b) => b.addEventListener('click', () => {
+      apriAnagrafica(String((b as HTMLElement).dataset.anagrafica));
+    }));
   }
+
+  // ---- COMPLETAMENTO ANAGRAFICO ----
+  /* Il modulo si apre gia' pieno di quello che c'e': chi recupera il registro
+     cartaceo ha in mano la scheda e deve solo aggiungere il mancante, non
+     ridigitare il noto. */
+  function apriAnagrafica(domandaId: string) {
+    anaCorrente = righe.find((x) => x.domanda_id === domandaId);
+    if (!anaCorrente) return;
+    const a = anaCorrente;
+    ($('tc-ana-chi') as HTMLElement).innerHTML = `<strong>${esc(a.nome)}</strong> · ${esc(a.email)}`;
+    ($('tc-ana-nome-attuale') as HTMLElement).textContent = a.nome ?? '';
+
+    const set = (id: string, v: unknown) => { ($(id) as HTMLInputElement).value = v == null ? '' : String(v); };
+    set('tc-ana-cognome', a.cognome);
+    set('tc-ana-categoria', a.categoria_socio);
+    set('tc-ana-via', a.residenza_via);
+    set('tc-ana-civico', a.residenza_civico);
+    set('tc-ana-cap', a.residenza_cap);
+    set('tc-ana-comune', a.residenza_comune);
+    set('tc-ana-prov', a.residenza_provincia);
+    set('tc-ana-telefono', a.telefono);
+    set('tc-ana-cf', a.codice_fiscale);
+    set('tc-ana-note', a.note_segreteria);
+    set('tc-ana-cess-data', a.cessazione_data);
+    set('tc-ana-cess-motivo', a.cessazione_motivo);
+    const cessato = a.stato_socio === 'cessato';
+    ($('tc-ana-cessato') as HTMLInputElement).checked = cessato;
+    $('tc-ana-cessazione')!.classList.toggle('hidden', !cessato);
+
+    /* Cosa manca, detto per nome. E' il motivo per cui questa schermata
+       esiste: non «compila i campi», ma «di questa persona mancano il
+       cognome e la residenza». */
+    const mancano = Object.keys(NOME_CAMPO)
+      .filter((c) => a[c] == null || String(a[c]).trim() === '')
+      .map((c) => NOME_CAMPO[c]);
+    const m = $('tc-ana-manca')!;
+    m.innerHTML = mancano.length
+      ? `<span style="color:#8a6215;">Manca ancora: <strong>${esc(mancano.join(', '))}</strong>.</span>`
+      : '<span style="color:#2d8659;">La scheda è completa per il libro degli associati.</span>';
+
+    ($('tc-ana-ultima') as HTMLElement).textContent = a.anagrafica_aggiornata_il
+      ? `Ultima modifica: ${dataIt(a.anagrafica_aggiornata_il)}.`
+      : 'Mai modificata da qui.';
+    $('tc-ana-esito')!.classList.add('hidden');
+    show('tc-ana');
+  }
+
+  function esitoAna(msg: string, ok: boolean) {
+    const e = $('tc-ana-esito')!;
+    e.classList.remove('hidden');
+    e.style.background = ok ? '#eaf3ee' : '#fbecec';
+    e.style.borderLeft = `4px solid ${ok ? '#2d8659' : '#a33'}`;
+    e.textContent = msg;
+  }
+
+  $('tc-ana-chiudi')?.addEventListener('click', () => hide('tc-ana'));
+  $('tc-ana')?.addEventListener('click', (e) => { if (e.target === $('tc-ana')) hide('tc-ana'); });
+  $('tc-ana-cessato')?.addEventListener('change', (e) => {
+    $('tc-ana-cessazione')!.classList.toggle('hidden', !(e.target as HTMLInputElement).checked);
+  });
+
+  $('tc-ana-salva')?.addEventListener('click', async () => {
+    if (!anaCorrente) return;
+    const cessato = ($('tc-ana-cessato') as HTMLInputElement).checked;
+    // Il vincolo esiste anche a database: qui si chiede prima, per non far
+    // scoprire la regola con un errore tecnico.
+    if (cessato && (!val('tc-ana-cess-data') || !val('tc-ana-cess-motivo'))) {
+      return esitoAna('Per registrare una cessazione servono la data e il motivo.', false);
+    }
+    const campi: Record<string, string | null> = {
+      cognome: val('tc-ana-cognome'),
+      categoria_socio: val('tc-ana-categoria'),
+      residenza_via: val('tc-ana-via'),
+      residenza_civico: val('tc-ana-civico'),
+      residenza_cap: val('tc-ana-cap'),
+      residenza_comune: val('tc-ana-comune'),
+      residenza_provincia: val('tc-ana-prov'),
+      telefono: val('tc-ana-telefono'),
+      codice_fiscale: val('tc-ana-cf'),
+      note_segreteria: val('tc-ana-note'),
+      stato_socio: cessato ? 'cessato' : 'attivo',
+      cessazione_data: cessato ? val('tc-ana-cess-data') : '',
+      cessazione_motivo: cessato ? val('tc-ana-cess-motivo') : '',
+    };
+
+    const btn = $('tc-ana-salva') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'Salvo…';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const r = await fetch(ANAGRAFICA_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({ domanda_id: anaCorrente.domanda_id, campi }),
+      });
+      const j = await r.json();
+      if (r.ok && j.ok) {
+        if (j.invariato) {
+          esitoAna('Nessun campo cambiato.', true);
+          btn.disabled = false; btn.textContent = 'Salva la scheda';
+          return;
+        }
+        esitoAna(`Salvato: ${j.campi_cambiati.length} camp${j.campi_cambiati.length === 1 ? 'o' : 'i'}. Ricarico…`, true);
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        esitoAna(j.message || j.error || 'Salvataggio non riuscito.', false);
+        btn.disabled = false; btn.textContent = 'Salva la scheda';
+      }
+    } catch {
+      esitoAna('Errore di connessione. Riprova.', false);
+      btn.disabled = false; btn.textContent = 'Salva la scheda';
+    }
+  });
 
   // ---- REGISTRAZIONE MANUALE ----
   function apriRegistrazione(domandaId: string) {

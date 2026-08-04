@@ -156,6 +156,27 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     const r = doc.riepilogo;
     const l = doc.lacune;
 
+    /* [4/8] L'ordine delle colonne e' quello in cui l'Associazione tiene il
+       registro cartaceo, non quello comodo al database: un funzionario deve
+       poter mettere i due affiancati e trovare le stesse colonne nello stesso
+       posto. */
+    const residenza = (x: any) => {
+      const strada = [x.residenza_via, x.residenza_civico].filter(Boolean).join(' ').trim();
+      const citta = [x.residenza_cap, x.residenza_comune].filter(Boolean).join(' ').trim();
+      const prov = x.residenza_provincia ? `(${x.residenza_provincia})` : '';
+      const tutto = [strada, [citta, prov].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+      return tutto || null;
+    };
+    /* Il vuoto si vede. Una cella lasciata bianca sembra una svista di stampa;
+       «da completare» dice che il dato manca e che qualcuno lo sa. */
+    const mancante = (s: string = 'da completare') =>
+      `<span style="color:#a33;font-style:italic;">${s}</span>`;
+
+    const MOTIVO_CESSAZIONE: Record<string, string> = {
+      recesso: 'recesso', decadenza_morosita: 'decadenza per morosità',
+      esclusione: 'esclusione', decesso: 'decesso',
+    };
+
     const righe = doc.righe.map((x: any, i: number) => {
       /* La deroga senza il motivo scritto e' una riga che il funzionario non
          puo' verificare: se c'e' la deroga, il motivo si stampa. */
@@ -168,14 +189,23 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
             : x.posizione === 'ammesso_senza_incasso'
               ? 'quota non ancora pervenuta'
               : '';
-      return `<tr>
-        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;text-align:right;white-space:nowrap;">${x.numero_tessera != null ? esc(x.numero_tessera) : '<span style="color:#8a6215;">da assegnare</span>'}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(x.nome)}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;white-space:nowrap;">${esc(dataIt(x.data_nascita)) || '<span style="color:#a33;">non registrata</span>'}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(x.comune_nascita || '') || '<span style="color:#a33;">non registrato</span>'}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;white-space:nowrap;">${esc(dataIt(x.approvata_il)) || '<span style="color:#a33;">non registrata</span>'}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;white-space:nowrap;">${esc(POSIZIONE[x.posizione] ?? x.posizione)}</td>
-        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;font-size:.92em;color:#4a4a4a;">${nota}</td>
+      const td = 'padding:6px 8px;border-bottom:1px solid #E5DFCF;';
+      const res = residenza(x);
+      return `<tr${x.stato_socio === 'cessato' ? ' style="opacity:.6;"' : ''}>
+        <td style="${td}text-align:right;white-space:nowrap;">${x.numero_tessera != null ? esc(x.numero_tessera) : mancante('da assegnare')}</td>
+        <td style="${td}">${x.cognome ? esc(x.cognome) : mancante()}</td>
+        <td style="${td}">${esc(x.nome)}</td>
+        <td style="${td}white-space:nowrap;">${x.categoria_socio ? esc(x.categoria_socio) : mancante()}</td>
+        <td style="${td}">${x.comune_nascita ? esc(x.comune_nascita) : mancante()}</td>
+        <td style="${td}white-space:nowrap;">${x.data_nascita ? esc(dataIt(x.data_nascita)) : mancante()}</td>
+        <td style="${td}">${res ? esc(res) : mancante()}</td>
+        <td style="${td}white-space:nowrap;">${x.telefono ? esc(x.telefono) : '<span style="color:#999;">—</span>'}</td>
+        <td style="${td}white-space:nowrap;">${x.approvata_il ? esc(dataIt(x.approvata_il)) : mancante()}</td>
+        <td style="${td}white-space:nowrap;">${x.stato_socio === 'cessato'
+          ? `<span style="color:#a33;">cessato il ${esc(dataIt(x.cessazione_data))}</span>`
+          : 'attivo'}</td>
+        <td style="${td}white-space:nowrap;">${esc(POSIZIONE[x.posizione] ?? x.posizione)}</td>
+        <td style="${td}font-size:.92em;color:#4a4a4a;">${nota}</td>
       </tr>`;
     }).join('');
 
@@ -188,7 +218,38 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (l.senza_comune_nascita > 0) buchi.push(`<li><strong>${esc(l.senza_comune_nascita)}</strong> ${l.senza_comune_nascita === 1 ? 'posizione è priva del' : 'posizioni sono prive del'} comune di nascita.</li>`);
     if (r.da_regolarizzare > 0) buchi.push(`<li><strong>${esc(r.da_regolarizzare)}</strong> quote risultano versate prima dell’adozione del sistema informatico e sono documentate dal registro cartaceo: la registrazione contabile è da completare. Non si tratta di quote non versate.</li>`);
     if (r.ammesso_senza_incasso > 0) buchi.push(`<li><strong>${esc(r.ammesso_senza_incasso)}</strong> ${r.ammesso_senza_incasso === 1 ? 'posizione risulta ammessa senza che risulti' : 'posizioni risultano ammesse senza che risulti'} il versamento della quota.</li>`);
-    buchi.push('<li>La <strong>residenza</strong> non compare in questo registro perché non è mai stata raccolta dal modulo di adesione. Non è un dato andato perduto: è un dato mai richiesto, che va integrato per le posizioni esistenti e chiesto alle prossime.</li>');
+    if (l.senza_residenza > 0) buchi.push(`<li><strong>${esc(l.senza_residenza)}</strong> ${l.senza_residenza === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} residenza completa. Il modulo di adesione non l’ha mai richiesta: non è un dato andato perduto, è un dato mai raccolto, in corso di integrazione dal registro cartaceo.</li>`);
+    if (l.senza_cognome > 0) buchi.push(`<li><strong>${esc(l.senza_cognome)}</strong> ${l.senza_cognome === 1 ? 'posizione ha' : 'posizioni hanno'} nome e cognome ancora in un campo unico, in corso di separazione.</li>`);
+    if (l.senza_categoria > 0) buchi.push(`<li><strong>${esc(l.senza_categoria)}</strong> ${l.senza_categoria === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} categoria di socio, da riportare dal registro cartaceo.</li>`);
+
+    /* Le cessazioni. Un libro degli associati che registra solo gli ingressi è
+       incompleto per definizione: chi è uscito, quando e perché deve potersi
+       leggere tutto insieme, non cercando fra le righe degli attivi. Quando
+       non c'è ancora nessuna uscita lo si dice, invece di lasciare un vuoto
+       che sembra una sezione dimenticata. */
+    const cessazioni = (doc.cessati ?? []).length
+      ? `<div style="margin-top:26px;">
+          <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 8px;color:#1E2E26;">Soci cessati nell’anno ${esc(doc.anno)}</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">
+            <thead><tr style="background:#F8F1E4;text-align:left;">
+              <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">Tessera</th>
+              <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome e nome</th>
+              <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Iscritto/a il</th>
+              <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cessato/a il</th>
+              <th style="padding:7px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Motivo</th>
+            </tr></thead>
+            <tbody>${doc.cessati.map((x: any) => `<tr>
+              <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;text-align:right;">${x.numero_tessera != null ? esc(x.numero_tessera) : ''}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc([x.cognome, x.nome].filter(Boolean).join(' '))}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(dataIt(x.approvata_il))}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(dataIt(x.cessazione_data))}</td>
+              <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(MOTIVO_CESSAZIONE[x.cessazione_motivo] ?? x.cessazione_motivo ?? '')}</td>
+            </tr>`).join('')}</tbody>
+          </table>
+        </div>`
+      : `<p style="margin-top:26px;font-size:12.5px;color:#1E2E26;">
+          <strong>Soci cessati nell’anno ${esc(doc.anno)}:</strong> nessuno. Non risultano recessi, decadenze, esclusioni né decessi registrati.
+        </p>`;
 
     const incassi = doc.incassi ?? {};
     const vociIncasso = [
@@ -224,11 +285,16 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         <thead>
           <tr style="background:#F8F1E4;text-align:left;">
             <th style="padding:8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">Tessera</th>
-            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome e nome</th>
-            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Nato/a il</th>
-            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">a</th>
-            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Ammesso/a il</th>
-            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Posizione quota</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Nome</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Categoria</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Nato/a a</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">il</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Residenza</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Telefono</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Iscritto/a il</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Stato</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Quota ${esc(doc.anno)}</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Note</th>
           </tr>
         </thead>
@@ -240,6 +306,9 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 8px;color:#1E2E26;">Riepilogo delle posizioni</h2>
           <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">
             <tr><td style="padding:5px 8px;">Soci ammessi</td><td style="padding:5px 8px;text-align:right;"><strong>${esc(r.iscritti)}</strong></td></tr>
+            <tr><td style="padding:5px 8px;">di cui attivi</td><td style="padding:5px 8px;text-align:right;">${esc(r.attivi)}</td></tr>
+            <tr><td style="padding:5px 8px;">di cui cessati</td><td style="padding:5px 8px;text-align:right;">${esc(r.cessati)}</td></tr>
+            <tr><td style="padding:5px 8px;">Schede anagrafiche complete</td><td style="padding:5px 8px;text-align:right;">${esc(r.complete)} su ${esc(r.iscritti)}</td></tr>
             <tr><td style="padding:5px 8px;">In regola con la quota</td><td style="padding:5px 8px;text-align:right;">${esc(r.in_regola)}</td></tr>
             <tr><td style="padding:5px 8px;">Versamento parziale</td><td style="padding:5px 8px;text-align:right;">${esc(r.parziale)}</td></tr>
             <tr><td style="padding:5px 8px;">Da regolarizzare a registro</td><td style="padding:5px 8px;text-align:right;">${esc(r.da_regolarizzare)}</td></tr>
@@ -252,8 +321,15 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         </div>
       </div>
 
+      ${cessazioni}
+
       <div style="margin-top:26px;border-left:4px solid #C8923E;background:#FDF9F0;padding:14px 18px;">
         <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 8px;color:#1E2E26;">Posizioni ancora da regolarizzare e dati mancanti</h2>
+        <p style="margin:0 0 8px;font-size:12.5px;color:#1E2E26;">
+          Delle ${esc(r.iscritti)} schede, <strong>${esc(r.complete)}</strong> sono complete di tutti i dati previsti dal libro degli associati
+          e <strong>${esc(l.schede_incomplete)}</strong> sono ancora da completare. Le schede incomplete restano nel registro,
+          con i campi mancanti indicati: escluderle darebbe un registro più ordinato ma più corto del vero.
+        </p>
         <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.65;color:#1E2E26;">${buchi.join('')}</ul>
       </div>
 
@@ -270,21 +346,32 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
      virgola come separatore e il segnabyte iniziale, altrimenti Excel in
      italiano mette tutto in una colonna sola e storpia le lettere accentate. */
   function scaricaCsv() {
-    const testa = ['Numero tessera', 'Cognome e nome', 'Email', 'Data di nascita', 'Comune di nascita',
-      'Data di ammissione', 'Posizione quota', 'Quota dovuta', 'Versato', 'Manca', 'Motivo della deroga'];
+    const testa = ['Numero tessera', 'Cognome', 'Nome', 'Categoria', 'Email',
+      'Comune di nascita', 'Data di nascita',
+      'Via', 'Civico', 'CAP', 'Comune di residenza', 'Provincia',
+      'Telefono', 'Codice fiscale',
+      'Data di iscrizione', 'Stato', 'Data di cessazione', 'Motivo di cessazione',
+      'Posizione quota', 'Quota dovuta', 'Versato', 'Manca', 'Motivo della deroga',
+      'Note di segreteria', 'Scheda completa'];
     const cella = (v: unknown) => {
       const s = String(v ?? '');
       return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const corpo = doc.righe.map((x: any) => [
-      x.numero_tessera ?? '', x.nome ?? '', x.email ?? '',
-      x.data_nascita ?? '', x.comune_nascita ?? '',
+      x.numero_tessera ?? '', x.cognome ?? '', x.nome ?? '', x.categoria_socio ?? '', x.email ?? '',
+      x.comune_nascita ?? '', x.data_nascita ?? '',
+      x.residenza_via ?? '', x.residenza_civico ?? '', x.residenza_cap ?? '',
+      x.residenza_comune ?? '', x.residenza_provincia ?? '',
+      x.telefono ?? '', x.codice_fiscale ?? '',
       x.approvata_il ? String(x.approvata_il).slice(0, 10) : '',
+      x.stato_socio ?? '', x.cessazione_data ?? '', x.cessazione_motivo ?? '',
       POSIZIONE[x.posizione] ?? x.posizione,
       Number(x.quota_dovuta ?? 0).toFixed(2).replace('.', ','),
       Number(x.totale_incassato ?? 0).toFixed(2).replace('.', ','),
       Number(x.manca ?? 0).toFixed(2).replace('.', ','),
       x.deroga_pagamento_motivo ?? '',
+      x.note_segreteria ?? '',
+      x.anagrafica_completa ? 'sì' : 'no',
     ].map(cella).join(';'));
     const csv = '﻿' + [testa.join(';'), ...corpo].join('\r\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));

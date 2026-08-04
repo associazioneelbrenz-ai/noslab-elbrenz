@@ -19,6 +19,7 @@
 
 import Layout from '../layouts/Layout.astro';
 import { PAGAMENTI_LIVE } from '../lib/pagamenti';
+import { ANAGRAFICA_PUBBLICA_LIVE } from '../lib/anagrafica';
 
 // URL edge function — letta da env per dev/prod
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
@@ -389,6 +390,39 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
           />
           <p class="text-xs text-[#F5EEDD]/45 mt-2" style="font-family: 'Inter', sans-serif;">Se nato all'estero, scrivi nome dello stato</p>
         </div>
+
+        {/* [4/8/2026] Residenza e telefono: il libro degli associati li vuole e
+            il registro cartaceo li ha, ma NON si chiedono finche' l'informativa
+            su /privacy non li dichiara. Oggi quel testo dice che il
+            tesseramento non raccoglie il telefono: chiederlo prima renderebbe
+            falsa l'informativa, che e' peggio che averla scarna.
+            Con l'interruttore spento questi campi non esistono proprio
+            nell'HTML, non sono nascosti: vedi src/lib/anagrafica.ts. */}
+        {ANAGRAFICA_PUBBLICA_LIVE && (
+          <>
+            <div class="mb-6">
+              <label for="cf-cognome" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Cognome</label>
+              <input type="text" id="cf-cognome" name="cognome" required minlength="2" maxlength="100" autocomplete="family-name" class="eb-campo-scuro" style="font-family: 'Inter', sans-serif;" />
+            </div>
+
+            <div class="mb-6">
+              <label for="cf-residenza-via" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Indirizzo di residenza</label>
+              <div class="grid grid-cols-4 gap-3">
+                <input type="text" id="cf-residenza-via" name="residenza_via" required maxlength="200" placeholder="Via o località" autocomplete="address-line1" class="eb-campo-scuro placeholder:text-[#F5EEDD]/30 col-span-3" style="font-family: 'Inter', sans-serif;" />
+                <input type="text" id="cf-residenza-civico" name="residenza_civico" required maxlength="20" placeholder="Civico" class="eb-campo-scuro placeholder:text-[#F5EEDD]/30" style="font-family: 'Inter', sans-serif;" />
+                <input type="text" id="cf-residenza-cap" name="residenza_cap" required inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="CAP" autocomplete="postal-code" class="eb-campo-scuro placeholder:text-[#F5EEDD]/30" style="font-family: 'Inter', sans-serif;" />
+                <input type="text" id="cf-residenza-comune" name="residenza_comune" required maxlength="200" placeholder="Comune" autocomplete="address-level2" class="eb-campo-scuro placeholder:text-[#F5EEDD]/30 col-span-2" style="font-family: 'Inter', sans-serif;" />
+                <input type="text" id="cf-residenza-provincia" name="residenza_provincia" required maxlength="2" placeholder="Prov." class="eb-campo-scuro placeholder:text-[#F5EEDD]/30 uppercase" style="font-family: 'Inter', sans-serif;" />
+              </div>
+            </div>
+
+            <div class="mb-6">
+              <label for="cf-telefono" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Telefono <span class="normal-case tracking-normal text-[#F5EEDD]/45">(facoltativo)</span></label>
+              <input type="tel" id="cf-telefono" name="telefono" maxlength="40" autocomplete="tel" class="eb-campo-scuro" style="font-family: 'Inter', sans-serif;" />
+              <p class="text-xs text-[#F5EEDD]/45 mt-2" style="font-family: 'Inter', sans-serif;">Solo per contattarti sulle attività dell'Associazione. Non lo pubblichiamo e non lo cediamo a nessuno.</p>
+            </div>
+          </>
+        )}
 
         {/* [3/8/2026] La SCELTA del metodo diventa obbligatoria, il VERSAMENTO
             no. Chi sceglie bonifico o contanti paga dopo per definizione, e
@@ -950,6 +984,19 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         comune_nascita: (formData.get('comune_nascita') as string || '').trim(),
         sesso: (formData.get('sesso') as string || '').trim(),
         metodo_scelto: (formData.get('metodo_scelto') as string || '').trim(),
+        // [4/8/2026] Anagrafica per il libro degli associati. I campi esistono
+        // nel modulo solo con ANAGRAFICA_PUBBLICA_LIVE acceso: con
+        // l'interruttore spento `formData.get` torna null e queste chiavi
+        // partono vuote, che per la edge vuol dire «non pervenuto». Cosi' il
+        // percorso e' gia' collaudato il giorno che si accende, e nel frattempo
+        // non cambia niente di quello che viaggia oggi.
+        cognome: (formData.get('cognome') as string || '').trim(),
+        residenza_via: (formData.get('residenza_via') as string || '').trim(),
+        residenza_civico: (formData.get('residenza_civico') as string || '').trim(),
+        residenza_cap: (formData.get('residenza_cap') as string || '').trim(),
+        residenza_comune: (formData.get('residenza_comune') as string || '').trim(),
+        residenza_provincia: (formData.get('residenza_provincia') as string || '').trim().toUpperCase(),
+        telefono: (formData.get('telefono') as string || '').trim(),
         gdpr: formData.get('gdpr') === 'on',
         _honeypot: (formData.get('_honeypot') as string || ''),
         _ts: formOpenedAt,
