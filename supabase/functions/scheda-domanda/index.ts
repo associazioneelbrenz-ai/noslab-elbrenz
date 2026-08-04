@@ -105,12 +105,38 @@ function jsonR(obj: unknown, status = 200): Response {
 // I tentativi NON riusciti si riportano a parte: dicono che la persona ci ha
 // provato, ed e' un'informazione diversa dal non aver fatto nulla.
 async function statoIncasso(supabase: any, id: string, email: string | null) {
-  const { data } = await supabase.from('pagamenti_tesseramento')
-    .select('stato, metodo, importo, anomalia, capture_id, created_at, domanda_id')
-    .or(email ? `domanda_id.eq.${id},email.ilike.${email}` : `domanda_id.eq.${id}`)
-    .in('tipo', ['quota', 'integrazione'])
-    .order('created_at', { ascending: false }).limit(10);
-  const righe = (data ?? []) as Array<Record<string, unknown>>;
+  const campi = 'stato, metodo, importo, anomalia, capture_id, created_at, domanda_id';
+  const tipi = ['quota', 'integrazione'];
+
+  // [4/8/2026] Due ricerche separate invece di una `.or()` con l'indirizzo
+  // concatenato dentro la stringa del filtro. In quella sintassi la virgola
+  // separa le condizioni: un indirizzo che contenesse una virgola o una
+  // parentesi spezzerebbe il filtro in due e la query smetterebbe di dire
+  // quello che credi. Oggi nessun indirizzo a database lo fa, ma era una riga
+  // che aspettava il primo indirizzo strano. Qui l'email e' un VALORE.
+  const [perDomanda, perEmail] = await Promise.all([
+    supabase.from('pagamenti_tesseramento').select(campi)
+      .eq('domanda_id', id).in('tipo', tipi)
+      .order('created_at', { ascending: false }).limit(10),
+    email
+      ? supabase.from('pagamenti_tesseramento').select(campi)
+          .ilike('email', email).in('tipo', tipi)
+          .order('created_at', { ascending: false }).limit(10)
+      : Promise.resolve({ data: [] }),
+  ]);
+
+  // Unione in memoria, senza doppioni: la stessa riga puo' arrivare da
+  // entrambe le ricerche.
+  const visti = new Set<string>();
+  const righe: Array<Record<string, unknown>> = [];
+  for (const r of [...((perDomanda.data ?? []) as Array<Record<string, unknown>>),
+                   ...((perEmail.data ?? []) as Array<Record<string, unknown>>)]) {
+    const k = String(r.capture_id ?? '') + '|' + String(r.created_at ?? '') + '|' + String(r.importo ?? '');
+    if (visti.has(k)) continue;
+    visti.add(k);
+    righe.push(r);
+  }
+  righe.sort((a, b) => String(b.created_at ?? '').localeCompare(String(a.created_at ?? '')));
   // Per dire "incassata" si pretende l'aggancio alla domanda, non la sola
   // omonimia di email: e' cio' che guarda il trigger, e un pagamento agganciato
   // a un'altra domanda della stessa persona non vale per questa.
@@ -543,6 +569,26 @@ Deno.serve(async (req: Request) => {
     // --- APPROVA: idempotente, un solo numero, un solo invio (logica condivisa)
     const r = await eseguiApprova(supabase, secret, d);
     if ('errore' in r) return erroreHtml(r.errore);
+    // [4/8/2026] Il ramo che mancava. `bloccato` non ha `errore` e non ha `ok`,
+    // quindi finiva nel ramo sotto e cercava `r.gia.stato` su un oggetto senza
+    // `gia`: la funzione cadeva. Non era teorico: i bottoni delle email di
+    // luglio puntano qui e i token valgono trenta giorni, quindi bastava aprire
+    // una vecchia mail e premere approva su una domanda senza quota per
+    // ottenere una pagina rotta. Il dato era salvo perche' il trigger blocca
+    // comunque, ma chi guardava vedeva un errore incomprensibile, ed e' lo
+    // scenario in cui una persona ragionevole conclude che sia rotto il blocco
+    // e prova ad aggirarlo.
+    // Il messaggio del trigger si mostra com'e': e' scritto per essere letto.
+    if ('bloccato' in r) {
+      const expScheda = Date.now() + TOKEN_TTL_MS;
+      const tScheda = await firmaToken(secret, 'vista', d, expScheda);
+      return pagina('Approvazione bloccata', `
+        <p class="occhiello">El Brenz · Tesseramento</p>
+        <h1>Approvazione bloccata</h1>
+        <p>${esc(r.bloccato)}</p>
+        <p>Dalla scheda completa puoi <strong>sollecitare il pagamento</strong> oppure <strong>approvare in deroga</strong> spiegando il motivo, per esempio se la quota e' gia' stata raccolta in contanti.</p>
+        <p><a href="https://elbrenz.eu/scheda-domanda/vista/${d}/${expScheda}/${tScheda}" style="color:#8a6215;font-weight:600;">Apri la scheda completa &rarr;</a></p>`);
+    }
     if (!r.ok) {
       return pagina('Già gestita', `
         <p class="occhiello">El Brenz · Tesseramento</p>
@@ -576,19 +622,24 @@ Deno.serve(async (req: Request) => {
     .select('*').eq('id', d).maybeSingle();
   if (!dom) return erroreHtml('Domanda non trovata.');
 
-  const { data: pagamenti } = await supabase.from('pagamenti_tesseramento')
-    .select('stato, metodo, importo, anomalia, created_at')
-    .or(`domanda_id.eq.${d},email.ilike.${dom.email}`)
-    .eq('tipo', 'quota')
-    .order('created_at', { ascending: false })
-    .limit(3);
-
-  const pagHtml = (pagamenti && pagamenti.length > 0)
-    ? pagamenti.map((p) => `<div class="${p.stato === 'completato' ? 'pag-ok' : 'pag-no'}" style="margin-bottom:8px;">
-        ${p.stato === 'completato' ? '✓' : '⏳'} <strong>${esc(p.stato)}</strong> — ${esc(p.importo ?? '?')} € via ${p.metodo === 'paypal' ? 'PayPal/carta' : 'bonifico'}${p.anomalia ? ' · <strong style="color:#a33">ANOMALIA da verificare</strong>' : ''}
-        <span style="color:#999;font-size:12px;"> · ${new Date(p.created_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}</span>
-      </div>`).join('')
-    : `<div class="pag-no">Nessun pagamento quota trovato per questa email (può arrivare più tardi: arriverà una mail dedicata).</div>`;
+  // [4/8/2026] Anche il ramo HTML passa da statoIncasso. Prima si calcolava i
+  // pagamenti per conto suo filtrando `tipo` sul solo valore 'quota': per i
+  // sedici soci che hanno versato l'integrazione da 10 euro, questa pagina
+  // diceva che non risultava nessun pagamento mentre la scheda nuova diceva il
+  // contrario. Due schermate, due verita' sulla stessa persona.
+  // Una sola funzione, una sola verita': e' lo stesso principio per cui la
+  // pagina e il trigger applicano la stessa regola.
+  const inc = await statoIncasso(supabase, d, dom.email);
+  const rigaPag = (p: Record<string, any>) => `<div class="${p.stato === 'completato' ? 'pag-ok' : 'pag-no'}" style="margin-bottom:8px;">
+      ${p.stato === 'completato' ? '✓' : '⏳'} <strong>${esc(p.stato)}</strong> — ${esc(p.importo ?? '?')} € via ${p.metodo === 'paypal' ? 'PayPal/carta' : esc(p.metodo ?? 'non indicato')}${p.anomalia ? ' · <strong style="color:#a33">ANOMALIA da verificare</strong>' : ''}
+      <span style="color:#999;font-size:12px;"> · ${new Date(p.created_at).toLocaleString('it-IT', { timeZone: 'Europe/Rome' })}</span>
+    </div>`;
+  const pagHtml = inc.incassata
+    ? inc.incassati.map(rigaPag).join('')
+      + (inc.tentativi.length ? inc.tentativi.map(rigaPag).join('') : '')
+    : `<div class="pag-no"><strong>Nessuna quota incassata.</strong> ${dom.metodo_scelto ? `Il richiedente ha scelto <strong>${esc(dom.metodo_scelto)}</strong>.` : 'Il richiedente non ha scelto nessun metodo.'}</div>`
+      + (inc.tentativi.length ? inc.tentativi.map(rigaPag).join('') : '')
+      + (inc.daAgganciare.length ? `<div class="pag-no" style="margin-top:8px;"><strong>Attenzione:</strong> risultano pagamenti completati con questa email ma non collegati a questa domanda.</div>` + inc.daAgganciare.map(rigaPag).join('') : '');
 
   const expAz = Date.now() + TOKEN_TTL_MS;
   const tApprova = await firmaToken(secret, 'azione-approva', d, expAz);
