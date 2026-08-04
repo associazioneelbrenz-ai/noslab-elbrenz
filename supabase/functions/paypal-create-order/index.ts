@@ -22,6 +22,30 @@ import {
 } from '../_shared/paypal.ts';
 
 const ANNO_QUOTA = 2026;
+
+/**
+ * La quota DELIBERATA per un anno, oppure null se per quell'anno non c'e'
+ * nessuna delibera.
+ *
+ * Non usa `quotaAnno()` di proposito: quella ha un valore di riserva, giusto
+ * quando si MOSTRA un numero, sbagliatissimo quando si INCASSA. Se il Direttivo
+ * non ha deliberato la quota del 2027, il sistema non deve chiedere venti euro
+ * perche' erano venti l'anno prima: deve dire che non lo sa e fermarsi.
+ */
+async function quotaDeliberata(
+  sb: { from: (t: string) => any },
+  anno: number,
+): Promise<number | null> {
+  const { data, error } = await sb.from('config_app').select('valore')
+    .eq('chiave', 'quota_sociale_per_anno').maybeSingle();
+  if (error || !data) {
+    console.error('[paypal-create-order] quota non leggibile:', error?.message);
+    return null;
+  }
+  const v = (data.valore as Record<string, unknown> | null)?.[String(anno)];
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 && n <= 1000 ? n : null;
+}
 const IMPORTO_QUOTA = '20.00'; // deliberato dal Direttivo — MAI dal client
 // [4/8/2026] Questo numero adesso vive anche in config_app, chiave
 // `quota_sociale_per_anno`, e lo leggono le viste e le edge che lo mostrano
@@ -72,6 +96,8 @@ Deno.serve(async (req: Request) => {
   );
 
   let importo: string;
+
+  let annoPagamento = ANNO_QUOTA;
   let descrizione: string;
   let domandaId: string | null = null;
   let nomeIntegrazione: string | null = null;
@@ -95,8 +121,28 @@ Deno.serve(async (req: Request) => {
     nomeIntegrazione = socio.nome;
     emailIntegrazione = socio.email;
   } else if (tipo === 'quota') {
-    importo = IMPORTO_QUOTA;
-    descrizione = `Quota sociale ${ANNO_QUOTA} – El Brenz`;
+    // [4/8/2026] IL RINNOVO. Fino a ieri l'anno era uno solo e l'importo una
+    // costante. Dal 1 gennaio le tessere scadono tutte insieme e serve poter
+    // pagare la quota dell'anno NUOVO senza rifare la domanda.
+    //
+    // L'anno arriva dal client ma NON viene creduto: si accetta solo l'anno in
+    // corso o il successivo, e solo se per quell'anno il Direttivo ha
+    // deliberato una quota in config_app. Senza delibera non si incassa
+    // niente: un importo preso da un valore di riserva sarebbe una cifra che
+    // nessuno ha mai approvato, chiesta a un socio.
+    const annoChiesto = Number.isInteger(body.anno) ? Number(body.anno) : ANNO_QUOTA;
+    if (annoChiesto !== ANNO_QUOTA && annoChiesto !== ANNO_QUOTA + 1) {
+      return jsonResponse({ error: 'Anno non valido per il versamento della quota.' }, 400, cors);
+    }
+    const deliberata = await quotaDeliberata(supabase, annoChiesto);
+    if (deliberata === null) {
+      return jsonResponse({
+        error: `La quota per il ${annoChiesto} non risulta ancora deliberata dal Direttivo: non possiamo incassarla.`,
+      }, 409, cors);
+    }
+    annoPagamento = annoChiesto;
+    importo = deliberata.toFixed(2);
+    descrizione = `Quota sociale ${annoChiesto} – El Brenz`;
   } else {
     const raw = typeof body.importo === 'number'
       ? body.importo
@@ -160,7 +206,7 @@ Deno.serve(async (req: Request) => {
   // riga a DB prima dell'ordine: custom_id PayPal = id domanda (quota) o id riga
   const { data: riga, error: dbErr } = await supabase
     .from('pagamenti_tesseramento')
-    .insert({ tipo, anonimo, nome, cognome, email, anno: ANNO_QUOTA, importo, stato: 'creato', domanda_id: domandaId })
+    .insert({ tipo, anonimo, nome, cognome, email, anno: annoPagamento, importo, stato: 'creato', domanda_id: domandaId })
     .select('id')
     .single();
   if (dbErr || !riga) {

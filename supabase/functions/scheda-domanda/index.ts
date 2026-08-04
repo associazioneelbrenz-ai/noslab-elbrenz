@@ -91,6 +91,10 @@ const CAMPI_ANAGRAFICI = [
   'telefono', 'categoria_socio', 'stato_socio',
   'cessazione_data', 'cessazione_motivo',
   'note_segreteria', 'codice_fiscale',
+  // Statuto 2014: il recesso ha effetto dal SECONDO mese successivo a quello in
+  // cui il Consiglio riceve la comunicazione. Serve la data di RICEZIONE, non
+  // quella in cui qualcuno la registra a sistema.
+  'recesso_comunicato_il',
 ] as const;
 
 const CATEGORIE_SOCIO = ['ordinario', 'fondatore', 'onorario', 'sostenitore'];
@@ -167,6 +171,9 @@ function normalizzaCampo(campo: string, grezzo: unknown): unknown | Error {
       return v;
     case 'cessazione_data':
       if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Error('La data di cessazione va scritta per intero.');
+      return v;
+    case 'recesso_comunicato_il':
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return new Error('La data della comunicazione di recesso va scritta per intero.');
       return v;
     case 'telefono':
       // Larghi di proposito: i numeri del registro cartaceo sono scritti in
@@ -476,6 +483,28 @@ Deno.serve(async (req: Request) => {
       // corrisponde a nessun lavoro reale da fare.
       const daCompletare = righe.filter((r: Record<string, any>) =>
         r.stato === 'approvata' && r.posizione !== 'account_di_sistema');
+      // [4/8/2026] IL COLLEGAMENTO DI RINNOVO, e la regola che lo governa.
+      //
+      // I solleciti di rinnovo partono DOPO il 31 dicembre, mai prima: chiedere
+      // a novembre la quota dell'anno dopo e' il modo piu' rapido per far
+      // sentire una persona un abbonamento invece che un socio.
+      //
+      // Quella regola qui non e' scritta in un commento e basta: finche' l'anno
+      // non e' cominciato il collegamento NON VIENE PROPRIO GENERATO. Nessun
+      // collegamento, nessuna email possibile. Una regola che vive solo nella
+      // buona volonta' di chi guarda il pannello, prima o poi, non regge.
+      const annoRinnovo = ANNO + 1;
+      const { data: sollecitabile } = await sb.rpc('rinnovo_sollecitabile', { p_anno: annoRinnovo });
+      const rinnoviAperti = sollecitabile === true;
+      if (rinnoviAperti) {
+        const expR = Date.now() + TOKEN_TTL_MS;
+        for (const r of righe as Array<Record<string, any>>) {
+          if (r.stato !== 'approvata' || r.posizione === 'account_di_sistema' || r.stato_socio === 'cessato') continue;
+          r.rinnovo = `https://elbrenz.eu/rinnovo/${annoRinnovo}/${r.domanda_id}/${expR}/`
+            + await firmaToken(secret, `rinnovo-${annoRinnovo}`, r.domanda_id, expR);
+        }
+      }
+
       const completezza = {
         totale: daCompletare.length,
         complete: daCompletare.filter((r: Record<string, any>) => r.anagrafica_completa).length,
@@ -514,6 +543,13 @@ Deno.serve(async (req: Request) => {
         incassanti,
         completezza,
         gita_annullata: await gitaAnnullata(sb),
+        rinnovi: {
+          anno: annoRinnovo,
+          aperti: rinnoviAperti,
+          perche: rinnoviAperti
+            ? null
+            : `I rinnovi per il ${annoRinnovo} si aprono il 1 gennaio ${annoRinnovo}. Chiedere prima la quota dell anno dopo fa sentire un socio un abbonamento.`,
+        },
         io: user.id,
       });
     }
@@ -586,8 +622,19 @@ Deno.serve(async (req: Request) => {
       }
 
       const adesso = new Date().toISOString();
+      // [4/8/2026] Se questa modifica fa cessare un socio, resta scritto CHI
+      // l'ha deliberata e quando. Lo statuto dice che la qualita' di socio si
+      // perde per mancato pagamento, ma il termine lo delibera il Consiglio:
+      // qui si REGISTRA una decisione presa altrove, e senza il nome di chi
+      // l'ha presa non e' una decisione, e' una riga comparsa da sola.
+      const diventaCessato = modifiche.stato_socio === 'cessato'
+        && (prima as Record<string, any>).stato_socio !== 'cessato';
       const { error: errUp } = await sb.from('domande_tesseramento')
-        .update({ ...modifiche, anagrafica_aggiornata_il: adesso, anagrafica_aggiornata_da: user.id })
+        .update({
+          ...modifiche,
+          anagrafica_aggiornata_il: adesso, anagrafica_aggiornata_da: user.id,
+          ...(diventaCessato ? { cessazione_deliberata_da: user.id, cessazione_deliberata_il: adesso } : {}),
+        })
         .eq('id', domandaId);
       if (errUp) return jsonR({ ok: false, error: 'aggiornamento_fallito', message: errUp.message }, 500);
 
@@ -726,10 +773,21 @@ Deno.serve(async (req: Request) => {
         incassi: sommaPerTipo,
         gita_annullata: await gitaAnnullata(sb),
         lacune,
+        // [4/8/2026] Chi vota in assemblea. Statuto 2014: «l'esercizio dei
+        // diritti sociali spetta ai soci regolarmente iscritti e in regola con
+        // il versamento della quota». L'elenco dice anche chi NON vota e
+        // perche': uno che nasconde le esclusioni non regge una contestazione.
+        voto: (await sb.rpc('aventi_diritto_voto', { p_anno: ANNO })).data ?? [],
       });
     }
 
     const jPaga = url.pathname.match(/\/json\/paga-quota\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
+    // [4/8/2026] Il RINNOVO: come paga-quota, ma per un anno preciso. L'anno
+    // sta nell'indirizzo E dentro lo scopo firmato, cosi' cambiarlo a mano
+    // invalida il collegamento: nessuno puo' farsi comparire davanti la
+    // quota di un anno diverso da quello per cui il collegamento e' stato
+    // emesso.
+    const jRinn = url.pathname.match(/\/json\/rinnovo\/(\d{4})\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jSoll = url.pathname.match(/\/json\/sollecita\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jVista = url.pathname.match(/\/json\/vista\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jEmail = url.pathname.match(/\/json\/email-azione\/(approva|respingi)\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
@@ -740,6 +798,41 @@ Deno.serve(async (req: Request) => {
     // nasceva una seconda domanda per la stessa persona. Qui la domanda e'
     // quella, indicata dal token, e paypal-create-order la riconosce dal
     // domanda_id senza crearne un'altra.
+    // IL RINNOVO NON E' UNA NUOVA ADESIONE. Chi e' gia' socio non ricompila la
+    // domanda, non ridA' i dati anagrafici e non ripassa dal Consiglio: deve
+    // solo versare la quota dell'anno nuovo. Il numero di tessera resta il suo
+    // per sempre (decisione di Cristian, 4/8): cambia solo l'anno.
+    if (jRinn && req.method === 'GET') {
+      const [, annoS, id, e, tok] = jRinn;
+      const anno = parseInt(annoS, 10);
+      if (!(await verificaToken(secret, `rinnovo-${anno}`, id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });
+
+      const { data: dom } = await sb.from('domande_tesseramento')
+        .select('nome, cognome, email, stato, numero_tessera, stato_socio').eq('id', id).maybeSingle();
+      if (!dom) return jsonR({ ok: false, error: 'not_found' });
+      // Un socio cessato non rinnova: se ha cambiato idea, la sua posizione la
+      // riapre il Consiglio, non un collegamento in una mail vecchia.
+      if (dom.stato !== 'approvata' || dom.stato_socio === 'cessato') {
+        return jsonR({ ok: false, error: 'non_rinnovabile' });
+      }
+
+      // La posizione per QUELL'anno, dalla funzione che sa distinguere gli
+      // anni: la vista storica direbbe «in regola» per sempre.
+      const { data: pos } = await sb.rpc('soci_al_anno', { p_anno: anno });
+      const mia = ((pos ?? []) as Array<Record<string, any>>).find((r) => r.domanda_id === id);
+
+      return jsonR({
+        ok: true, tipo: 'rinnovo', domanda_id: id, anno,
+        nome: dom.nome, cognome: dom.cognome, email: dom.email,
+        numero_tessera: dom.numero_tessera,
+        quota: mia ? Number(mia.quota_dovuta) : null,
+        versato: mia ? Number(mia.versato) : 0,
+        manca: mia ? Number(mia.manca) : null,
+        gia_rinnovato: mia ? ['in_regola', 'in_regola_per_deroga'].includes(String(mia.posizione)) : false,
+        posizione: mia?.posizione ?? null,
+      });
+    }
+
     if (jPaga && req.method === 'GET') {
       const [, id, e, tok] = jPaga;
       if (!(await verificaToken(secret, 'paga-quota', id, parseInt(e, 10), tok))) return jsonR({ ok: false, error: 'token' });

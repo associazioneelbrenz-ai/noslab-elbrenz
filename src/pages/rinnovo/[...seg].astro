@@ -1,0 +1,158 @@
+---
+/**
+ * /rinnovo/{anno}/{domandaId}/{exp}/{token} — il rinnovo della quota.
+ *
+ * [4/8/2026] Perche' esiste. Il 31 dicembre scadono TUTTE le tessere insieme,
+ * perche' valgono per anno solare: il 1 gennaio ci sono trenta persone da
+ * rinnovare e fino a ieri non c'era nessun modo di farlo se non rifare la
+ * domanda da capo.
+ *
+ * IL RINNOVO NON E' UNA NUOVA ADESIONE, ed e' tutto qui. Chi e' gia' socio non
+ * ricompila niente, non ridA' i dati anagrafici, non ripassa dal Consiglio:
+ * versa la quota dell'anno nuovo e basta. Il numero di tessera resta il suo
+ * per sempre, cambia solo l'anno.
+ *
+ * L'anno sta nell'indirizzo E dentro lo scopo firmato: cambiarlo a mano
+ * invalida il collegamento.
+ *
+ * Gemella di /paga-quota, che resta per la quota dell'anno di ammissione.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+const [anno, id, exp, token] = seg;
+const valido = /^\d{4}$/.test(anno ?? '') && /^[0-9a-f-]{36}$/i.test(id ?? '')
+  && /^\d+$/.test(exp ?? '') && /^[0-9a-f]+$/i.test(token ?? '');
+
+const PEEK = valido ? `${SB_URL}/functions/v1/scheda-domanda/json/rinnovo/${anno}/${id}/${exp}/${token}` : '';
+const CREATE_URL = `${SB_URL}/functions/v1/paypal-create-order`;
+const CAPTURE_URL = `${SB_URL}/functions/v1/paypal-capture-order`;
+const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJc1GPwUL2wgh64lSCKfaEkKZlaC';
+---
+
+<Layout title="Rinnova la tessera · El Brenz" description="Rinnovo della quota sociale El Brenz." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen flex items-start justify-center px-4 py-12 md:py-16">
+    <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9"
+         style="font-family: 'Inter', sans-serif;"
+         id="rn-card" data-peek={PEEK} data-create={CREATE_URL} data-capture={CAPTURE_URL}
+         data-anno={anno} data-domanda={id} data-client-id={PAYPAL_CLIENT_ID}>
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · rinnovo</p>
+      <div id="rn-body"><p class="text-[#1E2E26]/70 m-0">Un momento…</p></div>
+      <div id="rn-paypal" class="hidden mt-6"></div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const card = document.getElementById('rn-card')!;
+  const body = document.getElementById('rn-body')!;
+  const boxPaypal = document.getElementById('rn-paypal')!;
+  const peek = card.getAttribute('data-peek') || '';
+  const CREATE = card.getAttribute('data-create')!;
+  const CAPTURE = card.getAttribute('data-capture')!;
+  const ANNO = Number(card.getAttribute('data-anno'));
+  const DOMANDA = card.getAttribute('data-domanda')!;
+  const CLIENT_ID = card.getAttribute('data-client-id')!;
+
+  const H = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const titolo = (t: string) => `<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 10px;">${t}</h1>`;
+  const testo = (t: string) => `<p style="color:#1E2E26;opacity:.85;margin:0 0 8px;line-height:1.65;">${t}</p>`;
+
+  if (!peek) {
+    body.innerHTML = titolo('Collegamento non valido')
+      + testo('Questo collegamento non è valido. Apri la nostra email più recente, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.');
+  } else {
+    (async function () {
+      let d: any;
+      try {
+        const r = await fetch(peek, { headers: { Accept: 'application/json' } });
+        d = await r.json();
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Non riesco a caricare la pagina. Riprova fra poco.');
+        return;
+      }
+
+      if (!d.ok) {
+        /* Ogni motivo ha la sua frase: «non valido» e basta manda la persona a
+           cercare un guasto che non c'e'. */
+        const msg = d.error === 'non_rinnovabile'
+          ? 'La tua posizione non risulta rinnovabile da qui. Scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a> e la sistemiamo insieme.'
+          : 'Il collegamento è scaduto o non è valido. Apri la nostra email più recente, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.';
+        body.innerHTML = titolo('Non ci siamo') + testo(msg);
+        return;
+      }
+
+      const chi = [d.nome, d.cognome].filter(Boolean).join(' ');
+
+      if (d.gia_rinnovato) {
+        body.innerHTML = titolo(`Sei già in regola per il ${H(d.anno)}`)
+          + testo(`Risulta tutto a posto, ${H(d.nome)}: non devi fare niente.`)
+          + (d.numero_tessera != null ? testo(`La tua tessera è la numero <strong>${H(d.numero_tessera)}</strong>, e resta la stessa ogni anno.`) : '');
+        return;
+      }
+
+      if (d.quota == null) {
+        // Nessuna quota deliberata per quell'anno: non si chiede un importo che
+        // nessuno ha approvato.
+        body.innerHTML = titolo('Non ancora')
+          + testo(`La quota per il ${H(d.anno)} non risulta ancora deliberata. Appena il Direttivo la stabilisce ti riscriviamo.`);
+        return;
+      }
+
+      const daPagare = Number(d.manca ?? d.quota);
+      body.innerHTML = titolo(`Rinnova per il ${H(d.anno)}`)
+        + testo(`Ciao ${H(d.nome)}, sei socio di El Brenz${d.numero_tessera != null ? ` con la tessera numero <strong>${H(d.numero_tessera)}</strong>` : ''}. Per il ${H(d.anno)} manca solo la quota: <strong>non devi ricompilare niente</strong>.`)
+        + `<div style="background:#F8F1E4;border-radius:6px;padding:14px 16px;margin:16px 0;display:flex;align-items:baseline;justify-content:space-between;">
+             <span style="color:#1E2E26;opacity:.75;font-size:14px;">Quota ${H(d.anno)}</span>
+             <span style="font-size:24px;font-weight:600;color:#1E2E26;">${H(daPagare.toFixed(2).replace('.', ','))} €</span>
+           </div>`
+        + (Number(d.versato) > 0 ? testo(`<span style="color:#8a6215;">Hai già versato ${H(Number(d.versato).toFixed(2).replace('.', ','))} €: questo è il saldo.</span>`) : '')
+        + testo('<span style="font-size:13px;opacity:.7;">Il numero di tessera resta il tuo: cambia solo l\'anno.</span>');
+
+      boxPaypal.classList.remove('hidden');
+      const s = document.createElement('script');
+      s.src = `https://www.paypal.com/sdk/js?client-id=${CLIENT_ID}&currency=EUR&intent=capture&locale=it_IT`;
+      s.onerror = () => {
+        boxPaypal.innerHTML = `<p style="color:#a33;font-size:14px;margin:0;">Non riesco a caricare il pagamento. Riprova fra poco, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.</p>`;
+      };
+      s.onload = () => {
+        (window as any).paypal.Buttons({
+          createOrder: async () => {
+            // L'importo NON viaggia da qui: lo decide il server dalla quota
+            // deliberata per quell'anno. Il client dice solo di che anno si
+            // tratta, e anche quello viene ricontrollato.
+            const r = await fetch(CREATE, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tipo: 'quota', anno: ANNO, domanda_id: DOMANDA, nome: d.nome, cognome: d.cognome, email: d.email }),
+            });
+            const j = await r.json();
+            if (!j.id) throw new Error(j.error || 'ordine non creato');
+            return j.id;
+          },
+          onApprove: async (data: any) => {
+            const r = await fetch(CAPTURE, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ orderID: data.orderID }),
+            });
+            const j = await r.json();
+            if (j.ok || j.status === 'COMPLETED') {
+              body.innerHTML = titolo('Rinnovato ✓')
+                + testo(`Grazie ${H(d.nome)}. La quota ${H(d.anno)} è registrata${d.numero_tessera != null ? `, e la tua tessera resta la numero <strong>${H(d.numero_tessera)}</strong>` : ''}.`)
+                + testo('Ti arriverà la tessera dell\'anno nuovo per email.');
+              boxPaypal.classList.add('hidden');
+            } else {
+              boxPaypal.innerHTML = `<p style="color:#a33;font-size:14px;margin:0;">Il pagamento non risulta completato. Se ti è stato addebitato qualcosa scrivici subito a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.</p>`;
+            }
+          },
+          onError: () => {
+            boxPaypal.innerHTML = `<p style="color:#a33;font-size:14px;margin:0;">Qualcosa è andato storto con il pagamento. Riprova, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.</p>`;
+          },
+        }).render('#rn-paypal');
+      };
+      document.head.appendChild(s);
+    })();
+  }
+</script>
