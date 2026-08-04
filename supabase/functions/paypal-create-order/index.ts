@@ -23,6 +23,15 @@ import {
 
 const ANNO_QUOTA = 2026;
 const IMPORTO_QUOTA = '20.00'; // deliberato dal Direttivo — MAI dal client
+// [4/8/2026] Questo numero adesso vive anche in config_app, chiave
+// `quota_sociale_per_anno`, e lo leggono le viste e le edge che lo mostrano
+// soltanto (contact-form, scheda-domanda) tramite _shared/quota.ts.
+// QUI e' rimasto scritto a mano di proposito: questa funzione decide quanto
+// una persona paga davvero, e cambiare da dove prende la cifra si collauda con
+// una transazione vera, non di notte. Da allineare con Cristian alla tastiera.
+// Finche' non succede, se il Direttivo delibera una quota nuova va cambiata in
+// DUE posti: config_app e qui. // TODO allineare a quotaAnno()
+
 // Integrazione quota 2026 (10 → 20 €) per i 19 soci storici che hanno già
 // versato 10 € sui registri. Importo FISSATO QUI, mai dal client; il socio
 // è identificato dal codice tessera (HMAC non enumerabile) → domanda_id

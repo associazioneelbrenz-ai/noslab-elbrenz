@@ -23,11 +23,13 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { firmaToken, verificaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
 import { ensureCodiceEQr, tesseraEmailHtml } from '../_shared/tessera.ts';
 import { sollecitoQuotaHtml } from '../_shared/sollecitoQuota.ts';
+import { quotaAnno } from '../_shared/quota.ts';
 
 const ANNO = 2026;
-// Quota sociale dell'anno. Sta qui e non nel testo della mail perche' il numero
-// mostrato a un socio non si scrive due volte in due posti diversi.
-const QUOTA_EURO = 20;
+// Quota sociale dell'anno. Qui il numero si MOSTRA soltanto (mail, pannello):
+// non decide quanto qualcuno paga. Si legge da config_app tramite quotaAnno(),
+// con 20 come rete se la lettura non riesce.
+const QUOTA_FALLBACK = 20;
 
 function esc(s: unknown): string {
   return String(s ?? '')
@@ -227,7 +229,7 @@ async function eseguiApprova(supabase: any, secret: string, d: string, derogaMot
           // In deroga la tessera parte lo stesso, ma la mail dice che la quota
           // manca: tacerlo e' cio' che ha lasciato Schwarz convinto di essere a
           // posto per tredici giorni.
-          ...(deroga ? { quotaDaSaldare: { importo: QUOTA_EURO, urlPagamento: urlPagaQuota } } : {}),
+          ...(deroga ? { quotaDaSaldare: { importo: await quotaAnno(supabase, ANNO, QUOTA_FALLBACK), urlPagamento: urlPagaQuota } } : {}),
         });
         const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
           method: 'POST',
@@ -360,7 +362,7 @@ Deno.serve(async (req: Request) => {
       ).values()].sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
 
       return jsonR({
-        ok: true, tipo: 'coda', livello, quota: QUOTA_EURO,
+        ok: true, tipo: 'coda', livello, quota: await quotaAnno(sb, ANNO, QUOTA_FALLBACK),
         righe,
         incassi: incassi ?? [],
         incassanti,
@@ -389,7 +391,7 @@ Deno.serve(async (req: Request) => {
       return jsonR({
         ok: true, tipo: 'paga-quota', domanda_id: id,
         nome: dom.nome, email: dom.email, stato: dom.stato,
-        numero_tessera: dom.numero_tessera, quota: QUOTA_EURO, incassata: inc.incassata,
+        numero_tessera: dom.numero_tessera, quota: await quotaAnno(sb, ANNO, QUOTA_FALLBACK), incassata: inc.incassata,
       });
     }
 
@@ -408,7 +410,7 @@ Deno.serve(async (req: Request) => {
       if (!sharedSecret) return jsonR({ ok: false, error: 'config', message: 'SEND_EMAIL_SHARED_SECRET non configurato: sollecito non inviato.' });
       const expP = Date.now() + TOKEN_TTL_MS;
       const urlPaga = `https://elbrenz.eu/paga-quota/${id}/${expP}/${await firmaToken(secret, 'paga-quota', id, expP)}`;
-      const html = sollecitoQuotaHtml({ nome: dom.nome, anno: ANNO, importo: QUOTA_EURO, urlPagamento: urlPaga });
+      const html = sollecitoQuotaHtml({ nome: dom.nome, anno: ANNO, importo: await quotaAnno(sb, ANNO, QUOTA_FALLBACK), urlPagamento: urlPaga });
       try {
         const resp = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
           method: 'POST',
@@ -466,7 +468,7 @@ Deno.serve(async (req: Request) => {
         // pagina non deve dedurla contando righe, o prima o poi dedurra' male.
         incassata: inc.incassata,
         incassati: inc.incassati, tentativi: inc.tentativi, daAgganciare: inc.daAgganciare,
-        quota: QUOTA_EURO,
+        quota: await quotaAnno(sb, ANNO, QUOTA_FALLBACK),
         // Stesso token dell'approvazione: chi puo' approvare puo' sollecitare,
         // e sollecitare e' l'azione meno impegnativa delle due.
         postSollecita: postApprova,
@@ -493,7 +495,7 @@ Deno.serve(async (req: Request) => {
         ...(inc ? {
           incassata: inc.incassata, incassati: inc.incassati,
           tentativi: inc.tentativi, daAgganciare: inc.daAgganciare,
-          metodo_scelto: dom.metodo_scelto, quota: QUOTA_EURO,
+          metodo_scelto: dom.metodo_scelto, quota: await quotaAnno(sb, ANNO, QUOTA_FALLBACK),
           postSollecita: post,
         } : {}),
       });

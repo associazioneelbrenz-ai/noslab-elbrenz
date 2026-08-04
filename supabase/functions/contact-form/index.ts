@@ -29,6 +29,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2"
 import { firmaToken, TOKEN_TTL_MS } from "../_shared/admin.ts"
 import { notificaDirettivo } from "../_shared/notificaDirettivo.ts"
 import { confermaDomandaHtml } from '../_shared/sollecitoQuota.ts'
+import { quotaAnno } from '../_shared/quota.ts'
 
 // =============================================================================
 // CONFIG
@@ -68,7 +69,9 @@ const RECIPIENT_EMAIL = 'info@elbrenz.eu'
 // Anno e quota sociale in corso: il numero mostrato a un socio non si scrive
 // due volte in due posti diversi.
 const ANNO_QUOTA = 2026
-const QUOTA_EURO = 20
+// Qui il numero si MOSTRA soltanto, nella mail di conferma al richiedente: non
+// decide quanto qualcuno paga. Si legge da config_app, con questo come rete.
+const QUOTA_FALLBACK = 20
 
 // =============================================================================
 // CORS — risposta dinamica in base a Origin presente nella request
@@ -447,11 +450,17 @@ serve(async (req) => {
   let pagamentoHtml = ''
   let schedaHtml = ''
   let domandaIdCreated: string | null = null   // 14/7: ritornato al client per legare il pagamento quota
+  // La quota si legge dove il client c'e', cioe' qui dentro, e si usa piu'
+  // avanti: il blocco che manda la conferma al richiedente sta in un altro
+  // try e non vede questa variabile. Parte dal valore di rete, quindi anche se
+  // la lettura non avviene la mail dice comunque un numero giusto.
+  let quotaDaMostrare = QUOTA_FALLBACK
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
+    quotaDaMostrare = await quotaAnno(supabase, ANNO_QUOTA, QUOTA_FALLBACK)
     const { data: domanda, error: insErr } = await supabase
       .from('domande_tesseramento')
       .insert({
@@ -600,7 +609,7 @@ serve(async (req) => {
         body: JSON.stringify({
           to: email,
           subject: `La tua domanda di adesione a El Brenz ${ANNO_QUOTA}`,
-          html: confermaDomandaHtml({ nome, anno: ANNO_QUOTA, importo: QUOTA_EURO, metodo: metodoScelto }),
+          html: confermaDomandaHtml({ nome, anno: ANNO_QUOTA, importo: quotaDaMostrare, metodo: metodoScelto }),
           reply_to: RECIPIENT_EMAIL,
           tags: [{ name: 'source', value: 'conferma-domanda' }],
         }),
