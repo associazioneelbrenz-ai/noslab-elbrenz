@@ -52,3 +52,24 @@ comment on column public.pagamenti_tesseramento.data_ricostruita is
 -- nato da un pagamento; la seconda che qualcuno ha chiesto e gli e' stato detto
 -- di no. Metterle nello stesso mucchio racconterebbe quattro rifiuti che non ci
 -- sono mai stati.
+
+-- [4/8/2026, dopo l'advisor] Le due funzioni risultavano chiamabili via
+-- /rest/v1/rpc anche senza aver fatto l'accesso.
+--
+-- blocca_approvazione_senza_incasso() e' una funzione TRIGGER: chiamata come
+-- RPC fallirebbe comunque, perche' fuori da un trigger non ha la riga su cui
+-- lavorare. Ma esporla e' rumore in un elenco di sicurezza, e il rumore fa
+-- passare inosservata la riga che conta.
+--
+-- quota_anno() legge un numero pubblico, la quota sta scritta sul sito. Ma
+-- resta SECURITY DEFINER, cioe' gira con i permessi di chi l'ha creata: una
+-- funzione cosi' si espone solo se serve, e qui non serve. La chiamano le
+-- viste e le edge, che girano col service role.
+--
+-- ATTENZIONE alla riga su `public`: revocare da anon e authenticated NON basta,
+-- perche' Postgres concede EXECUTE al ruolo PUBLIC per difetto e anon lo
+-- eredita da li'. Senza quella riga la funzione resta chiamabile, e la
+-- migration sembra fatta mentre non lo e'. L'ha detto la verifica
+-- dall'esterno, non il codice.
+revoke execute on function public.blocca_approvazione_senza_incasso() from anon, authenticated, public;
+revoke execute on function public.quota_anno(int) from anon, authenticated, public;
