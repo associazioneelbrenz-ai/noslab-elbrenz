@@ -208,6 +208,27 @@ async function gitaAnnullata(sb: ReturnType<typeof createClient>): Promise<boole
   }
 }
 
+// [4/8/2026] Da quale data il libro digitale e' la fonte del registro.
+//
+// Il registro cartaceo si ferma a centodieci; da 111 a 122 le persone esistono
+// solo a database. Finche' due registri sono entrambi vivi, divergono: serve
+// che il libro digitale dichiari da quando e' lui la fonte.
+//
+// La data la stabilisce il CONSIGLIO insieme alla delibera sulla compagine.
+// Finche' non c'e', si torna null e il documento non porta la dicitura. Non si
+// inventa e non si usa la data di oggi come ripiego: sarebbe un registro che
+// dichiara una cosa che nessuno ha deliberato.
+async function supportoDigitaleDal(sb: ReturnType<typeof createClient>): Promise<string | null> {
+  try {
+    const { data } = await sb.from('config_app').select('valore')
+      .eq('chiave', 'registro_soci_supporto_digitale').maybeSingle();
+    const v = (data?.valore as Record<string, unknown> | undefined)?.dal;
+    return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 // Ramo JSON (16/7): la pagina Astro /scheda-domanda renderizza nativamente su
 // elbrenz.eu (la piattaforma Supabase forza text/plain sull'HTML delle edge →
 // download .txt). Qui rispondiamo JSON sui path con prefisso /json/…, lasciando
@@ -672,6 +693,130 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // [4/8/2026] LE CESSAZIONI. Lo strumento che serve al Consiglio per
+    // deliberare sulla compagine sociale.
+    //
+    // NESSUNA CESSAZIONE AUTOMATICA, mai. Il sistema puo' PROPORRE chi non ha
+    // versato (`proposta_decadenza`), il Consiglio decide, il segretario
+    // registra. Un programma non ha il potere di espellere un socio, e
+    // scriverlo nel codice non glielo darebbe: glielo toglierebbe al Consiglio.
+    //
+    // IN BLOCCO, perche' la prima delibera riguardera' molte posizioni
+    // insieme: una data, un motivo, una delibera, tante persone. La conferma
+    // mostra QUANTE, perche' il numero e' cio' che fa fermare chi sta per
+    // sbagliare.
+    if (url.pathname.endsWith('/json/cessazione') && req.method === 'POST') {
+      const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+      const atteso = Deno.env.get('INGEST_TOKEN');
+      let chi: string | null = null;
+      if (atteso && req.headers.get('x-ingest-token') === atteso) {
+        chi = null; // canale amministrativo: nessuna persona a cui attribuirlo
+      } else {
+        if (!bearer) return jsonR({ ok: false, error: 'no_token' }, 401);
+        const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+          global: { headers: { Authorization: `Bearer ${bearer}` } },
+        });
+        const { data: { user } } = await asUser.auth.getUser();
+        if (!user) return jsonR({ ok: false, error: 'unauthorized' }, 401);
+        const { data: ruoli } = await sb.from('utente_ruolo')
+          .select('ruolo:ruolo_id(livello)').eq('utente_id', user.id);
+        const liv = Math.max(0, ...(((ruoli ?? []) as Array<Record<string, any>>).map((r) => r?.ruolo?.livello ?? 0)));
+        if (liv < 50) return jsonR({ ok: false, error: 'non_autorizzato' }, 403);
+        chi = user.id;
+      }
+
+      let corpo: Record<string, any>;
+      try { corpo = await req.json(); } catch { return jsonR({ ok: false, error: 'json_non_valido' }, 400); }
+
+      // --- ANNULLAMENTO: una cessazione non si modifica, si annulla con motivo ---
+      if (corpo?.azione === 'annulla') {
+        const id = String(corpo?.domanda_id ?? '');
+        const motivo = String(corpo?.motivo ?? '').trim();
+        if (!/^[0-9a-f-]{36}$/i.test(id)) return jsonR({ ok: false, error: 'domanda_non_valida' }, 400);
+        if (motivo.length < 5) return jsonR({ ok: false, error: 'motivo_mancante', message: 'Scrivi perche annulli questa cessazione: resta agli atti.' }, 400);
+        const { data: prima } = await sb.from('domande_tesseramento')
+          .select('stato_socio, cessazione_data, cessazione_motivo, cessazione_delibera').eq('id', id).maybeSingle();
+        if (!prima || prima.stato_socio !== 'cessato') return jsonR({ ok: false, error: 'non_cessato' }, 409);
+        const adesso = new Date().toISOString();
+        await sb.from('domande_tesseramento').update({
+          stato_socio: 'attivo', cessazione_data: null, cessazione_motivo: null,
+          cessazione_delibera: null, cessazione_deliberata_da: null, cessazione_deliberata_il: null,
+          anagrafica_aggiornata_il: adesso, anagrafica_aggiornata_da: chi,
+        }).eq('id', id);
+        // Lo storico tiene com'era: annullare non vuol dire far sparire.
+        await sb.from('anagrafica_modifica').insert({
+          domanda_id: id, modificato_da: chi,
+          prima, dopo: { stato_socio: 'attivo', annullamento_motivo: motivo.slice(0, 500) },
+        });
+        return jsonR({ ok: true, azione: 'annulla', domanda_id: id });
+      }
+
+      // --- REGISTRAZIONE, singola o in blocco ---
+      const ids: string[] = Array.isArray(corpo?.domande) ? corpo.domande.map(String) : [];
+      const data = String(corpo?.cessazione_data ?? '').slice(0, 10);
+      const motivo = String(corpo?.cessazione_motivo ?? '');
+      const delibera = String(corpo?.cessazione_delibera ?? '').trim().slice(0, 300);
+      const esegui = corpo?.esegui === true;
+
+      if (!ids.length || ids.some((x) => !/^[0-9a-f-]{36}$/i.test(x))) {
+        return jsonR({ ok: false, error: 'domande_non_valide' }, 400);
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return jsonR({ ok: false, error: 'data_mancante', message: 'Serve la data effettiva della cessazione.' }, 400);
+      if (!['recesso', 'decadenza_morosita', 'esclusione', 'decesso'].includes(motivo)) {
+        return jsonR({ ok: false, error: 'motivo_non_previsto', message: 'Il motivo deve essere fra quelli previsti dallo statuto.' }, 400);
+      }
+      // Senza il riferimento alla delibera la riga dice che qualcuno e' uscito
+      // ma non in forza di quale decisione: non e' una cessazione registrata.
+      if (delibera.length < 3) {
+        return jsonR({ ok: false, error: 'delibera_mancante', message: 'Serve il riferimento alla delibera del Consiglio che ha deciso la cessazione.' }, 400);
+      }
+
+      const { data: persone } = await sb.from('domande_tesseramento')
+        .select('id, numero_socio, nome, stato, stato_socio').in('id', ids);
+      const valide = ((persone ?? []) as Array<Record<string, any>>)
+        .filter((p) => p.stato === 'approvata' && p.stato_socio !== 'cessato');
+
+      // GIRO A VUOTO per difetto: si dice CHI e QUANTI, e non si scrive niente.
+      if (!esegui) {
+        return jsonR({
+          ok: true, giro_a_vuoto: true,
+          quanti: valide.length,
+          gia_cessati: (persone ?? []).length - valide.length,
+          persone: valide.map((p) => ({ domanda_id: p.id, numero_socio: p.numero_socio, nome: p.nome })),
+          cessazione_data: data, cessazione_motivo: motivo, cessazione_delibera: delibera,
+          // Il recesso ha effetto dal SECONDO mese successivo a quello in cui il
+          // Consiglio riceve la comunicazione: la data effettiva NON e' quella
+          // della lettera, e chi compila deve saperlo.
+          avviso_recesso: motivo === 'recesso'
+            ? 'Il recesso ha effetto dal secondo mese successivo a quello in cui il Consiglio ha ricevuto la comunicazione. La data qui sopra deve essere quella EFFETTIVA, non quella della lettera.'
+            : null,
+        });
+      }
+
+      if (!valide.length) return jsonR({ ok: false, error: 'nessuna_posizione' }, 400);
+
+      const adesso = new Date().toISOString();
+      let fatte = 0;
+      for (const p of valide) {
+        const { error } = await sb.from('domande_tesseramento').update({
+          stato_socio: 'cessato', cessazione_data: data, cessazione_motivo: motivo,
+          cessazione_delibera: delibera,
+          cessazione_deliberata_da: chi, cessazione_deliberata_il: adesso,
+          anagrafica_aggiornata_il: adesso, anagrafica_aggiornata_da: chi,
+        }).eq('id', p.id);
+        if (error) continue;
+        await sb.from('anagrafica_modifica').insert({
+          domanda_id: p.id, modificato_da: chi,
+          prima: { stato_socio: p.stato_socio ?? null },
+          dopo: { stato_socio: 'cessato', cessazione_data: data, cessazione_motivo: motivo, cessazione_delibera: delibera },
+        });
+        fatte++;
+      }
+      // Il numero di socio NON si tocca e NON torna disponibile: il contatore
+      // prende sempre il massimo piu' uno, e i cessati restano nel registro.
+      return jsonR({ ok: true, eseguito: true, cessate: fatte, su: valide.length });
+    }
+
     // [4/8/2026] LIBRO SOCI. Il registro che al RUNTS va esibito.
     //
     // Ramo a parte, non un pezzo di /json/coda, per due ragioni. La prima e' la
@@ -703,6 +848,15 @@ Deno.serve(async (req: Request) => {
         .select('ruolo:ruolo_id(nome, livello)').eq('utente_id', user.id);
       const livello = Math.max(0, ...(((ruoli ?? []) as Array<Record<string, any>>).map((r) => r?.ruolo?.livello ?? 0)));
       if (livello < 50) return jsonR({ ok: false, error: 'non_autorizzato' }, 403);
+
+      // La data a cui si guarda la compagine. Serve per convocare e per
+      // allegare al verbale: «chi era socio il giorno dell'assemblea» e' una
+      // domanda diversa da «chi e' socio oggi».
+      let corpoLibro: Record<string, any> = {};
+      try { corpoLibro = await req.clone().json(); } catch { /* nessun corpo */ }
+      const dataRichiesta = /^\d{4}-\d{2}-\d{2}$/.test(String(corpoLibro?.alla_data ?? ''))
+        ? String(corpoLibro.alla_data)
+        : new Date().toISOString().slice(0, 10);
 
       const { data: soci, error: errSoci } = await sb.from('v_soci_in_regola')
         .select('domanda_id, nome, email, anno, numero_tessera, codice_tessera, stato, approvata_il, posizione, quota_dovuta, totale_incassato, manca, in_deroga, deroga_pagamento_motivo, ultimo_incasso_il, metodi_incasso, socio_storico')
@@ -801,6 +955,15 @@ Deno.serve(async (req: Request) => {
         // il versamento della quota». L'elenco dice anche chi NON vota e
         // perche': uno che nasconde le esclusioni non regge una contestazione.
         voto: (await sb.rpc('aventi_diritto_voto', { p_anno: ANNO })).data ?? [],
+        // La compagine A UNA DATA: chi era associato, chi andava convocato,
+        // chi votava. La data la sceglie chi estrae; senza, si intende oggi.
+        alla_data: dataRichiesta,
+        compagine: (await sb.rpc('associati_alla_data', { p_data: dataRichiesta })).data ?? [],
+        // DA QUALE DATA il libro digitale e' la fonte. Se il Consiglio non
+        // l'ha ancora stabilita, resta nulla e il documento NON porta la
+        // dicitura: inventarla, o usare la data di oggi come ripiego, vorrebbe
+        // dire far dire a un registro una cosa che nessuno ha deliberato.
+        supporto_digitale_dal: await supportoDigitaleDal(sb),
       });
     }
 

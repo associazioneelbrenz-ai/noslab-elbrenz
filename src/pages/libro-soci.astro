@@ -77,6 +77,11 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <span class="ml-auto"></span>
           <button type="button" id="ls-stampa" class="bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded text-[13px] font-medium border-0 cursor-pointer hover:bg-[#2a3f34] transition-colors">Stampa o salva in PDF</button>
           <button type="button" id="ls-csv" class="bg-white text-[#1E2E26] border border-[#C8923E]/50 px-5 py-2.5 rounded text-[13px] cursor-pointer hover:border-[#C8923E] transition-colors">Scarica il foglio di calcolo</button>
+          {/* La compagine A UNA DATA: «chi era socio il giorno dell'assemblea»
+              è una domanda diversa da «chi è socio oggi», e in assemblea serve
+              la prima. */}
+          <label class="text-[13px] text-[#1E2E26]/70" for="ls-data">Compagine al</label>
+          <input type="date" id="ls-data" class="border border-[#E5DFCF] bg-white rounded px-3 py-2 text-[13px] text-[#1E2E26]" />
           <button type="button" id="ls-logout" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
         </div>
 
@@ -122,6 +127,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
   const LIBRO_URL = $('ls-root')!.getAttribute('data-libro-url')!;
   let doc: any = null;
+  let allaData: string | null = null;
 
   /* Come si chiama, in italiano, una posizione rispetto alla quota. La parola
      conta: «da regolarizzare» dice che manca un dato, «moroso» direbbe che
@@ -143,7 +149,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     const r = await fetch(LIBRO_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: '{}',
+      body: JSON.stringify(allaData ? { alla_data: allaData } : {}),
     });
     const d = await r.json();
     if (!d.ok) { show(d.error === 'non_autorizzato' ? 'ls-noaccess' : 'ls-login'); return; }
@@ -255,6 +261,39 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <strong>Soci cessati nell’anno ${esc(doc.anno)}:</strong> nessuno. Non risultano recessi, decadenze, esclusioni né decessi registrati.
         </p>`;
 
+    /* [4/8] I DUE ELENCHI, che si stampano insieme perché in assemblea
+       servono entrambi: il primo dimostra che tutti sono stati chiamati, il
+       secondo stabilisce chi vota. Un socio non in regola perde il diritto di
+       voto, non quello di essere convocato. */
+    const comp = (doc.compagine ?? []) as any[];
+    const convocati = comp.filter((c) => c.convocato);
+    const votanti = comp.filter((c) => c.vota);
+    const dataComp = doc.alla_data ? dataIt(doc.alla_data) : '';
+    const rigaComp = (c: any) => `<tr>
+        <td style="padding:5px 8px;border-bottom:1px solid #E5DFCF;text-align:right;">${c.numero_socio != null ? esc(c.numero_socio) : ''}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #E5DFCF;">${esc([c.cognome, c.nome].filter(Boolean).join(' ') || c.nome)}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #E5DFCF;">${esc(c.categoria_socio ?? '')}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #E5DFCF;">${esc(POSIZIONE[c.posizione] ?? c.posizione ?? '')}</td>
+        <td style="padding:5px 8px;border-bottom:1px solid #E5DFCF;">${c.vota ? '<strong>sì</strong>' : 'no'}</td>
+      </tr>`;
+    const compagine = comp.length ? `<div style="margin-top:26px;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 4px;color:#1E2E26;">Compagine sociale al ${esc(dataComp)}</h2>
+        <p style="font-size:12px;color:#4a4a4a;margin:0 0 10px;">
+          Da convocare: <strong>${esc(convocati.length)}</strong> · con diritto di voto: <strong>${esc(votanti.length)}</strong>.
+          La convocazione spetta a tutti gli associati; il voto ai soli in regola con il versamento della quota.
+        </p>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;color:#1E2E26;">
+          <thead><tr style="background:#F8F1E4;text-align:left;">
+            <th style="padding:6px 8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">N. socio</th>
+            <th style="padding:6px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome e nome</th>
+            <th style="padding:6px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Categoria</th>
+            <th style="padding:6px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Posizione quota</th>
+            <th style="padding:6px 8px;border-bottom:2px solid #1E2E26;font-weight:600;">Vota</th>
+          </tr></thead>
+          <tbody>${convocati.map(rigaComp).join('')}</tbody>
+        </table>
+      </div>` : '';
+
     const incassi = doc.incassi ?? {};
     const vociIncasso = [
       ['quota', 'Quote sociali'],
@@ -284,6 +323,12 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         <strong>${esc(r.da_regolarizzare)}</strong> con quota versata prima dell’adozione del sistema informatico e registrazione da completare,
         <strong>${esc(r.ammesso_senza_incasso)}</strong> senza che risulti il versamento.
       </p>
+
+      ${doc.supporto_digitale_dal ? `<p style="font-size:11.5px;color:#1E2E26;margin:0 0 10px;line-height:1.55;padding:8px 12px;background:#F8F1E4;border-left:3px solid #C8923E;">
+        Registro tenuto su supporto digitale dal ${esc(dataIt(doc.supporto_digitale_dal))}.
+        Le posizioni anteriori sono riportate dal registro cartaceo tenuto dal 21 dicembre 2009,
+        che resta conservato presso la sede.
+      </p>` : ''}
 
       <p style="font-size:11.5px;color:#6B6B6B;margin:0 0 10px;line-height:1.55;">
         Il <strong>numero di socio</strong> è il progressivo del registro degli associati tenuto dall'Associazione dal 2009
@@ -339,6 +384,8 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">${vociIncasso}</table>
         </div>
       </div>
+
+      ${compagine}
 
       ${cessazioni}
 
@@ -401,6 +448,11 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     URL.revokeObjectURL(url);
   }
 
+  $('ls-data')?.addEventListener('change', async () => {
+    const v = val('ls-data');
+    allaData = /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    await init();
+  });
   $('ls-stampa')?.addEventListener('click', () => window.print());
   $('ls-csv')?.addEventListener('click', scaricaCsv);
 

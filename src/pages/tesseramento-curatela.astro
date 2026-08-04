@@ -91,6 +91,12 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <input id="tc-cerca" type="search" placeholder="Cerca nome o email…" class="ml-auto border border-[#E5DFCF] bg-white rounded px-3 py-1.5 text-[13px] text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
         </div>
 
+        <div id="tc-selezione" class="hidden bg-[#1E2E26] text-[#F5EEDD] rounded p-4 mb-4 flex flex-wrap items-center gap-4">
+          <span class="text-sm"><strong id="tc-sel-quanti">0</strong> selezionati</span>
+          <button type="button" id="tc-sel-cessa" class="bg-[#a33] text-white px-4 py-2 rounded text-[13px] font-semibold border-0 cursor-pointer">Registra la cessazione</button>
+          <button type="button" id="tc-sel-azzera" class="text-[13px] underline bg-transparent border-0 text-[#F5EEDD]/70 cursor-pointer">Annulla la selezione</button>
+        </div>
+
         <div id="tc-lista" class="grid gap-3"></div>
 
         {/* MODULO: registrare un incasso gia' avvenuto fuori dal sistema.
@@ -279,6 +285,52 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           </div>
         </div>
 
+        {/* CESSAZIONI. Il Consiglio delibera, il segretario registra, il
+            sistema non decide mai. La selezione è multipla perché la prima
+            delibera riguarderà molte posizioni insieme: una data, un motivo,
+            una delibera, tante persone. */}
+        <div id="tc-cess" class="hidden fixed inset-0 z-50 bg-[#1E2E26]/60 overflow-y-auto p-4 md:p-8">
+          <div class="bg-white rounded-lg border-t-4 border-[#a33] max-w-lg mx-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-1">
+              <h3 class="text-xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif;">Registra una cessazione</h3>
+              <button type="button" id="tc-cess-chiudi" class="text-[#1E2E26]/50 bg-transparent border-0 text-2xl leading-none cursor-pointer" aria-label="Chiudi">&times;</button>
+            </div>
+            <p id="tc-cess-chi" class="text-[13px] text-[#1E2E26]/65 m-0 mb-5"></p>
+
+            <div class="grid gap-4">
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-cess-motivo">Motivo, fra quelli previsti dallo statuto <span class="text-[#a33]">*</span></label>
+                <select class={inputCls} id="tc-cess-motivo">
+                  <option value="">scegli</option>
+                  <option value="recesso">recesso del socio</option>
+                  <option value="decadenza_morosita">mancato pagamento della quota</option>
+                  <option value="esclusione">esclusione deliberata dal Consiglio</option>
+                  <option value="decesso">decesso</option>
+                </select>
+                <p id="tc-cess-avviso" class="hidden text-[13px] m-0 mt-2 px-3 py-2 rounded" style="background:#FDF9F0;color:#8a6215;"></p>
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-cess-data">Data effettiva della cessazione <span class="text-[#a33]">*</span></label>
+                <input class={inputCls} type="date" id="tc-cess-data" />
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-cess-delibera">Riferimento alla delibera <span class="text-[#a33]">*</span></label>
+                <input class={inputCls} type="text" id="tc-cess-delibera" maxlength="300" placeholder="es. CD 3/2026 del 12 settembre" />
+                <p class="text-[12px] text-[#1E2E26]/50 m-0 mt-1">Senza il riferimento la riga dice che qualcuno è uscito ma non in forza di quale decisione.</p>
+              </div>
+
+              <div id="tc-cess-esito" class="hidden rounded px-4 py-3 text-sm"></div>
+
+              <div class="flex flex-wrap gap-3 items-center">
+                <button type="button" id="tc-cess-salva" class="bg-[#a33] text-white px-6 py-3 rounded font-semibold text-sm cursor-pointer border-0">Registra la cessazione</button>
+                <span class="text-[12px] text-[#1E2E26]/55">Il socio resta nel registro e tiene il suo numero. Si annulla con motivo, non si modifica.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <p id="tc-vuoto" class="hidden text-[#1E2E26]/60 bg-white border border-[#E5DFCF] rounded p-6 text-center m-0">Niente in questa selezione.</p>
 
         {/* CASSA — da v_incassi, che tiene insieme quote, integrazioni e
@@ -338,6 +390,10 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
      che nessuno deve restituire. */
   let gitaAnnullata = false;
   let anaCorrente: any = null;
+  /* La selezione per la cessazione in blocco: la prima delibera riguarderà
+     molte posizioni insieme, e farle una per una è il modo di sbagliarne una. */
+  const selezione = new Set<string>();
+  const CESSAZIONE_URL = CODA_URL.replace(/\/coda$/, '/cessazione');
   const REGISTRA_URL = 'https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/contanti-registra';
   const ANAGRAFICA_URL = CODA_URL.replace(/\/coda$/, '/anagrafica');
 
@@ -635,6 +691,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       /* Il completamento anagrafico vale per chi e' socio davvero: sulle
          annullate e sull'account di servizio non c'e' niente da completare. */
       const completabile = x.stato === 'approvata' && x.posizione !== 'account_di_sistema';
+      const cessabile = completabile && x.stato_socio !== 'cessato';
       const etichettaAna = x.anagrafica_completa
         ? 'Scheda anagrafica'
         : '<span style="color:#8a6215;">Completa la scheda</span>';
@@ -642,7 +699,12 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           ${registrabile ? `<button type="button" data-registra="${esc(x.domanda_id)}" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Registra un incasso già avvenuto</button>` : ''}
           ${completabile ? `<button type="button" data-anagrafica="${esc(x.domanda_id)}" class="text-[13px] underline bg-transparent border-0 p-0 cursor-pointer text-[#8a6215]">${etichettaAna}</button>` : ''}
         </div>`;
-      return `<div class="bg-white border border-[#E5DFCF] hover:border-[#C8923E] rounded p-4 transition-colors">
+      const cessato = x.stato_socio === 'cessato';
+      return `<div class="bg-white border ${cessato ? 'border-[#a33]/30' : 'border-[#E5DFCF] hover:border-[#C8923E]'} rounded p-4 transition-colors"${cessato ? ' style="opacity:.7;"' : ''}>
+        ${cessabile ? `<label class="flex items-center gap-2 text-[12px] text-[#1E2E26]/55 mb-2 cursor-pointer">
+          <input type="checkbox" data-sel="${esc(x.domanda_id)}" class="w-4 h-4 accent-[#a33]"${selezione.has(x.domanda_id) ? ' checked' : ''} />
+          <span>seleziona per la cessazione</span></label>` : ''}
+        ${cessato ? `<p class="text-[12px] m-0 mb-2" style="color:#a33;">Cessato il ${esc(dataIt(x.cessazione_data))}${x.cessazione_delibera ? ` · ${esc(x.cessazione_delibera)}` : ''}</p>` : ''}
         <a href="${esc(x.vista)}" class="block no-underline">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span class="text-[16px] text-[#1E2E26] font-medium" style="font-family:'Playfair Display',serif;">${esc(x.nome)}</span>
@@ -663,7 +725,96 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     document.querySelectorAll('[data-anagrafica]').forEach((b) => b.addEventListener('click', () => {
       apriAnagrafica(String((b as HTMLElement).dataset.anagrafica));
     }));
+    document.querySelectorAll('[data-sel]').forEach((c) => c.addEventListener('change', (e) => {
+      const id = String((e.target as HTMLElement).dataset.sel);
+      if ((e.target as HTMLInputElement).checked) selezione.add(id); else selezione.delete(id);
+      aggiornaSelezione();
+    }));
+    aggiornaSelezione();
   }
+
+  function aggiornaSelezione() {
+    $('tc-selezione')!.classList.toggle('hidden', selezione.size === 0);
+    ($('tc-sel-quanti') as HTMLElement).textContent = String(selezione.size);
+  }
+
+  // ---- CESSAZIONI ----
+  function apriCessazione() {
+    if (selezione.size === 0) return;
+    const nomi = righe.filter((x) => selezione.has(x.domanda_id))
+      .map((x) => `${x.numero_socio != null ? `n. ${x.numero_socio} ` : ''}${x.nome}`);
+    ($('tc-cess-chi') as HTMLElement).innerHTML = selezione.size === 1
+      ? `<strong>${esc(nomi[0])}</strong>`
+      : `<strong>${esc(selezione.size)} posizioni</strong>: ${esc(nomi.join(' · '))}`;
+    ($('tc-cess-motivo') as HTMLSelectElement).value = '';
+    ($('tc-cess-data') as HTMLInputElement).value = '';
+    ($('tc-cess-delibera') as HTMLInputElement).value = '';
+    $('tc-cess-esito')!.classList.add('hidden');
+    $('tc-cess-avviso')!.classList.add('hidden');
+    show('tc-cess');
+  }
+  $('tc-sel-cessa')?.addEventListener('click', apriCessazione);
+  $('tc-sel-azzera')?.addEventListener('click', () => { selezione.clear(); render(); });
+  $('tc-cess-chiudi')?.addEventListener('click', () => hide('tc-cess'));
+  $('tc-cess')?.addEventListener('click', (e) => { if (e.target === $('tc-cess')) hide('tc-cess'); });
+
+  /* Il recesso ha effetto dal SECONDO mese successivo a quello in cui il
+     Consiglio riceve la comunicazione: la data effettiva non coincide con
+     quella della lettera, e chi compila deve saperlo PRIMA di scriverla. */
+  $('tc-cess-motivo')?.addEventListener('change', () => {
+    const m = val('tc-cess-motivo');
+    const box = $('tc-cess-avviso')!;
+    box.classList.toggle('hidden', m !== 'recesso');
+    if (m === 'recesso') {
+      box.innerHTML = 'Attenzione: il recesso ha effetto dal <strong>secondo mese successivo</strong> a quello in cui il Consiglio ha ricevuto la comunicazione. Se la lettera è arrivata il 10 marzo, la data effettiva è il <strong>1 maggio</strong>, non il 10 marzo.';
+    }
+  });
+
+  $('tc-cess-salva')?.addEventListener('click', async () => {
+    const motivo = val('tc-cess-motivo');
+    const data = val('tc-cess-data');
+    const delibera = val('tc-cess-delibera').trim();
+    const e = $('tc-cess-esito')!;
+    const mostra = (t: string, ok: boolean) => {
+      e.classList.remove('hidden');
+      e.style.background = ok ? '#eaf3ee' : '#fbecec';
+      e.style.borderLeft = `4px solid ${ok ? '#2d8659' : '#a33'}`;
+      e.textContent = t;
+    };
+    if (!motivo) return mostra('Scegli il motivo previsto dallo statuto.', false);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return mostra('Scegli la data effettiva della cessazione.', false);
+    if (delibera.length < 3) return mostra('Scrivi il riferimento alla delibera del Consiglio.', false);
+
+    const domande = [...selezione];
+    // Il NUMERO è ciò che fa fermare chi sta per sbagliare.
+    const quante = domande.length;
+    if (!confirm(`Stai per registrare la cessazione di ${quante} ${quante === 1 ? 'socio' : 'soci'}, con effetto dal ${data}. Il Consiglio ha deliberato questo? Procedo?`)) return;
+
+    const btn = $('tc-cess-salva') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'Registro…';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const r = await fetch(CESSAZIONE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({
+          domande, cessazione_data: data, cessazione_motivo: motivo,
+          cessazione_delibera: delibera, esegui: true,
+        }),
+      });
+      const j = await r.json();
+      if (r.ok && j.ok) {
+        mostra(`Registrate ${j.cessate} cessazioni. Ricarico…`, true);
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        mostra(j.message || j.error || 'Non riuscito.', false);
+        btn.disabled = false; btn.textContent = 'Registra la cessazione';
+      }
+    } catch {
+      mostra('Errore di connessione. Riprova.', false);
+      btn.disabled = false; btn.textContent = 'Registra la cessazione';
+    }
+  });
 
   // ---- COMPLETAMENTO ANAGRAFICO ----
   /* Il modulo si apre gia' pieno di quello che c'e': chi recupera il registro
