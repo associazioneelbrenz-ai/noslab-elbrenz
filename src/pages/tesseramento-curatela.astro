@@ -326,19 +326,88 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     }
     $('tc-cassa')!.innerHTML = blocchi.join('');
 
+    /* Si annullano SOLO le registrazioni fatte a mano, e solo se non lo sono
+       gia'. Un incasso online si rimborsa dal fornitore: mostrare qui un
+       bottone che lo marca annullato lascerebbe il denaro dov'e' e il registro
+       a dire il contrario. Il vincolo vale anche lato edge, qui e' cortesia. */
+    const annullabile = (x: any) =>
+      x.tabella === 'pagamenti_tesseramento'
+      && ['contanti', 'bonifico', 'altro'].includes(String(x.metodo))
+      && x.stato !== 'annullato';
+
     $('tc-cassa-dettaglio')!.innerHTML = `<table class="w-full text-[13px] border-collapse">
       <thead><tr class="text-left text-[#1E2E26]/55">
         <th class="py-2 pr-3 font-medium">Quando</th><th class="py-2 pr-3 font-medium">Chi</th>
         <th class="py-2 pr-3 font-medium">Cosa</th><th class="py-2 pr-3 font-medium">Metodo</th>
         <th class="py-2 pr-3 font-medium">Stato</th><th class="py-2 pr-3 font-medium text-right">Importo</th>
-      </tr></thead><tbody>${incassi.map((x) => `<tr class="border-t border-[#E5DFCF]">
-        <td class="py-2 pr-3 whitespace-nowrap">${esc(dataIt(x.quando))}</td>
+        <th class="py-2 font-medium"></th>
+      </tr></thead><tbody>${incassi.map((x) => `<tr class="border-t border-[#E5DFCF]"${x.stato === 'annullato' ? ' style="opacity:.55;"' : ''}>
+        <td class="py-2 pr-3 whitespace-nowrap">${esc(dataIt(x.incassato_il || x.quando))}${x.data_ricostruita ? ' <span class="text-[11px] text-[#8a6215]">ricostruita</span>' : ''}</td>
         <td class="py-2 pr-3">${esc(x.nome || x.email || '—')}</td>
         <td class="py-2 pr-3">${esc(ETICHETTA[x.tipo] ?? x.tipo)}</td>
         <td class="py-2 pr-3">${esc(x.metodo === 'paypal' ? 'PayPal/carta' : x.metodo || '—')}</td>
-        <td class="py-2 pr-3" style="color:${x.stato === 'completato' ? '#2d8659' : x.stato === 'annullato' ? '#999' : '#8a6215'};">${esc(x.stato)}</td>
-        <td class="py-2 pr-3 text-right whitespace-nowrap">${esc(Number(x.importo || 0).toFixed(2))} €</td>
-      </tr>`).join('')}</tbody></table>`;
+        <td class="py-2 pr-3" style="color:${x.stato === 'completato' ? '#2d8659' : x.stato === 'annullato' ? '#999' : '#8a6215'};">${esc(x.stato)}${x.annullato_motivo ? `<span class="block text-[11px] text-[#1E2E26]/55">${esc(x.annullato_motivo)}</span>` : ''}</td>
+        <td class="py-2 pr-3 text-right whitespace-nowrap"${x.stato === 'annullato' ? ' style="text-decoration:line-through;"' : ''}>${esc(Number(x.importo || 0).toFixed(2))} €</td>
+        <td class="py-2 text-right whitespace-nowrap">${annullabile(x)
+          ? `<button type="button" data-annulla="${esc(x.id)}" class="text-[12px] text-[#a33] underline bg-transparent border-0 p-0 cursor-pointer">Annulla</button>`
+          : ''}</td>
+      </tr>
+      ${annullabile(x) ? `<tr class="tc-ann-box hidden" data-box="${esc(x.id)}"><td colspan="7" class="pb-3">
+        <div class="bg-[#fbecec] border-l-4 border-[#a33] rounded px-4 py-3">
+          <label class="block text-[13px] text-[#1E2E26] mb-1" for="tc-ann-m-${esc(x.id)}">Perché annulli questo incasso? Resta scritto, insieme al tuo nome.</label>
+          <input id="tc-ann-m-${esc(x.id)}" type="text" maxlength="500" placeholder="es. registrato per errore sulla persona sbagliata" class="w-full border border-[#E5DFCF] bg-white rounded px-3 py-2 text-[13px] text-[#1E2E26] focus:outline-none focus:border-[#a33]" />
+          <div class="flex flex-wrap gap-3 items-center mt-2">
+            <button type="button" data-annulla-go="${esc(x.id)}" class="bg-[#a33] text-white px-4 py-2 rounded text-[13px] font-semibold border-0 cursor-pointer">Annulla l'incasso</button>
+            <button type="button" data-annulla-no="${esc(x.id)}" class="text-[13px] text-[#1E2E26]/60 underline bg-transparent border-0 cursor-pointer">Lascia stare</button>
+            <span class="text-[12px] text-[#1E2E26]/55">La riga non sparisce: resta con scritto perché.</span>
+          </div>
+          <p data-annulla-err="${esc(x.id)}" class="hidden text-[13px] text-[#a33] m-0 mt-2"></p>
+        </div>
+      </td></tr>` : ''}`).join('')}</tbody></table>`;
+
+    const box = (id: string) => document.querySelector(`[data-box="${CSS.escape(id)}"]`) as HTMLElement | null;
+    document.querySelectorAll('[data-annulla]').forEach((b) => b.addEventListener('click', () => {
+      const id = String((b as HTMLElement).dataset.annulla);
+      box(id)?.classList.remove('hidden');
+      (document.getElementById(`tc-ann-m-${id}`) as HTMLInputElement | null)?.focus();
+    }));
+    document.querySelectorAll('[data-annulla-no]').forEach((b) => b.addEventListener('click', () => {
+      box(String((b as HTMLElement).dataset.annullaNo))?.classList.add('hidden');
+    }));
+    document.querySelectorAll('[data-annulla-go]').forEach((b) => b.addEventListener('click', async () => {
+      const id = String((b as HTMLElement).dataset.annullaGo);
+      const input = document.getElementById(`tc-ann-m-${id}`) as HTMLInputElement;
+      const err = document.querySelector(`[data-annulla-err="${CSS.escape(id)}"]`) as HTMLElement;
+      const motivo = (input?.value || '').trim();
+      /* Il motivo e' obbligatorio anche a database: qui si chiede prima, per
+         non far scoprire il vincolo con un errore tecnico. */
+      if (motivo.length < 5) {
+        err.classList.remove('hidden');
+        err.textContent = 'Scrivi il motivo: senza, l\'annullamento non si registra.';
+        input?.focus();
+        return;
+      }
+      err.classList.add('hidden');
+      const btn = b as HTMLButtonElement;
+      btn.disabled = true; btn.textContent = 'Annullo…';
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const r = await fetch(REGISTRA_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+          body: JSON.stringify({ azione: 'annulla', pagamento_id: id, motivo }),
+        });
+        const j = await r.json();
+        if (r.ok && j.ok) { window.location.reload(); return; }
+        err.classList.remove('hidden');
+        err.textContent = j.detail || j.error || 'Annullamento non riuscito.';
+        btn.disabled = false; btn.textContent = 'Annulla l\'incasso';
+      } catch {
+        err.classList.remove('hidden');
+        err.textContent = 'Errore di connessione. Riprova.';
+        btn.disabled = false; btn.textContent = 'Annulla l\'incasso';
+      }
+    }));
   }
 
   function passa(x: any) {

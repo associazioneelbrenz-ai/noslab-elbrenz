@@ -337,8 +337,11 @@ Deno.serve(async (req: Request) => {
       // La cassa, dalla vista che tiene insieme quote, integrazioni e anticipi
       // delle gite senza duplicare una riga. Nessun totale calcolato qui: si
       // sommano righe che arrivano gia' pronte.
+      // `id` serve per poter annullare una registrazione manuale dal dettaglio
+      // della cassa; `annullato_motivo` per far vedere perche', invece di una
+      // riga barrata senza spiegazione.
       const { data: incassi } = await sb.from('v_incassi')
-        .select('tabella, tipo, nome, email, anno, importo, stato, metodo, quando')
+        .select('id, tabella, tipo, nome, email, anno, importo, stato, metodo, quando, incassato_il, data_ricostruita, annullato_motivo, note_incasso')
         .order('quando', { ascending: false });
 
       // Chi puo' aver materialmente incassato: serve al modulo di
