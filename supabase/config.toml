@@ -238,3 +238,9 @@ verify_jwt = true
 # funzione risponderebbe 401 al gateway (Trappola 12).
 [functions.tessere-qr-orfani]
 verify_jwt = false
+
+# Promemoria della quota al socio: il gate e' INGEST_TOKEN nell'header.
+# Senza questa dichiarazione il deploy CLI rimetterebbe verify_jwt=true
+# (Trappola 12).
+[functions.solleciti-quota]
+verify_jwt = false
