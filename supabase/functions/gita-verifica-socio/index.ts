@@ -58,7 +58,23 @@ Deno.serve(async (req: Request) => {
       .eq('stato', 'approvata')
       .limit(1);
   }
-  const { data } = await q.maybeSingle();
+  // [4/8/2026] L'ERRORE NON SI SCARTA PIU'. Prima era `const { data } = ...`:
+  // se la query falliva, `data` restava vuoto e si rispondeva «socio: false»,
+  // che la pagina mostra a un socio in regola come «non risulti socio» e gli
+  // propone di tesserarsi di nuovo. Un guasto di rete diventava un'accusa.
+  // E' gia' successo, con la chiave anonima vuota in una build.
+  //
+  // Adesso: non trovato e non-riuscito sono due risposte diverse. La prima e'
+  // un fatto, la seconda e' un'ammissione di non sapere.
+  const { data, error } = await q.maybeSingle();
+
+  if (error) {
+    console.error('[gita-verifica-socio] lettura fallita:', error.message);
+    return jsonResponse({
+      errore: true,
+      messaggio: 'Non riusciamo a verificare la tua posizione in questo momento. Riprova fra poco: non significa che tu non sia socio.',
+    }, 503, cors);
+  }
 
   if (!data) return jsonResponse({ socio: false }, 200, cors);
   // solo il nome di battesimo, niente cognome/email/tessera di terzi

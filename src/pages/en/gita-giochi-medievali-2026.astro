@@ -2,14 +2,19 @@
 /* /en/gita-giochi-medievali-2026 — English translation (Phase 1b). Review in progress. */
 
 import Layout from '../../layouts/Layout.astro';
-import { getStatoGita } from '../../lib/postiGita';
+import { statoGita, chiusuraIscrizioniGita, dataLunga } from '../../lib/postiGita';
 
 // [3/8/2026] Lo stato della gita si legge da config_app, la stessa chiave
 // che consultano la pagina italiana e l'edge che crea l'ordine PayPal: un
 // lettore di lingua tedesca o inglese non deve leggere un invito a
 // iscriversi a qualcosa che non si fa. Lettura fallita = annullata.
 export const prerender = false;
-const { annullata: gitaAnnullata } = await getStatoGita();
+// [4/8/2026] Tre esiti, non due: se la lettura non riesce non si afferma ne'
+// che la gita e' aperta ne' che e' annullata. Si tace, non si mente.
+const stato = await statoGita();
+const gitaAnnullata = stato === 'annullata';
+const gitaAperta = stato === 'aperta';
+const chiusura = await chiusuraIscrizioniGita();
 
 const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]';
 ---
@@ -22,6 +27,16 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
 >
   {/* Avviso di annullamento, verbatim dal brief del 3/8. La pagina resta
       pubblicata: chi ha il collegamento salvato deve trovare la spiegazione. */}
+  {stato === 'non_verificabile' && (
+    <aside class="bg-[#FDF9F0] border-b-2 border-[#C8923E]" role="status" aria-live="polite">
+      <div class="max-w-3xl mx-auto px-6 py-5">
+        <p class="text-[15px] leading-relaxed m-0 text-[#1E2E26]" style="font-family: 'Inter', sans-serif;">
+          <strong>We cannot verify the status of the trip right now.</strong>
+          Rather than tell you something untrue, we will not say it is open nor that it is cancelled: reload in a little while, or write to us at <a href="mailto:info@elbrenz.eu" class="text-[#8a6215] underline">info@elbrenz.eu</a>.
+        </p>
+      </div>
+    </aside>
+  )}
   {gitaAnnullata && (
     <aside class="bg-[#8a3a3a] text-[#F5EEDD]" role="status" aria-live="polite">
       <div class="max-w-3xl mx-auto px-6 py-6 md:py-7">
@@ -46,9 +61,12 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         At the foot of Churburg castle (Castel Coira), in Val Venosta (Vinschgau), the Alpine region's largest historical
         reenactment comes to life. El Brenz takes you where historical Tyrol lives again.
       </p>
-      {gitaAnnullata ? (
+      {/* [4/8] «Cancelled» si dice solo quando lo si e' letto davvero. Con lo
+          stato non verificabile non compare ne' questo ne' l'invito. */}
+      {gitaAnnullata && (
         <p class="text-base text-[#F5EEDD]/70 m-0" style="font-family: 'Inter', sans-serif;">2026 edition cancelled</p>
-      ) : (
+      )}
+      {gitaAperta && (
         <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sign up and secure your place →</a>
       )}
     </div>
@@ -119,7 +137,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         ))}
       </ul>
       <div class="text-center mt-10">
-        {!gitaAnnullata && <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Secure your place →</a>}
+        {gitaAperta && <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Secure your place →</a>}
       </div>
     </div>
   </section>
@@ -172,7 +190,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         </div>
         <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
           <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Sign-up</dt>
-          <dd class="m-0 text-[#1E2E26]/90">Open until Friday 14 August 2026. Limited places: coach with 54 seats.</dd>
+          <dd class="m-0 text-[#1E2E26]/90">{chiusura ? `Open until ${dataLunga(chiusura, 'en')}. ` : ''}Limited places: coach with 54 seats.</dd>
         </div>
       </dl>
     </div>
@@ -181,14 +199,24 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
   {/* ===================== SEZIONE 6 — CTA FINALE ===================== */}
   <section class="bg-[#1E2E26] text-[#F5EEDD] py-20 md:py-24">
     <div class="max-w-3xl mx-auto px-6 text-center">
+      {/* [4/8] Questo blocco promette posti disponibili: esce solo se la
+          gita risulta aperta per certo. Prima usciva sempre, anche a gita
+          annullata. */}
+      {!gitaAperta && (
+        <h2 class="text-3xl md:text-5xl m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Write to us</h2>
+      )}
+      {gitaAperta && (
+        <>
       <p class="text-sm tracking-[0.2em] uppercase text-[#D9A94E] font-semibold m-0 mb-4" style="font-family: 'Inter', sans-serif;">54 places. Don't wait.</p>
       <h2 class="text-3xl md:text-5xl m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Secure your place</h2>
       <p class="text-lg text-[#F5EEDD]/85 max-w-2xl mx-auto m-0 mb-9" style="font-family: 'Source Serif 4', Georgia, serif;">
         El Brenz members travel at a <strong>reduced rate</strong>; non-members pay the full price.
         During sign-up you can check your rate and, if you like, join on the spot.
       </p>
+        </>
+      )}
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        {!gitaAnnullata && <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sign up for the trip →</a>}
+        {gitaAperta && <a href="/en/gita-giochi-medievali-2026/iscrizione" class={CTA}>Sign up for the trip →</a>}
         <a href="mailto:info@elbrenz.eu" class="inline-block border-2 border-[#C8923E] text-[#F5EEDD] px-7 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors" style="font-family: 'Inter', sans-serif;">Questions? Write to us</a>
       </div>
       <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">
@@ -202,7 +230,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
   {/* La barra fissa sparisce a gita annullata: un invito a iscriversi
       incollato in fondo allo schermo sopra un avviso di annullamento e'
       il modo piu' rapido per far pagare qualcuno per sbaglio. */}
-  {!gitaAnnullata && (
+  {gitaAperta && (
   <div class="md:hidden fixed inset-x-0 bottom-0 z-30 bg-[#1E2E26]/95 backdrop-blur border-t border-[#C8923E]/40 px-4 py-3" style="padding-bottom:max(0.75rem,env(safe-area-inset-bottom));">
     <a href="/en/gita-giochi-medievali-2026/iscrizione" class="block text-center bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold uppercase tracking-wide text-sm no-underline" style="font-family: 'Inter', sans-serif;">Sign up for the trip →</a>
   </div>

@@ -54,7 +54,7 @@ import { createClient } from '@supabase/supabase-js';
 // getCollection serve ancora, ma solo per la collection `eventi` (i NOSTRI
 // appuntamenti in home): gli articoli non passano piu' di qui.
 import { getCollection } from 'astro:content';
-import { getStatoGitaAlBuild } from '../lib/postiGita';
+import { statoGita } from '../lib/postiGita';
 import { formatDataIT, nomePilastro } from '../lib/articoli';
 import { schemaOrganization } from '../lib/schema';
 import { imgRid, srcSetCard } from '../lib/immagini';
@@ -64,7 +64,16 @@ import { MIGOLE, miniatura, embed } from '../data/video';
 // l'edge gita-crea-ordine. La home non deve invitare a pagare un viaggio che
 // non si fa. NB: questa pagina e' prerenderizzata, quindi il valore si fissa
 // al build: per riaprire una gita non basta cambiare il DB, serve un deploy.
-const { annullata: gitaAnnullata } = await getStatoGitaAlBuild();
+// [4/8/2026, secondo giro] Tre esiti, non due, e la build NON si ferma piu'.
+// Fermarla era la difesa contro il congelamento di «annullata» in una pagina
+// generata una volta; ma bloccare l'intero deploy per un dato solo punisce
+// anche tutto il resto del sito. Adesso la card della gita resta, e sparisce
+// SOLO il pezzo che dipende dal dato: niente contatore, niente «Annullata»,
+// niente invito. La traccia resta nel log della build, che `statoGita` scrive
+// a voce alta.
+const statoGitaOra = await statoGita();
+const gitaAnnullata = statoGitaOra === 'annullata';
+const gitaAperta = statoGitaOra === 'aperta';
 
 // MODIFICA 2/8/2026 — anche la home legge dalla vista, come /articoli,
 // /articoli/<slug> e /archivio-storico. Prima passava dal ponte
@@ -709,7 +718,15 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
                     {e.data.descrizioneBreve}
                   </p>
                 )}
-                {isGita && gitaAnnullata ? (
+                {isGita && statoGitaOra === 'non_verificabile' ? (
+                  /* [4/8/2026] Stato non leggibile: la card resta, con il suo
+                     titolo e il collegamento, ma senza contatore, senza badge
+                     e senza invito a pagare. Nessuna delle due affermazioni e'
+                     verificata, quindi non se ne fa nessuna. */
+                  <div class="mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-2" style="font-family: 'Inter', sans-serif;">
+                    <a href={e.data.link} class="text-sm text-[#8a6215] no-underline hover:underline">Tutti i dettagli</a>
+                  </div>
+                ) : isGita && gitaAnnullata ? (
                   /* [3/8/2026] Gita annullata: via il contatore posti (non c'e'
                      piu' niente da contare) e via l'invito a pagare. Il
                      collegamento alla pagina resta: e' li' che c'e' la
@@ -1561,7 +1578,10 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
       del sito: si apre da solo e porta dritto al pagamento. A gita annullata
       non deve comparire affatto. Il componente resta in repo, pronto per la
       prossima edizione. */}
-  {!gitaAnnullata && <PopupLocandinaRitterspiele />}
+  {/* [4/8] Il popup e' un invito a iscriversi: esce solo se la gita risulta
+      APERTA per certo. Con lo stato non verificabile non si invita nessuno a
+      pagare, e non si dice nemmeno che e' annullata: semplicemente non si apre. */}
+  {gitaAperta && <PopupLocandinaRitterspiele />}
 
 </Layout>
 
@@ -1575,10 +1595,15 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
     fetch(`${SB_URL}/rest/v1/v_posti_gita?select=posti_totali,posti_occupati`, {
       headers: { apikey: SB_ANON, Authorization: `Bearer ${SB_ANON}` },
     })
-      .then((r) => (r.ok ? r.json() : []))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
       .then((rows) => {
         const row = Array.isArray(rows) ? rows[0] : null;
-        if (!row) return;
+        // [4/8/2026] Prima qui c'era `if (!row) return;`, e i puntini di
+        // «… di 54» restavano per sempre: sembra un caricamento che non
+        // finisce, e chi guarda non sa se sono rimasti due posti o cinquanta.
+        // Non e' una bugia, ma non e' nemmeno un'informazione: si dice che il
+        // dato non c'e'.
+        if (!row) throw new Error('nessuna riga in v_posti_gita');
         const totali = Number(row.posti_totali) || 54;
         const occupati = Math.min(Number(row.posti_occupati) || 0, totali);
         const disponibili = Math.max(totali - occupati, 0);
@@ -1592,7 +1617,18 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
           testo.style.color = '#a33';
         }
       })
-      .catch(() => {});
+      .catch((e) => {
+        // Rumoroso: un difetto che non si vede e' un difetto che dura mesi.
+        console.error('[gita] contatore posti non leggibile:', e?.message ?? e);
+        if (testo) {
+          testo.textContent = 'non disponibile';
+          testo.style.color = '#8a8278';
+        }
+        // La barra a zero direbbe «nessun posto occupato», che e'
+        // un'affermazione. Meglio toglierla del tutto.
+        const barraWrap = barra?.parentElement as HTMLElement | null;
+        if (barraWrap) barraWrap.style.display = 'none';
+      });
   })();
 
   // [3/8/2026] La mappa della vetrina (brief blocco 2). Sostituisce la

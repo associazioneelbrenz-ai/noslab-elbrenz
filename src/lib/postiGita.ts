@@ -73,6 +73,43 @@ export async function getStatoGita(
 }
 
 /**
+ * Lo stato della gita in TRE esiti, non due.
+ *
+ * [4/8/2026, secondo giro] Il fail-closed di `getStatoGita` risponde
+ * «annullata» quando non riesce a leggere, e per nascondere un invito a pagare
+ * va benissimo. Il guaio e' che «annullata» non e' solo una scelta prudente:
+ * e' un'AFFERMAZIONE, e la pagina la stampa a caratteri grandi. Un intoppo di
+ * rete diventa cosi' un annuncio falso, e la gente smette di iscriversi a un
+ * viaggio che si fa.
+ *
+ * La regola e' che un dato che non si riesce a leggere non deve mai produrre
+ * un'affermazione. Quindi qui gli esiti sono tre e le pagine li trattano tutti
+ * e tre: si tace, non si mente.
+ *
+ *   'aperta'         -> si invita a iscriversi
+ *   'annullata'      -> si dice che e' annullata, ed e' vero
+ *   'non_verificabile' -> ne' l'uno ne' l'altro: si mostra il resto e basta
+ */
+export type StatoGita = 'aperta' | 'annullata' | 'non_verificabile';
+
+export async function statoGita(
+  slug = 'gita_giochi_medievali_2026_stato',
+): Promise<StatoGita> {
+  const r = await getStatoGita(slug);
+  if (!r.letturaRiuscita) {
+    // Rumoroso di proposito: un difetto che non si vede e' un difetto che dura
+    // mesi. Questa riga e' quella che il 4 agosto sarebbe servita.
+    console.error(
+      `[gita] stato NON LEGGIBILE da config_app (chiave ${slug}). ` +
+      'La pagina non dira ne aperta ne annullata. Controlla le variabili PUBLIC_SUPABASE_* ' +
+      'e che la chiave sia in config_app_chiavi_pubbliche().',
+    );
+    return 'non_verificabile';
+  }
+  return r.annullata ? 'annullata' : 'aperta';
+}
+
+/**
  * Come sopra, ma per le pagine PRERENDERIZZATE, dove il valore si fissa al
  * momento della build e ci resta fino alla build successiva.
  *
@@ -108,7 +145,9 @@ export async function getStatoGitaAlBuild(
  */
 export function descrizioneGita(posti: PostiGita | null): string {
   const coda =
-    'Viaggio e ingresso 60 euro, iscrizioni entro il 14 agosto. Tornei, corteo storico e villaggio medievale a Castel Coira.';
+    // Niente data qui dentro: era cablata al 14 agosto mentre la chiusura vera
+    // e' un'altra, e una descrizione social si copia in giro e resta.
+    'Viaggio e ingresso 60 euro. Tornei, corteo storico e villaggio medievale a Castel Coira.';
   if (!posti) {
     return `Gita sociale El Brenz ai Giochi Medievali del Südtirol, 22 agosto 2026. ${coda}`;
   }
@@ -116,4 +155,63 @@ export function descrizioneGita(posti: PostiGita | null): string {
     return "Posti esauriti. Scrivici per la lista d'attesa.";
   }
   return `Restano ${posti.disponibili} posti su ${posti.totali}. ${coda}`;
+}
+
+/**
+ * I dati della gita che CAMBIANO, letti da dove sono scritti.
+ *
+ * [4/8/2026] Nasce da due bugie trovate in pagina, tutte e due della specie
+ * «il valore vecchio che resta»:
+ *
+ *   - le pagine dicevano «iscrizioni fino al 14 agosto» mentre in config_app
+ *     la chiusura e' il 15: una data cablata a mano il giorno che fu scritta,
+ *     e mai piu' toccata;
+ *   - promettevano il bonus preorder di 5 euro «entro il 31 luglio» il 4
+ *     agosto, cioe' quattro giorni dopo la scadenza. Il server aveva gia'
+ *     smesso di applicarlo: la pagina prometteva uno sconto che alla cassa non
+ *     arrivava.
+ *
+ * La seconda e' la piu' seria, perche' riguarda soldi e perche' nessuno se ne
+ * accorge finche' non lo dice qualcuno che ha pagato.
+ */
+export const PREORDER_SCADENZA = new Date('2026-07-31T23:59:59+02:00').getTime();
+
+/** Il bonus preorder e' ancora valido adesso? Stessa soglia della edge
+ *  gita-crea-ordine: se qui e la' divergono, la pagina promette e la cassa
+ *  smentisce. */
+export function bonusPreorderAttivo(): boolean {
+  return Date.now() <= PREORDER_SCADENZA;
+}
+
+/** La data di chiusura delle iscrizioni, dalla configurazione. Torna null se
+ *  non si riesce a leggerla: in quel caso la pagina non scrive nessuna data,
+ *  invece di scriverne una vecchia. */
+export async function chiusuraIscrizioniGita(
+  slug = 'gita_giochi_medievali_2026_stato',
+): Promise<Date | null> {
+  try {
+    if (!SB_URL || !SB_ANON) return null;
+    const sb = createClient(SB_URL, SB_ANON, { auth: { persistSession: false } });
+    const { data, error } = await sb
+      .from('config_app').select('valore').eq('chiave', slug).maybeSingle();
+    if (error) { console.error('[gita] chiusura iscrizioni non leggibile:', error.message); return null; }
+    const v = (data?.valore as Record<string, unknown> | undefined)?.chiusura_iscrizioni;
+    // Anche questo ramo lascia traccia: tornare vuoto in silenzio e' la stessa
+    // specie di difetto che questo file esiste per correggere.
+    if (typeof v !== 'string') {
+      console.error('[gita] chiusura_iscrizioni assente o non testuale nella configurazione:', JSON.stringify(v));
+      return null;
+    }
+    const d = new Date(v + 'T23:59:59+02:00');
+    return Number.isNaN(d.getTime()) ? null : d;
+  } catch (e) {
+    console.error('[gita] chiusura iscrizioni non leggibile:', e);
+    return null;
+  }
+}
+
+/** La data scritta come la scriverebbe una persona, nella lingua della pagina. */
+export function dataLunga(d: Date, lingua: 'it' | 'de' | 'en' = 'it'): string {
+  const loc = lingua === 'de' ? 'de-DE' : lingua === 'en' ? 'en-GB' : 'it-IT';
+  return d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Rome' });
 }

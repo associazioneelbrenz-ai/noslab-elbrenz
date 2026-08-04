@@ -12,7 +12,7 @@
  */
 
 import Layout from '../layouts/Layout.astro';
-import { getPostiGita, descrizioneGita, getStatoGita } from '../lib/postiGita';
+import { getPostiGita, descrizioneGita, statoGita, chiusuraIscrizioniGita, dataLunga, bonusPreorderAttivo } from '../lib/postiGita';
 
 // SSR (prerender=false): l'anteprima social mostra i posti REALI del momento.
 // I posti si leggono server-side dalla stessa vista v_posti_gita della home
@@ -25,9 +25,17 @@ const posti = await getPostiGita();
 // [3/8/2026] Stato della gita da config_app: la pagina non decide da sola se
 // l'evento e' vivo. Stessa fonte che l'edge gita-crea-ordine consulta prima
 // di creare un ordine, cosi' pagina e server non possono divergere.
-// Se la lettura fallisce si assume ANNULLATA: meglio un avviso di troppo che
-// un anticipo incassato per un viaggio che non si fa.
-const { annullata: gitaAnnullata } = await getStatoGita();
+// [4/8/2026] TRE esiti, non due. «Annullata» non e' solo una scelta prudente:
+// e' un'affermazione, stampata a caratteri grandi. Se la lettura non riesce non
+// si dice ne' che e' aperta ne' che e' annullata: si mostra il resto della
+// pagina e si tace sullo stato. Si tace, non si mente.
+const stato = await statoGita();
+const gitaAnnullata = stato === 'annullata';
+const gitaAperta = stato === 'aperta';
+// Le date NON si scrivono a mano: quella che era cablata qui diceva 14 agosto
+// mentre la chiusura vera e' il 15, e nessuno se n'era accorto.
+const chiusura = await chiusuraIscrizioniGita();
+const bonusVivo = bonusPreorderAttivo();
 
 const ogDescription = gitaAnnullata
   ? 'La gita del 22 agosto ai Giochi Medievali del Südtirol e\' stata annullata: non e\' stato raggiunto il numero minimo di partecipanti.'
@@ -46,6 +54,17 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
   {/* [3/8/2026] AVVISO DI ANNULLAMENTO, in cima e leggibile senza scorrere.
       La pagina NON si cancella e NON si spubblica: chi ha il link salvato
       deve trovare la spiegazione, non un 404. */}
+  {stato === 'non_verificabile' && (
+    <aside class="bg-[#FDF9F0] border-b-2 border-[#C8923E]" role="status" aria-live="polite">
+      <div class="max-w-3xl mx-auto px-6 py-5">
+        <p class="text-[15px] leading-relaxed m-0 text-[#1E2E26]" style="font-family: 'Inter', sans-serif;">
+          <strong>Non riusciamo a verificare lo stato della gita in questo momento.</strong>
+          Per non darti un'informazione sbagliata preferiamo non dirti né che è aperta né che è annullata:
+          ricarica fra poco, oppure scrivici a <a href="mailto:info@elbrenz.eu" class="text-[#8a6215] underline">info@elbrenz.eu</a>.
+        </p>
+      </div>
+    </aside>
+  )}
   {gitaAnnullata && (
     <aside class="bg-[#8a3a3a] text-[#F5EEDD]" role="status" aria-live="polite">
       <div class="max-w-3xl mx-auto px-6 py-6 md:py-7">
@@ -73,12 +92,13 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         Ai piedi di Castel Coira, in Val Venosta, va in scena la più grande rievocazione storica
         dell'arco alpino. El Brenz vi porta là dove il Tirolo torna a vivere.
       </p>
-      {gitaAnnullata ? (
+      {gitaAnnullata && (
         <p class="text-base text-[#F5EEDD]/70 m-0" style="font-family: 'Inter', sans-serif;">Edizione 2026 annullata</p>
-      ) : (
+      )}
+      {gitaAperta && (
         <>
           <a href="/gita-giochi-medievali-2026/iscrizione" class={CTA}>Iscriviti e blocca il posto →</a>
-          <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">Solo 54 posti · soci a tariffa agevolata · bonus preorder entro il 31 luglio</p>
+          <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">Solo 54 posti · soci a tariffa agevolata{bonusVivo ? ' · bonus preorder entro il 31 luglio' : ''}</p>
         </>
       )}
     </div>
@@ -148,7 +168,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
           </li>
         ))}
       </ul>
-      {!gitaAnnullata && (
+      {gitaAperta && (
         <div class="text-center mt-10">
           <a href="/gita-giochi-medievali-2026/iscrizione" class={CTA}>Blocca il tuo posto →</a>
         </div>
@@ -204,7 +224,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         </div>
         <div class="flex gap-4 bg-white border-l-4 border-[#C8923E] px-5 py-4 rounded">
           <dt class="text-[#8a6215] font-semibold w-24 shrink-0" style="font-family: 'Inter', sans-serif;">Iscrizioni</dt>
-          <dd class="m-0 text-[#1E2E26]/90">Aperte fino a venerdì 14 agosto 2026. Posti limitati: pullman da 54.</dd>
+          <dd class="m-0 text-[#1E2E26]/90">{chiusura ? `Aperte fino a ${dataLunga(chiusura, 'it')}. ` : ''}Posti limitati: pullman da 54.</dd>
         </div>
       </dl>
     </div>
@@ -213,9 +233,10 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
   {/* ===================== SEZIONE 6 — CTA FINALE ===================== */}
   <section class="bg-[#1E2E26] text-[#F5EEDD] py-20 md:py-24">
     <div class="max-w-3xl mx-auto px-6 text-center">
-      {gitaAnnullata ? (
+      {!gitaAperta && (
         <h2 class="text-3xl md:text-5xl m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Scrivici</h2>
-      ) : (
+      )}
+      {gitaAperta && (
         <>
           <p class="text-sm tracking-[0.2em] uppercase text-[#D9A94E] font-semibold m-0 mb-4" style="font-family: 'Inter', sans-serif;">54 posti. Non aspettare.</p>
           <h2 class="text-3xl md:text-5xl m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Assicurati il tuo posto</h2>
@@ -226,7 +247,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
         </>
       )}
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
-        {!gitaAnnullata && <a href="/gita-giochi-medievali-2026/iscrizione" class={CTA}>Iscriviti alla gita →</a>}
+        {gitaAperta && <a href="/gita-giochi-medievali-2026/iscrizione" class={CTA}>Iscriviti alla gita →</a>}
         <a href="mailto:info@elbrenz.eu" class="inline-block border-2 border-[#C8923E] text-[#F5EEDD] px-7 py-4 text-base font-semibold tracking-wide uppercase no-underline rounded hover:bg-[#C8923E] hover:text-[#1E2E26] transition-colors" style="font-family: 'Inter', sans-serif;">Hai domande? Scrivici</a>
       </div>
       <p class="text-sm text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">
@@ -239,7 +260,7 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
   {/* CTA sticky su mobile — sparisce a gita annullata: una barra fissa che
       invita a iscriversi sopra un avviso di annullamento e' il modo piu'
       rapido per far pagare qualcuno per sbaglio. */}
-  {!gitaAnnullata && (
+  {gitaAperta && (
     <div class="md:hidden fixed inset-x-0 bottom-0 z-30 bg-[#1E2E26]/95 backdrop-blur border-t border-[#C8923E]/40 px-4 py-3" style="padding-bottom:max(0.75rem,env(safe-area-inset-bottom));">
       <a href="/gita-giochi-medievali-2026/iscrizione" class="block text-center bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold uppercase tracking-wide text-sm no-underline" style="font-family: 'Inter', sans-serif;">Iscriviti alla gita →</a>
     </div>

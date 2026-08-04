@@ -13,7 +13,7 @@
  * createOrder/onApprove, come su /dona e /tesseramento.
  */
 import Layout from '../../layouts/Layout.astro';
-import { getPostiGita, descrizioneGita, getStatoGita } from '../../lib/postiGita';
+import { getPostiGita, descrizioneGita, statoGita } from '../../lib/postiGita';
 
 // SSR (prerender=false): anche condividendo il link di iscrizione, l'anteprima
 // social mostra i posti REALI (stessa vista v_posti_gita della home, fail-safe).
@@ -44,9 +44,20 @@ const ISCRIZIONI_CUTOFF_ISO = '2026-08-14T23:59:59+02:00';
 // [3/8/2026] Gita annullata. Lo stato si legge da config_app, SERVER-SIDE:
 // se lo decidesse il JS al load, per un istante il modulo sarebbe visibile e
 // cliccabile. Qui la pagina esce dal server gia' senza modulo.
-// Lettura fallita = annullata: meglio un modulo chiuso di troppo che un
-// anticipo incassato per un viaggio che non si fa.
-const { annullata: gitaAnnullata } = await getStatoGita();
+// [4/8/2026] Tre esiti. Il modulo resta chiuso sia a gita annullata sia a
+// stato non verificabile, perche' in entrambi i casi incassare un anticipo
+// sarebbe sbagliato. Ma cio' che si SCRIVE e' diverso: «annullata» solo quando
+// lo sappiamo davvero, altrimenti si dice che non lo sappiamo. Chiudere il
+// modulo e' prudenza; dire «annullata» senza averlo letto e' una bugia.
+const stato = await statoGita();
+const gitaAnnullata = stato === 'annullata';
+const gitaAperta = stato === 'aperta';
+// NOTA [4/8]: qui la guardia sul bonus c'era gia' (PREORDER_ATTIVO, sopra), ed
+// e' corretta. Mancava invece sulla landing, che il 4 agosto prometteva ancora
+// il bonus scaduto il 31 luglio. La soglia pero' e' scritta in DUE posti, qui
+// e nella edge gita-crea-ordine: finche' coincidono non si vede niente, il
+// giorno che una cambia la pagina promette e la cassa smentisce.
+// TODO refactor: una sola fonte, come si e' fatto per la quota.
 
 const label = "block text-sm text-[#1E2E26]/70 mb-1.5";
 const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] focus:outline-none focus:border-[#C8923E] rounded";
@@ -62,13 +73,13 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
     <div class="max-w-2xl mx-auto px-6 py-12 md:py-16">
       <p class="text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">Gita sociale · 22 agosto 2026</p>
       <h1 class="text-3xl md:text-4xl leading-tight m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
-        {gitaAnnullata ? (
+        {!gitaAperta ? (
           <Fragment>Gita ai <em class="text-[#C8923E]" style="font-style: italic;">Giochi Medievali</em></Fragment>
         ) : (
           <Fragment>Blocca il tuo posto per i <em class="text-[#C8923E]" style="font-style: italic;">Giochi Medievali</em></Fragment>
         )}
       </h1>
-      {!gitaAnnullata && (
+      {gitaAperta && (
         <p class="text-lg text-[#F5EEDD]/85 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
           Sluderno, ai piedi di Castel Coira. Posti limitati (pullman da 54): si fermano solo con l'anticipo.
         </p>
@@ -78,7 +89,7 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
 
   <main class="bg-[#F8F1E4]">
     <div
-      class={`max-w-2xl mx-auto px-6 py-10 md:py-14${gitaAnnullata ? ' gita-annullata' : ''}`}
+      class={`max-w-2xl mx-auto px-6 py-10 md:py-14${gitaAperta ? '' : ' gita-annullata'}`}
       id="gita-box"
       data-verifica-url={VERIFICA_URL}
       data-create-url={CREATE_URL}
@@ -88,6 +99,19 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
       {/* [3/8/2026] GITA ANNULLATA — reso dal server, non dal JS: gli step
           restano nascosti dal CSS di questa pagina (classe sul contenitore),
           quindi non c'e' nessun istante in cui il modulo e' cliccabile. */}
+      {stato === 'non_verificabile' && (
+        <div class="bg-white border-l-4 border-[#C8923E] rounded p-6 md:p-8" role="status">
+          <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">Non riusciamo a verificare lo stato della gita</h2>
+          <p class="m-0 text-[#1E2E26]/85 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+            In questo momento non riusciamo a controllare se le iscrizioni sono aperte. Per non farti versare
+            un anticipo alla cieca abbiamo chiuso il modulo: non è detto che la gita sia annullata, semplicemente
+            non lo sappiamo adesso.
+          </p>
+          <p class="mt-4 mb-0 text-sm text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">
+            Riprova fra qualche minuto, oppure scrivici a <a href="mailto:info@elbrenz.eu" class="text-[#8a6215] underline">info@elbrenz.eu</a>.
+          </p>
+        </div>
+      )}
       {gitaAnnullata && (
         <div class="bg-white border-l-4 border-[#8a3a3a] rounded p-6 md:p-8" role="status">
           <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">Gita annullata</h2>
@@ -257,6 +281,14 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
           body: JSON.stringify({ email, codice }),
         });
         const out = await r.json();
+        // [4/8/2026] Tre risposte, non due. «Non riusciamo a verificarlo» non
+        // e' «non sei socio»: mostrare l'offerta di tesserarsi a un socio in
+        // regola perche' una query e' andata storta e' il modo piu' rapido per
+        // far sentire preso in giro chi la quota l'ha gia' pagata.
+        if (out.errore) {
+          box3(esitoSocio, out.messaggio || 'Non riusciamo a verificare la tua posizione in questo momento. Riprova fra poco: non significa che tu non sia socio.', false);
+          return;
+        }
         if (out.socio) {
           box3(esitoSocio, `Bentornato/a${out.nome ? ' ' + out.nome : ''}! Socio confermato: hai la tariffa agevolata. Prosegui con l'iscrizione.`, true);
           // precompila email nel modulo
