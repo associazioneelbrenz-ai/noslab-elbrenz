@@ -211,6 +211,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
 
       <p class="text-xs text-[#1E2E26]/50 mt-8 m-0" style="font-family: 'Inter', sans-serif;">
         Cartografia: © Provincia Autonoma di Trento · SIAT (CTP 2020, Ortofoto 2015), licenza CC BY ·
+        carta storica d'impianto (1817-1855) © Provincia Autonoma di Trento, Servizio catasto, CC BY 4.0 ·
         in caso di indisponibilità del servizio provinciale: © OpenStreetMap contributors ·
         <a href="/crediti-e-licenze" class="underline">crediti e licenze</a>
       </p>
@@ -228,6 +229,25 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   }
   .marker-cluster, .marker-cluster div { background: transparent !important; }
   .leaflet-div-icon { background: transparent; border: 0; }
+
+  /* [4/8] I PIN DEVONO STACCARSI DA QUALUNQUE SFONDO. Su ortofoto un pin
+     scuro sparisce dentro un bosco e un pin chiaro sparisce dentro un prato
+     secco: il bordo avorio da solo non basta. Un'ombra portata scura sotto la
+     goccia la stacca da entrambi, e non cambia il colore della categoria. */
+  .leaflet-marker-icon svg { filter: drop-shadow(0 1px 2px rgba(0,0,0,.55)); }
+  .mc-cluster { box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+
+  /* Il pannello della carta storica. */
+  .mappa-catasto {
+    background: rgba(248,241,228,.96); border: 1px solid #C8923E; border-radius: 6px;
+    padding: 8px 10px; max-width: 260px; font-family: 'Inter', sans-serif;
+    box-shadow: 0 2px 10px rgba(30,46,38,.25);
+  }
+  .mappa-catasto .mc-riga { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #1E2E26; }
+  .mappa-catasto input[type=range] { flex: 1; accent-color: #C8923E; }
+  .mappa-catasto .mc-nota { margin: 6px 0 0; font-size: 11.5px; line-height: 1.5; color: #1E2E26; }
+  .mappa-catasto .mc-assente { margin: 0; color: #6b6255; }
+  .mappa-catasto .mc-fuori { color: #8a6215; font-weight: 600; }
 </style>
 
 <script type="application/json" id="mappa-dati" set:html={JSON.stringify(datiMappa)} />
@@ -238,6 +258,11 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   const WMS_BASE = 'https://siat.provincia.tn.it/geoserver/stem';
   const ATTR_PAT = 'Cartografia © <a href="https://siat.provincia.tn.it">Provincia Autonoma di Trento · SIAT</a> (CC BY)';
   const ATTR_OSM = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+  import {
+    COPERTURE, catastoDisponibile, coperturaPer, comuniCoperti,
+    ATTRIBUZIONE_CATASTO, DATAZIONE_FONTE,
+  } from '../lib/catastoStorico';
 
   const dati = JSON.parse(document.getElementById('mappa-dati')?.textContent ?? '{}');
   const btnCarica = document.getElementById('mappa-carica');
@@ -357,6 +382,66 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   aggiornaBottoni();
   applicaFiltri();
 
+  /**
+   * IL PANNELLO DEL CATASTO: trasparenza, avviso di copertura, attribuzione.
+   *
+   * [4/8/2026] Tre comportamenti, e il terzo e' quello che conta.
+   *
+   *  - se il livello NON esiste ancora, il pannello lo dice e spiega perche',
+   *    invece di lasciare un interruttore morto o un riquadro vuoto;
+   *  - se esiste ed e' acceso, compare il cursore della trasparenza, perche'
+   *    il valore vero non e' vedere l'ottocento, e' vederlo SOPRA l'oggi;
+   *  - se esiste ma ci si sposta FUORI dall'area coperta, lo dice: «per questa
+   *    zona la carta storica non c'e' ancora». Senza quella riga, un'area
+   *    bianca sembra un guasto del sito invece che un limite dei dati.
+   */
+  function montaPannelloCatasto(L: any, catasto: any) {
+    const Pannello = L.Control.extend({
+      options: { position: 'bottomleft' },
+      onAdd() {
+        const box = L.DomUtil.create('div', 'mappa-catasto');
+        L.DomEvent.disableClickPropagation(box);
+        box.innerHTML = catasto
+          ? `<label class="mc-riga"><span>Carta storica</span>
+               <input type="range" id="mc-opacita" min="20" max="100" value="70" step="5" aria-label="Trasparenza della carta storica" />
+             </label>
+             <p class="mc-nota" id="mc-copertura"></p>`
+          : `<p class="mc-nota mc-assente"><strong>Carta storica: non ancora disponibile.</strong>
+               Il catasto asburgico d&rsquo;impianto (${DATAZIONE_FONTE}) &egrave; pubblicato dalla
+               Provincia con licenza aperta, ma il servizio di scaricamento non &egrave; pi&ugrave;
+               raggiungibile e i fogli non sono ancora nostri. Appena ci saranno, comparir&agrave; qui.</p>`;
+        return box;
+      },
+    });
+    const pannello = new Pannello();
+    pannello.addTo(mappa!);
+
+    if (!catasto) return;
+
+    const box = document.querySelector('.mappa-catasto') as HTMLElement;
+    const cursore = document.getElementById('mc-opacita') as HTMLInputElement | null;
+    const nota = document.getElementById('mc-copertura');
+
+    // Il cursore e la nota servono solo a livello acceso: a livello spento
+    // sarebbero due comandi che non comandano niente.
+    const aggiorna = () => {
+      const acceso = mappa!.hasLayer(catasto);
+      box.style.display = acceso ? 'block' : 'none';
+      if (!acceso || !nota) return;
+      const c = mappa!.getCenter();
+      const dentro = coperturaPer(c.lat, c.lng);
+      nota.innerHTML = dentro
+        ? `Comune catastale di <strong>${dentro.comuneCatastale}</strong>, rilievo ${dentro.rilievo}.`
+        : `<span class="mc-fuori">Per questa zona la carta storica non c&rsquo;&egrave; ancora.</span>
+           Coperti finora: ${comuniCoperti().join(', ')}.`;
+    };
+
+    cursore?.addEventListener('input', () => catasto.setOpacity(Number(cursore.value) / 100));
+    mappa!.on('overlayadd overlayremove', aggiorna);
+    mappa!.on('moveend zoomend', aggiorna);
+    aggiorna();
+  }
+
   function goccia(colori: { corpo: string; bordo: string }) {
     return `<svg viewBox="0 0 32 44" width="32" height="44" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="${colori.corpo}" stroke="${colori.bordo}" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="${colori.bordo}"/></svg>`;
   }
@@ -415,6 +500,20 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       basiOk = true; void probe;
     } catch { basiOk = false; }
 
+    // [4/8/2026] SELETTORE DI SFONDO A QUATTRO VOCI.
+    //
+    // La mappa standard smette di essere solo un ripiego e diventa una scelta:
+    // su una carta tecnica in bianco e nero certi luoghi si leggono meglio,
+    // sull'ortofoto altri. Il catasto d'impianto non e' uno sfondo alternativo
+    // ma una SOVRAPPOSIZIONE con trasparenza, perche' il valore vero e' il
+    // confronto: l'ottocento in trasparenza sull'oggi.
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17, attribution: ATTR_OSM,
+    });
+
+    const sfondi: Record<string, any> = { 'Mappa standard': osm };
+    let sfondoIniziale = osm;
+
     if (basiOk) {
       const ctp = L.tileLayer.wms(`${WMS_BASE}/ctp2020_bn_00/wms`, {
         layers: 'ctp2020_bn_00', format: 'image/png', version: '1.3.0', attribution: ATTR_PAT,
@@ -422,13 +521,34 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       const orto = L.tileLayer.wms(`${WMS_BASE}/ecw-rgb-2015/wms`, {
         layers: 'ecw-rgb-2015', format: 'image/jpeg', version: '1.3.0', attribution: ATTR_PAT,
       });
-      ctp.addTo(mappa);
-      L.control.layers({ 'Carta tecnica': ctp, 'Ortofoto': orto }, {}, { position: 'topright' }).addTo(mappa);
-    } else {
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 17, attribution: ATTR_OSM,
-      }).addTo(mappa);
+      sfondi['Carta tecnica'] = ctp;
+      sfondi['Ortofoto'] = orto;
+      sfondoIniziale = ctp;
     }
+    sfondoIniziale.addTo(mappa);
+
+    // --- LO SLOT DEL CATASTO D'IMPIANTO ---
+    //
+    // Il livello NON e' mai predefinito: chi arriva deve prima capire dove si
+    // trova oggi. E finche' non ci sono coperture non si mette un riquadro
+    // vuoto in mappa: si dice che per quella zona la carta storica non c'e'
+    // ancora. Un'assenza spiegata e' informazione, una muta sembra un guasto.
+    let catasto: any = null;
+    if (catastoDisponibile()) {
+      const c = COPERTURE[0];
+      catasto = L.tileLayer(c.urlRiquadri, {
+        minZoom: c.zoomMin, maxZoom: c.zoomMax,
+        bounds: L.latLngBounds(c.confini),
+        opacity: 0.7,
+        attribution: ATTRIBUZIONE_CATASTO,
+      });
+    }
+
+    const sovrapposti: Record<string, any> = {};
+    if (catasto) sovrapposti[`Catasto d'impianto (${DATAZIONE_FONTE})`] = catasto;
+    L.control.layers(sfondi, sovrapposti, { position: 'topright', collapsed: false }).addTo(mappa);
+
+    montaPannelloCatasto(L, catasto);
 
     // Clustering: con 34+ punti la Val di Non diventa un grumo illeggibile. I
     // marker filtrati (valle/tipo) entrano/escono dal cluster in applicaFiltri().
@@ -437,6 +557,27 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       iconCreateFunction: (c: any) => L.divIcon({ html: `<div class="mc-cluster">${c.getChildCount()}</div>`, className: '', iconSize: [40, 40] }),
     });
     cluster.addTo(mappa);
+
+    // [4/8] IL GRUPPO CHE NON SI SEPARA PIU'. A zoom massimo due luoghi a
+    // pochi metri restano insieme: cliccare all'infinito senza che si aprano
+    // e' il modo di far credere che la mappa sia rotta. Qui il gruppo dice
+    // CHI contiene, e da quell'elenco si arriva al luogo.
+    cluster.on('clusterclick', (e: any) => {
+      const gruppo = e.layer;
+      if (mappa!.getZoom() < mappa!.getMaxZoom()) return;   // sotto il massimo si apre da solo
+      const figli = gruppo.getAllChildMarkers();
+      const voci = figli.map((m: any) => {
+        const nome = m.options?.title ?? m.getPopup?.()?.getContent?.() ?? 'luogo';
+        const testo = String(nome).replace(/<[^>]+>/g, ' ').trim().split(/\s{2,}/)[0];
+        return `<li style="margin:0 0 4px;">${testo}</li>`;
+      }).join('');
+      L.popup({ maxWidth: 260 })
+        .setLatLng(gruppo.getLatLng())
+        .setContent(`<p style="margin:0 0 6px;font-weight:600;">${figli.length} luoghi qui</p>
+                     <ul style="margin:0;padding-left:18px;font-size:13px;">${voci}</ul>`)
+        .openOn(mappa!);
+      e.originalEvent?.preventDefault?.();
+    });
 
     // Pin colorato "a sigillo" per categoria (bordo avorio; fallback oro).
     const iconaLuogoCat = (cat: string) => L.divIcon({
