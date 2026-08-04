@@ -417,6 +417,12 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
             </div>
 
             <div class="mb-6">
+              <label for="cf-codice-fiscale" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Codice fiscale</label>
+              <input type="text" id="cf-codice-fiscale" name="codice_fiscale" required minlength="16" maxlength="16" pattern="[A-Za-z0-9]{16}" class="eb-campo-scuro uppercase" style="font-family: 'Inter', sans-serif;" />
+              <p class="text-xs text-[#F5EEDD]/45 mt-2" style="font-family: 'Inter', sans-serif;">Serve al libro degli associati, che l'Associazione e' tenuta a compilare.</p>
+            </div>
+
+            <div class="mb-6">
               <label for="cf-telefono" class="block text-[11px] tracking-[0.22em] uppercase text-[#D9A94E] font-medium mb-2" style="font-family: 'Inter', sans-serif;">Telefono <span class="normal-case tracking-normal text-[#F5EEDD]/45">(facoltativo)</span></label>
               <input type="tel" id="cf-telefono" name="telefono" maxlength="40" autocomplete="tel" class="eb-campo-scuro" style="font-family: 'Inter', sans-serif;" />
               <p class="text-xs text-[#F5EEDD]/45 mt-2" style="font-family: 'Inter', sans-serif;">Solo per contattarti sulle attività dell'Associazione. Non lo pubblichiamo e non lo cediamo a nessuno.</p>
@@ -928,6 +934,12 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
   // Form contatto: gestione submit con feedback inline.
   // M.A.2.5 — protezione client + server (honeypot, time-trap, validazione)
 
+  // [4/8/2026] Lo script client non vede le variabili del frontmatter: la
+  // costante si importa anche qui. E' un valore fissato al build, quindi il
+  // bundler la sostituisce con true o false e non arriva niente al browser
+  // oltre al risultato.
+  import { ANAGRAFICA_PUBBLICA_LIVE } from '../lib/anagrafica';
+
   const form = document.getElementById('contact-form') as HTMLFormElement | null;
   const submit = document.getElementById('cf-submit') as HTMLButtonElement | null;
   const feedback = document.getElementById('cf-feedback') as HTMLDivElement | null;
@@ -997,6 +1009,12 @@ const RICEVUTA_URL = `${SUPABASE_URL}/functions/v1/ricevuta-ocr`;
         residenza_comune: (formData.get('residenza_comune') as string || '').trim(),
         residenza_provincia: (formData.get('residenza_provincia') as string || '').trim().toUpperCase(),
         telefono: (formData.get('telefono') as string || '').trim(),
+        codice_fiscale: (formData.get('codice_fiscale') as string || '').trim().toUpperCase(),
+        // Dice alla edge in che modalita' e' il modulo, cosi' la validazione
+        // lato server pretende l'anagrafica completa SOLO quando il modulo la
+        // chiede davvero. Un solo interruttore da girare, in
+        // src/lib/anagrafica.ts, e non due che prima o poi divergono.
+        anagrafica_modo: ANAGRAFICA_PUBBLICA_LIVE ? 'completa' : 'base',
         gdpr: formData.get('gdpr') === 'on',
         _honeypot: (formData.get('_honeypot') as string || ''),
         _ts: formOpenedAt,

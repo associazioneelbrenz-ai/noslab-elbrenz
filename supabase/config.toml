@@ -72,6 +72,13 @@ verify_jwt = false
 [functions.newsletter-unsubscribe]
 verify_jwt = false
 
+# 4/8: iscrizione, conferma e disiscrizione sono rami PUBBLICI, chiamati senza
+# JWT. I rami amministrativi della stessa funzione hanno il loro gate interno
+# (sessione + ruolo >= 50), quindi verify_jwt qui non protegge niente e
+# romperebbe soltanto il doppio opt-in.
+[functions.newsletter-gestione]
+verify_jwt = false
+
 [functions.museo-gg-proposta]
 verify_jwt = false
 

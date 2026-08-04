@@ -1,0 +1,129 @@
+---
+/**
+ * /newsletter — dove ci si iscrive alle notizie dell'Associazione.
+ *
+ * [4/8/2026] Primo passo del doppio opt-in: questa pagina non iscrive
+ * nessuno, mette in attesa e fa partire la mail di conferma. Finche' quel
+ * collegamento non viene aperto, a questa persona non si scrive nient'altro.
+ *
+ * Si chiede il minimo, cioe' l'indirizzo, e il nome soltanto perche' una
+ * comunicazione che comincia con «Gentile Maria» si legge diversamente da una
+ * che comincia con «Gentile utente». Nient'altro: ogni campo in piu' su un
+ * modulo pubblico e' gente che se ne va a meta'.
+ */
+import Layout from '../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/iscrizione`;
+---
+
+<Layout
+  title="Le notizie di El Brenz"
+  description="Ricevi le notizie dell'Associazione El Brenz delle Valli del Noce: storia, lingua ladina anaunica ed eventi delle nostre valli. Poche email, quando c'è qualcosa da raccontare."
+  ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen px-4 py-16 md:py-24">
+    <div class="max-w-xl mx-auto" style="font-family: 'Inter', sans-serif;" data-edge={EDGE} data-anon={ANON} id="nl-root">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3">El Brenz · le nostre notizie</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-5" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Le storie delle nostre valli, quando ci sono
+      </h1>
+      <p class="text-[15px] text-[#1E2E26]/80 leading-relaxed m-0 mb-2">
+        Scriviamo poco e solo quando abbiamo qualcosa da raccontare: una ricerca d'archivio, una parola di
+        <em>ladino anaunico</em> che stava per perdersi, una rievocazione, un incontro nei nostri paesi.
+      </p>
+      <p class="text-[15px] text-[#1E2E26]/80 leading-relaxed m-0 mb-8">
+        Nessuna pubblicità, nessun indirizzo ceduto a nessuno. In fondo a ogni email c'è il collegamento
+        per togliersi, e funziona con un clic solo.
+      </p>
+
+      <div class="bg-white border border-[#E5DFCF] rounded-lg p-6 md:p-8">
+        <div id="nl-modulo">
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="nl-nome">Come ti chiami <span class="text-[#1E2E26]/45">(facoltativo)</span></label>
+          <input id="nl-nome" type="text" maxlength="120" autocomplete="name"
+                 class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E] mb-4" />
+
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="nl-email">La tua email</label>
+          <input id="nl-email" type="email" required autocomplete="email" placeholder="nome@esempio.it"
+                 class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
+
+          <label class="flex items-start gap-2 text-[13px] text-[#1E2E26]/80 cursor-pointer mt-4">
+            <input type="checkbox" id="nl-gdpr" class="mt-1 w-4 h-4 accent-[#C8923E] flex-shrink-0" />
+            <span>Acconsento a ricevere le comunicazioni dell'Associazione e ho letto l'<a href="/privacy" class="text-[#8a6215] underline">informativa privacy</a>.</span>
+          </label>
+
+          <button type="button" id="nl-invia"
+                  class="mt-5 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors border-0 cursor-pointer">
+            Iscrivimi
+          </button>
+          <p class="text-[12px] text-[#1E2E26]/55 m-0 mt-3">
+            Ti arriverà una mail con un collegamento da aprire: finché non lo apri non sei iscritto e non ti scriviamo.
+          </p>
+        </div>
+        <div id="nl-esito" class="hidden"></div>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const root = document.getElementById('nl-root')!;
+  const EDGE = root.getAttribute('data-edge')!;
+  const ANON = root.getAttribute('data-anon')!;
+  const $ = (id: string) => document.getElementById(id)!;
+  const val = (id: string) => ($(id) as HTMLInputElement).value.trim();
+
+  function esito(html: string) {
+    $('nl-modulo').classList.add('hidden');
+    const e = $('nl-esito');
+    e.classList.remove('hidden');
+    e.innerHTML = html;
+  }
+  function errore(t: string) {
+    let box = document.getElementById('nl-err');
+    if (!box) {
+      box = document.createElement('p');
+      box.id = 'nl-err';
+      box.style.cssText = 'background:#fbecec;color:#1E2E26;border-radius:4px;padding:10px 14px;margin:14px 0 0;font-size:13px;';
+      $('nl-modulo').appendChild(box);
+    }
+    box.textContent = t;
+  }
+
+  $('nl-invia').addEventListener('click', async () => {
+    const email = val('nl-email').toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return errore('Controlla l\'indirizzo email.');
+    // Il consenso e' una casella che si spunta, mai una gia' spuntata: un
+    // consenso preselezionato non e' un consenso.
+    if (!($('nl-gdpr') as HTMLInputElement).checked) return errore('Serve la spunta sul consenso per procedere.');
+
+    const b = $('nl-invia') as HTMLButtonElement;
+    b.disabled = true; b.textContent = 'Un momento…';
+    try {
+      const r = await fetch(EDGE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: ANON },
+        body: JSON.stringify({ email, nome: val('nl-nome'), origine: 'modulo_sito' }),
+      });
+      const d = await r.json();
+      if (d.ok && d.gia_iscritto) {
+        esito(`<h2 style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2E26;margin:0 0 8px;font-weight:500;">Ci sei già</h2>
+               <p style="color:#1E2E26;opacity:.8;margin:0;line-height:1.6;">Questo indirizzo riceve già le nostre notizie. Non abbiamo cambiato niente.</p>`);
+        return;
+      }
+      if (d.ok) {
+        esito(`<h2 style="font-family:'Playfair Display',serif;font-size:20px;color:#1E2E26;margin:0 0 8px;font-weight:500;">Ti abbiamo scritto</h2>
+               <p style="color:#1E2E26;opacity:.8;margin:0 0 8px;line-height:1.6;">Apri la mail che ti è arrivata e clicca il collegamento: solo allora l'iscrizione è fatta.</p>
+               <p style="color:#1E2E26;opacity:.55;margin:0;font-size:13px;">Se non la vedi, guarda fra la posta indesiderata. Il collegamento vale sette giorni.</p>`);
+        return;
+      }
+      b.disabled = false; b.textContent = 'Iscrivimi';
+      errore(d.message || 'Non ha funzionato. Riprova fra poco.');
+    } catch {
+      b.disabled = false; b.textContent = 'Iscrivimi';
+      errore('Errore di connessione. Riprova fra poco.');
+    }
+  });
+</script>

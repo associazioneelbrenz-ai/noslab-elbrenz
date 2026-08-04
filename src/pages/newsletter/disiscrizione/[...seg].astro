@@ -17,7 +17,11 @@ const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvx
 const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
 const [emailSeg, exp, token] = seg;
 const valido = /^[A-Za-z0-9_-]+$/.test(emailSeg ?? '') && /^\d+$/.test(exp ?? '') && /^[0-9a-f]+$/i.test(token ?? '');
-const EDGE = `${SB_URL}/functions/v1/newsletter-unsubscribe/${emailSeg}/${exp}/${token}`;
+// [4/8/2026] Punta alla edge NUOVA, che oltre a spegnere i flag storici
+// aggiorna `newsletter_iscritto`: senza questo passaggio una disiscrizione
+// valeva per le vecchie liste e non per quella nuova, cioe' non valeva.
+// L'edge vecchia resta in piedi per i collegamenti gia' in circolazione.
+const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/disiscrizione/${emailSeg}/${exp}/${token}`;
 ---
 
 <Layout title="Le tue comunicazioni · El Brenz" description="Gestisci le comunicazioni di El Brenz." ogImage="/og/og-default.jpg">
@@ -47,29 +51,29 @@ const EDGE = `${SB_URL}/functions/v1/newsletter-unsubscribe/${emailSeg}/${exp}/$
     }
 
     // "Resta" ben visibile (bottone oro); "disiscriviti" piccolo e sobrio.
+    /* [4/8/2026] Le due scelte pesano uguale. Prima la disiscrizione era un
+       link grigetto di dodici pixel accanto a un bottone d'oro: legalmente
+       basta, ma e' un modo di rendere difficile una cosa che deve essere
+       facile, e chi se ne accorge non ci pensa due volte a segnalarlo. */
     const restaBtn = `<a href="/" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 28px;border-radius:4px;font-weight:600;font-size:15px;text-decoration:none;">Resta con noi</a>`;
-    const disLink = `<button id="unsub-go" style="background:none;border:0;color:#a99f8c;font-size:12px;text-decoration:underline;cursor:pointer;padding:6px;font-family:inherit;">Confermo la disiscrizione</button>`;
+    const disLink = `<button id="unsub-go" style="background:#fff;border:1px solid #cfc6b4;color:#6b6255;padding:11px 26px;border-radius:4px;font-size:15px;cursor:pointer;font-family:inherit;">Disiscrivimi</button>`;
 
-    async function peek() {
-      try {
-        const r = await fetch(edge, { headers: { Accept: 'application/json' } });
-        const d = await r.json();
-        if (!d.ok) {
-          body.innerHTML = titolo('Link non più valido') + testo('Questo link è scaduto o non è valido. Apri la nostra email più recente, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.');
-          return;
-        }
-        render(d.email || '');
-      } catch {
-        body.innerHTML = titolo('Errore') + testo('Non riesco a caricare la pagina. Riprova tra poco.');
-      }
+    /* [4/8/2026] La pagina NON si disiscrive da sola al caricamento, e non e'
+       una dimenticanza. I filtri antivirus e i «link sicuri» dei client di
+       posta aprono gli indirizzi contenuti nelle email per controllarli: una
+       disiscrizione che scatta all'apertura toglierebbe dalla lista persone
+       che non hanno mai cliccato, e nessuno se ne accorgerebbe. Serve un
+       gesto umano, uno solo: un clic e via, senza «sei sicuro?». */
+    function peek() {
+      render('');
     }
 
     function render(emailMasch: string) {
       body.innerHTML =
         titolo('Davvero ci lasci?')
         + testo(`Fai parte della comunità delle nostre valli${emailMasch ? ` (<strong>${H(emailMasch)}</strong>)` : ''}. Le nostre email sono poche e raccontano storia, lingua ed eventi delle Valli del Noce: sarebbe un peccato perderle.`)
-        + `<div style="margin:22px 0 14px;">${restaBtn}</div>`
-        + `<div style="margin-top:4px;">${disLink}</div>`;
+        + `<div style="margin:22px 0 8px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">${restaBtn}${disLink}</div>`
+        + `<p style="color:#1E2E26;opacity:.5;margin:10px 0 0;font-size:12px;">Un clic e sei fuori subito: non ti chiediamo altro.</p>`;
       document.getElementById('unsub-go')!.addEventListener('click', esegui);
     }
 

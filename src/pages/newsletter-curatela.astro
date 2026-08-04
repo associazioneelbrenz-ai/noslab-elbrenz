@@ -1,0 +1,315 @@
+---
+/**
+ * /newsletter-curatela — da dove l'Associazione parla ai suoi soci.
+ *
+ * [4/8/2026] Perche' esiste. Finora ogni comunicazione era scritta a mano, una
+ * persona per volta: con trenta soci e un comunicato stampa pronto e mai
+ * spedito, era il collo di bottiglia piu' stretto di tutto l'ecosistema.
+ *
+ * L'ORDINE DELLE COSE E' LA SICUREZZA. Si scrive, si sceglie il gruppo, si
+ * vede quanti sono, si manda una prova a se stessi, e SOLO DOPO si spedisce.
+ * La prova non e' un consiglio: finche' non e' stata fatta, l'invio viene
+ * rifiutato dal server, non solo nascosto qui. E prima di partire si vede
+ * scritto QUANTE PERSONE riceveranno, perche' il numero e' la cosa che fa
+ * fermare chi sta per sbagliare.
+ *
+ * I numeri vengono tutti dal ramo /pannello dell'edge: i gruppi da
+ * v_newsletter_destinatari, il residuo giornaliero dal database. Qui non si
+ * calcola niente, perche' un conteggio sbagliato in questa pagina si tradurrebbe
+ * in email vere a persone vere.
+ *
+ * Accesso: sessione OTP + livello >= 50, verificato LATO SERVER.
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const BASE = `${SB_URL}/functions/v1/newsletter-gestione`;
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Curatela newsletter · El Brenz" description="Comunicazioni ai soci, riservata al Direttivo." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen" data-base={BASE} id="nc-root">
+    <div class="max-w-4xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8" style="font-family: 'Playfair Display', serif; font-weight: 500;">Curatela · Comunicazioni</h1>
+
+      <p id="nc-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* LOGIN */}
+      <section id="nc-login" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 max-w-md">
+        <div id="nc-login-1">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti invieremo un codice di verifica.</p>
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="nc-email">Email</label>
+          <input class={inputCls} type="email" id="nc-email" autocomplete="email" placeholder="nome@esempio.it" />
+          <button type="button" id="nc-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors">Invia codice</button>
+        </div>
+        <div id="nc-login-2" class="hidden">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice a 6 cifre inviato a <strong id="nc-email-echo"></strong>.</p>
+          <input class={`${inputCls} tracking-[0.4em] text-center text-xl`} type="text" id="nc-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+          <button type="button" id="nc-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Verifica e accedi</button>
+          <button type="button" id="nc-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        </div>
+        <div id="nc-login-err" class="hidden mt-3 text-sm rounded px-3 py-2" style="background:#fbecec;color:#1E2E26;"></div>
+      </section>
+
+      <section id="nc-noaccess" class="hidden bg-white border border-[#E5DFCF] rounded p-6 max-w-md">
+        <p class="m-0 text-[#1E2E26]/80">Questa area è riservata al direttivo. Se pensi di dover avere accesso, chiedilo al segretario.</p>
+      </section>
+
+      {/* PANNELLO */}
+      <section id="nc-app" class="hidden">
+        <div id="nc-numeri" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2"></div>
+        <p id="nc-nota" class="text-[13px] text-[#1E2E26]/65 m-0 mb-8"></p>
+
+        {/* SCRIVERE */}
+        <div class="bg-white border border-[#E5DFCF] rounded p-6 md:p-8 mb-8">
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-5" style="font-family: 'Playfair Display', serif; font-weight: 500;">Scrivi una comunicazione</h2>
+
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="nc-oggetto">Oggetto</label>
+          <input class={inputCls} type="text" id="nc-oggetto" maxlength="300" placeholder="es. Assemblea ordinaria: convocazione" />
+
+          <label class="block text-sm text-[#1E2E26]/75 mb-1 mt-4" for="nc-gruppo">A chi</label>
+          <select class={inputCls} id="nc-gruppo">
+            <option value="soci_in_regola">Soci in regola con la quota</option>
+            <option value="tutti">Tutti: soci e iscritti confermati</option>
+            <option value="non_soci">Solo iscritti che non sono soci</option>
+          </select>
+          <p id="nc-quanti" class="text-[13px] text-[#8a6215] m-0 mt-2"></p>
+
+          <label class="block text-sm text-[#1E2E26]/75 mb-1 mt-4" for="nc-corpo">Testo, in HTML</label>
+          <textarea class={`${inputCls} font-mono text-[13px]`} id="nc-corpo" rows="10" placeholder="&lt;p&gt;Care socie, cari soci,&lt;/p&gt;"></textarea>
+          <p class="text-[12px] text-[#1E2E26]/50 m-0 mt-2">Il collegamento di disiscrizione lo aggiunge il sistema in fondo a ogni email: non serve scriverlo.</p>
+
+          <div class="flex flex-wrap gap-3 items-center mt-5">
+            <button type="button" id="nc-salva" class="bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 rounded font-medium text-sm border-0 cursor-pointer hover:bg-[#2a3f34] transition-colors">Salva la bozza</button>
+            <span id="nc-salva-esito" class="text-[13px] text-[#1E2E26]/60"></span>
+          </div>
+        </div>
+
+        {/* LE CAMPAGNE */}
+        <h2 class="text-xl text-[#1E2E26] m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">Le comunicazioni</h2>
+        <div id="nc-lista" class="grid gap-3"></div>
+        <p id="nc-vuoto" class="hidden text-[#1E2E26]/60 bg-white border border-[#E5DFCF] rounded p-6 text-center m-0">
+          Nessuna comunicazione ancora. La prima che scrivi comparirà qui.
+        </p>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  import { proteggiCuratela2fa } from '../lib/curatela2fa';
+
+  const $ = (id: string) => document.getElementById(id);
+  const show = (id: string) => $(id)?.classList.remove('hidden');
+  const hide = (id: string) => $(id)?.classList.add('hidden');
+  const val = (id: string) => ($(id) as HTMLInputElement)?.value ?? '';
+  const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const dataIt = (s: string | null) => { if (!s) return ''; try { return new Date(s).toLocaleString('it-IT', { timeZone: 'Europe/Rome', dateStyle: 'short', timeStyle: 'short' }); } catch { return String(s); } };
+
+  const BASE = $('nc-root')!.getAttribute('data-base')!;
+  let dati: any = null;
+  let bozzaId: string | null = null;
+
+  const ETICHETTA_GRUPPO: Record<string, string> = {
+    tutti: 'tutti', soci_in_regola: 'soci in regola', non_soci: 'iscritti non soci',
+  };
+
+  async function chiama(rotta: string, corpo: Record<string, unknown> = {}) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const r = await fetch(`${BASE}/${rotta}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+      body: JSON.stringify(corpo),
+    });
+    return await r.json();
+  }
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    hide('nc-loading');
+    if (!session) { show('nc-login'); return; }
+    if (!(await proteggiCuratela2fa())) { window.location.reload(); return; }
+    const d = await chiama('pannello');
+    if (!d.ok) { show(d.error === 'non_autorizzato' ? 'nc-noaccess' : 'nc-login'); return; }
+    dati = d;
+    show('nc-app');
+    render();
+  }
+
+  function render() {
+    const g = dati.gruppi ?? {};
+    const i = dati.iscritti ?? {};
+    const card = (n: string | number, testo: string, colore = '#1E2E26') =>
+      `<div class="bg-white border border-[#E5DFCF] rounded p-4">
+         <p class="text-2xl m-0" style="font-family:'Playfair Display',serif;color:${colore};">${esc(n)}</p>
+         <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">${esc(testo)}</p>
+       </div>`;
+    $('nc-numeri')!.innerHTML =
+      card(g.soci_in_regola ?? 0, 'soci in regola', '#2d8659')
+      + card(g.non_soci ?? 0, 'iscritti non soci')
+      + card(i.in_attesa ?? 0, 'in attesa di conferma', (i.in_attesa ?? 0) > 0 ? '#8a6215' : '#1E2E26')
+      + card(`${dati.residuo_giornaliero}/${dati.tetto}`, 'invii che restano oggi',
+             dati.residuo_giornaliero < 10 ? '#a33' : '#1E2E26');
+
+    const pezzi: string[] = [];
+    if ((i.disiscritto ?? 0) > 0) pezzi.push(`${i.disiscritto} disiscritt${i.disiscritto === 1 ? 'o' : 'i'}`);
+    if ((i.rimbalzato ?? 0) > 0) pezzi.push(`${i.rimbalzato} rimbalzat${i.rimbalzato === 1 ? 'o' : 'i'}`);
+    /* I candidati alla richiesta di consenso non sono iscritti: e' importante
+       che la pagina non li faccia sembrare tali. Sono indirizzi che
+       l'Associazione ha, e a cui non ha ancora chiesto niente. */
+    const coda = pezzi.length ? ` Non ricevono: ${pezzi.join(', ')}.` : '';
+    $('nc-nota')!.innerHTML =
+      `Ci sono inoltre <strong>${esc(dati.candidati_consenso)}</strong> indirizzi noti all'Associazione a cui non è mai stato chiesto il consenso: non sono iscritti e non ricevono niente finché non rispondono a una richiesta.${coda}`;
+
+    aggiornaQuanti();
+
+    const campagne = dati.campagne ?? [];
+    $('nc-vuoto')!.classList.toggle('hidden', campagne.length > 0);
+    $('nc-lista')!.innerHTML = campagne.map((c: any) => {
+      const colore = c.stato === 'inviata' ? '#2d8659' : c.stato === 'in_invio' ? '#8a6215' : c.stato === 'annullata' ? '#999' : '#4a6180';
+      const provata = c.provata_il
+        ? `<span style="color:#2d8659;">provata il ${esc(dataIt(c.provata_il))}</span>`
+        : `<span style="color:#a33;">mai provata: l'invio è bloccato</span>`;
+      const azioni = c.stato === 'bozza'
+        ? `<button type="button" data-prova="${esc(c.id)}" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Manda una prova a ${esc(dati.indirizzo_prova)}</button>
+           <button type="button" data-vuoto="${esc(c.id)}" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Chi riceverebbe</button>
+           <button type="button" data-modifica="${esc(c.id)}" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Riprendi la bozza</button>`
+        : c.stato === 'in_invio'
+          ? `<button type="button" data-vuoto="${esc(c.id)}" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Chi manca ancora</button>`
+          : '';
+      const esiti = c.stato !== 'bozza'
+        ? `<p class="text-[13px] text-[#1E2E26]/70 m-0 mt-2">${esc(c.consegnati ?? 0)} in coda su ${esc(c.destinatari_count ?? 0)}${c.falliti ? ` · ${esc(c.falliti)} falliti` : ''}${c.invio_finito_il ? ` · finito il ${esc(dataIt(c.invio_finito_il))}` : ''}</p>`
+        : '';
+      return `<div class="bg-white border border-[#E5DFCF] rounded p-4">
+        <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span class="text-[16px] text-[#1E2E26] font-medium" style="font-family:'Playfair Display',serif;">${esc(c.oggetto)}</span>
+          <span class="text-[12px] px-2 py-0.5 rounded-full" style="background:#f1f1f1;color:${colore};">${esc(c.stato)}</span>
+          <span class="text-[12px] text-[#1E2E26]/55">a ${esc(ETICHETTA_GRUPPO[c.gruppo] ?? c.gruppo ?? 'nessuno')}</span>
+        </div>
+        <p class="text-[13px] m-0 mt-1">${provata}</p>
+        ${esiti}
+        <div class="mt-3 flex flex-wrap gap-4">${azioni}</div>
+        <div data-box="${esc(c.id)}" class="hidden mt-3"></div>
+      </div>`;
+    }).join('');
+
+    document.querySelectorAll('[data-prova]').forEach((b) => b.addEventListener('click', () => prova(String((b as HTMLElement).dataset.prova))));
+    document.querySelectorAll('[data-vuoto]').forEach((b) => b.addEventListener('click', () => giroAVuoto(String((b as HTMLElement).dataset.vuoto))));
+    document.querySelectorAll('[data-modifica]').forEach((b) => b.addEventListener('click', () => riprendi(String((b as HTMLElement).dataset.modifica))));
+  }
+
+  function aggiornaQuanti() {
+    const g = val('nc-gruppo');
+    const n = (dati.gruppi ?? {})[g] ?? 0;
+    $('nc-quanti')!.innerHTML = n === 0
+      ? 'In questo gruppo non c\'è nessuno: la comunicazione non partirebbe.'
+      : `Riceverebbe${n === 1 ? '' : 'ro'} <strong>${n}</strong> person${n === 1 ? 'a' : 'e'}.`;
+  }
+  $('nc-gruppo')?.addEventListener('change', aggiornaQuanti);
+
+  $('nc-salva')?.addEventListener('click', async () => {
+    const oggetto = val('nc-oggetto').trim();
+    const corpo = (($('nc-corpo') as HTMLTextAreaElement).value ?? '').trim();
+    const e = $('nc-salva-esito')!;
+    if (oggetto.length < 3) { e.textContent = 'Scrivi un oggetto.'; return; }
+    if (corpo.length < 10) { e.textContent = 'Scrivi il testo della comunicazione.'; return; }
+    e.textContent = 'Salvo…';
+    const d = await chiama('campagna-salva', { id: bozzaId ?? undefined, oggetto, corpo_html: corpo, gruppo: val('nc-gruppo') });
+    if (d.ok) { e.textContent = 'Salvata.'; setTimeout(() => window.location.reload(), 700); }
+    else e.textContent = d.message || d.error || 'Non riuscito.';
+  });
+
+  function riprendi(id: string) {
+    const c = (dati.campagne ?? []).find((x: any) => x.id === id);
+    if (!c) return;
+    bozzaId = id;
+    ($('nc-oggetto') as HTMLInputElement).value = c.oggetto ?? '';
+    ($('nc-corpo') as HTMLTextAreaElement).value = c.corpo_html ?? '';
+    ($('nc-gruppo') as HTMLSelectElement).value = c.gruppo ?? 'soci_in_regola';
+    aggiornaQuanti();
+    $('nc-oggetto')!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function prova(id: string) {
+    const box = document.querySelector(`[data-box="${CSS.escape(id)}"]`) as HTMLElement;
+    box.classList.remove('hidden');
+    box.innerHTML = '<p class="text-[13px] text-[#1E2E26]/60 m-0">Mando la prova…</p>';
+    const d = await chiama('campagna-prova', { id });
+    box.innerHTML = d.ok
+      ? `<p class="text-[13px] m-0" style="color:#2d8659;">Prova accodata a ${esc(d.a)}. Controlla la casella prima di spedire davvero.</p>`
+      : `<p class="text-[13px] m-0" style="color:#a33;">${esc(d.message || d.error)}</p>`;
+    if (d.ok) setTimeout(() => window.location.reload(), 1800);
+  }
+
+  /* Il giro a vuoto e' il passo obbligato prima dell'invio: mostra CHI
+     riceverebbe e QUANTI sono, e solo da qui si arriva al bottone che spedisce
+     davvero. Nessuna scorciatoia: il numero e' la cosa che fa fermare chi sta
+     per sbagliare. */
+  async function giroAVuoto(id: string) {
+    const box = document.querySelector(`[data-box="${CSS.escape(id)}"]`) as HTMLElement;
+    box.classList.remove('hidden');
+    box.innerHTML = '<p class="text-[13px] text-[#1E2E26]/60 m-0">Conto…</p>';
+    const d = await chiama('campagna-invia', { id });
+    if (!d.ok) { box.innerHTML = `<p class="text-[13px] m-0" style="color:#a33;">${esc(d.message || d.error)}</p>`; return; }
+
+    const elenco = (d.destinatari ?? []).map((x: any) => esc(x.email)).join(', ');
+    const avviso = d.supera_il_tetto
+      ? `<p class="text-[13px] m-0 mt-2" style="color:#a33;">${esc(d.avviso_tetto)}</p>` : '';
+    const blocco = d.blocco
+      ? `<p class="text-[13px] m-0 mt-2" style="color:#a33;"><strong>${esc(d.blocco)}</strong></p>` : '';
+    const bottone = d.pronta_a_partire
+      ? `<button type="button" data-invia="${esc(id)}" data-quanti="${esc(d.quanti)}" class="mt-3 bg-[#a33] text-white px-5 py-2.5 rounded text-[13px] font-semibold border-0 cursor-pointer">Invia davvero a ${esc(d.quanti)} persone</button>`
+      : '';
+    box.innerHTML = `<div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded px-4 py-3">
+      <p class="text-[13px] text-[#1E2E26] m-0"><strong>${esc(d.quanti)}</strong> riceverebbero questa comunicazione${d.gia_serviti ? ` (${esc(d.gia_serviti)} l'hanno già ricevuta)` : ''}. Oggi restano ${esc(d.residuo_giornaliero)} invii.</p>
+      <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1 break-all">${elenco}</p>
+      ${avviso}${blocco}${bottone}
+    </div>`;
+
+    box.querySelectorAll('[data-invia]').forEach((b) => b.addEventListener('click', async () => {
+      const quanti = (b as HTMLElement).dataset.quanti;
+      // L'ultima domanda nomina il numero: «trenta persone» ferma una mano che
+      // «confermi?» non fermerebbe.
+      if (!confirm(`Stai per inviare questa comunicazione a ${quanti} persone. Non si può richiamare. Procedo?`)) return;
+      const btn = b as HTMLButtonElement;
+      btn.disabled = true; btn.textContent = 'Accodo…';
+      const r = await chiama('campagna-invia', { id, esegui: true });
+      box.innerHTML = r.ok
+        ? `<p class="text-[13px] m-0" style="color:#2d8659;">${esc(r.message)}</p>`
+        : `<p class="text-[13px] m-0" style="color:#a33;">${esc(r.message || r.error)}</p>`;
+      if (r.ok) setTimeout(() => window.location.reload(), 2500);
+    }));
+  }
+
+  // ---- LOGIN (stesso flusso delle altre curatele) ----
+  const loginErr = (t: string) => { const e = $('nc-login-err')!; e.classList.remove('hidden'); e.textContent = t; };
+  $('nc-send')?.addEventListener('click', async () => {
+    const email = val('nc-email').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('Email non valida.'); return; }
+    $('nc-login-err')?.classList.add('hidden');
+    const btn = $('nc-send') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    btn.disabled = false; btn.textContent = 'Invia codice';
+    if (error || !data?.ok) { loginErr('Impossibile inviare il codice. Riprova.'); return; }
+    (window as any)._ncEmail = email;
+    ($('nc-email-echo') as HTMLElement).textContent = email;
+    hide('nc-login-1'); show('nc-login-2');
+    setTimeout(() => ($('nc-code') as HTMLInputElement)?.focus(), 100);
+  });
+  $('nc-back')?.addEventListener('click', () => { hide('nc-login-2'); show('nc-login-1'); });
+  $('nc-verify')?.addEventListener('click', async () => {
+    const codice = val('nc-code').replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) { loginErr('Il codice deve essere di 6 cifre.'); return; }
+    const btn = $('nc-verify') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Verifica…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._ncEmail, codice, scope: 'login' } });
+    if (error || !data?.ok || !data?.session) { btn.disabled = false; btn.textContent = 'Verifica e accedi'; loginErr('Codice errato o scaduto.'); return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+
+  init();
+</script>

@@ -1,0 +1,93 @@
+---
+/**
+ * /newsletter/conferma/{emailSeg}/{exp}/{token} — secondo passo del doppio
+ * opt-in: qui l'iscrizione diventa vera.
+ *
+ * [4/8/2026] Perche' una pagina e non la edge direttamente: la piattaforma
+ * Supabase forza `text/plain` sull'HTML servito dalle edge function, quindi il
+ * browser scaricherebbe un file invece di mostrare una pagina. Si rende qui su
+ * elbrenz.eu e si chiama l'edge in JSON. Token HMAC nel PATH, mai in query:
+ * `=` seguito da due cifre esadecimali si corrompe nel quoted-printable delle
+ * email.
+ *
+ * A DIFFERENZA DELLA DISISCRIZIONE, qui la conferma scatta al caricamento
+ * senza chiedere un secondo clic. Il gesto volontario c'e' gia' stato: e'
+ * quello di aprire il collegamento ricevuto per posta, ed e' esattamente cio'
+ * che il doppio opt-in vuole dimostrare. Chiederne un altro sarebbe un
+ * triplo opt-in, e ogni passo in piu' e' gente che si perde per strada.
+ */
+import Layout from '../../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+const [emailSeg, exp, token] = seg;
+const valido = /^[A-Za-z0-9_-]+$/.test(emailSeg ?? '') && /^\d+$/.test(exp ?? '') && /^[0-9a-f]+$/i.test(token ?? '');
+const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/conferma/${emailSeg}/${exp}/${token}`;
+---
+
+<Layout title="Iscrizione confermata · El Brenz" description="Conferma dell'iscrizione alle notizie di El Brenz." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
+    <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9 text-center"
+         style="font-family: 'Inter', sans-serif;" data-edge={valido ? EDGE : ''} data-anon={ANON} id="conf-card">
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · comunicazioni</p>
+      <div id="conf-body">
+        <p class="text-[#1E2E26]/70 m-0">Un momento…</p>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    const card = document.getElementById('conf-card')!;
+    const body = document.getElementById('conf-body')!;
+    const edge = card.getAttribute('data-edge') || '';
+    const anon = card.getAttribute('data-anon') || '';
+
+    const H = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const titolo = (t: string) => `<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 10px;">${t}</h1>`;
+    const testo = (t: string) => `<p style="color:#1E2E26;opacity:.85;margin:0 0 8px;line-height:1.65;">${t}</p>`;
+    const torna = `<div style="margin-top:20px;"><a href="/" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 28px;border-radius:4px;font-weight:600;font-size:15px;text-decoration:none;">Vai al sito</a></div>`;
+
+    if (!edge) {
+      body.innerHTML = titolo('Collegamento non valido')
+        + testo('Questo collegamento non è valido. Apri la nostra email più recente, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.');
+      return;
+    }
+
+    (async function conferma() {
+      try {
+        const r = await fetch(edge, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: anon },
+          body: '{}',
+        });
+        const d = await r.json();
+        if (d.ok) {
+          const nome = d.nome ? `, ${H(d.nome)}` : '';
+          body.innerHTML =
+            titolo(d.gia ? 'Eri già dei nostri' : 'Ci sei.')
+            + testo(d.gia
+              ? `Questo indirizzo riceveva già le notizie dell'Associazione. Non abbiamo cambiato niente.`
+              : `Benvenuto${nome}. Da adesso riceverai le notizie dell'Associazione El Brenz: poche email, e solo quando abbiamo qualcosa da raccontare sulla storia, la lingua e la vita delle nostre valli.`)
+            + testo('In fondo a ogni email trovi il collegamento per toglierti, che funziona con un clic solo.')
+            + torna;
+          return;
+        }
+        /* Un collegamento scaduto non e' un errore della persona: si dice cosa
+           fare, non «non valido» e basta. */
+        body.innerHTML = d.error === 'link_scaduto'
+          ? titolo('Collegamento scaduto')
+            + testo('I collegamenti di conferma valgono sette giorni. Iscriviti di nuovo dal sito e te ne mandiamo uno fresco.')
+            + torna
+          : titolo('Non riuscito')
+            + testo('Riprova aprendo di nuovo il collegamento, oppure scrivici a <a href="mailto:info@elbrenz.eu" style="color:#8a6215;">info@elbrenz.eu</a>.');
+      } catch {
+        body.innerHTML = titolo('Errore') + testo('Errore di connessione. Riprova fra poco.');
+      }
+    })();
+  })();
+</script>

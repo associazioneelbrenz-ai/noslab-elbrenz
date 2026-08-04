@@ -97,11 +97,21 @@ const CATEGORIE_SOCIO = ['ordinario', 'fondatore', 'onorario', 'sostenitore'];
 const STATI_SOCIO = ['attivo', 'cessato'];
 const MOTIVI_CESSAZIONE = ['recesso', 'decadenza_morosita', 'esclusione', 'decesso'];
 
-// I campi che il libro degli associati pretende. Il TELEFONO non c'e' apposta:
-// e' un recapito, utile all'Associazione, ma un registro non e' incompleto
-// perche' manca un numero di telefono.
+// I campi che il libro degli associati pretende.
+//
+// [4/8/2026, decisione di Cristian] Il CODICE FISCALE e' fra questi: e'
+// obbligatorio. La prima versione lo teneva fuori, e sbagliava.
+//
+// Resta pero' vuoto a database, e non e' una contraddizione: trenta schede
+// storiche non ce l'hanno, e metterci un vincolo NOT NULL bloccherebbe ogni
+// scrittura su quelle righe invece di aiutare a completarle. Obbligatorio vuol
+// dire due cose precise: il modulo pubblico non lo lascia saltare, e una
+// scheda che ne e' priva risulta INCOMPLETA e si vede.
+//
+// Il TELEFONO invece resta fuori apposta: e' un recapito utile
+// all'Associazione, ma un registro non e' incompleto perche' manca un numero.
 const CAMPI_LIBRO_ASSOCIATI = [
-  'cognome', 'data_nascita', 'comune_nascita',
+  'cognome', 'data_nascita', 'comune_nascita', 'codice_fiscale',
   'residenza_via', 'residenza_civico', 'residenza_cap', 'residenza_comune', 'residenza_provincia',
   'categoria_socio', 'approvata_il',
 ];
@@ -167,6 +177,27 @@ function normalizzaCampo(campo: string, grezzo: unknown): unknown | Error {
       return v.slice(0, 2000);
     default:
       return v.slice(0, 200);
+  }
+}
+
+// [4/8/2026] La gita e' annullata o no. Lo chiede la cassa: un anticipo di una
+// gita annullata e' denaro incassato ma DA RESTITUIRE, e va detto; lo stesso
+// anticipo di una gita che si fa e' incasso e basta.
+//
+// La domanda si fa al database e non si scrive nella pagina, perche' il 3
+// agosto la gita e' stata annullata, il 4 riaperta, e una pagina che se lo
+// ricorda per conto suo mente al primo ripensamento. E' successo davvero.
+async function gitaAnnullata(sb: ReturnType<typeof createClient>): Promise<boolean> {
+  try {
+    const { data } = await sb.from('config_app').select('valore')
+      .eq('chiave', 'gita_giochi_medievali_2026_stato').maybeSingle();
+    const stato = (data?.valore as Record<string, unknown> | undefined)?.stato;
+    // Qui NON si fa fail-closed: questa funzione gira con la chiave di
+    // servizio, che legge sempre. Se lo stato manca del tutto, la gita non
+    // risulta annullata: e' il caso in cui non c'e' nessuna gita.
+    return typeof stato === 'string' && stato !== 'aperta';
+  } catch {
+    return false;
   }
 }
 
@@ -482,6 +513,7 @@ Deno.serve(async (req: Request) => {
         incassi: incassi ?? [],
         incassanti,
         completezza,
+        gita_annullata: await gitaAnnullata(sb),
         io: user.id,
       });
     }
@@ -667,6 +699,7 @@ Deno.serve(async (req: Request) => {
           vuoto(r.residenza_via) || vuoto(r.residenza_civico) || vuoto(r.residenza_cap)
           || vuoto(r.residenza_comune) || vuoto(r.residenza_provincia)).length,
         senza_categoria: righe.filter((r) => vuoto(r.categoria_socio)).length,
+        senza_codice_fiscale: righe.filter((r) => vuoto(r.codice_fiscale)).length,
         // Il numero che conta: quante schede non reggerebbero il confronto con
         // il registro cartaceo, campo per campo.
         schede_incomplete: righe.filter((r) => !r.anagrafica_completa).length,
@@ -691,6 +724,7 @@ Deno.serve(async (req: Request) => {
           ammesso_senza_incasso: conta('ammesso_senza_incasso'),
         },
         incassi: sommaPerTipo,
+        gita_annullata: await gitaAnnullata(sb),
         lacune,
       });
     }

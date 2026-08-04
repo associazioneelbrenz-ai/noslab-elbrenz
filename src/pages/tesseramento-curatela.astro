@@ -68,6 +68,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
             {/* [4/8] Il registro da esibire si raggiunge da qui: e' il posto in
                 cui il segretario sta gia' lavorando quando gli serve. */}
             <a href="/libro-soci" class="text-sm text-[#8a6215] underline">Libro dei soci</a>
+            <a href="/newsletter-curatela" class="text-sm text-[#8a6215] underline">Comunicazioni</a>
             <button type="button" id="tc-logout" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
           </div>
         </div>
@@ -233,7 +234,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
                   <input class={inputCls} type="tel" id="tc-ana-telefono" maxlength="40" />
                 </div>
                 <div>
-                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-cf">Codice fiscale <span class="text-[#1E2E26]/45">(facoltativo)</span></label>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-ana-cf">Codice fiscale <span class="text-[#a33]">*</span></label>
                   <input class={`${inputCls} uppercase`} type="text" id="tc-ana-cf" maxlength="16" />
                 </div>
               </div>
@@ -331,6 +332,11 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   let io = '';
   let socioCorrente: any = null;
   let completezza: any = null;
+  /* Se la gita e' annullata lo dice il server, che legge config_app. La pagina
+     non se lo ricorda: il 3 agosto la gita e' stata annullata e il 4 riaperta,
+     e un dato cablato qui avrebbe continuato a chiedere di restituire soldi
+     che nessuno deve restituire. */
+  let gitaAnnullata = false;
   let anaCorrente: any = null;
   const REGISTRA_URL = 'https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/contanti-registra';
   const ANAGRAFICA_URL = CODA_URL.replace(/\/coda$/, '/anagrafica');
@@ -340,6 +346,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
      della colonna del database. */
   const NOME_CAMPO: Record<string, string> = {
     cognome: 'cognome', data_nascita: 'data di nascita', comune_nascita: 'comune di nascita',
+    codice_fiscale: 'codice fiscale',
     residenza_via: 'via', residenza_civico: 'civico', residenza_cap: 'CAP',
     residenza_comune: 'comune di residenza', residenza_provincia: 'provincia',
     categoria_socio: 'categoria', approvata_il: 'data di ammissione',
@@ -365,6 +372,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     incassi = d.incassi ?? [];
     incassanti = d.incassanti ?? [];
     completezza = d.completezza ?? null;
+    gitaAnnullata = d.gita_annullata === true;
     io = d.io ?? '';
     ($('tc-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
     show('tc-app');
@@ -458,10 +466,11 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       anticipo_gita: 'Anticipi gite',
     };
     const blocchi = [...perTipo.entries()].sort((a, b) => b[1].totale - a[1].totale).map(([tipo, v]) => {
-      /* Gli anticipi della gita annullata sono incassati ma da restituire:
-         sommarli agli altri senza dirlo darebbe una cassa piu' ricca di
-         quella vera. */
-      const daRestituire = tipo === 'anticipo_gita';
+      /* Gli anticipi di una gita ANNULLATA sono incassati ma da restituire, e
+         sommarli agli altri senza dirlo darebbe una cassa piu' ricca di quella
+         vera. Se la gita si fa, invece, sono incasso e basta: dire «da
+         restituire» manderebbe il segretario a rimborsare gente che parte. */
+      const daRestituire = tipo === 'anticipo_gita' && gitaAnnullata;
       return `<div class="bg-white border ${daRestituire ? 'border-[#8a3a3a]/40' : 'border-[#E5DFCF]'} rounded p-4 flex items-baseline justify-between gap-4">
          <span>
            <span class="text-[15px] text-[#1E2E26]">${esc(ETICHETTA[tipo] ?? tipo)}${daRestituire ? ' <span style="color:#8a3a3a;font-weight:600;">da restituire</span>' : ''}</span>
@@ -471,8 +480,10 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
        </div>`;
     });
     const totale = completati.reduce((t, x) => t + Number(x.importo || 0), 0);
-    const daRestituire = completati.filter((x) => x.tipo === 'anticipo_gita')
-      .reduce((t, x) => t + Number(x.importo || 0), 0);
+    const daRestituire = gitaAnnullata
+      ? completati.filter((x) => x.tipo === 'anticipo_gita')
+          .reduce((t, x) => t + Number(x.importo || 0), 0)
+      : 0;
     blocchi.push(`<div class="bg-[#1E2E26] text-[#F5EEDD] rounded p-4 flex items-baseline justify-between gap-4">
          <span>
            <span class="text-[15px]">Totale incassato</span>

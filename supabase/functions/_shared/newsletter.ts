@@ -42,6 +42,24 @@ export async function linkDisiscrizione(siteBase: string, email: string, secret:
   return `${siteBase.replace(/\/$/, '')}/newsletter/disiscrizione/${emailToSeg(e)}/${exp}/${token}`;
 }
 
+// [4/8/2026] CONFERMA dell'iscrizione, cioe' il secondo passo del doppio
+// opt-in. Scope diverso da quello della disiscrizione: un collegamento non
+// deve poter fare il mestiere dell'altro, e con lo stesso scope basterebbe
+// cambiare una parola nell'indirizzo.
+export const CONFERMA_SCOPE = 'newsletter-conferma';
+// Sette giorni: un consenso confermato a mesi di distanza non dimostra piu'
+// niente sulla volonta' di quel momento, e una richiesta che scade e' anche
+// un modo di rispettare chi ha deciso di non rispondere.
+export const CONFERMA_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** URL completo di conferma dell'iscrizione (doppio opt-in). */
+export async function linkConferma(siteBase: string, email: string, secret: string): Promise<string> {
+  const e = email.trim().toLowerCase();
+  const exp = Date.now() + CONFERMA_TTL_MS;
+  const token = await firmaToken(secret, CONFERMA_SCOPE, e, exp);
+  return `${siteBase.replace(/\/$/, '')}/newsletter/conferma/${emailToSeg(e)}/${exp}/${token}`;
+}
+
 /**
  * Footer HTML volutamente discreto (piccolo, grigio, in fondo) per le email
  * marketing: presente e cliccabile come vuole il GDPR, ma non appariscente.

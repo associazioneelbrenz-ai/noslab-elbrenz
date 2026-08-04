@@ -365,6 +365,36 @@ serve(async (req) => {
   const provGrezza = testo(body.residenza_provincia, 2)?.toUpperCase() ?? null
   const residenzaProvincia = provGrezza && /^[A-Z]{2}$/.test(provGrezza) ? provGrezza : null
   const telefono = testo(body.telefono, 40)
+  // [4/8/2026, decisione di Cristian] Il CODICE FISCALE e' obbligatorio, non
+  // facoltativo come diceva la prima versione. Serve al libro degli associati,
+  // che l'Associazione e' tenuta a compilare.
+  const cfGrezzo = testo(body.codice_fiscale, 16)?.toUpperCase().replace(/\s+/g, '') ?? null
+  const codiceFiscale = cfGrezzo && /^[A-Z0-9]{11,16}$/.test(cfGrezzo) ? cfGrezzo : null
+
+  // Il modulo dichiara in che modalita' e': `completa` quando
+  // ANAGRAFICA_PUBBLICA_LIVE e' acceso e i campi sono a schermo, `base`
+  // altrimenti. Cosi' l'obbligatorieta' si accende insieme ai campi, con un
+  // interruttore solo, invece di due che prima o poi divergono.
+  //
+  // Chi manomettesse questo valore otterrebbe soltanto una domanda meno
+  // completa, non un accesso a qualcosa: non e' un controllo di sicurezza, e'
+  // il modulo che dice cosa ha chiesto.
+  const anagraficaCompleta = body.anagrafica_modo === 'completa'
+  if (anagraficaCompleta) {
+    const mancanti: string[] = []
+    if (!cognome) mancanti.push('il cognome')
+    if (!residenzaVia || !residenzaCivico || !residenzaCap || !residenzaComune || !residenzaProvincia) {
+      mancanti.push("l'indirizzo di residenza completo")
+    }
+    if (!codiceFiscale) mancanti.push('il codice fiscale')
+    if (mancanti.length) {
+      return jsonResponse(
+        { error: `Per completare l'iscrizione servono ${mancanti.join(', ')}.` },
+        400,
+        cors,
+      )
+    }
+  }
   const honeypot = typeof body._honeypot === 'string' ? body._honeypot : ''
   const ts = typeof body._ts === 'number' ? body._ts : 0
   // VETR 2/3 (11/7): sorgente utm opzionale (source/medium/campaign, stringhe
@@ -506,6 +536,7 @@ serve(async (req) => {
         residenza_comune: residenzaComune,
         residenza_provincia: residenzaProvincia,
         telefono,
+        codice_fiscale: codiceFiscale,
       })
       .select('id')
       .single()

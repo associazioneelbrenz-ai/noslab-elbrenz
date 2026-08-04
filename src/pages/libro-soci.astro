@@ -196,6 +196,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         <td style="${td}">${x.cognome ? esc(x.cognome) : mancante()}</td>
         <td style="${td}">${esc(x.nome)}</td>
         <td style="${td}white-space:nowrap;">${x.categoria_socio ? esc(x.categoria_socio) : mancante()}</td>
+        <td style="${td}white-space:nowrap;font-family:ui-monospace,monospace;font-size:.92em;">${x.codice_fiscale ? esc(x.codice_fiscale) : mancante()}</td>
         <td style="${td}">${x.comune_nascita ? esc(x.comune_nascita) : mancante()}</td>
         <td style="${td}white-space:nowrap;">${x.data_nascita ? esc(dataIt(x.data_nascita)) : mancante()}</td>
         <td style="${td}">${res ? esc(res) : mancante()}</td>
@@ -220,6 +221,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (r.ammesso_senza_incasso > 0) buchi.push(`<li><strong>${esc(r.ammesso_senza_incasso)}</strong> ${r.ammesso_senza_incasso === 1 ? 'posizione risulta ammessa senza che risulti' : 'posizioni risultano ammesse senza che risulti'} il versamento della quota.</li>`);
     if (l.senza_residenza > 0) buchi.push(`<li><strong>${esc(l.senza_residenza)}</strong> ${l.senza_residenza === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} residenza completa. Il modulo di adesione non l’ha mai richiesta: non è un dato andato perduto, è un dato mai raccolto, in corso di integrazione dal registro cartaceo.</li>`);
     if (l.senza_cognome > 0) buchi.push(`<li><strong>${esc(l.senza_cognome)}</strong> ${l.senza_cognome === 1 ? 'posizione ha' : 'posizioni hanno'} nome e cognome ancora in un campo unico, in corso di separazione.</li>`);
+    if (l.senza_codice_fiscale > 0) buchi.push(`<li><strong>${esc(l.senza_codice_fiscale)}</strong> ${l.senza_codice_fiscale === 1 ? 'posizione è priva del' : 'posizioni sono prive del'} <strong>codice fiscale</strong>, che il modulo di adesione non ha mai richiesto ed è dato obbligatorio per il registro: è la lacuna da colmare per prima.</li>`);
     if (l.senza_categoria > 0) buchi.push(`<li><strong>${esc(l.senza_categoria)}</strong> ${l.senza_categoria === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} categoria di socio, da riportare dal registro cartaceo.</li>`);
 
     /* Le cessazioni. Un libro degli associati che registra solo gli ingressi è
@@ -259,7 +261,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       ['anticipo_gita', 'Anticipi per gite sociali'],
     ].filter(([k]) => incassi[k as string] != null)
      .map(([k, etichetta]) => `<tr>
-        <td style="padding:5px 8px;">${esc(etichetta)}${k === 'anticipo_gita' ? ' <span style="color:#8a3a3a;">(da restituire, gita annullata)</span>' : ''}</td>
+        <td style="padding:5px 8px;">${esc(etichetta)}${k === 'anticipo_gita' && doc.gita_annullata ? ' <span style="color:#8a3a3a;">(da restituire, gita annullata)</span>' : ''}</td>
         <td style="padding:5px 8px;text-align:right;white-space:nowrap;">${esc(eur(incassi[k as string]))}</td>
       </tr>`).join('');
 
@@ -288,6 +290,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Nome</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Categoria</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Codice fiscale</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Nato/a a</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">il</th>
             <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Residenza</th>

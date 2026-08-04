@@ -13,8 +13,11 @@
 -- sulla prima spaziatura e trasforma «Maria Luisa Battistini» in «Maria» piu'
 -- «Luisa Battistini».
 --
--- NIENTE E' OBBLIGATORIO. I soci storici verranno completati un po' per volta:
--- un vincolo di obbligatorieta' bloccherebbe il lavoro invece di aiutarlo.
+-- NESSUNA COLONNA E' NOT NULL, nemmeno quelle obbligatorie. I soci storici
+-- verranno completati un po' per volta, e un vincolo di obbligatorieta' a
+-- database bloccherebbe proprio le scritture che servono a completarli.
+-- L'obbligo, dove c'e', vive nel modulo pubblico e nel conteggio di
+-- completezza del libro soci: vedi il blocco sul codice fiscale piu' sotto.
 --
 -- IL VALORE PREDEFINITO VALE PER LE RIGHE NUOVE, NON PER QUELLE VECCHIE.
 -- `add column ... default` in Postgres riempirebbe anche le trentacinque righe
@@ -87,10 +90,18 @@ do $$ begin
     check (residenza_provincia is null or residenza_provincia ~ '^[A-Za-z]{2}$');
 exception when duplicate_object then null; end $$;
 
--- Il codice fiscale resta FACOLTATIVO e non deve diventare obbligatorio: il
--- libro degli associati non lo richiede, il registro cartaceo non ce l'ha in
--- centodieci schede, e ogni campo obbligatorio in piu' su un modulo pubblico
--- e' gente che abbandona a meta'.
+-- CODICE FISCALE. [Corretto il 4/8/2026, decisione di Cristian: e'
+-- OBBLIGATORIO.] La prima stesura di questa migrazione lo dava per facoltativo
+-- e sbagliava: serve al libro degli associati, che l'Associazione e' tenuta a
+-- compilare.
+--
+-- La colonna resta comunque senza NOT NULL, e non e' una contraddizione:
+-- trenta schede storiche non ce l'hanno, e un vincolo di obbligatorieta' a
+-- database bloccherebbe QUALUNQUE scrittura su quelle righe, compresa quella
+-- che serve a completarle. Sarebbe un vincolo che impedisce di rispettarlo.
+-- Obbligatorio vuol dire due cose precise e verificabili: il modulo pubblico
+-- non lo lascia saltare, e una scheda che ne e' priva risulta incompleta nel
+-- libro soci e si vede.
 do $$ begin
   alter table public.domande_tesseramento add constraint domande_codice_fiscale_plausibile
     check (codice_fiscale is null or codice_fiscale ~ '^[A-Za-z0-9]{11,16}$');
@@ -103,7 +114,7 @@ comment on column public.domande_tesseramento.categoria_socio is
 comment on column public.domande_tesseramento.stato_socio is
  'attivo | cessato. Vuoto significa attivo per un socio ammesso: finche'' non si dichiara una cessazione, con la sua data e il suo motivo, il socio e'' dentro.';
 comment on column public.domande_tesseramento.codice_fiscale is
- 'FACOLTATIVO e da non rendere obbligatorio. Serve semmai a chi dona, non a chi si tessera.';
+ 'OBBLIGATORIO per il libro degli associati (decisione 4/8/2026). Senza NOT NULL solo perche'' le schede storiche ne sono prive e il vincolo impedirebbe di completarle: l''obbligo e'' nel modulo pubblico e nel conteggio di completezza.';
 comment on column public.domande_tesseramento.note_segreteria is
  'Testo libero a uso interno della segreteria. Non compare mai in pagine pubbliche.';
 
