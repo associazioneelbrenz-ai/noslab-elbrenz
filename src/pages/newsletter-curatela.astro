@@ -60,7 +60,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
       {/* PANNELLO */}
       <section id="nc-app" class="hidden">
-        <div id="nc-numeri" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2"></div>
+        <div id="nc-numeri" class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-2"></div>
         <p id="nc-nota" class="text-[13px] text-[#1E2E26]/65 m-0 mb-8"></p>
 
         {/* SCRIVERE */}
@@ -72,10 +72,18 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
           <label class="block text-sm text-[#1E2E26]/75 mb-1 mt-4" for="nc-gruppo">A chi</label>
           <select class={inputCls} id="nc-gruppo">
-            <option value="soci_in_regola">Soci in regola con la quota</option>
+            {/* [4/8] L'ordine non e' casuale: in cima quello che serve nove
+                volte su dieci, cioe' scrivere a tutti i soci. «In regola» sta
+                sotto perche' e' il caso particolare, non il normale. */}
+            <option value="soci_tutti">Tutti i soci, anche chi non è in regola con la quota</option>
+            <option value="soci_in_regola">Solo i soci in regola: chi esercita i diritti sociali</option>
             <option value="tutti">Tutti: soci e iscritti confermati</option>
             <option value="non_soci">Solo iscritti che non sono soci</option>
           </select>
+          <p class="text-[12px] text-[#1E2E26]/50 m-0 mt-1">
+            Una convocazione d'assemblea va a <strong>tutti i soci</strong>. «Solo i soci in regola» serve
+            quando la comunicazione riguarda un diritto che lo statuto riserva a loro.
+          </p>
           <p id="nc-quanti" class="text-[13px] text-[#8a6215] m-0 mt-2"></p>
 
           <label class="block text-sm text-[#1E2E26]/75 mb-1 mt-4" for="nc-corpo">Testo, in HTML</label>
@@ -115,7 +123,8 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   let bozzaId: string | null = null;
 
   const ETICHETTA_GRUPPO: Record<string, string> = {
-    tutti: 'tutti', soci_in_regola: 'soci in regola', non_soci: 'iscritti non soci',
+    tutti: 'tutti', soci_tutti: 'tutti i soci',
+    soci_in_regola: 'soci in regola', non_soci: 'iscritti non soci',
   };
 
   async function chiama(rotta: string, corpo: Record<string, unknown> = {}) {
@@ -149,7 +158,8 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
          <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">${esc(testo)}</p>
        </div>`;
     $('nc-numeri')!.innerHTML =
-      card(g.soci_in_regola ?? 0, 'soci in regola', '#2d8659')
+      card(g.soci_tutti ?? 0, 'soci, tutti')
+      + card(g.soci_in_regola ?? 0, 'di cui in regola', '#2d8659')
       + card(g.non_soci ?? 0, 'iscritti non soci')
       + card(i.in_attesa ?? 0, 'in attesa di conferma', (i.in_attesa ?? 0) > 0 ? '#8a6215' : '#1E2E26')
       + card(`${dati.residuo_giornaliero}/${dati.tetto}`, 'invii che restano oggi',
