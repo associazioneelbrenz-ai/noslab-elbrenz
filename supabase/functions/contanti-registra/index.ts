@@ -14,6 +14,16 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 //
 // Vincolo DB da rispettare (pagamenti_contanti_coerenza): se metodo='contanti'
 // allora incassato_da, incassato_il e importo sono obbligatori. Non aggirarlo.
+//
+// [4/8/2026] Estesa agli incassi gia' avvenuti fuori dal sistema che non sono
+// contanti: un bonifico vecchio, le quote del registro cartaceo. Cambiano solo
+// due campi in ingresso, `metodo` e `data_ricostruita`; chi chiamava prima
+// continua a funzionare identico, perche' senza quei campi il metodo resta
+// 'contanti' e la data si assume esatta.
+// Chi puo': ruolo >= 50. Cosa resta scritto: registrato_da, incassato_da e la
+// data reale. Cosa NON si puo': modificare un incasso registrato. Si annulla
+// con motivo (annullato_il/da/motivo), perche' il RUNTS chiede di poter
+// ricostruire chi ha scritto cosa, e una riga riscritta cancella la storia.
 
 const ALLOWED_ORIGINS = [
   "https://elbrenz-community.netlify.app",
@@ -72,6 +82,16 @@ Deno.serve(async (req: Request) => {
   const incassatoIl = String(b?.incassato_il ?? "").slice(0, 10);
   const incassatoDa = String(b?.incassato_da ?? "").trim();
   const modalita = String(b?.consenso_modalita ?? "");
+  // [4/8/2026] Serve anche per gli incassi avvenuti FUORI dal sistema che non
+  // sono contanti: un bonifico vecchio mai riconciliato, le quote del registro
+  // cartaceo. Il metodo resta 'contanti' se non si dice altro, cosi' chi
+  // chiamava prima continua a funzionare uguale.
+  const METODI_MANUALI = ["contanti", "bonifico", "altro"];
+  const metodo = METODI_MANUALI.includes(String(b?.metodo ?? "")) ? String(b.metodo) : "contanti";
+  // Una data ricostruita DICHIARATA e' un dato onesto; una data inventata e
+  // taciuta e' un falso. Chi registra una quota del 2020 raccolta a mano non
+  // si ricorda il giorno, e va bene: basta che lo dica.
+  const dataRicostruita = b?.data_ricostruita === true;
   const tipo = b?.tipo === "integrazione" ? "integrazione" : "quota";
 
   if (!nome || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return J({ error: "dati_socio_incompleti" }, 400);
@@ -126,7 +146,7 @@ Deno.serve(async (req: Request) => {
 
   // 6) Pagamento. metodo='contanti' + stato='completato' (il denaro c'e' gia').
   const { data: pag, error: ePag } = await admin.from("pagamenti_tesseramento").insert({
-    tipo, metodo: "contanti", stato: "completato",
+    tipo, metodo, stato: "completato",
     nome, email, anno, importo, valuta: "EUR",
     domanda_id: domandaId,
     incassato_da: incassatoDa,
@@ -134,6 +154,7 @@ Deno.serve(async (req: Request) => {
     incassato_il: incassatoIl,
     registrato_da: user.id,
     consegnato_tesoriere: false,
+    data_ricostruita: dataRicostruita,
     note_incasso: (b?.note ?? "").toString().slice(0, 500) || null,
   }).select("id").single();
   if (ePag || !pag) return J({ error: "pagamento_fallito", detail: ePag?.message }, 500);

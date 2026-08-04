@@ -68,11 +68,14 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         </div>
 
         {/* I numeri che contano, letti dai dati e mai scritti a mano */}
-        <div id="tc-riepilogo" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8"></div>
+        <div id="tc-riepilogo" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-2"></div>
+        <p id="tc-nota-manca" class="text-[13px] text-[#1E2E26]/65 m-0 mb-8"></p>
 
         <div class="flex flex-wrap items-center gap-2 mb-4">
           <button type="button" data-filtro="da_lavorare" class="tc-filtro bg-[#1E2E26] text-[#F5EEDD] border border-[#1E2E26] rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Da lavorare</button>
           <button type="button" data-filtro="senza_incasso" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Ammessi senza incasso</button>
+          <button type="button" data-filtro="parziale" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Parziali</button>
+          <button type="button" data-filtro="da_regolarizzare" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Da regolarizzare</button>
           <button type="button" data-filtro="in_regola" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">In regola</button>
           <button type="button" data-filtro="tutte" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Tutte</button>
           <input id="tc-cerca" type="search" placeholder="Cerca nome o email…" class="ml-auto border border-[#E5DFCF] bg-white rounded px-3 py-1.5 text-[13px] text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
@@ -80,6 +83,18 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
         <div id="tc-lista" class="grid gap-3"></div>
         <p id="tc-vuoto" class="hidden text-[#1E2E26]/60 bg-white border border-[#E5DFCF] rounded p-6 text-center m-0">Niente in questa selezione.</p>
+
+        {/* CASSA — da v_incassi, che tiene insieme quote, integrazioni e
+            anticipi delle gite senza duplicare una riga. */}
+        <div class="mt-12 pt-8 border-t border-[#E5DFCF]">
+          <div class="flex items-baseline justify-between mb-1">
+            <h2 class="text-xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif;">Cassa</h2>
+            <button type="button" id="tc-cassa-toggle" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Mostra il dettaglio</button>
+          </div>
+          <p class="text-[13px] text-[#1E2E26]/55 m-0 mb-4">Ogni incasso una volta sola: le quote e le integrazioni dal tesseramento, gli anticipi dalle iscrizioni alle gite.</p>
+          <div id="tc-cassa" class="grid gap-3"></div>
+          <div id="tc-cassa-dettaglio" class="hidden mt-4 overflow-x-auto"></div>
+        </div>
       </section>
     </div>
   </main>
@@ -101,12 +116,21 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   let righe: any[] = [];
   let filtro = 'da_lavorare';
 
+  /* Le etichette sono quelle di v_soci_in_regola, una per una: se la vista un
+     domani aggiunge una posizione, qui manca l'etichetta e si vede subito,
+     invece di ritrovarsi tutto ammucchiato sotto un fallback che mente. */
   const POSIZIONE: Record<string, { testo: string; sfondo: string; colore: string }> = {
     in_regola: { testo: 'In regola', sfondo: '#eaf3ee', colore: '#2d8659' },
+    parziale: { testo: 'Parziale', sfondo: '#fdf3df', colore: '#8a6215' },
     in_regola_per_deroga: { testo: 'In deroga', sfondo: '#FDF9F0', colore: '#8a6215' },
+    da_regolarizzare: { testo: 'Da regolarizzare', sfondo: '#eef2f7', colore: '#4a6180' },
     ammesso_senza_incasso: { testo: 'Ammesso senza incasso', sfondo: '#fbecec', colore: '#a33' },
-    non_ammesso: { testo: 'Da lavorare', sfondo: '#fdf3df', colore: '#8a6215' },
+    account_di_sistema: { testo: 'Account di servizio', sfondo: '#f1f1f1', colore: '#666' },
+    in_coda: { testo: 'In coda', sfondo: '#fdf3df', colore: '#8a6215' },
+    respinta: { testo: 'Respinta', sfondo: '#fbecec', colore: '#a33' },
+    annullata: { testo: 'Annullata', sfondo: '#f1f1f1', colore: '#666' },
   };
+  let incassi: any[] = [];
 
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -125,27 +149,116 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (!d.ok) { show(d.error === 'non_autorizzato' ? 'tc-noaccess' : 'tc-login'); return; }
 
     righe = d.righe ?? [];
+    incassi = d.incassi ?? [];
     ($('tc-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
     show('tc-app');
     riepilogo();
     render();
+    renderCassa();
   }
 
   function riepilogo() {
     const conta = (p: string) => righe.filter((x) => x.posizione === p).length;
     const daLavorare = righe.filter((x) => x.stato === 'in_attesa').length;
     const senzaIncasso = conta('ammesso_senza_incasso');
-    const incassato = righe.reduce((t, x) => t + Number(x.totale_incassato || 0), 0);
+    const parziali = conta('parziale');
+    const daRegolarizzare = conta('da_regolarizzare');
+    const mancaInTutto = righe
+      .filter((x) => x.posizione === 'parziale')
+      .reduce((t, x) => t + Number(x.manca || 0), 0);
+    /* L'incassato viene da v_incassi, non dalla somma delle righe socio: le
+       due cose sarebbero quasi uguali e la differenza, gli anticipi delle
+       gite, e' proprio quella che si vuole vedere. */
+    const incassato = incassi
+      .filter((x) => x.stato === 'completato')
+      .reduce((t, x) => t + Number(x.importo || 0), 0);
     const card = (n: string | number, testo: string, colore: string) =>
       `<div class="bg-white border border-[#E5DFCF] rounded p-4">
          <p class="text-2xl m-0" style="font-family:'Playfair Display',serif;color:${colore};">${esc(n)}</p>
          <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">${esc(testo)}</p>
        </div>`;
+    /* Le cinque posizioni che indicano un'azione diversa, piu' la coda. I
+       numeri arrivano dalla vista: qui si contano righe, non si decide niente. */
     $('tc-riepilogo')!.innerHTML =
       card(daLavorare, 'in coda', daLavorare > 0 ? '#8a6215' : '#1E2E26')
-      + card(conta('in_regola'), 'soci in regola', '#2d8659')
+      + card(conta('in_regola'), 'in regola', '#2d8659')
+      + card(parziali, parziali === 1 ? 'parziale' : 'parziali', parziali > 0 ? '#8a6215' : '#1E2E26')
+      + card(daRegolarizzare, 'da regolarizzare', daRegolarizzare > 0 ? '#4a6180' : '#1E2E26')
       + card(senzaIncasso, 'ammessi senza incasso', senzaIncasso > 0 ? '#a33' : '#1E2E26')
-      + card(`${incassato.toFixed(0)} €`, 'quote incassate', '#1E2E26');
+      + card(`${incassato.toFixed(0)} €`, 'incassato in tutto', '#1E2E26');
+    const nota = $('tc-nota-manca')!;
+    nota.innerHTML = parziali > 0
+      ? `Ai ${parziali} soci parziali manca in tutto <strong>${mancaInTutto.toFixed(2)} €</strong> per raggiungere la quota dell'anno.`
+      : '';
+  }
+
+  /* La cassa. Un riquadro per tipo di incasso, e sotto il dettaglio riga per
+     riga se lo si chiede. Tutti i numeri sono somme di righe che arrivano dal
+     server: qui non si calcola niente che non si possa ricavare dalle tabelle. */
+  function renderCassa() {
+    const completati = incassi.filter((x) => x.stato === 'completato');
+    const perTipo = new Map<string, { quante: number; totale: number; dove: Set<string> }>();
+    for (const x of completati) {
+      const k = String(x.tipo);
+      if (!perTipo.has(k)) perTipo.set(k, { quante: 0, totale: 0, dove: new Set() });
+      const v = perTipo.get(k)!;
+      v.quante++; v.totale += Number(x.importo || 0); v.dove.add(String(x.tabella));
+    }
+    const ETICHETTA: Record<string, string> = {
+      quota: 'Quote sociali', integrazione: 'Integrazioni', donazione: 'Donazioni',
+      anticipo_gita: 'Anticipi gite',
+    };
+    const blocchi = [...perTipo.entries()].sort((a, b) => b[1].totale - a[1].totale).map(([tipo, v]) => {
+      /* Gli anticipi della gita annullata sono incassati ma da restituire:
+         sommarli agli altri senza dirlo darebbe una cassa piu' ricca di
+         quella vera. */
+      const daRestituire = tipo === 'anticipo_gita';
+      return `<div class="bg-white border ${daRestituire ? 'border-[#8a3a3a]/40' : 'border-[#E5DFCF]'} rounded p-4 flex items-baseline justify-between gap-4">
+         <span>
+           <span class="text-[15px] text-[#1E2E26]">${esc(ETICHETTA[tipo] ?? tipo)}${daRestituire ? ' <span style="color:#8a3a3a;font-weight:600;">da restituire</span>' : ''}</span>
+           <span class="block text-[12px] text-[#1E2E26]/50 mt-0.5">${esc(v.quante)} incass${v.quante === 1 ? 'o' : 'i'} · da ${esc([...v.dove].join(', '))}${daRestituire ? ' · gita annullata' : ''}</span>
+         </span>
+         <span class="text-xl whitespace-nowrap" style="font-family:'Playfair Display',serif;${daRestituire ? 'color:#8a3a3a;' : ''}">${esc(v.totale.toFixed(2))} €</span>
+       </div>`;
+    });
+    const totale = completati.reduce((t, x) => t + Number(x.importo || 0), 0);
+    const daRestituire = completati.filter((x) => x.tipo === 'anticipo_gita')
+      .reduce((t, x) => t + Number(x.importo || 0), 0);
+    blocchi.push(`<div class="bg-[#1E2E26] text-[#F5EEDD] rounded p-4 flex items-baseline justify-between gap-4">
+         <span>
+           <span class="text-[15px]">Totale incassato</span>
+           ${daRestituire ? `<span class="block text-[12px] opacity-70 mt-0.5">di cui ${esc(daRestituire.toFixed(2))} € da restituire: resta ${esc((totale - daRestituire).toFixed(2))} €</span>` : ''}
+         </span>
+         <span class="text-xl whitespace-nowrap" style="font-family:'Playfair Display',serif;">${esc(totale.toFixed(2))} €</span>
+       </div>`);
+    /* Le righe non completate non spariscono: un bonifico in verifica e' una
+       cosa che il segretario deve sapere che esiste. */
+    const inSospeso = incassi.filter((x) => x.stato !== 'completato' && x.stato !== 'annullato');
+    if (inSospeso.length) {
+      const t = inSospeso.reduce((s, x) => s + Number(x.importo || 0), 0);
+      blocchi.push(`<div class="bg-[#FDF9F0] border border-[#E8DFC7] rounded p-4 flex items-baseline justify-between gap-4">
+           <span>
+             <span class="text-[15px] text-[#1E2E26]">Non ancora completati</span>
+             <span class="block text-[12px] text-[#1E2E26]/50 mt-0.5">${esc(inSospeso.length)} rig${inSospeso.length === 1 ? 'a' : 'he'} fra creati e in verifica</span>
+           </span>
+           <span class="text-xl whitespace-nowrap" style="font-family:'Playfair Display',serif;color:#8a6215;">${esc(t.toFixed(2))} €</span>
+         </div>`);
+    }
+    $('tc-cassa')!.innerHTML = blocchi.join('');
+
+    $('tc-cassa-dettaglio')!.innerHTML = `<table class="w-full text-[13px] border-collapse">
+      <thead><tr class="text-left text-[#1E2E26]/55">
+        <th class="py-2 pr-3 font-medium">Quando</th><th class="py-2 pr-3 font-medium">Chi</th>
+        <th class="py-2 pr-3 font-medium">Cosa</th><th class="py-2 pr-3 font-medium">Metodo</th>
+        <th class="py-2 pr-3 font-medium">Stato</th><th class="py-2 pr-3 font-medium text-right">Importo</th>
+      </tr></thead><tbody>${incassi.map((x) => `<tr class="border-t border-[#E5DFCF]">
+        <td class="py-2 pr-3 whitespace-nowrap">${esc(dataIt(x.quando))}</td>
+        <td class="py-2 pr-3">${esc(x.nome || x.email || '—')}</td>
+        <td class="py-2 pr-3">${esc(ETICHETTA[x.tipo] ?? x.tipo)}</td>
+        <td class="py-2 pr-3">${esc(x.metodo === 'paypal' ? 'PayPal/carta' : x.metodo || '—')}</td>
+        <td class="py-2 pr-3" style="color:${x.stato === 'completato' ? '#2d8659' : x.stato === 'annullato' ? '#999' : '#8a6215'};">${esc(x.stato)}</td>
+        <td class="py-2 pr-3 text-right whitespace-nowrap">${esc(Number(x.importo || 0).toFixed(2))} €</td>
+      </tr>`).join('')}</tbody></table>`;
   }
 
   function passa(x: any) {
@@ -154,6 +267,8 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (filtro === 'tutte') return true;
     if (filtro === 'da_lavorare') return x.stato === 'in_attesa';
     if (filtro === 'senza_incasso') return x.posizione === 'ammesso_senza_incasso';
+    if (filtro === 'da_regolarizzare') return x.posizione === 'da_regolarizzare';
+    if (filtro === 'parziale') return x.posizione === 'parziale';
     if (filtro === 'in_regola') return x.posizione === 'in_regola' || x.posizione === 'in_regola_per_deroga';
     return true;
   }
@@ -163,16 +278,26 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     $('tc-vuoto')!.classList.toggle('hidden', visibili.length > 0);
     $('tc-lista')!.innerHTML = visibili.map((x) => {
       const p = POSIZIONE[x.posizione] ?? POSIZIONE.non_ammesso;
-      const giorni = giorniDa(x.stato === 'in_attesa' ? x.created_at : x.approvata_il);
+      const giorni = giorniDa(x.approvata_il);
       /* Un'attesa lunga si dice, non si lascia dedurre da una data: e' il
          segnale che a luglio e' mancato per sei giorni. */
       const attesa = (x.stato === 'in_attesa' || x.posizione === 'ammesso_senza_incasso') && giorni >= 3
         ? `<span class="text-[12px] font-semibold" style="color:#a33;">da ${giorni} giorni</span>` : '';
-      const quota = x.incassata
-        ? `<span style="color:#2d8659;">✓ ${esc(Number(x.totale_incassato).toFixed(0))} € via ${esc(x.metodo_incasso === 'paypal' ? 'PayPal/carta' : x.metodo_incasso || 'n/d')}, ${esc(dataIt(x.ultimo_incasso))}</span>`
+      /* Chi e' gia' stato avvisato deve vedersi, altrimenti il segretario
+         telefona a chi ha ricevuto una mail ieri. */
+      const avvisi = (x.promemoria ?? []).filter((p: any) => p.esito === 'inviato');
+      const promemoria = avvisi.length
+        ? `<span class="text-[12px] text-[#1E2E26]/55"> · promemoria ${avvisi.map((p: any) => `n.${esc(p.numero)} del ${esc(dataIt(p.inviato_il))}`).join(', ')}</span>`
+        : '';
+      const quota = x.posizione === 'parziale'
+        ? `<span style="color:#8a6215;">versati ${esc(Number(x.totale_incassato).toFixed(2))} € su ${esc(Number(x.quota_dovuta).toFixed(2))} €: <strong>mancano ${esc(Number(x.manca).toFixed(2))} €</strong>${x.metodi_incasso ? ` · ${esc(x.metodi_incasso === 'paypal' ? 'PayPal/carta' : x.metodi_incasso)}` : ''}</span>`
+        : x.quota_incassata
+        ? `<span style="color:#2d8659;">✓ ${esc(Number(x.totale_incassato).toFixed(2))} € via ${esc(x.metodi_incasso === 'paypal' ? 'PayPal/carta' : x.metodi_incasso || 'n/d')}, ${esc(dataIt(x.ultimo_incasso_il))}</span>`
         : x.in_deroga
           ? `<span style="color:#8a6215;">in deroga · ${esc(x.deroga_pagamento_motivo)}</span>`
-          : `<span style="color:#a33;">nessun incasso${x.metodo_scelto ? ` · ha scelto ${esc(x.metodo_scelto)}` : ' · nessun metodo scelto'}${x.tentativi ? ` · ${x.tentativi} tentativo/i non riuscito/i` : ''}</span>`;
+          : x.posizione === 'da_regolarizzare'
+            ? `<span style="color:#4a6180;">ha versato prima del sistema: manca il dato, non la quota</span>`
+            : `<span style="color:#a33;">nessun incasso${x.metodo_scelto ? ` · ha scelto ${esc(x.metodo_scelto)}` : ' · nessun metodo scelto'}${Number(x.pagamenti_in_verifica) > 0 ? ` · <strong>${esc(x.pagamenti_in_verifica)} in verifica</strong>` : ''}${x.tentativi_non_riusciti ? ` · ${esc(x.tentativi_non_riusciti)} tentativo/i non riuscito/i` : ''}</span>`;
       return `<a href="${esc(x.vista)}" class="block bg-white border border-[#E5DFCF] hover:border-[#C8923E] rounded p-4 no-underline transition-colors">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span class="text-[16px] text-[#1E2E26] font-medium" style="font-family:'Playfair Display',serif;">${esc(x.nome)}</span>
@@ -180,7 +305,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           ${x.numero_tessera != null ? `<span class="text-[12px] text-[#1E2E26]/55">tessera n. ${esc(x.numero_tessera)}</span>` : ''}
           ${attesa}
         </div>
-        <p class="text-[13px] text-[#1E2E26]/60 m-0 mt-1">${esc(x.email)} · domanda del ${esc(dataIt(x.created_at))}</p>
+        <p class="text-[13px] text-[#1E2E26]/60 m-0 mt-1">${esc(x.email)}${x.approvata_il ? ` · ammesso il ${esc(dataIt(x.approvata_il))}` : ''}${promemoria}</p>
         <p class="text-[13px] m-0 mt-1.5">${quota}</p>
       </a>`;
     }).join('');
@@ -198,6 +323,12 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     render();
   }));
   $('tc-cerca')?.addEventListener('input', render);
+  $('tc-cassa-toggle')?.addEventListener('click', () => {
+    const box = $('tc-cassa-dettaglio')!;
+    const aperto = !box.classList.contains('hidden');
+    box.classList.toggle('hidden', aperto);
+    ($('tc-cassa-toggle') as HTMLElement).textContent = aperto ? 'Mostra il dettaglio' : 'Nascondi il dettaglio';
+  });
 
   // ---- LOGIN (stesso flusso delle altre curatele) ----
   const loginErr = (t: string) => { const e = $('tc-login-err')!; e.classList.remove('hidden'); e.textContent = t; };

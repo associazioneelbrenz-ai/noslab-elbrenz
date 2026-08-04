@@ -301,47 +301,51 @@ Deno.serve(async (req: Request) => {
       const livello = Math.max(0, ...(((ruoli ?? []) as Array<Record<string, any>>).map((r) => r?.ruolo?.livello ?? 0)));
       if (livello < 50) return jsonR({ ok: false, error: 'non_autorizzato' }, 403);
 
-      const { data: domande } = await sb.from('domande_tesseramento')
-        .select('id, nome, email, stato, numero_tessera, metodo_scelto, deroga_pagamento_motivo, created_at, approvata_il, tessera_inviata')
-        .order('created_at', { ascending: false }).limit(200);
+      // [4/8/2026] La posizione la decide la VISTA, non piu' questa funzione.
+      // Prima il pannello se la ricalcolava in TypeScript: due punti che
+      // applicano la stessa regola sono due punti che prima o poi divergono, ed
+      // e' proprio il guaio da cui viene tutta questa storia. Adesso
+      // v_soci_in_regola e' l'unica a dire chi e' in regola, e sa distinguere
+      // anche i tredici del registro cartaceo e l'account di servizio, cose che
+      // il pannello da solo non poteva sapere.
+      const { data: soci, error: errSoci } = await sb.from('v_soci_in_regola')
+        .select('*').order('approvata_il', { ascending: false, nullsFirst: true });
+      if (errSoci) return jsonR({ ok: false, error: 'lettura', message: errSoci.message }, 500);
 
-      // Un solo giro sui pagamenti invece di uno per domanda: con duecento
-      // righe la differenza fra una query e duecento e' fra un pannello che
-      // si apre e uno che si fa aspettare.
-      const { data: pagamenti } = await sb.from('pagamenti_tesseramento')
-        .select('domanda_id, stato, metodo, importo, capture_id, created_at')
-        .in('tipo', ['quota', 'integrazione']);
+      // Chi ha gia' ricevuto un promemoria, e quando: il segretario deve poter
+      // vedere che una persona e' gia' stata avvisata prima di telefonarle.
+      const { data: promemoria } = await sb.from('sollecito_quota')
+        .select('domanda_id, numero, inviato_il, esito');
       const perDomanda = new Map<string, Array<Record<string, unknown>>>();
-      for (const p of (pagamenti ?? []) as Array<Record<string, unknown>>) {
-        const k = String(p.domanda_id ?? '');
-        if (!k) continue;
+      for (const r of (promemoria ?? []) as Array<Record<string, unknown>>) {
+        const k = String(r.domanda_id ?? '');
         if (!perDomanda.has(k)) perDomanda.set(k, []);
-        perDomanda.get(k)!.push(p);
+        perDomanda.get(k)!.push(r);
       }
 
       const exp = Date.now() + TOKEN_TTL_MS;
       const righe = [];
-      for (const d of (domande ?? []) as Array<Record<string, any>>) {
-        const suoi = perDomanda.get(d.id) ?? [];
-        const incassati = suoi.filter((p) => p.stato === 'completato');
-        const tentativi = suoi.filter((p) => p.stato !== 'completato');
-        const deroga = !!(d.deroga_pagamento_motivo && String(d.deroga_pagamento_motivo).trim());
+      for (const x of (soci ?? []) as Array<Record<string, any>>) {
         righe.push({
-          ...d,
-          incassata: incassati.length > 0,
-          totale_incassato: incassati.reduce((t, p) => t + Number(p.importo ?? 0), 0),
-          ultimo_incasso: incassati[0]?.created_at ?? null,
-          metodo_incasso: incassati[0]?.metodo ?? null,
-          tentativi: tentativi.length,
-          in_deroga: deroga,
-          posizione: d.stato !== 'approvata' ? 'non_ammesso'
-            : incassati.length > 0 ? 'in_regola'
-            : deroga ? 'in_regola_per_deroga'
-            : 'ammesso_senza_incasso',
-          vista: `https://elbrenz.eu/scheda-domanda/vista/${d.id}/${exp}/${await firmaToken(secret, 'vista', d.id, exp)}`,
+          ...x,
+          id: x.domanda_id,
+          promemoria: (perDomanda.get(x.domanda_id) ?? []).sort((a, b) => Number(a.numero) - Number(b.numero)),
+          vista: `https://elbrenz.eu/scheda-domanda/vista/${x.domanda_id}/${exp}/${await firmaToken(secret, 'vista', x.domanda_id, exp)}`,
         });
       }
-      return jsonR({ ok: true, tipo: 'coda', livello, quota: QUOTA_EURO, righe });
+
+      // La cassa, dalla vista che tiene insieme quote, integrazioni e anticipi
+      // delle gite senza duplicare una riga. Nessun totale calcolato qui: si
+      // sommano righe che arrivano gia' pronte.
+      const { data: incassi } = await sb.from('v_incassi')
+        .select('tabella, tipo, nome, email, anno, importo, stato, metodo, quando')
+        .order('quando', { ascending: false });
+
+      return jsonR({
+        ok: true, tipo: 'coda', livello, quota: QUOTA_EURO,
+        righe,
+        incassi: incassi ?? [],
+      });
     }
 
     const jPaga = url.pathname.match(/\/json\/paga-quota\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
