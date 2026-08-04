@@ -1,0 +1,332 @@
+---
+/**
+ * /libro-soci — il registro dei soci nella forma in cui si esibisce.
+ *
+ * [4/8/2026] Perche' esiste. Il libro dei soci e' un documento che al RUNTS va
+ * mostrato, e finora esisteva solo come righe sparse fra una tabella e una
+ * vista: per farlo vedere a un funzionario bisognava rimetterlo a mano, e un
+ * registro ricopiato a mano e' un registro di cui nessuno puo' garantire
+ * niente.
+ *
+ * PERCHE' UNA PAGINA DA STAMPARE E NON UN FOGLIO DI CALCOLO. Un CSV si apre
+ * con le colonne strette, le date girate all'americana e nessuna intestazione:
+ * prima di poterlo consegnare il segretario dovrebbe impaginarlo, ed e'
+ * esattamente il lavoro a mano che si voleva togliere. Questa pagina invece e'
+ * gia' il documento: intestazione dell'associazione, tabella, totali, data di
+ * estrazione e firma di chi l'ha estratto. Si stampa in PDF con la stampa del
+ * browser, un passaggio solo, e quello che si vede a schermo e' quello che
+ * esce sul foglio. Il CSV resta disponibile col bottone, perche' serve per
+ * tutt'altro: rimaneggiare i dati, non esibirli.
+ *
+ * NON CALCOLA NIENTE. Ogni numero arriva dal ramo /json/libro-soci dell'edge,
+ * che a sua volta legge v_soci_in_regola e v_incassi, le stesse fonti del
+ * pannello di curatela. Due documenti che dicono numeri diversi sulla stessa
+ * persona sarebbero peggio di nessun documento.
+ *
+ * I BUCHI SI DICHIARANO IN PRIMA PAGINA. Un registro che nasconde le proprie
+ * lacune e' peggio di uno che le dichiara: il funzionario che se ne accorge da
+ * solo smette di fidarsi anche del resto.
+ *
+ * Accesso: sessione OTP + livello >= 50, verificato LATO SERVER dall'edge.
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const LIBRO_URL = `${SB_URL}/functions/v1/scheda-domanda/json/libro-soci`;
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Libro dei soci · El Brenz" description="Registro dei soci, riservato al Direttivo." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen" data-libro-url={LIBRO_URL} id="ls-root">
+    <div class="max-w-6xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+
+      <p id="ls-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* LOGIN */}
+      <section id="ls-login" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 max-w-md">
+        <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
+        <h1 class="text-2xl text-[#1E2E26] m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Libro dei soci</h1>
+        <div id="ls-login-1">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti invieremo un codice di verifica.</p>
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="ls-email">Email</label>
+          <input class={inputCls} type="email" id="ls-email" autocomplete="email" placeholder="nome@esempio.it" />
+          <button type="button" id="ls-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors">Invia codice</button>
+        </div>
+        <div id="ls-login-2" class="hidden">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice a 6 cifre inviato a <strong id="ls-email-echo"></strong>.</p>
+          <input class={`${inputCls} tracking-[0.4em] text-center text-xl`} type="text" id="ls-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+          <button type="button" id="ls-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Verifica e accedi</button>
+          <button type="button" id="ls-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        </div>
+        <div id="ls-login-err" class="hidden mt-3 text-sm rounded px-3 py-2" style="background:#fbecec;color:#1E2E26;"></div>
+      </section>
+
+      {/* NO ACCESS */}
+      <section id="ls-noaccess" class="hidden bg-white border border-[#E5DFCF] rounded p-6 max-w-md">
+        <p class="m-0 text-[#1E2E26]/80">Questa area è riservata al direttivo (segretario o amministratore). Se pensi di dover avere accesso, chiedilo al segretario.</p>
+        <button type="button" id="ls-logout-2" class="mt-4 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+      </section>
+
+      {/* DOCUMENTO */}
+      <section id="ls-app" class="hidden">
+        {/* La barra dei comandi non fa parte del documento e in stampa sparisce. */}
+        <div class="ls-noprint flex flex-wrap items-center gap-3 mb-8">
+          <a href="/tesseramento-curatela" class="text-[13px] text-[#8a6215] underline">← Curatela tesseramento</a>
+          <span class="ml-auto"></span>
+          <button type="button" id="ls-stampa" class="bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded text-[13px] font-medium border-0 cursor-pointer hover:bg-[#2a3f34] transition-colors">Stampa o salva in PDF</button>
+          <button type="button" id="ls-csv" class="bg-white text-[#1E2E26] border border-[#C8923E]/50 px-5 py-2.5 rounded text-[13px] cursor-pointer hover:border-[#C8923E] transition-colors">Scarica il foglio di calcolo</button>
+          <button type="button" id="ls-logout" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+        </div>
+
+        <article id="ls-doc" class="bg-white border border-[#E5DFCF] rounded p-8 md:p-12"></article>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<style is:global>
+  /* Il documento va in orizzontale: la tabella ha sette colonne e in verticale
+     i nomi andrebbero a capo, che su un registro da esibire e' brutto e si
+     legge male. */
+  @media print {
+    @page { size: A4 landscape; margin: 12mm; }
+    .ls-noprint, header, footer, nav { display: none !important; }
+    #ls-root, #ls-doc, body, main { background: #fff !important; }
+    #ls-doc { border: 0 !important; padding: 0 !important; border-radius: 0 !important; }
+    /* Una riga di soci non si spezza fra due pagine: meta' persona in fondo a
+       un foglio e meta' in cima al successivo e' il modo piu' rapido per far
+       sembrare sbagliato un registro giusto. */
+    #ls-doc tr { break-inside: avoid; page-break-inside: avoid; }
+    #ls-doc thead { display: table-header-group; }
+    #ls-doc { font-size: 10pt; color: #000; }
+    #ls-doc a { color: #000; text-decoration: none; }
+  }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  import { proteggiCuratela2fa } from '../lib/curatela2fa';
+
+  const $ = (id: string) => document.getElementById(id);
+  const show = (id: string) => $(id)?.classList.remove('hidden');
+  const hide = (id: string) => $(id)?.classList.add('hidden');
+  const val = (id: string) => ($(id) as HTMLInputElement)?.value ?? '';
+  const esc = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const dataIt = (s: string | null) => {
+    if (!s) return '';
+    try { return new Date(s).toLocaleDateString('it-IT', { timeZone: 'Europe/Rome' }); } catch { return String(s); }
+  };
+  const eur = (n: unknown) => `${Number(n ?? 0).toFixed(2)} €`;
+
+  const LIBRO_URL = $('ls-root')!.getAttribute('data-libro-url')!;
+  let doc: any = null;
+
+  /* Come si chiama, in italiano, una posizione rispetto alla quota. La parola
+     conta: «da regolarizzare» dice che manca un dato, «moroso» direbbe che
+     manca il denaro, e sono tredici persone che il denaro l'hanno versato. */
+  const POSIZIONE: Record<string, string> = {
+    in_regola: 'in regola',
+    in_regola_per_deroga: 'in regola, per deroga',
+    parziale: 'versamento parziale',
+    da_regolarizzare: 'versata prima del sistema, da registrare',
+    ammesso_senza_incasso: 'quota non ancora pervenuta',
+  };
+
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    hide('ls-loading');
+    if (!session) { show('ls-login'); return; }
+    if (!(await proteggiCuratela2fa())) { window.location.reload(); return; }
+
+    const r = await fetch(LIBRO_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: '{}',
+    });
+    const d = await r.json();
+    if (!d.ok) { show(d.error === 'non_autorizzato' ? 'ls-noaccess' : 'ls-login'); return; }
+    doc = d;
+    show('ls-app');
+    render();
+  }
+
+  function render() {
+    const r = doc.riepilogo;
+    const l = doc.lacune;
+
+    const righe = doc.righe.map((x: any, i: number) => {
+      /* La deroga senza il motivo scritto e' una riga che il funzionario non
+         puo' verificare: se c'e' la deroga, il motivo si stampa. */
+      const nota = x.in_deroga
+        ? `in deroga: ${esc(x.deroga_pagamento_motivo || 'motivo non registrato')}`
+        : x.posizione === 'parziale'
+          ? `versati ${esc(eur(x.totale_incassato))} su ${esc(eur(x.quota_dovuta))}, mancano ${esc(eur(x.manca))}`
+          : x.posizione === 'da_regolarizzare'
+            ? 'quota versata prima dell’adozione del sistema, registrazione da completare'
+            : x.posizione === 'ammesso_senza_incasso'
+              ? 'quota non ancora pervenuta'
+              : '';
+      return `<tr>
+        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;text-align:right;white-space:nowrap;">${x.numero_tessera != null ? esc(x.numero_tessera) : '<span style="color:#8a6215;">da assegnare</span>'}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(x.nome)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;white-space:nowrap;">${esc(dataIt(x.data_nascita)) || '<span style="color:#a33;">non registrata</span>'}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;">${esc(x.comune_nascita || '') || '<span style="color:#a33;">non registrato</span>'}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;white-space:nowrap;">${esc(dataIt(x.approvata_il)) || '<span style="color:#a33;">non registrata</span>'}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;white-space:nowrap;">${esc(POSIZIONE[x.posizione] ?? x.posizione)}</td>
+        <td style="padding:6px 8px;border-bottom:1px solid #E5DFCF;font-size:.92em;color:#4a4a4a;">${nota}</td>
+      </tr>`;
+    }).join('');
+
+    /* Le lacune, dette per nome. Si mostrano solo quelle che ci sono davvero:
+       un elenco di zeri sarebbe rumore, e nasconderebbe quella che conta. */
+    const buchi: string[] = [];
+    if (l.senza_data_ammissione > 0) buchi.push(`<li><strong>${esc(l.senza_data_ammissione)}</strong> ${l.senza_data_ammissione === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} data di ammissione: il socio risulta ammesso, ma la data non fu registrata.</li>`);
+    if (l.senza_numero_tessera > 0) buchi.push(`<li><strong>${esc(l.senza_numero_tessera)}</strong> ${l.senza_numero_tessera === 1 ? 'posizione è priva del' : 'posizioni sono prive del'} numero di tessera, ancora da assegnare.</li>`);
+    if (l.senza_data_nascita > 0) buchi.push(`<li><strong>${esc(l.senza_data_nascita)}</strong> ${l.senza_data_nascita === 1 ? 'posizione è priva della' : 'posizioni sono prive della'} data di nascita.</li>`);
+    if (l.senza_comune_nascita > 0) buchi.push(`<li><strong>${esc(l.senza_comune_nascita)}</strong> ${l.senza_comune_nascita === 1 ? 'posizione è priva del' : 'posizioni sono prive del'} comune di nascita.</li>`);
+    if (r.da_regolarizzare > 0) buchi.push(`<li><strong>${esc(r.da_regolarizzare)}</strong> quote risultano versate prima dell’adozione del sistema informatico e sono documentate dal registro cartaceo: la registrazione contabile è da completare. Non si tratta di quote non versate.</li>`);
+    if (r.ammesso_senza_incasso > 0) buchi.push(`<li><strong>${esc(r.ammesso_senza_incasso)}</strong> ${r.ammesso_senza_incasso === 1 ? 'posizione risulta ammessa senza che risulti' : 'posizioni risultano ammesse senza che risulti'} il versamento della quota.</li>`);
+    buchi.push('<li>La <strong>residenza</strong> non compare in questo registro perché non è mai stata raccolta dal modulo di adesione. Non è un dato andato perduto: è un dato mai richiesto, che va integrato per le posizioni esistenti e chiesto alle prossime.</li>');
+
+    const incassi = doc.incassi ?? {};
+    const vociIncasso = [
+      ['quota', 'Quote sociali'],
+      ['integrazione', 'Integrazioni'],
+      ['donazione', 'Donazioni'],
+      ['anticipo_gita', 'Anticipi per gite sociali'],
+    ].filter(([k]) => incassi[k as string] != null)
+     .map(([k, etichetta]) => `<tr>
+        <td style="padding:5px 8px;">${esc(etichetta)}${k === 'anticipo_gita' ? ' <span style="color:#8a3a3a;">(da restituire, gita annullata)</span>' : ''}</td>
+        <td style="padding:5px 8px;text-align:right;white-space:nowrap;">${esc(eur(incassi[k as string]))}</td>
+      </tr>`).join('');
+
+    $('ls-doc')!.innerHTML = `
+      <header style="border-bottom:2px solid #1E2E26;padding-bottom:14px;margin-bottom:22px;">
+        <p style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8a6215;margin:0 0 6px;font-weight:600;">Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce</p>
+        <h1 style="font-family:'Playfair Display',serif;font-size:26px;font-weight:500;margin:0 0 6px;color:#1E2E26;">Libro dei soci · anno ${esc(doc.anno)}</h1>
+        <p style="font-size:12px;color:#4a4a4a;margin:0;">
+          Estratto il ${esc(dataIt(doc.estratto_il))} alle ${esc(new Date(doc.estratto_il).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' }))}
+          da ${esc(doc.estratto_da)} · quota sociale deliberata per il ${esc(doc.anno)}: ${esc(eur(doc.quota))}
+        </p>
+      </header>
+
+      <p style="font-size:13px;line-height:1.6;color:#1E2E26;margin:0 0 20px;">
+        Il presente registro riporta <strong>${esc(r.iscritti)}</strong> soci ammessi per l’anno ${esc(doc.anno)}.
+        Di questi, <strong>${esc(r.in_regola)}</strong> risultano in regola con la quota,
+        <strong>${esc(r.parziale)}</strong> con versamento parziale,
+        <strong>${esc(r.da_regolarizzare)}</strong> con quota versata prima dell’adozione del sistema informatico e registrazione da completare,
+        <strong>${esc(r.ammesso_senza_incasso)}</strong> senza che risulti il versamento.
+      </p>
+
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">
+        <thead>
+          <tr style="background:#F8F1E4;text-align:left;">
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;text-align:right;font-weight:600;">Tessera</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Cognome e nome</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Nato/a il</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">a</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Ammesso/a il</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Posizione quota</th>
+            <th style="padding:8px;border-bottom:2px solid #1E2E26;font-weight:600;">Note</th>
+          </tr>
+        </thead>
+        <tbody>${righe}</tbody>
+      </table>
+
+      <div style="margin-top:26px;display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start;">
+        <div style="flex:1 1 260px;">
+          <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 8px;color:#1E2E26;">Riepilogo delle posizioni</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">
+            <tr><td style="padding:5px 8px;">Soci ammessi</td><td style="padding:5px 8px;text-align:right;"><strong>${esc(r.iscritti)}</strong></td></tr>
+            <tr><td style="padding:5px 8px;">In regola con la quota</td><td style="padding:5px 8px;text-align:right;">${esc(r.in_regola)}</td></tr>
+            <tr><td style="padding:5px 8px;">Versamento parziale</td><td style="padding:5px 8px;text-align:right;">${esc(r.parziale)}</td></tr>
+            <tr><td style="padding:5px 8px;">Da regolarizzare a registro</td><td style="padding:5px 8px;text-align:right;">${esc(r.da_regolarizzare)}</td></tr>
+            <tr><td style="padding:5px 8px;">Quota non pervenuta</td><td style="padding:5px 8px;text-align:right;">${esc(r.ammesso_senza_incasso)}</td></tr>
+          </table>
+        </div>
+        <div style="flex:1 1 260px;">
+          <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 8px;color:#1E2E26;">Somme incassate</h2>
+          <table style="width:100%;border-collapse:collapse;font-size:12.5px;color:#1E2E26;">${vociIncasso}</table>
+        </div>
+      </div>
+
+      <div style="margin-top:26px;border-left:4px solid #C8923E;background:#FDF9F0;padding:14px 18px;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:16px;font-weight:500;margin:0 0 8px;color:#1E2E26;">Posizioni ancora da regolarizzare e dati mancanti</h2>
+        <ul style="margin:0;padding-left:18px;font-size:12.5px;line-height:1.65;color:#1E2E26;">${buchi.join('')}</ul>
+      </div>
+
+      <p style="margin-top:26px;font-size:11.5px;color:#6B6B6B;line-height:1.6;">
+        Registro estratto automaticamente dal sistema informatico dell’associazione. I dati relativi alla posizione
+        rispetto alla quota sono determinati dalle registrazioni contabili e non sono modificabili da questa pagina.
+        Le registrazioni di incasso non si correggono: si annullano indicando il motivo, e la scrittura originaria resta.
+      </p>
+      <p style="margin-top:22px;font-size:12px;color:#1E2E26;">Il Segretario ______________________________</p>
+    `;
+  }
+
+  /* Il foglio di calcolo serve a rimaneggiare i dati, non a esibirli: punto e
+     virgola come separatore e il segnabyte iniziale, altrimenti Excel in
+     italiano mette tutto in una colonna sola e storpia le lettere accentate. */
+  function scaricaCsv() {
+    const testa = ['Numero tessera', 'Cognome e nome', 'Email', 'Data di nascita', 'Comune di nascita',
+      'Data di ammissione', 'Posizione quota', 'Quota dovuta', 'Versato', 'Manca', 'Motivo della deroga'];
+    const cella = (v: unknown) => {
+      const s = String(v ?? '');
+      return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const corpo = doc.righe.map((x: any) => [
+      x.numero_tessera ?? '', x.nome ?? '', x.email ?? '',
+      x.data_nascita ?? '', x.comune_nascita ?? '',
+      x.approvata_il ? String(x.approvata_il).slice(0, 10) : '',
+      POSIZIONE[x.posizione] ?? x.posizione,
+      Number(x.quota_dovuta ?? 0).toFixed(2).replace('.', ','),
+      Number(x.totale_incassato ?? 0).toFixed(2).replace('.', ','),
+      Number(x.manca ?? 0).toFixed(2).replace('.', ','),
+      x.deroga_pagamento_motivo ?? '',
+    ].map(cella).join(';'));
+    const csv = '﻿' + [testa.join(';'), ...corpo].join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `libro-soci-elbrenz-${doc.anno}-${String(doc.estratto_il).slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  $('ls-stampa')?.addEventListener('click', () => window.print());
+  $('ls-csv')?.addEventListener('click', scaricaCsv);
+
+  // ---- LOGIN (stesso flusso delle altre curatele) ----
+  const loginErr = (t: string) => { const e = $('ls-login-err')!; e.classList.remove('hidden'); e.textContent = t; };
+  $('ls-send')?.addEventListener('click', async () => {
+    const email = val('ls-email').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('Email non valida.'); return; }
+    $('ls-login-err')?.classList.add('hidden');
+    const btn = $('ls-send') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    btn.disabled = false; btn.textContent = 'Invia codice';
+    if (error || !data?.ok) { loginErr('Impossibile inviare il codice. Riprova.'); return; }
+    (window as any)._lsEmail = email;
+    ($('ls-email-echo') as HTMLElement).textContent = email;
+    hide('ls-login-1'); show('ls-login-2');
+    setTimeout(() => ($('ls-code') as HTMLInputElement)?.focus(), 100);
+  });
+  $('ls-back')?.addEventListener('click', () => { hide('ls-login-2'); show('ls-login-1'); });
+  $('ls-verify')?.addEventListener('click', async () => {
+    const codice = val('ls-code').replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) { loginErr('Il codice deve essere di 6 cifre.'); return; }
+    $('ls-login-err')?.classList.add('hidden');
+    const btn = $('ls-verify') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Verifica…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._lsEmail, codice, scope: 'login' } });
+    if (error || !data?.ok || !data?.session) { btn.disabled = false; btn.textContent = 'Verifica e accedi'; loginErr('Codice errato o scaduto.'); return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+  const logout = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  $('ls-logout')?.addEventListener('click', logout);
+  $('ls-logout-2')?.addEventListener('click', logout);
+
+  init();
+</script>

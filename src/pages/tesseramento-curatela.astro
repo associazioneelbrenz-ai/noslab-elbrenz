@@ -64,7 +64,12 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       <section id="tc-app" class="hidden">
         <div class="flex items-center justify-between mb-6">
           <p class="text-sm text-[#1E2E26]/70 m-0">Ciao <strong id="tc-utente"></strong></p>
-          <button type="button" id="tc-logout" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+          <div class="flex items-center gap-4">
+            {/* [4/8] Il registro da esibire si raggiunge da qui: e' il posto in
+                cui il segretario sta gia' lavorando quando gli serve. */}
+            <a href="/libro-soci" class="text-sm text-[#8a6215] underline">Libro dei soci</a>
+            <button type="button" id="tc-logout" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+          </div>
         </div>
 
         {/* I numeri che contano, letti dai dati e mai scritti a mano */}
@@ -77,6 +82,10 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           <button type="button" data-filtro="parziale" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Parziali</button>
           <button type="button" data-filtro="da_regolarizzare" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Da regolarizzare</button>
           <button type="button" data-filtro="in_regola" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">In regola</button>
+          {/* [4/8] Le annullate erano raggiungibili solo da «Tutte», mescolate
+              alle altre. Sono fantasmi e doppioni: servono di rado, ma quando
+              servono si cercano proprio quelle. */}
+          <button type="button" data-filtro="annullate" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Annullate</button>
           <button type="button" data-filtro="tutte" class="tc-filtro bg-white text-[#1E2E26] border border-[#C8923E]/40 rounded-full px-4 py-1.5 text-[13px] cursor-pointer">Tutte</button>
           <input id="tc-cerca" type="search" placeholder="Cerca nome o email…" class="ml-auto border border-[#E5DFCF] bg-white rounded px-3 py-1.5 text-[13px] text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
         </div>
@@ -266,10 +275,26 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       + card(daRegolarizzare, 'da regolarizzare', daRegolarizzare > 0 ? '#4a6180' : '#1E2E26')
       + card(senzaIncasso, 'ammessi senza incasso', senzaIncasso > 0 ? '#a33' : '#1E2E26')
       + card(`${incassato.toFixed(0)} €`, 'incassato in tutto', '#1E2E26');
+    /* [4/8] La quadratura. I riquadri mostrano le posizioni su cui si agisce,
+       ma le domande sono di piu': le annullate e l'account di servizio non
+       hanno un riquadro perche' non c'e' niente da farci, e senza dirlo uno
+       che somma i riquadri trova un numero piu' piccolo del vero e si chiede
+       dove sono finite le altre. Un totale che torna e' la prova che non si
+       sta guardando solo una fetta. */
+    const annullate = conta('annullata') + conta('respinta');
+    const servizio = conta('account_di_sistema');
     const nota = $('tc-nota-manca')!;
-    nota.innerHTML = parziali > 0
-      ? `Ai ${parziali} soci parziali manca in tutto <strong>${mancaInTutto.toFixed(2)} €</strong> per raggiungere la quota dell'anno.`
-      : '';
+    const pezzi: string[] = [];
+    if (parziali > 0) {
+      pezzi.push(`Ai ${parziali} soci parziali manca in tutto <strong>${mancaInTutto.toFixed(2)} €</strong> per raggiungere la quota dell'anno.`);
+    }
+    const coda: string[] = [];
+    if (annullate > 0) coda.push(`${annullate} annullate fra fantasmi e doppioni`);
+    if (servizio > 0) coda.push(`${servizio} account di servizio`);
+    if (coda.length) {
+      pezzi.push(`Fuori dai riquadri: ${coda.join(' e ')}. In tutto le domande sono <strong>${righe.length}</strong>.`);
+    }
+    nota.innerHTML = pezzi.join(' ');
   }
 
   /* La cassa. Un riquadro per tipo di incasso, e sotto il dettaglio riga per
@@ -419,6 +444,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if (filtro === 'da_regolarizzare') return x.posizione === 'da_regolarizzare';
     if (filtro === 'parziale') return x.posizione === 'parziale';
     if (filtro === 'in_regola') return x.posizione === 'in_regola' || x.posizione === 'in_regola_per_deroga';
+    if (filtro === 'annullate') return x.posizione === 'annullata' || x.posizione === 'respinta';
     return true;
   }
 

@@ -370,6 +370,108 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    // [4/8/2026] LIBRO SOCI. Il registro che al RUNTS va esibito.
+    //
+    // Ramo a parte, non un pezzo di /json/coda, per due ragioni. La prima e' la
+    // minimizzazione: qui servono le date di nascita, che nel pannello della
+    // coda non servono e quindi non devono nemmeno partire dal server. La
+    // seconda e' che il libro soci ha una popolazione diversa dalla coda: solo
+    // chi e' stato ammesso, e senza l'account di servizio, che non e' una
+    // persona e in un registro dei soci non ci va.
+    //
+    // NON RICALCOLA NIENTE. La posizione rispetto alla quota arriva da
+    // v_soci_in_regola e i totali da v_incassi, gli stessi che alimentano il
+    // pannello: se questo file si mettesse a rifare i conti, il registro
+    // esibito e il pannello potrebbero dire due cose diverse sulla stessa
+    // persona, ed e' esattamente il guaio da cui nasce tutto questo lavoro.
+    //
+    // I BUCHI SI DICHIARANO. Il conteggio di cosa manca esce da qui insieme ai
+    // dati: un registro che nasconde le proprie lacune e' peggio di uno che le
+    // dichiara, perche' il funzionario che se ne accorge da solo non si fida
+    // piu' nemmeno del resto.
+    if (url.pathname.endsWith('/json/libro-soci') && req.method === 'POST') {
+      const bearer = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '');
+      if (!bearer) return jsonR({ ok: false, error: 'no_token' }, 401);
+      const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
+        global: { headers: { Authorization: `Bearer ${bearer}` } },
+      });
+      const { data: { user }, error: uerr } = await asUser.auth.getUser();
+      if (uerr || !user) return jsonR({ ok: false, error: 'unauthorized' }, 401);
+      const { data: ruoli } = await sb.from('utente_ruolo')
+        .select('ruolo:ruolo_id(nome, livello)').eq('utente_id', user.id);
+      const livello = Math.max(0, ...(((ruoli ?? []) as Array<Record<string, any>>).map((r) => r?.ruolo?.livello ?? 0)));
+      if (livello < 50) return jsonR({ ok: false, error: 'non_autorizzato' }, 403);
+
+      const { data: soci, error: errSoci } = await sb.from('v_soci_in_regola')
+        .select('domanda_id, nome, email, anno, numero_tessera, codice_tessera, stato, approvata_il, posizione, quota_dovuta, totale_incassato, manca, in_deroga, deroga_pagamento_motivo, ultimo_incasso_il, metodi_incasso, socio_storico')
+        .eq('stato', 'approvata')
+        .neq('posizione', 'account_di_sistema');
+      if (errSoci) return jsonR({ ok: false, error: 'lettura', message: errSoci.message }, 500);
+
+      // L'anagrafica sta sulla domanda, non nella vista. Si prende solo per le
+      // persone che finiscono nel registro, e solo i campi che il registro
+      // chiede: non si porta dietro tutto il resto per comodita'.
+      const ids = (soci ?? []).map((s: Record<string, any>) => s.domanda_id);
+      const { data: anag } = await sb.from('domande_tesseramento')
+        .select('id, data_nascita, comune_nascita, sesso').in('id', ids);
+      const perId = new Map(((anag ?? []) as Array<Record<string, any>>).map((a) => [a.id, a]));
+
+      const righe = ((soci ?? []) as Array<Record<string, any>>).map((s) => {
+        const a = perId.get(s.domanda_id) ?? {};
+        return {
+          ...s,
+          data_nascita: a.data_nascita ?? null,
+          comune_nascita: a.comune_nascita ?? null,
+          sesso: a.sesso ?? null,
+        };
+      }).sort((x, y) => {
+        // Per numero di tessera, che e' l'ordine con cui un registro si legge.
+        // Chi non ce l'ha ancora va in fondo, non in testa con uno zero finto.
+        const nx = x.numero_tessera ?? Number.MAX_SAFE_INTEGER;
+        const ny = y.numero_tessera ?? Number.MAX_SAFE_INTEGER;
+        if (nx !== ny) return nx - ny;
+        return String(x.nome ?? '').localeCompare(String(y.nome ?? ''));
+      });
+
+      // I totali del denaro vengono da v_incassi, la stessa fonte del pannello.
+      const { data: incassi } = await sb.from('v_incassi')
+        .select('tipo, stato, importo, anno');
+      const completati = ((incassi ?? []) as Array<Record<string, any>>).filter((i) => i.stato === 'completato');
+      const sommaPerTipo: Record<string, number> = {};
+      for (const i of completati) {
+        sommaPerTipo[String(i.tipo)] = (sommaPerTipo[String(i.tipo)] ?? 0) + Number(i.importo ?? 0);
+      }
+
+      const conta = (p: string) => righe.filter((r) => r.posizione === p).length;
+      const lacune = {
+        senza_data_ammissione: righe.filter((r) => !r.approvata_il).length,
+        senza_numero_tessera: righe.filter((r) => r.numero_tessera == null).length,
+        senza_data_nascita: righe.filter((r) => !r.data_nascita).length,
+        senza_comune_nascita: righe.filter((r) => !r.comune_nascita).length,
+        // La residenza non e' mai stata chiesta nel modulo: non e' un dato
+        // perso, e' un dato che non e' mai esistito. Dirlo e' diverso dal
+        // lasciare una colonna vuota e sperare che nessuno la guardi.
+        residenza_mai_raccolta: righe.length,
+      };
+
+      return jsonR({
+        ok: true, tipo: 'libro-soci', anno: ANNO,
+        quota: await quotaAnno(sb, ANNO, QUOTA_FALLBACK),
+        estratto_il: new Date().toISOString(),
+        estratto_da: user.email ?? '',
+        righe,
+        riepilogo: {
+          iscritti: righe.length,
+          in_regola: conta('in_regola') + conta('in_regola_per_deroga'),
+          parziale: conta('parziale'),
+          da_regolarizzare: conta('da_regolarizzare'),
+          ammesso_senza_incasso: conta('ammesso_senza_incasso'),
+        },
+        incassi: sommaPerTipo,
+        lacune,
+      });
+    }
+
     const jPaga = url.pathname.match(/\/json\/paga-quota\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jSoll = url.pathname.match(/\/json\/sollecita\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
     const jVista = url.pathname.match(/\/json\/vista\/([0-9a-f-]{36})\/(\d+)\/([0-9a-f]+)\/?$/);
