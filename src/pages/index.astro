@@ -739,7 +739,12 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
                   <div class="mt-auto pt-4" data-gita-countdown style="font-family: 'Inter', sans-serif;">
                     <div class="flex items-baseline justify-between text-[13px] mb-1.5">
                       <span class="text-[#1E2E26]/70">Posti disponibili</span>
-                      <span class="tabular-nums font-semibold text-[#1E2E26]" data-gita-testo>… di 54</span>
+                      {/* [4/8/2026 sera] Il segnaposto NON porta un numero.
+                          Prima diceva «… di 54»: cablato a mano, e quando lo
+                          script moriva restava a schermo come se fosse il dato
+                          vero. I numeri che vede il socio vengono dal server,
+                          anche quando sono solo meta' di una frase. */}
+                      <span class="tabular-nums font-semibold text-[#1E2E26]" data-gita-testo>…</span>
                     </div>
                     <div class="h-2.5 w-full bg-[#E5DFCF] rounded-full overflow-hidden">
                       <div class="h-full bg-[#C8923E] rounded-full transition-[width] duration-500" data-gita-barra style="width:0%"></div>
@@ -1626,7 +1631,17 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
         }
         // La barra a zero direbbe «nessun posto occupato», che e'
         // un'affermazione. Meglio toglierla del tutto.
-        const barraWrap = barra?.parentElement as HTMLElement | null;
+        //
+        // [4/8/2026 sera] QUI C'ERA `as HTMLElement | null`, E COSTAVA CARO.
+        // Questo blocco usa `define:vars`, quindi Astro lo emette INLINE e NON
+        // lo compila: l'annotazione TypeScript arrivava cruda al browser, che
+        // andava in SyntaxError sull'INTERO blocco di 273 righe. Morivano
+        // insieme il contatore posti, la mappa della vetrina e il carosello
+        // eventi, e in home restava per sempre il segnaposto «… di 54».
+        // `astro check` non lo vede, la build resta verde: si vede solo
+        // aprendo la pagina. In un blocco `define:vars` si scrive JavaScript
+        // e basta, niente tipi.
+        const barraWrap = barra && barra.parentElement;
         if (barraWrap) barraWrap.style.display = 'none';
       });
   })();
