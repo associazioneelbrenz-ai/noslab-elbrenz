@@ -75,6 +75,36 @@ Deno.serve(async (req: Request) => {
   let b: any;
   try { b = await req.json(); } catch { return J({ error: "invalid_json" }, 400); }
 
+  // [4/8/2026] ANNULLAMENTO. Un incasso registrato non si modifica: si annulla
+  // con un motivo scritto, e la riga resta. Correggere in silenzio vorrebbe
+  // dire cancellare la storia di chi ha scritto cosa, che e' proprio quello
+  // che al RUNTS serve poter ricostruire.
+  if (b?.azione === "annulla") {
+    const idPag = String(b?.pagamento_id ?? "");
+    const motivo = String(b?.motivo ?? "").trim();
+    if (!/^[0-9a-f-]{36}$/i.test(idPag)) return J({ error: "pagamento_non_valido" }, 400);
+    if (motivo.length < 5) return J({ error: "motivo_mancante" }, 400);
+    const { data: gia } = await admin.from("pagamenti_tesseramento")
+      .select("id, annullato_il, metodo").eq("id", idPag).maybeSingle();
+    if (!gia) return J({ error: "pagamento_inesistente" }, 404);
+    if ((gia as any).annullato_il) return J({ error: "gia_annullato" }, 409);
+    // Si annullano solo le registrazioni fatte a mano. Un incasso PayPal si
+    // rimborsa dal pannello di PayPal: fingerlo annullato qui lascerebbe il
+    // denaro dov'e' e il registro a dire il contrario.
+    if (!["contanti", "bonifico", "altro"].includes(String((gia as any).metodo ?? ""))) {
+      return J({ error: "solo_registrazioni_manuali", detail: "Un incasso online si rimborsa dal fornitore di pagamento, non si annulla qui." }, 400);
+    }
+    const { error: eAnn } = await admin.from("pagamenti_tesseramento").update({
+      annullato_il: new Date().toISOString(),
+      annullato_da: user.id,
+      annullato_motivo: motivo.slice(0, 500),
+      updated_at: new Date().toISOString(),
+    }).eq("id", idPag);
+    if (eAnn) return J({ error: "annullamento_fallito", detail: eAnn.message }, 500);
+    console.log(`[contanti-registra] annullato ${idPag} da ${user.id}`);
+    return J({ ok: true, azione: "annulla", pagamento_id: idPag });
+  }
+
   // 3) Validazioni. L'attestazione privacy e' OBBLIGATORIA: senza, non si salva.
   const nome = String(b?.nome ?? "").trim();
   const email = String(b?.email ?? "").trim().toLowerCase();

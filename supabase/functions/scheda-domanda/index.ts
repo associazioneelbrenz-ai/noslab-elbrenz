@@ -341,10 +341,27 @@ Deno.serve(async (req: Request) => {
         .select('tabella, tipo, nome, email, anno, importo, stato, metodo, quando')
         .order('quando', { ascending: false });
 
+      // Chi puo' aver materialmente incassato: serve al modulo di
+      // registrazione manuale, perche' i contanti li prende spesso un
+      // consigliere e non chi poi li registra. Solo id e nome: qui non
+      // servono altri dati personali e non si mandano.
+      const { data: membri } = await sb.from('utente_ruolo')
+        .select('utente_id, ruolo:ruolo_id(livello), utente:utente_id(id, nome, cognome, email)');
+      const incassanti = [...new Map(
+        ((membri ?? []) as Array<Record<string, any>>)
+          .filter((m) => (m?.ruolo?.livello ?? 0) >= 50 && m?.utente?.id)
+          .map((m) => [m.utente.id, {
+            id: m.utente.id,
+            nome: [m.utente.nome, m.utente.cognome].filter(Boolean).join(' ').trim() || m.utente.email,
+          }]),
+      ).values()].sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+
       return jsonR({
         ok: true, tipo: 'coda', livello, quota: QUOTA_EURO,
         righe,
         incassi: incassi ?? [],
+        incassanti,
+        io: user.id,
       });
     }
 

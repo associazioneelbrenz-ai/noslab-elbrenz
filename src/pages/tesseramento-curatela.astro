@@ -82,6 +82,80 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         </div>
 
         <div id="tc-lista" class="grid gap-3"></div>
+
+        {/* MODULO: registrare un incasso gia' avvenuto fuori dal sistema.
+            Chiede il minimo indispensabile e niente di piu': importo, data
+            reale, mezzo, e una nota. La casella «data ricostruita» esiste
+            perche' chi registra una quota raccolta due anni fa non si ricorda
+            il giorno, e va bene: basta che lo dica. Una data ricostruita
+            dichiarata e' un dato onesto, una inventata e taciuta e' un falso. */}
+        <div id="tc-reg" class="hidden fixed inset-0 z-50 bg-[#1E2E26]/60 overflow-y-auto p-4 md:p-8">
+          <div class="bg-white rounded-lg border-t-4 border-[#C8923E] max-w-lg mx-auto p-6 md:p-8">
+            <div class="flex items-start justify-between gap-4 mb-1">
+              <h3 class="text-xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif;">Registra un incasso già avvenuto</h3>
+              <button type="button" id="tc-reg-chiudi" class="text-[#1E2E26]/50 bg-transparent border-0 text-2xl leading-none cursor-pointer" aria-label="Chiudi">&times;</button>
+            </div>
+            <p id="tc-reg-chi" class="text-[13px] text-[#1E2E26]/65 m-0 mb-5"></p>
+
+            <div class="grid gap-4">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-reg-importo">Importo in euro <span class="text-[#a33]">*</span></label>
+                  <input class={inputCls} type="number" id="tc-reg-importo" min="0.01" max="1000" step="0.01" placeholder="10.00" />
+                </div>
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-reg-tipo">Cosa</label>
+                  <select class={inputCls} id="tc-reg-tipo">
+                    <option value="quota">Quota sociale</option>
+                    <option value="integrazione">Integrazione</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-reg-data">Data dell'incasso <span class="text-[#a33]">*</span></label>
+                  <input class={inputCls} type="date" id="tc-reg-data" />
+                </div>
+                <div>
+                  <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-reg-metodo">Come è arrivata</label>
+                  <select class={inputCls} id="tc-reg-metodo">
+                    <option value="contanti">Contanti</option>
+                    <option value="bonifico">Bonifico</option>
+                    <option value="altro">Altro</option>
+                  </select>
+                </div>
+              </div>
+
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/85 cursor-pointer">
+                <input type="checkbox" id="tc-reg-ricostruita" class="mt-1 w-4 h-4 accent-[#C8923E]" />
+                <span>La data è <strong>ricostruita</strong>, non esatta. Spuntala se ricordi il periodo ma non il giorno: resta scritto che è una ricostruzione.</span>
+              </label>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-reg-incassante">Chi ha materialmente incassato <span class="text-[#a33]">*</span></label>
+                <select class={inputCls} id="tc-reg-incassante"></select>
+              </div>
+
+              <div>
+                <label class="block text-sm text-[#1E2E26]/75 mb-1" for="tc-reg-note">Nota</label>
+                <textarea class={inputCls} id="tc-reg-note" rows="2" maxlength="500" placeholder="es. quota raccolta alla serata del 12 luglio, registro cartaceo pagina 4"></textarea>
+              </div>
+
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/85 cursor-pointer">
+                <input type="checkbox" id="tc-reg-attestazione" class="mt-1 w-4 h-4 accent-[#C8923E]" />
+                <span>Attesto che questo versamento è stato ricevuto davvero e che i dati qui sopra sono quelli reali. <span class="text-[#a33]">*</span></span>
+              </label>
+
+              <div id="tc-reg-esito" class="hidden rounded px-4 py-3 text-sm"></div>
+
+              <div class="flex flex-wrap gap-3 items-center">
+                <button type="button" id="tc-reg-salva" class="bg-[#C8923E] text-[#1E2E26] px-6 py-3 rounded font-semibold text-sm cursor-pointer border-0 hover:bg-[#D9A94E] transition-colors">Registra l'incasso</button>
+                <span class="text-[12px] text-[#1E2E26]/55">Resta scritto chi lo ha registrato e quando. Dopo non si modifica: si annulla con un motivo.</span>
+              </div>
+            </div>
+          </div>
+        </div>
         <p id="tc-vuoto" class="hidden text-[#1E2E26]/60 bg-white border border-[#E5DFCF] rounded p-6 text-center m-0">Niente in questa selezione.</p>
 
         {/* CASSA — da v_incassi, che tiene insieme quote, integrazioni e
@@ -131,6 +205,10 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     annullata: { testo: 'Annullata', sfondo: '#f1f1f1', colore: '#666' },
   };
   let incassi: any[] = [];
+  let incassanti: any[] = [];
+  let io = '';
+  let socioCorrente: any = null;
+  const REGISTRA_URL = 'https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/contanti-registra';
 
   async function init() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -150,6 +228,8 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
     righe = d.righe ?? [];
     incassi = d.incassi ?? [];
+    incassanti = d.incassanti ?? [];
+    io = d.io ?? '';
     ($('tc-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email || '';
     show('tc-app');
     riepilogo();
@@ -298,7 +378,15 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
           : x.posizione === 'da_regolarizzare'
             ? `<span style="color:#4a6180;">ha versato prima del sistema: manca il dato, non la quota</span>`
             : `<span style="color:#a33;">nessun incasso${x.metodo_scelto ? ` · ha scelto ${esc(x.metodo_scelto)}` : ' · nessun metodo scelto'}${Number(x.pagamenti_in_verifica) > 0 ? ` · <strong>${esc(x.pagamenti_in_verifica)} in verifica</strong>` : ''}${x.tentativi_non_riusciti ? ` · ${esc(x.tentativi_non_riusciti)} tentativo/i non riuscito/i` : ''}</span>`;
-      return `<a href="${esc(x.vista)}" class="block bg-white border border-[#E5DFCF] hover:border-[#C8923E] rounded p-4 no-underline transition-colors">
+      /* Il bottone di registrazione sta sulla riga della persona: e' li' che
+         il segretario si accorge che manca un incasso, non in un modulo a
+         parte dove poi deve ridigitare nome ed email. */
+      const registrabile = ['parziale', 'da_regolarizzare', 'ammesso_senza_incasso', 'in_regola'].includes(x.posizione);
+      const azioni = registrabile
+        ? `<button type="button" data-registra="${esc(x.domanda_id)}" class="mt-3 text-[13px] text-[#8a6215] underline bg-transparent border-0 p-0 cursor-pointer">Registra un incasso già avvenuto</button>`
+        : '';
+      return `<div class="bg-white border border-[#E5DFCF] hover:border-[#C8923E] rounded p-4 transition-colors">
+        <a href="${esc(x.vista)}" class="block no-underline">
         <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span class="text-[16px] text-[#1E2E26] font-medium" style="font-family:'Playfair Display',serif;">${esc(x.nome)}</span>
           <span class="text-[12px] px-2 py-0.5 rounded-full" style="background:${p.sfondo};color:${p.colore};">${esc(p.testo)}</span>
@@ -307,9 +395,93 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         </div>
         <p class="text-[13px] text-[#1E2E26]/60 m-0 mt-1">${esc(x.email)}${x.approvata_il ? ` · ammesso il ${esc(dataIt(x.approvata_il))}` : ''}${promemoria}</p>
         <p class="text-[13px] m-0 mt-1.5">${quota}</p>
-      </a>`;
+        </a>
+        ${azioni}
+      </div>`;
     }).join('');
+
+    document.querySelectorAll('[data-registra]').forEach((b) => b.addEventListener('click', () => {
+      apriRegistrazione(String((b as HTMLElement).dataset.registra));
+    }));
   }
+
+  // ---- REGISTRAZIONE MANUALE ----
+  function apriRegistrazione(domandaId: string) {
+    socioCorrente = righe.find((x) => x.domanda_id === domandaId);
+    if (!socioCorrente) return;
+    const manca = Number(socioCorrente.manca || 0);
+    ($('tc-reg-chi') as HTMLElement).innerHTML =
+      `<strong>${esc(socioCorrente.nome)}</strong> · ${esc(socioCorrente.email)}`
+      + (manca > 0 ? ` · gli mancano <strong>${esc(manca.toFixed(2))} €</strong> per la quota ${esc(socioCorrente.anno ?? '')}` : ' · risulta già in regola');
+    // Precompilo l'importo con quello che manca: e' il valore giusto nove
+    // volte su dieci, e resta modificabile.
+    ($('tc-reg-importo') as HTMLInputElement).value = manca > 0 ? manca.toFixed(2) : '';
+    ($('tc-reg-tipo') as HTMLSelectElement).value = 'quota';
+    ($('tc-reg-data') as HTMLInputElement).value = '';
+    ($('tc-reg-metodo') as HTMLSelectElement).value = 'contanti';
+    ($('tc-reg-ricostruita') as HTMLInputElement).checked = false;
+    ($('tc-reg-attestazione') as HTMLInputElement).checked = false;
+    ($('tc-reg-note') as HTMLTextAreaElement).value = '';
+    $('tc-reg-esito')!.classList.add('hidden');
+    const sel = $('tc-reg-incassante') as HTMLSelectElement;
+    sel.innerHTML = incassanti.map((p: any) =>
+      `<option value="${esc(p.id)}"${p.id === io ? ' selected' : ''}>${esc(p.nome)}${p.id === io ? ' (tu)' : ''}</option>`).join('');
+    show('tc-reg');
+  }
+
+  function esitoReg(msg: string, ok: boolean) {
+    const e = $('tc-reg-esito')!;
+    e.classList.remove('hidden');
+    e.style.background = ok ? '#eaf3ee' : '#fbecec';
+    e.style.borderLeft = `4px solid ${ok ? '#2d8659' : '#a33'}`;
+    e.textContent = msg;
+  }
+
+  $('tc-reg-chiudi')?.addEventListener('click', () => hide('tc-reg'));
+  $('tc-reg')?.addEventListener('click', (e) => { if (e.target === $('tc-reg')) hide('tc-reg'); });
+
+  $('tc-reg-salva')?.addEventListener('click', async () => {
+    if (!socioCorrente) return;
+    const importo = Number(val('tc-reg-importo'));
+    const data = val('tc-reg-data');
+    const incassante = val('tc-reg-incassante');
+    const attestato = ($('tc-reg-attestazione') as HTMLInputElement).checked;
+    if (!Number.isFinite(importo) || importo <= 0) return esitoReg('Scrivi un importo valido.', false);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return esitoReg('Scegli la data dell\'incasso.', false);
+    if (!incassante) return esitoReg('Indica chi ha materialmente incassato.', false);
+    // L'attestazione non e' un fastidio burocratico: e' la riga che dice che
+    // dietro a questo dato c'e' una persona che ci mette la faccia.
+    if (!attestato) return esitoReg('Serve l\'attestazione: è denaro, e resta agli atti.', false);
+
+    const btn = $('tc-reg-salva') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'Registro…';
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const r = await fetch(REGISTRA_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({
+          nome: socioCorrente.nome, email: socioCorrente.email,
+          importo, tipo: val('tc-reg-tipo'), metodo: val('tc-reg-metodo'),
+          incassato_il: data, incassato_da: incassante,
+          data_ricostruita: ($('tc-reg-ricostruita') as HTMLInputElement).checked,
+          note: val('tc-reg-note'),
+          attestazione: true, consenso_modalita: 'verbale',
+        }),
+      });
+      const j = await r.json();
+      if (r.ok && !j.error) {
+        esitoReg('Incasso registrato. Ricarico il pannello…', true);
+        setTimeout(() => window.location.reload(), 1200);
+      } else {
+        esitoReg(j.detail || j.error || 'Registrazione non riuscita.', false);
+        btn.disabled = false; btn.textContent = 'Registra l\'incasso';
+      }
+    } catch {
+      esitoReg('Errore di connessione. Riprova.', false);
+      btn.disabled = false; btn.textContent = 'Registra l\'incasso';
+    }
+  });
 
   document.querySelectorAll('.tc-filtro').forEach((b) => b.addEventListener('click', () => {
     filtro = (b as HTMLElement).dataset.filtro!;
