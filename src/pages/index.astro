@@ -54,7 +54,7 @@ import { createClient } from '@supabase/supabase-js';
 // getCollection serve ancora, ma solo per la collection `eventi` (i NOSTRI
 // appuntamenti in home): gli articoli non passano piu' di qui.
 import { getCollection } from 'astro:content';
-import { getStatoGita } from '../lib/postiGita';
+import { getStatoGitaAlBuild } from '../lib/postiGita';
 import { formatDataIT, nomePilastro } from '../lib/articoli';
 import { schemaOrganization } from '../lib/schema';
 import { imgRid, srcSetCard } from '../lib/immagini';
@@ -64,7 +64,7 @@ import { MIGOLE, miniatura, embed } from '../data/video';
 // l'edge gita-crea-ordine. La home non deve invitare a pagare un viaggio che
 // non si fa. NB: questa pagina e' prerenderizzata, quindi il valore si fissa
 // al build: per riaprire una gita non basta cambiare il DB, serve un deploy.
-const { annullata: gitaAnnullata } = await getStatoGita();
+const { annullata: gitaAnnullata } = await getStatoGitaAlBuild();
 
 // MODIFICA 2/8/2026 — anche la home legge dalla vista, come /articoli,
 // /articoli/<slug> e /archivio-storico. Prima passava dal ponte

@@ -54,18 +54,52 @@ export async function getPostiGita(
  */
 export async function getStatoGita(
   slug = 'gita_giochi_medievali_2026_stato',
-): Promise<{ annullata: boolean }> {
+): Promise<{ annullata: boolean; letturaRiuscita: boolean }> {
   try {
-    if (!SB_URL || !SB_ANON) return { annullata: true };
+    if (!SB_URL || !SB_ANON) return { annullata: true, letturaRiuscita: false };
     const sb = createClient(SB_URL, SB_ANON, { auth: { persistSession: false } });
     const { data, error } = await sb
       .from('config_app').select('valore').eq('chiave', slug).maybeSingle();
-    if (error) return { annullata: true };
+    if (error) return { annullata: true, letturaRiuscita: false };
     const stato = (data?.valore as Record<string, unknown> | undefined)?.stato;
-    return { annullata: typeof stato === 'string' ? stato !== 'aperta' : true };
+    // Nessuna riga NON e' una lettura riuscita: e' una chiave che non si vede,
+    // ed e' esattamente il caso che il 4 agosto ha tenuto la gita annullata
+    // per un giorno intero mentre la configurazione diceva il contrario.
+    if (typeof stato !== 'string') return { annullata: true, letturaRiuscita: false };
+    return { annullata: stato !== 'aperta', letturaRiuscita: true };
   } catch {
-    return { annullata: true };
+    return { annullata: true, letturaRiuscita: false };
   }
+}
+
+/**
+ * Come sopra, ma per le pagine PRERENDERIZZATE, dove il valore si fissa al
+ * momento della build e ci resta fino alla build successiva.
+ *
+ * [4/8/2026] Perche' esiste. Su una pagina SSR il fail-closed e' giusto: se la
+ * lettura non riesce si mostra la versione prudente e al caricamento dopo si
+ * corregge da sola. Su una pagina generata al build no: un singolo intoppo di
+ * rete durante `npm run build` congela «annullata» nell'HTML e ci resta, senza
+ * che nessuno lo sappia. E' successo davvero, in questa stessa giornata: una
+ * build ha letto male e la home ha pubblicato una gita annullata che annullata
+ * non era.
+ *
+ * Quindi qui la build si FERMA. Meglio un deploy che non parte e lo dice, di
+ * uno che riesce e pubblica una cosa falsa.
+ */
+export async function getStatoGitaAlBuild(
+  slug = 'gita_giochi_medievali_2026_stato',
+): Promise<{ annullata: boolean }> {
+  const r = await getStatoGita(slug);
+  if (!r.letturaRiuscita) {
+    throw new Error(
+      `[gita] Non sono riuscito a leggere lo stato della gita da config_app (chiave ${slug}). ` +
+      'La build si ferma di proposito: una pagina prerenderizzata congelerebbe lo stato prudente ' +
+      '«annullata» e lo pubblicherebbe come se fosse vero. Controlla la connessione, le variabili ' +
+      'PUBLIC_SUPABASE_* e che la chiave sia fra quelle pubbliche (config_app_chiavi_pubbliche).',
+    );
+  }
+  return { annullata: r.annullata };
 }
 
 /**
