@@ -4,6 +4,10 @@
 
 Il file è `docs/legacy_urls.csv`, 813 righe.
 
+**[4 agosto 2026]** Il CSV ha una colonna in più, `istituzionale`, che marca
+le pagine istituzionali del vecchio sito: 53 in tutto, di cui **33 senza
+corrispondente**. Il criterio è in `docs/legacy_urls_criterio.md`.
+
 ---
 
 ## Come è stato costruito, e perché non dalla sitemap
@@ -60,10 +64,23 @@ risolto: vanno ricontrollati a mano, non sono un esito.
 
 ## Che cosa risponde 404, in concreto
 
-### 1. Le sezioni istituzionali del vecchio menù (32 pagine)
+### 1. Le sezioni istituzionali del vecchio menù (33 pagine)
 
 Sono la perdita più consistente, perché erano contenuto redazionale, non
-impalcatura:
+impalcatura.
+
+> **[4 agosto 2026] Sono 33, non 32.** Il conteggio precedente veniva dalla
+> riga «pagina annidata» della tabella qui sopra, che resta giusta: le pagine
+> *annidate* a 404 sono davvero 32. Ma fra le istituzionali morte c'è anche
+> **`/territorio-e-cultura/`**, la radice della sezione, che nel censimento è
+> classificata come `pagina` e non come `pagina-annidata`: contando sul tipo
+> restava fuori, pur essendo la madre di dodici delle altre.
+>
+> Dal 4 agosto il CSV ha una colonna **`istituzionale`** che le marca una per
+> una, e il criterio è scritto in `docs/legacy_urls_criterio.md`. Il numero da
+> usare è **33**.
+
+L'elenco:
 
 - `/territorio-e-cultura/` e i suoi rami: castelli, malghe, musei, rifugi
   (Molino Ruatti, Museo Retico di Sanzeno, Ecomuseo di Peio, Museo della Guerra
@@ -73,7 +90,13 @@ impalcatura:
 - `/lassociazione-2/dalle-origini-a-giorni-nostri/`
 - `/eventi-manifestazioni-progetti-2/attivita-2011/`, `-2013/`, `-2014/`
 - `/storia/ricerche/`, `/progetti/…`, `/sostenitori/sostenitori/`
-- `/segheria-male/`, `/glossary-2/`, `/copertina/`
+- `/glossary-2/`
+
+Fuori dal conto delle 33, ma anch'esse a 404: **`/segheria-male/`** e
+**`/copertina/`**. Sono pagine singole di contenuto, non sezioni
+istituzionali, e la colonna `istituzionale` le marca `no`. Restano da
+recuperare, ma appartengono al lavoro editoriale sugli articoli, non a quello
+sulle sezioni.
 
 Buona parte di questi contenuti oggi vive in forma diversa sul sito nuovo
 (i musei nella mappa dei luoghi, Os dal Nos nella sua pagina, la storia
@@ -123,9 +146,11 @@ serve la pagina a partire dallo slug del database, che è quello storico.
 
 Sono scelte di Cristian, qui non è stata scritta nessuna regola.
 
-1. **Le 32 pagine istituzionali**: valgono un redirect verso il corrispondente
-   attuale (i musei verso `/luoghi/…`, Os dal Nos verso `/os-dal-nos`), oppure
-   sono contenuto da riscrivere e basta?
+1. **Le 33 pagine istituzionali** (colonna `istituzionale = si` nel CSV, esito
+   404): valgono un redirect verso il corrispondente attuale (i musei verso
+   `/luoghi/…`, Os dal Nos verso `/os-dal-nos`), oppure sono contenuto da
+   riscrivere e basta? Conviene partire da `/territorio-e-cultura/`: sotto di
+   lei stanno diciotto delle trentatré.
 2. **`/page/2/`–`/page/22/`**: un redirect secco a `/archivio-storico` chiude
    ventuno 404 con una riga sola.
 3. **Le tre gallerie**: le foto esistono ancora da qualche parte? Se sì è
