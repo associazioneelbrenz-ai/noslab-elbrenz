@@ -7,6 +7,13 @@
  * autorizzata da Cristian (data 17 luglio 2026), da far rivedere da un
  * professionista. La sezione "Notifiche push" (1.3) resta COMMENTATA finché le
  * push non sono attive. Versioni precedenti in privacy.astro.bak / .bak2.
+ *
+ * 5/8/2026: aggiunta in 1.3 la voce "Registrazione delle testimonianze orali in
+ * ladino anaunico" (progetto regolani: audio raccolto sul territorio da volontari
+ * incaricati, interessati che non passano dal sito) e relativa riga in 1.7.
+ * Backup: privacy.astro.bak-regolani. Il foglietto cartaceo da consegnare alla
+ * persona intervistata e' in docs/KIT_REGOLAN.md, e va tenuto allineato a questa
+ * sezione. Da far rivedere da un professionista insieme al resto.
  */
 import Layout from '../layouts/Layout.astro';
 ---
@@ -36,7 +43,7 @@ import Layout from '../layouts/Layout.astro';
     <div class="max-w-3xl mx-auto px-6" style="font-family: 'Source Serif 4', Georgia, serif;">
 
       <p class="text-sm text-[#0F0F0F]/55 mb-12" style="font-family: 'Inter', sans-serif;">
-        Ultimo aggiornamento: 2 agosto 2026
+        Ultimo aggiornamento: 5 agosto 2026
       </p>
 
       <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.1 Titolare del trattamento</h2>
@@ -62,6 +69,7 @@ import Layout from '../layouts/Layout.astro';
         <li><strong>Guardiani (glossario del ladino anaunico).</strong> Email (obbligatoria, non pubblicata) e i contributi proposti. Finalità: raccolta e curatela del glossario. Base giuridica: consenso e legittimo interesse alla valorizzazione della lingua (art. 6.1.a/f). I contributi pubblicati sono rilasciati con licenza CC BY 4.0. Conservazione: per la durata del progetto.</li>
         <li><strong>Convenzioni.</strong> Dati dell'esercente e del referente che propone una convenzione. Finalità: valutazione e gestione della convenzione. Base giuridica: riscontro alla richiesta (art. 6.1.b). Nella parte pubblica non sono esposti i dati personali del referente.</li>
         <li><strong>Custodi della memoria.</strong> Testimonianze, ricordi e materiali conferiti. Finalità: raccolta e valorizzazione della memoria delle valli. Base giuridica: consenso (art. 6.1.a).</li>
+        <li><strong>Registrazione delle testimonianze orali in ladino anaunico.</strong> Alcuni volontari incaricati dall'Associazione, chiamati <em>regolani</em>, raccolgono sul territorio registrazioni audio di persone che parlano il ladino anaunico. Dati trattati: la registrazione della voce, il nome e il cognome della persona intervistata, l'anno e il luogo di nascita se comunicati, il paese, la data della registrazione e il contenuto del racconto, che può comprendere ricordi personali e riferimenti ad altre persone. Finalità: documentazione, studio e salvaguardia della lingua e della memoria delle valli, conservazione nell'archivio dell'Associazione, trascrizione, pubblicazione sul sito e nelle iniziative culturali dell'Associazione. Base giuridica: <strong>consenso</strong> (art. 6.1.a GDPR), raccolto prima della registrazione su modulo cartaceo oppure, in alternativa, registrato a voce all'inizio della registrazione stessa. Al momento del consenso la persona sceglie se la registrazione possa essere pubblicata con il proprio nome, soltanto conservata e studiata senza pubblicazione, oppure utilizzata senza che il nome compaia. Alla persona intervistata viene consegnata copia cartacea di un'informativa sintetica corrispondente a questa sezione. I regolani sono persone autorizzate e istruite dall'Associazione, non fornitori esterni. Conservazione: la registrazione resta nell'archivio dell'Associazione anche dopo l'eventuale revoca, per finalità di archiviazione nel pubblico interesse e di ricerca storica e linguistica (art. 5.1.e e art. 89 GDPR). Revoca: in qualunque momento, scrivendo a <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] no-underline hover:underline">info@elbrenz.eu</a> oppure dicendolo a chi ha effettuato la registrazione; la revoca comporta il ritiro della registrazione dalle pubblicazioni e non pregiudica la liceità del trattamento già effettuato.</li>
         <li><strong>Donazioni di materiale storico (Museo Grande Guerra "Non e Sole").</strong> Dati identificativi e di contatto (nome e cognome, email, telefono facoltativo), la descrizione e la provenienza del materiale, e i file digitali caricati. Finalità: gestione della donazione, ossia esame da parte dei curatori, eventuale ricontatto, conservazione nell'archivio del museo e, solo previa valutazione e con i consensi prestati, pubblicazione del materiale con indicazione della provenienza. Base giuridica: consenso dell'interessato ed esecuzione della richiesta (art. 6.1.a/b). I file caricati sono conservati in uno spazio privato, accessibile ai soli curatori e amministratori, fino alla decisione; il materiale non approvato e i relativi dati sono cancellati entro 12 mesi dall'invio. I dati identificativi del donatore non sono mai pubblicati senza esplicito accordo.</li>
         <li><strong>Area redazione (collaboratori).</strong> Dati dei collaboratori abilitati a proporre e pubblicare contenuti. Finalità: gestione redazionale. Base giuridica: rapporto di collaborazione (art. 6.1.b).</li>
       </ul>
@@ -104,7 +112,7 @@ import Layout from '../layouts/Layout.astro';
 
       <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.7 Conservazione (sintesi)</h2>
       <p class="text-base leading-relaxed text-[#0F0F0F]/85">
-        In generale: dati del rapporto associativo per la durata dell'iscrizione e secondo gli obblighi di legge; contenuti, media e riconoscimenti per la durata dell'iscrizione o finché pubblicati; contatti da raccolta materiali 12 mesi; newsletter fino a revoca; proposte di donazione non accolte per un periodo ragionevole; log tecnici per il tempo limitato necessario; archivio delle conversazioni con Andreas dei soci autenticati fino alla cessazione del rapporto associativo.
+        In generale: dati del rapporto associativo per la durata dell'iscrizione e secondo gli obblighi di legge; contenuti, media e riconoscimenti per la durata dell'iscrizione o finché pubblicati; contatti da raccolta materiali 12 mesi; newsletter fino a revoca; proposte di donazione non accolte per un periodo ragionevole; log tecnici per il tempo limitato necessario; archivio delle conversazioni con Andreas dei soci autenticati fino alla cessazione del rapporto associativo; registrazioni delle testimonianze orali conservate nell'archivio dell'Associazione per finalità di archiviazione nel pubblico interesse e di ricerca storica e linguistica.
       </p>
 
       <h2 class="text-2xl font-medium text-[#1E2E26] mb-4 mt-12" style="font-family: 'Playfair Display', serif;">1.8 I tuoi diritti</h2>
