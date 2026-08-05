@@ -103,6 +103,32 @@ async function urlEventi() {
 const EVENTI = await urlEventi();
 
 /**
+ * Le schede dei pezzi del Museo Grande Guerra. Si filtra stato=pubblicato come
+ * fa la policy di lettura pubblica, cosi' un pezzo in bozza o in attesa non
+ * finisce mai dichiarato ai motori. Se il DB non risponde: lista vuota, build
+ * salva (stessa regola degli eventi e dei luoghi).
+ */
+async function urlPezziMuseo() {
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return [];
+  try {
+    const r = await fetch(`${url}/rest/v1/museo_gg_pezzo?select=slug&stato=eq.pubblicato`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return [];
+    const righe = await r.json();
+    return righe
+      .map((x) => x.slug)
+      .filter(Boolean)
+      .map((s) => `https://elbrenz.eu/non-e-sole-grande-guerra/${s}`);
+  } catch {
+    return []; // degrado silenzioso
+  }
+}
+const MUSEO = await urlPezziMuseo();
+
+/**
  * AGGIUNTA 2/8/2026 — gli articoli. Passando a leggere dal database la pagina
  * /articoli/<slug> e' diventata SSR, e la sitemap non scopre le rotte SSR: se
  * non li aggiungessimo qui, 108 articoli uscirebbero dalla sitemap tutti
@@ -184,7 +210,7 @@ export default defineConfig({
     // noindex, quindi non devono comparire nella sitemap (audit 14/7).
     sitemap({
       // Pagine luogo, evento e articolo (SSR): non scoperte in automatico.
-      customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI],
+      customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI, ...MUSEO],
       filter: (page) => {
         const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
         const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';

@@ -22,7 +22,7 @@ const IMG_ALT = 'Soldati in divisa austro-ungarica salutano dai vagoni di un tre
 const DIDASCALIA = 'Partenza per il fronte della Galizia, 1914. Foto d’epoca, Tiroler Landesarchiv (Landesarchiv Innsbruck). Elaborazione digitale di Michele Corradini.';
 
 type Pezzo = {
-  id: string; titolo: string; descrizione: string | null; racconto: string | null; tipo: string;
+  id: string; slug: string | null; titolo: string; descrizione: string | null; racconto: string | null; tipo: string;
   anno: number | null; periodo: string | null; luogo: string | null; valle: string | null;
   fonte: string; elaborazione: string | null; donatore: string | null; immagini_urls: string[];
 };
@@ -31,7 +31,7 @@ try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
   // Solo colonne pubbliche del cartellino; niente caricato_da/validato_da.
   const { data } = await sb.from('museo_gg_pezzo')
-    .select('id, titolo, descrizione, racconto, tipo, anno, periodo, luogo, valle, fonte, elaborazione, donatore, immagini_urls')
+    .select('id, slug, titolo, descrizione, racconto, tipo, anno, periodo, luogo, valle, fonte, elaborazione, donatore, immagini_urls')
     .eq('stato', 'pubblicato')
     .order('ordine', { ascending: true }).order('anno', { ascending: true });
   pezzi = (data as Pezzo[]) ?? [];
@@ -52,6 +52,10 @@ const etichettaValle = (v: string | null) => (v && VALLE[v]) ? VALLE[v] : (v ?? 
 // Opzioni filtro presenti fra i pezzi pubblicati.
 const tipiPresenti = [...new Set(pezzi.map((p) => p.tipo).filter(Boolean))];
 const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is string => !!v))];
+const periodiPresenti = [...new Set(pezzi.map((p) => p.periodo).filter((v): v is string => !!v))].sort();
+// La scheda propria esiste solo se il pezzo ha uno slug: i pezzi nati prima
+// della colonna restano apribili nel lightbox, senza link morti.
+const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` : null);
 ---
 
 <Layout title={`${TITOLO} · El Brenz`} description="La Grande Guerra vissuta nelle Valli del Noce: soldati trentini nell'esercito austro-ungarico, il fronte della Galizia dal 1914, i profughi, le famiglie. Sezione a cura di Michele Corradini." ogImage="/og/og-grande-guerra.jpg">
@@ -129,21 +133,32 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
                   {valliPresenti.map((v) => <option value={v}>{etichettaValle(v)}</option>)}
                 </select>
               )}
+              {periodiPresenti.length > 1 && (
+                <select id="museo-f-periodo" class="text-sm border border-[#C8923E]/40 bg-white text-[#1E2E26] px-3 py-1.5 rounded">
+                  <option value="">Tutti i periodi</option>
+                  {periodiPresenti.map((v) => <option value={v}>{v}</option>)}
+                </select>
+              )}
             </div>
 
-            <div id="museo-griglia" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {/* Mosaico: colonne CSS invece della griglia a riquadri uguali, cosi'
+                ogni immagine tiene le sue proporzioni. Una cartolina orizzontale
+                e una lettera verticale non vanno ritagliate nello stesso 4:3:
+                in un museo si espone il pezzo, non la cornice. */}
+            <div id="museo-griglia" class="columns-2 md:columns-3 gap-3">
               {pezzi.map((p) => (
-                <button
-                  type="button"
-                  class="museo-tile group text-left m-0 p-0 border border-[#C8923E]/25 bg-[#F5EEDD] overflow-hidden cursor-pointer"
+                <a
+                  href={linkPezzo(p) ?? '#'}
+                  class="museo-tile group block break-inside-avoid mb-3 text-left no-underline border border-[#C8923E]/25 bg-[#F5EEDD] overflow-hidden cursor-pointer"
                   data-tipo={p.tipo}
                   data-valle={p.valle ?? ''}
+                  data-periodo={p.periodo ?? ''}
                   data-pezzo={JSON.stringify(p)}
                 >
-                  <span class="block aspect-[4/3] overflow-hidden bg-[#e8dcc4]">
+                  <span class="block overflow-hidden bg-[#e8dcc4]">
                     {p.immagini_urls[0] && (
                       <img src={p.immagini_urls[0]} alt={p.titolo} loading="lazy" decoding="async"
-                        class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300" />
+                        class="w-full h-auto group-hover:scale-[1.03] transition-transform duration-300" />
                     )}
                   </span>
                   <span class="block p-2.5">
@@ -152,7 +167,7 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
                       {etichettaTipo(p.tipo)}{p.periodo ? ` · ${p.periodo}` : (p.anno ? ` · ${p.anno}` : '')}
                     </span>
                   </span>
-                </button>
+                </a>
               ))}
             </div>
             <p id="museo-vuoto" class="hidden text-[#1E2E26]/60 text-sm py-4" style="font-family: 'Inter', sans-serif;">Nessun pezzo per questo filtro.</p>
@@ -160,7 +175,7 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
         )}
 
         {/* Proponi materiale — segnalazione pubblica (senza login), V1 senza upload */}
-        <div class="mt-10 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 md:p-6" style="font-family: 'Inter', sans-serif;">
+        <div id="proponi" class="mt-10 scroll-mt-24 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 md:p-6" style="font-family: 'Inter', sans-serif;">
           <h3 class="text-lg text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Hai materiale sulla Grande Guerra?</h3>
           <p class="text-sm text-[#1E2E26]/75 leading-relaxed m-0">
             Le foto in soffitta, le cartoline dal fronte, le lettere di famiglia, un oggetto tramandato:
@@ -322,6 +337,9 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
               guadagnano uno spazio vuoto. */}
           <div id="museo-racconto" class="hidden text-[#1E2E26]/85 whitespace-pre-wrap break-words m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif; font-size: 1.05rem; line-height: 1.7;"></div>
           <dl id="museo-cartellino" class="text-sm text-[#1E2E26]/80 space-y-1.5 border-t border-[#C8923E]/30 pt-4"></dl>
+          {/* Dal lightbox alla scheda con indirizzo proprio: da li' il pezzo si
+              condivide e i motori lo vedono. Nascosto per i pezzi senza slug. */}
+          <a id="museo-scheda" href="#" class="hidden mt-4 text-sm font-semibold text-[#8a6215] no-underline hover:underline">Apri la scheda intera →</a>
         </div>
       </div>
     </div>
@@ -366,6 +384,17 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
           riga('Elaborazione', p.elaborazione),
           riga('Donatore', p.donatore),
         ].join('');
+        const elScheda = document.getElementById('museo-scheda') as HTMLAnchorElement | null;
+        if (elScheda) {
+          if (p.slug) {
+            elScheda.href = `/non-e-sole-grande-guerra/${p.slug}`;
+            elScheda.classList.remove('hidden');
+            elScheda.classList.add('inline-block');
+          } else {
+            elScheda.classList.add('hidden');
+            elScheda.classList.remove('inline-block');
+          }
+        }
         overlay!.classList.remove('hidden');
         overlay!.classList.add('flex');
         document.body.style.overflow = 'hidden';
@@ -376,9 +405,17 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
         document.body.style.overflow = '';
       }
 
-      griglia.querySelectorAll<HTMLButtonElement>('.museo-tile').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          try { apri(JSON.parse(btn.dataset.pezzo || '{}')); } catch {}
+      // Le mattonelle ora sono LINK veri alla scheda del pezzo: i motori le
+      // seguono, il tasto centrale apre in una scheda nuova, il menu contestuale
+      // offre "copia indirizzo". Il click normale pero' continua ad aprire il
+      // lightbox, che funziona ed e' piu' rapido per scorrere la collezione.
+      // Si intercetta solo il click semplice: con ctrl/cmd/shift o col tasto
+      // centrale si lascia fare al browser quello che l'utente si aspetta.
+      griglia.querySelectorAll<HTMLAnchorElement>('.museo-tile').forEach((tile) => {
+        tile.addEventListener('click', (e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || (e as MouseEvent).button !== 0) return;
+          e.preventDefault();
+          try { apri(JSON.parse(tile.dataset.pezzo || '{}')); } catch {}
         });
       });
       document.getElementById('museo-chiudi')?.addEventListener('click', chiudi);
@@ -388,13 +425,17 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
       // Filtri
       const fTipo = document.getElementById('museo-f-tipo') as HTMLSelectElement | null;
       const fValle = document.getElementById('museo-f-valle') as HTMLSelectElement | null;
+      const fPeriodo = document.getElementById('museo-f-periodo') as HTMLSelectElement | null;
       const vuoto = document.getElementById('museo-vuoto');
       function filtra() {
         const t = fTipo?.value || '';
         const v = fValle?.value || '';
+        const pe = fPeriodo?.value || '';
         let visibili = 0;
         griglia!.querySelectorAll<HTMLElement>('.museo-tile').forEach((tile) => {
-          const ok = (!t || tile.dataset.tipo === t) && (!v || tile.dataset.valle === v);
+          const ok = (!t || tile.dataset.tipo === t)
+            && (!v || tile.dataset.valle === v)
+            && (!pe || tile.dataset.periodo === pe);
           tile.style.display = ok ? '' : 'none';
           if (ok) visibili++;
         });
@@ -402,6 +443,7 @@ const valliPresenti = [...new Set(pezzi.map((p) => p.valle).filter((v): v is str
       }
       fTipo?.addEventListener('change', filtra);
       fValle?.addEventListener('change', filtra);
+      fPeriodo?.addEventListener('change', filtra);
     }
   </script>
 

@@ -1,0 +1,164 @@
+---
+/**
+ * /non-e-sole-grande-guerra/<slug> — la scheda di un singolo pezzo del Museo.
+ *
+ * Perche' esiste: finora i pezzi vivevano solo dentro la griglia della sezione,
+ * aperti da un lightbox. Non erano condivisibili uno per uno (WhatsApp e
+ * Facebook pescavano l'OG generica della sezione) ne' indicizzabili: una
+ * fotografia con la sua fonte e il suo racconto non aveva un indirizzo proprio.
+ *
+ * L'OG e' LA FOTOGRAFIA STESSA, non una card disegnata: un pezzo di museo e'
+ * gia' un'immagine, e cosi' non c'e' nessuna PNG da rigenerare e ricommettere
+ * dopo ogni pubblicazione (vedi il rito degli eventi, che qui non serve).
+ *
+ * SSR come la sezione: la vetrina cambia quando il curatore pubblica dal
+ * pannello, non quando si fa il build. Il filtro stato='pubblicato' sta nella
+ * query e nella policy: un pezzo in bozza o in attesa qui da' 404.
+ */
+import Layout from '../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+
+const { slug } = Astro.params;
+
+type Pezzo = {
+  id: string; slug: string; titolo: string; descrizione: string | null; racconto: string | null;
+  tipo: string; anno: number | null; periodo: string | null; luogo: string | null;
+  valle: string | null; fonte: string; elaborazione: string | null; donatore: string | null;
+  immagini_urls: string[];
+};
+
+let pezzo: Pezzo | null = null;
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('museo_gg_pezzo')
+    .select('id, slug, titolo, descrizione, racconto, tipo, anno, periodo, luogo, valle, fonte, elaborazione, donatore, immagini_urls')
+    .eq('slug', slug)
+    .eq('stato', 'pubblicato')
+    .maybeSingle();
+  pezzo = (data as Pezzo) ?? null;
+} catch (e) {
+  console.error('[museo/slug] lettura fallita:', e);
+}
+
+if (!pezzo) return Astro.redirect('/non-e-sole-grande-guerra', 302);
+
+const VALLE: Record<string, string> = {
+  val_di_non: 'Val di Non', val_di_sole: 'Val di Sole', val_di_rabbi: 'Val di Rabbi',
+  val_di_pejo: 'Val di Pejo', piu_valli: 'Più valli', fuori_valle: 'Fuori valle',
+};
+const TIPO: Record<string, string> = {
+  foto: 'Fotografia', fotografia: 'Fotografia', cartolina: 'Cartolina',
+  lettera: 'Lettera', documento: 'Documento', oggetto: 'Oggetto',
+};
+const tipoL = TIPO[pezzo.tipo] ?? pezzo.tipo;
+const valleL = pezzo.valle ? (VALLE[pezzo.valle] ?? pezzo.valle) : null;
+const quando = pezzo.anno ? String(pezzo.anno) : (pezzo.periodo ?? null);
+
+// Il cartellino: le righe vuote non si stampano, un museo non espone etichette
+// a metà.
+const cartellino: [string, string | null][] = [
+  ['Tipo', tipoL],
+  ['Anno', pezzo.anno ? String(pezzo.anno) : null],
+  ['Periodo', pezzo.periodo],
+  ['Luogo', pezzo.luogo],
+  ['Valle', valleL],
+  ['Fonte', pezzo.fonte],
+  ['Elaborazione', pezzo.elaborazione],
+  ['Donatore', pezzo.donatore],
+];
+
+const copertina = pezzo.immagini_urls?.[0] ?? '/og/og-grande-guerra.jpg';
+const sommario = (pezzo.descrizione ?? pezzo.racconto ?? '')
+  .replace(/\s+/g, ' ').trim().slice(0, 180);
+const descrizioneSeo = sommario
+  || `${tipoL}${quando ? ` del ${quando}` : ''}${pezzo.luogo ? `, ${pezzo.luogo}` : ''}. Dal Museo della Grande Guerra delle Valli del Noce.`;
+
+const urlCanonico = `https://elbrenz.eu/non-e-sole-grande-guerra/${pezzo.slug}`;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  name: pezzo.titolo,
+  description: descrizioneSeo,
+  image: pezzo.immagini_urls ?? [],
+  url: urlCanonico,
+  ...(pezzo.anno ? { dateCreated: String(pezzo.anno) } : {}),
+  ...(pezzo.luogo ? { contentLocation: { '@type': 'Place', name: pezzo.luogo } } : {}),
+  isPartOf: {
+    '@type': 'Collection',
+    name: 'Museo della Grande Guerra · Non e Sole',
+    url: 'https://elbrenz.eu/non-e-sole-grande-guerra',
+  },
+  ...(pezzo.fonte ? { creditText: pezzo.fonte } : {}),
+};
+---
+
+<Layout
+  title={`${pezzo.titolo} · Museo della Grande Guerra · El Brenz`}
+  description={descrizioneSeo}
+  ogImage={copertina}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
+
+      <a href="/non-e-sole-grande-guerra"
+        class="inline-block text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold no-underline mb-4 hover:underline"
+        style="font-family: 'Inter', sans-serif;">← Museo della Grande Guerra</a>
+
+      <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-2"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;">{pezzo.titolo}</h1>
+
+      <p class="text-[11px] tracking-[0.14em] uppercase text-[#8a6215] m-0 mb-7"
+        style="font-family: 'Inter', sans-serif;">
+        {tipoL}{quando ? ` · ${quando}` : ''}{pezzo.luogo ? ` · ${pezzo.luogo}` : ''}
+      </p>
+
+      {pezzo.immagini_urls?.length > 0 && (
+        <div class="grid gap-4 mb-8">
+          {pezzo.immagini_urls.map((u, i) => (
+            <img src={u} alt={i === 0 ? pezzo!.titolo : `${pezzo!.titolo} (${i + 1})`}
+              class="w-full h-auto rounded-md border border-[#C8923E]/25"
+              loading={i === 0 ? 'eager' : 'lazy'} decoding="async" />
+          ))}
+        </div>
+      )}
+
+      {pezzo.descrizione && (
+        <p class="text-[#1E2E26]/85 leading-relaxed text-lg m-0 mb-6"
+          style="font-family: 'Source Serif 4', Georgia, serif;">{pezzo.descrizione}</p>
+      )}
+
+      {pezzo.racconto && (
+        <div class="mb-8">
+          <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-3 pb-2 border-b border-[#C8923E]/30"
+            style="font-family: 'Inter', sans-serif;">Il racconto</h2>
+          {/* whitespace-pre-line: gli a capo di chi ha scritto sono il ritmo del
+              racconto, non spaziatura da normalizzare. */}
+          <p class="text-[#1E2E26]/85 leading-relaxed whitespace-pre-line m-0"
+            style="font-family: 'Source Serif 4', Georgia, serif;">{pezzo.racconto}</p>
+        </div>
+      )}
+
+      <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 md:p-6" style="font-family: 'Inter', sans-serif;">
+        <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-3">Il cartellino</h2>
+        <dl class="text-sm text-[#1E2E26]/85 leading-relaxed m-0 grid gap-1.5">
+          {cartellino.filter(([, v]) => !!v).map(([k, v]) => (
+            <div><dt class="inline font-semibold text-[#8a6215]">{k}:</dt> <dd class="inline m-0">{v}</dd></div>
+          ))}
+        </dl>
+      </div>
+
+      <p class="mt-8 text-sm text-[#1E2E26]/70 leading-relaxed" style="font-family: 'Inter', sans-serif;">
+        Hai materiale sulla Grande Guerra nelle nose valli?
+        <a href="/non-e-sole-grande-guerra#proponi" class="text-[#8a6215] font-semibold hover:underline">Proponilo al museo →</a>
+      </p>
+
+    </div>
+  </main>
+</Layout>
