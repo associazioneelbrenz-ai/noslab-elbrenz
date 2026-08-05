@@ -1,0 +1,87 @@
+---
+/**
+ * /guardiani/conferma/{id}/{token} — conferma del doppio opt-in alla newsletter
+ * dei «Guardiani de la lenga».
+ *
+ * Perche' una pagina e non la risposta dell'edge: la piattaforma Supabase serve
+ * l'HTML delle edge function come text/plain con nosniff, e il destinatario si
+ * trovava davanti il sorgente invece del ringraziamento (segnalato da Monica
+ * Valentinotti, 5/8/2026). Stessa cura gia' adottata per /guardiani-curatela:
+ * la pagina la rende elbrenz.eu, l'edge risponde in JSON.
+ *
+ * Il token sta nel PATH e mai in query string: un '=' seguito da due cifre
+ * esadecimali si corrompe nel quoted-printable delle email.
+ */
+import Layout from '../../../layouts/Layout.astro';
+
+export const prerender = false;
+
+const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
+const [id, token] = seg;
+const valido = /^[0-9a-f-]{36}$/i.test(id ?? '') && /^[0-9a-f]+$/i.test(token ?? '');
+const EDGE = valido ? `${SB_URL}/functions/v1/guardiani-contributo/conferma-newsletter/${id}/${token}` : '';
+---
+
+<Layout
+  title="Conferma iscrizione · Guardiani de la lenga"
+  description="Conferma dell'iscrizione agli aggiornamenti sul glossario del ladino anaunico."
+  ogImage="/og/og-default.jpg"
+>
+  <main class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
+    <div
+      id="gc-card"
+      data-edge={EDGE}
+      class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9"
+    >
+      <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">
+        Guardiani de la lenga
+      </p>
+      <div id="gc-body">
+        <p class="text-[#1E2E26]/70 m-0">Confermo l'iscrizione…</p>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  (function () {
+    var card = document.getElementById('gc-card');
+    var body = document.getElementById('gc-body');
+    if (!card || !body) return;
+    var edge = card.getAttribute('data-edge') || '';
+
+    var titolo = function (t) {
+      return '<h1 style="font-family:Georgia,serif;font-size:24px;color:#1E2E26;margin:0 0 10px;">' + t + '</h1>';
+    };
+    var testo = function (t) {
+      return '<p style="color:#1E2E26;opacity:.85;margin:0 0 10px;line-height:1.6;">' + t + '</p>';
+    };
+    var motto = '<p style="color:#C8923E;font-family:Georgia,serif;font-style:italic;margin:14px 0 0;">Raìs fonde no le ’nglacia</p>';
+    var casa = '<p style="margin:22px 0 0;"><a href="/guardiani-de-la-lenga" style="color:#C8923E;font-weight:600;text-decoration:none;">Torna al glossario →</a></p>';
+
+    function scadutoOInvalido() {
+      body.innerHTML = titolo('Link non valido')
+        + testo('Il link di conferma non è valido o è già stato usato. Se vuoi ricevere gli aggiornamenti, riprova dalla pagina del glossario.')
+        + casa;
+    }
+
+    if (!edge) { scadutoOInvalido(); return; }
+
+    fetch(edge, { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || d.ok !== true) { scadutoOInvalido(); return; }
+        body.innerHTML = titolo(d.gia ? 'Eri già iscritta ✓' : 'Iscrizione confermata ✓')
+          + testo(d.gia
+            ? 'Questa conferma era già arrivata: continuerai a ricevere gli aggiornamenti sul glossario e sui progetti della lingua.'
+            : 'Grazie! Da ora riceverai gli aggiornamenti sul glossario e sui progetti della lingua delle nostre valli.')
+          + motto + casa;
+      })
+      .catch(function () {
+        body.innerHTML = titolo('Non riesco a confermare')
+          + testo('Qualcosa è andato storto lungo la strada. Riprova fra qualche minuto, oppure scrivici a info@elbrenz.eu.')
+          + casa;
+      });
+  })();
+</script>

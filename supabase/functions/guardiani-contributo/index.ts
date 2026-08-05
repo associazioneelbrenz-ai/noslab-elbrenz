@@ -92,17 +92,33 @@ Deno.serve(async (req: Request) => {
   const mNews = url.pathname.match(/\/conferma-newsletter\/([0-9a-f-]{36})\/([0-9a-f]+)\/?$/);
   if (mNews) {
     const [, id, token] = mNews;
+    // [5/8/2026] Qui si rispondeva in HTML, e la piattaforma Supabase lo serve
+    // come text/plain con nosniff: chi apriva il link dalla mail si vedeva il
+    // sorgente della pagina invece del ringraziamento (segnalato da Monica
+    // Valentinotti). Stessa cura del ramo curatela: la pagina la rende
+    // elbrenz.eu, l'edge parla JSON. Un browser viene rimandato alla pagina,
+    // che poi chiama questo stesso endpoint in JSON — cosi' i link GIA' spediti
+    // restano validi. Effetto collaterale gradito: gli scanner antispam che
+    // aprono i link non confermano piu' l'iscrizione al posto della persona.
+    const vuoleJson = (req.headers.get('accept') ?? '').includes('application/json');
+    if (!vuoleJson) {
+      return new Response(null, {
+        status: 302,
+        headers: { 'Location': `${SITO}/guardiani/conferma/${id}/${token}`, 'Cache-Control': 'no-store' },
+      });
+    }
     const { data: contrib } = await supabase.from('guardiani_contributori')
       .select('id, marketing_token, marketing_double_optin').eq('id', id).maybeSingle();
     if (!contrib || contrib.marketing_token !== token) {
-      return html('<p class="occhiello">Guardiani de la lenga</p><h1>Link non valido</h1><p>Il link di conferma è scaduto o già usato.</p>');
+      return json({ ok: false, error: 'link_non_valido' }, 200, c);
     }
-    if (!contrib.marketing_double_optin) {
+    const gia = contrib.marketing_double_optin === true;
+    if (!gia) {
       await supabase.from('guardiani_contributori')
         .update({ marketing_double_optin: true, marketing_confermato_il: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq('id', id);
     }
-    return html('<p class="occhiello">Guardiani de la lenga</p><h1>Iscrizione confermata ✓</h1><p>Grazie! Da ora riceverai gli aggiornamenti sul glossario e sui progetti della lingua. <em>Raìs fonde no le ’nglacia.</em></p>');
+    return json({ ok: true, gia }, 200, c);
   }
 
   // ---- ramo CURATELA (valida / rifiuta) ----------------------------------
@@ -278,7 +294,10 @@ Deno.serve(async (req: Request) => {
 
   // double opt-in newsletter (solo se ha chiesto il marketing)
   if (consensoMarketing && marketingToken) {
-    const link = `${Deno.env.get('SUPABASE_URL')}/functions/v1/guardiani-contributo/conferma-newsletter/${contrib.id}/${marketingToken}`;
+    // Il link punta alla pagina sul NOSTRO dominio (che chiama l'edge in JSON):
+    // piu' rassicurante di un URL supabase.co in una mail, e niente sorgente a
+    // schermo. Il vecchio indirizzo dell'edge resta valido e rimanda qui.
+    const link = `${SITO}/guardiani/conferma/${contrib.id}/${marketingToken}`;
     await inviaEmail(email, 'Conferma la tua iscrizione · El Brenz',
       `<!DOCTYPE html><html><body style="font-family:-apple-system,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#F8F1E4;">
         <div style="background:#fff;padding:32px;border-radius:8px;border-top:4px solid #C8923E;">
