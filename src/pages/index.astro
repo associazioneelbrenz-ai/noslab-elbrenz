@@ -59,6 +59,7 @@ import { formatDataIT, nomePilastro } from '../lib/articoli';
 import { schemaOrganization } from '../lib/schema';
 import { imgRid, srcSetCard } from '../lib/immagini';
 import { MIGOLE, miniatura, embed } from '../data/video';
+import CardDdl1539 from '../components/CardDdl1539.astro';
 
 // [3/8/2026] Stato della gita: fonte unica config_app, la stessa che consulta
 // l'edge gita-crea-ordine. La home non deve invitare a pagare un viaggio che
@@ -426,6 +427,11 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
 
     </div>
   </section>
+
+  {/* AGGIUNTA 5/8/2026 — disegno di legge 1539, subito sotto la hero e FUORI
+      dal flusso degli ultimi articoli: non e' una notizia che invecchia, e'
+      la causa dell'Associazione. Permanente, e non si apre da sola. */}
+  <CardDdl1539 lang="it" />
 
   {/* AGGIUNTA M5.0 v2 — filigrana Aquila Tirolensis (pubblico dominio) nella
       fascia sotto la hero: centro-destra, parzialmente fuori viewport,

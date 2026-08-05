@@ -7,6 +7,7 @@
  */
 
 import PaginaPilastro from '../components/PaginaPilastro.astro';
+import CardDdl1539 from '../components/CardDdl1539.astro';
 ---
 <PaginaPilastro ogImage="/og/og-lingua.jpg"
   pilastro="2_lingua_ladinita"
@@ -21,4 +22,8 @@ import PaginaPilastro from '../components/PaginaPilastro.astro';
     'Registrazioni audio del progetto <em>Os dal Nos</em>',
     'Materiali didattici per scuole e curiosi',
   ]}
-/>
+>
+  {/* In testa al pilastro Lingua: il disegno di legge 1539 e' la causa di
+      questa sezione, non una notizia che invecchia. */}
+  <CardDdl1539 slot="in-testa" lang="it" compatta />
+</PaginaPilastro>

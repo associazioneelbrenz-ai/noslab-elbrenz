@@ -98,6 +98,12 @@ const occhielloFinal = occhiello ?? `Pilastro · ${nome}`;
     </div>
   </header>
 
+  {/* AGGIUNTA 5/8/2026 — slot opzionale fra l'intestazione e gli articoli, per
+      chi deve mettere qualcosa in testa a UNA pagina-pilastro senza infilarlo
+      in tutte (serve alla card del disegno di legge 1539 su /lingua). Le
+      pagine che non lo riempiono non cambiano di una riga. */}
+  <slot name="in-testa" />
+
   {hasArticoli ? (
     <section class="bg-[#FDF9F0]">
       <div class="max-w-4xl mx-auto px-6 py-16 md:py-20">

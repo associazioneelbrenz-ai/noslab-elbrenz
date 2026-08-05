@@ -11,6 +11,7 @@
  */
 import Layout from '../../layouts/Layout.astro';
 import { useTranslations } from '../../i18n/ui';
+import CardDdl1539 from '../../components/CardDdl1539.astro';
 
 const t = useTranslations('de');
 ---
@@ -62,6 +63,10 @@ const t = useTranslations('de');
       </div>
     </div>
   </section>
+
+  {/* AGGIUNTA 5/8/2026 — disegno di legge 1539, stessa card dell'italiano.
+      Il tedesco e' bozza: da far validare a Brunella Bonapace. */}
+  <CardDdl1539 lang="de" />
 
   <section class="bg-[#FDF9F0] py-16">
     <div class="max-w-2xl mx-auto px-6 text-center">

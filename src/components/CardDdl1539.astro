@@ -1,0 +1,200 @@
+---
+/**
+ * CardDdl1539 — evidenza permanente del disegno di legge n. 1539 per il
+ * riconoscimento del gruppo linguistico ladino-retico della Val di Non.
+ *
+ * Sta in home (alta, fuori dal flusso degli ultimi articoli), in /lingua, e
+ * nelle home /de e /en. NON e' un interstitial: e' una card, non si apre da
+ * sola.
+ *
+ * DUE COSE CHE NON DEVONO MAI SUCCEDERE, e sono il motivo per cui il testo e'
+ * scritto cosi':
+ *  1. Non deve MAI lasciare intendere che il riconoscimento sia avvenuto. La
+ *     pietra miliare e' il DEPOSITO in Parlamento, non il riconoscimento. Chi
+ *     verifica trova un disegno di legge fermo in commissione, e se la card
+ *     dice altro mette in dubbio tutto il resto che pubblichiamo.
+ *  2. Non deve MAI accostare El Brenz all'iter parlamentare. L'Associazione
+ *     non ha avuto alcun ruolo in Senato e non tratta con le istituzioni su
+ *     questo dossier. Si da' notizia di un atto altrui, si ringrazia, e si
+ *     dice che cosa fa l'Associazione per conto proprio: raccogliere la
+ *     lingua. Niente "grazie al nostro impegno", niente "una voce in piu'
+ *     quando si tratta con le istituzioni".
+ *
+ * La riga di stato viene da config_app.ddl_1539_stato, mai dal codice. Se non
+ * si legge, la riga non compare e il resto della card resta intero.
+ */
+import { getStatoDdl1539, dataEstesaIT } from '../lib/ddl1539';
+
+interface Props {
+  lang?: 'it' | 'de' | 'en';
+  /** true nella pagina /lingua, dove la card sta in testa e non serve il margine alto */
+  compatta?: boolean;
+}
+const { lang = 'it', compatta = false } = Astro.props;
+
+const ARTICOLO = '/articoli/presentazione-del-disegno-di-legge-n-1539-riconoscimento-del-gruppo-linguistico-ladino-retico-della-val-di-non';
+const TESSERAMENTO = '/tesseramento?utm_source=card-ddl1539&utm_medium=sito&utm_campaign=riconoscimento';
+
+const stato = await getStatoDdl1539();
+
+const T = {
+  it: {
+    kicker: 'IN PARLAMENTO',
+    titolo1: 'La ', titoloEm: 'nosa lenga', titolo2: ' è arrivata in Senato',
+    p1a: 'Il 18 giugno 2025 il senatore Pietro Patton ha depositato al Senato il disegno di legge n. 1539 per il riconoscimento del gruppo linguistico ',
+    p1b: 'ladino-retico della Val di Non',
+    p1c: '. È la prima volta che la questione arriva in Parlamento.',
+    p2: "Il testo chiede il riconoscimento del gruppo, l'insegnamento della lingua nelle scuole della valle, il rispetto della toponomastica e l'accesso alle tutele già previste per le minoranze riconosciute.",
+    p3: "All'Associazione El Brenz va il ringraziamento a chi ha portato in Senato una causa che nelle nostre valli si aspettava da generazioni.",
+    btn1: 'Leggi il disegno di legge',
+    btn2: 'Sostieni il riconoscimento',
+    chiusa: 'Il riconoscimento si decide in Parlamento. Una lingua però vive in chi la parla, e raccoglierne le parole prima che si perdano è il lavoro che ogni socio rende possibile.',
+    aggiornato: 'Aggiornato al',
+  },
+  de: {
+    kicker: 'IM PARLAMENT',
+    titolo1: 'Unsere Sprache ist im ', titoloEm: 'Senat', titolo2: ' angekommen',
+    p1a: 'Am 18. Juni 2025 hat Senator Pietro Patton im Senat den Gesetzentwurf Nr. 1539 zur Anerkennung der ',
+    p1b: 'ladinisch-rätischen Sprachgruppe des Nonsbergs',
+    p1c: ' eingebracht. Zum ersten Mal ist diese Frage im Parlament angelangt.',
+    p2: 'Der Entwurf fordert die Anerkennung der Sprachgruppe, den Sprachunterricht an den Schulen des Tals, die Achtung der Ortsnamen und den Zugang zu den Schutzmaßnahmen, die für anerkannte Minderheiten bereits vorgesehen sind.',
+    p3: 'Der Verein El Brenz dankt jenen, die eine Sache ins Parlament getragen haben, auf die man in unseren Tälern seit Generationen wartet.',
+    btn1: 'Den Gesetzentwurf lesen',
+    btn2: 'Die Anerkennung unterstützen',
+    chiusa: 'Über die Anerkennung entscheidet das Parlament. Eine Sprache lebt jedoch in denen, die sie sprechen: ihre Wörter zu sammeln, bevor sie verloren gehen, ist die Arbeit, die jedes Mitglied möglich macht.',
+    aggiornato: 'Stand:',
+  },
+  en: {
+    kicker: 'IN PARLIAMENT',
+    titolo1: 'Our language has reached the ', titoloEm: 'Senate', titolo2: '',
+    p1a: 'On 18 June 2025 Senator Pietro Patton tabled bill no. 1539 in the Italian Senate, seeking recognition of the ',
+    p1b: 'Ladin-Rhaetian language group of Val di Non',
+    p1c: '. It is the first time the question has reached Parliament.',
+    p2: 'The bill asks for recognition of the group, teaching of the language in the schools of the valley, respect for local place names, and access to the protections already granted to recognised minorities.',
+    p3: 'El Brenz thanks those who brought to the Senate a cause our valleys have been waiting on for generations.',
+    btn1: 'Read the bill',
+    btn2: 'Support recognition',
+    chiusa: 'Recognition is decided in Parliament. A language, however, lives in those who speak it, and gathering its words before they are lost is the work every member makes possible.',
+    aggiornato: 'Last checked:',
+  },
+}[lang];
+
+const dataVerifica = lang === 'it' ? dataEstesaIT(stato?.verificatoIl ?? null) : (stato?.verificatoIl ?? null);
+---
+
+<section class={`bg-[#FDF9F0] ${compatta ? 'pt-10 pb-12' : 'py-14 md:py-16'}`} aria-labelledby="eb-ddl1539-titolo">
+  <div class="max-w-4xl mx-auto px-5 sm:px-6">
+
+    <article class="relative bg-[#F5EEDD] border border-[#C8923E]/35 rounded-sm px-6 py-8 sm:px-10 sm:py-10 shadow-[0_1px_3px_rgba(30,46,38,0.06)]">
+
+      <span
+        class="inline-block bg-[#C8923E]/15 border border-[#C8923E] text-[#C8923E] px-3 py-1 text-[10px] sm:text-[11px] font-medium tracking-[0.2em] uppercase mb-5"
+        style="font-family: 'Inter', sans-serif;"
+      >
+        {T.kicker}
+      </span>
+
+      <h2
+        id="eb-ddl1539-titolo"
+        class="text-2xl sm:text-3xl md:text-4xl font-medium leading-[1.15] tracking-tight text-[#1E2E26] mb-5"
+        style="font-family: 'Playfair Display', serif;"
+      >
+        {T.titolo1}<em class="text-[#C8923E]" style="font-style: italic;">{T.titoloEm}</em>{T.titolo2}
+      </h2>
+
+      <div class="space-y-4 text-[15px] sm:text-base leading-relaxed text-[#0F0F0F]/85" style="font-family: 'Source Serif 4', Georgia, serif;">
+        <p>{T.p1a}<strong>{T.p1b}</strong>{T.p1c}</p>
+        <p>{T.p2}</p>
+        <p>{T.p3}</p>
+      </div>
+
+      {/* Riga di stato: viene da config_app, e se non si legge NON compare.
+          Un dato che non si riesce a leggere non deve produrre un'affermazione. */}
+      <p
+        id="eb-ddl1539-stato"
+        class:list={['mt-6 flex items-start gap-2 text-[13px] leading-snug text-[#0F0F0F]/55', { hidden: !stato }]}
+        style="font-family: 'Inter', sans-serif;"
+        data-verificato={stato?.verificatoIl ?? ''}
+      >
+        <span aria-hidden="true" class="mt-[6px] shrink-0 w-1.5 h-1.5 rounded-full bg-[#C8923E]/60"></span>
+        <span id="eb-ddl1539-stato-testo">
+          {stato?.stato}{dataVerifica ? `. ${T.aggiornato} ${dataVerifica}.` : '.'}
+        </span>
+      </p>
+
+      <div class="mt-7 flex flex-col sm:flex-row sm:flex-wrap gap-3">
+        <a
+          href={ARTICOLO}
+          class="inline-flex items-center justify-center bg-[#1E2E26] text-[#F5EEDD] px-6 py-3 text-sm font-medium tracking-wide no-underline hover:bg-[#16231d] transition-colors"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          {T.btn1}
+        </a>
+        <a
+          href={TESSERAMENTO}
+          class="inline-flex items-center justify-center border border-[#C8923E] text-[#C8923E] px-6 py-3 text-sm font-medium tracking-wide no-underline hover:bg-[#C8923E] hover:text-[#F5EEDD] transition-colors"
+          style="font-family: 'Inter', sans-serif;"
+        >
+          {T.btn2}
+        </a>
+      </div>
+
+      <p class="mt-5 text-[13px] leading-relaxed text-[#0F0F0F]/60" style="font-family: 'Source Serif 4', Georgia, serif;">
+        {T.chiusa}
+      </p>
+
+    </article>
+  </div>
+</section>
+
+<script>
+  /* Rinfresco della riga di stato dal client.
+     Serve perche' le pagine che ospitano la card sono PRERENDERIZZATE: senza
+     questo, cambiare la riga in config_app non cambierebbe niente finche'
+     qualcuno non rifa' la build, e la promessa "si aggiorna dal database"
+     sarebbe falsa. Qui invece il valore a build-time serve solo a rendere
+     l'HTML gia' giusto e a non far lampeggiare la riga.
+     Niente TypeScript in questo blocco: un'annotazione di tipo lo ucciderebbe
+     tutto a build verde. */
+  (function () {
+    var riga = document.getElementById('eb-ddl1539-stato');
+    var testo = document.getElementById('eb-ddl1539-stato-testo');
+    if (!riga || !testo) return;
+
+    var url = import.meta.env.PUBLIC_SUPABASE_URL;
+    var anon = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !anon) return;
+
+    var etichetta = { it: 'Aggiornato al', de: 'Stand:', en: 'Last checked:' };
+    var mesi = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+      'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+    var lang = (document.documentElement.lang || 'it').slice(0, 2);
+    if (!etichetta[lang]) lang = 'it';
+
+    function dataEstesa(iso) {
+      if (!iso) return null;
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+      if (!m) return null;
+      if (lang !== 'it') return iso;
+      var mese = mesi[Number(m[2]) - 1];
+      return mese ? Number(m[3]) + ' ' + mese + ' ' + m[1] : null;
+    }
+
+    fetch(url + '/rest/v1/config_app?chiave=eq.ddl_1539_stato&select=valore', {
+      headers: { apikey: anon },
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (rows) {
+        if (!rows || !rows.length) return;
+        var v = rows[0] && rows[0].valore;
+        var stato = v && v.stato;
+        /* Se il valore non si legge si lascia in piedi quello della build:
+           non si cancella una riga corretta per colpa di una rete storta. */
+        if (typeof stato !== 'string' || !stato.trim()) return;
+        var d = dataEstesa(v.verificato_il);
+        testo.textContent = stato.trim() + (d ? '. ' + etichetta[lang] + ' ' + d + '.' : '.');
+        riga.classList.remove('hidden');
+      })
+      .catch(function () { /* si tace: resta il valore della build */ });
+  })();
+</script>
