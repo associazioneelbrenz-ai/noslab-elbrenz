@@ -175,6 +175,31 @@ Deno.serve(async (req: Request) => {
     : "";
 
   // 6) Pagamento. metodo='contanti' + stato='completato' (il denaro c'e' gia').
+  //
+  // [6/8/2026] NON RIPETIBILE. Se la risposta non arriva al telefono, chi ha
+  // incassato non sa se e' passato e ripreme: due righe per lo stesso versamento
+  // non sono un fastidio, sono un errore di cassa che poi qualcuno deve trovare
+  // e stornare. Il vincolo vero e' l'indice unico sul database (stessa persona,
+  // tipo, importo, giorno, metodo, esclusi gli annullati): vale per tutti i
+  // chiamanti e per qualunque condizione di rete.
+  //
+  // Qui si fa la parte gentile: se il versamento c'e' gia', non si risponde con
+  // un errore ma si restituisce quello esistente. Chi ha premuto due volte deve
+  // leggere «e' registrato», non «non riuscito», altrimenti riprova una terza.
+  const { data: gia2 } = await admin.from("pagamenti_tesseramento")
+    .select("id, domanda_id")
+    .eq("metodo", "contanti").eq("stato", "completato").eq("tipo", tipo)
+    .eq("importo", importo).eq("incassato_il", incassatoIl)
+    .ilike("email", email).is("annullato_il", null)
+    .maybeSingle();
+  if (gia2) {
+    return J({
+      ok: true, gia_registrato: true,
+      pagamento_id: (gia2 as any).id,
+      domanda_id: (gia2 as any).domanda_id ?? domandaId,
+    });
+  }
+
   const { data: pag, error: ePag } = await admin.from("pagamenti_tesseramento").insert({
     tipo, metodo, stato: "completato",
     nome, email, anno, importo, valuta: "EUR",
@@ -187,7 +212,23 @@ Deno.serve(async (req: Request) => {
     data_ricostruita: dataRicostruita,
     note_incasso: (b?.note ?? "").toString().slice(0, 500) || null,
   }).select("id").single();
-  if (ePag || !pag) return J({ error: "pagamento_fallito", detail: ePag?.message }, 500);
+  if (ePag || !pag) {
+    // 23505 = violazione di unicita': due dita sullo stesso pulsante, o due
+    // schede aperte. Non e' un guasto, e' esattamente cio' che l'indice deve
+    // impedire: si recupera la riga buona e si risponde come se fosse andata.
+    if ((ePag as any)?.code === "23505") {
+      const { data: vinta } = await admin.from("pagamenti_tesseramento")
+        .select("id, domanda_id")
+        .eq("metodo", "contanti").eq("stato", "completato").eq("tipo", tipo)
+        .eq("importo", importo).eq("incassato_il", incassatoIl)
+        .ilike("email", email).is("annullato_il", null)
+        .maybeSingle();
+      if (vinta) {
+        return J({ ok: true, gia_registrato: true, pagamento_id: (vinta as any).id, domanda_id: (vinta as any).domanda_id ?? domandaId });
+      }
+    }
+    return J({ error: "pagamento_fallito", detail: ePag?.message }, 500);
+  }
 
   // 7) RICEVUTA al socio. Chi paga in contanti ha gli stessi diritti di chi paga
   // online. Riusiamo il meccanismo esistente (ricevuta_dati) e la funzione
