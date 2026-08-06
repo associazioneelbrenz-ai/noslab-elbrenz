@@ -53,7 +53,9 @@ const EDGE = `${SB_URL}/functions/v1/guardiani-contributo/azione/${azione}/${id}
           body.innerHTML = titolo('Già gestito') + testo(`Il termine «${H(d.lemma || '')}» risulta già <strong>${H(d.stato || '')}</strong>.`);
           return;
         }
-        if (!d.ok) {
+        // [6/8] L'anteprima ora dichiara `trovato`, non `ok`: leggere non e'
+        // fare, e due risposte che si somigliano prima o poi si confondono.
+        if (!d.trovato) {
           body.innerHTML = titolo('Link non valido o scaduto') + testo('I link di curatela valgono 30 giorni. Apri la mail più recente.');
           return;
         }
@@ -88,12 +90,25 @@ const EDGE = `${SB_URL}/functions/v1/guardiani-contributo/azione/${azione}/${id}
           body: JSON.stringify(motivoEl ? { motivo: motivoEl.value } : {}),
         });
         const d = await r.json();
-        if (d.ok) {
+        // Si mostra la conferma SOLO se la scrittura ha restituito la riga
+        // cambiata, e si riporta lo stato che arriva da lei, non quello letto
+        // prima. Se non e' andata, si dice cosa e' successo: si tace, non si
+        // mente. (Il 6 agosto quindici lemmi risultarono pubblicati a schermo e
+        // nessuno a database.)
+        if (d.ok && d.stato) {
           body.innerHTML = titolo(azione === 'valida' ? 'Pubblicato ✓' : 'Contributo rifiutato') + testo(H(d.message || 'Fatto.'));
         } else if (d.error === 'gia_gestito') {
-          body.innerHTML = titolo('Già gestito') + testo('Il contributo era già stato gestito.');
+          body.innerHTML = titolo('Già gestito')
+            + testo(`Il contributo risulta già <strong>${H(d.stato || 'gestito')}</strong>: non ho cambiato niente.`);
+        } else if (d.error === 'non_trovato') {
+          body.innerHTML = titolo('Contributo non trovato') + testo('Il termine non è più nel database.');
+        } else if (d.error === 'scrittura_fallita') {
+          body.innerHTML = titolo('Non salvato')
+            + testo('Il database ha rifiutato la modifica, quindi <strong>il termine non è stato pubblicato</strong>. Riprova; se insiste, segnalalo.')
+            + testo(`<span style="font-size:12px;color:#999;">${H(d.dettaglio || '')}</span>`);
         } else {
-          body.innerHTML = titolo('Non riuscito') + testo('Riprova aprendo di nuovo il link dalla mail.');
+          body.innerHTML = titolo('Non riuscito')
+            + testo('Non sono riuscito a salvare la decisione, quindi <strong>non è cambiato niente</strong>. Riprova aprendo di nuovo il link dalla mail.');
         }
       } catch {
         body.innerHTML = titolo('Errore') + testo('Errore di connessione. Riprova tra poco.');

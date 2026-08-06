@@ -144,8 +144,13 @@ Deno.serve(async (req: Request) => {
       }
       const expAz = Date.now() + TOKEN_TTL_MS;
       const tAz = await firmaToken(adminSecret, `guardiani-${azione}`, id, expAz);
+      // [6/8/2026] La LETTURA non dice piu' `ok`. Diceva `ok: true` come la
+      // scrittura, e due risposte che si somigliano prima o poi vengono
+      // confuse: bastava che qualcuno prendesse l'esito dell'anteprima per una
+      // conferma, e la pagina avrebbe annunciato una pubblicazione mai avvenuta.
+      // Qui `trovato` dice quel che e': ho letto il lemma, non ho fatto niente.
       return json({
-        ok: true, azione, lemma: lemma.lemma,
+        trovato: true, azione, lemma: lemma.lemma,
         variante: VARIANTE_LABEL[lemma.parlata] ?? lemma.parlata, stato: lemma.stato,
         post: { id, exp: expAz, t: tAz },
       }, 200, c);
@@ -155,21 +160,63 @@ Deno.serve(async (req: Request) => {
     if (lemma.stato === 'pubblicato' || lemma.stato === 'rifiutato') {
       return json({ ok: false, error: 'gia_gestito', stato: lemma.stato }, 200, c);
     }
-    if (azione === 'valida') {
-      await supabase.from('dizionario_lemma').update({
-        stato: 'pubblicato', validato_da: 'Commissione Linguistica El Brenz (via email)',
-        validato_il: new Date().toISOString(), updated_at: new Date().toISOString(),
-      }).eq('id', id).eq('stato', 'in_revisione');
-      return json({ ok: true, azione: 'valida', stato: 'pubblicato', lemma: lemma.lemma,
-        message: `«${lemma.lemma}» è ora nel glossario pubblico.` }, 200, c);
-    }
+    // [6/8/2026] SI RISPONDE SOLO DOPO AVER VISTO LA RIGA CAMBIATA.
+    //
+    // Prima l'esito della scrittura non veniva mai guardato: `.update()` di
+    // supabase-js non solleva eccezioni, torna un oggetto con `error`, e la
+    // funzione rispondeva comunque «e' ora nel glossario pubblico». La mattina
+    // del 6 agosto il segretario ha validato piu' di quindici lemmi vedendo
+    // quindici conferme, e a database non ne e' cambiato nemmeno uno: la
+    // scrittura veniva respinta da tg_punti_lemma (chiave esterna sui punti) e
+    // nessuno se ne accorgeva. Su tutti i lemmi in coda created_at e updated_at
+    // coincidevano al minuto.
+    //
+    // Un pannello che dichiara di aver fatto una cosa che non ha fatto e' peggio
+    // di un pannello rotto: quello rotto lo vedi. Ora si chiede alla scrittura
+    // di restituire la riga, e senza riga non si dice che e' andata bene.
+    const patch = azione === 'valida'
+      ? {
+          stato: 'pubblicato', validato_da: 'Commissione Linguistica El Brenz (via email)',
+          validato_il: new Date().toISOString(), updated_at: new Date().toISOString(),
+        }
+      : null;
+
     let motivo = '';
-    try { const b = await req.json(); motivo = String((b as Record<string, unknown>)?.motivo ?? '').trim().slice(0, 500); } catch { /**/ }
-    await supabase.from('dizionario_lemma').update({
-      stato: 'rifiutato', motivo_rifiuto: motivo || null, updated_at: new Date().toISOString(),
-    }).eq('id', id).eq('stato', 'in_revisione');
-    return json({ ok: true, azione: 'rifiuta', stato: 'rifiutato', lemma: lemma.lemma,
-      message: `«${lemma.lemma}» non entrerà nel glossario.` }, 200, c);
+    if (azione === 'rifiuta') {
+      try { const b = await req.json(); motivo = String((b as Record<string, unknown>)?.motivo ?? '').trim().slice(0, 500); } catch { /**/ }
+    }
+
+    const { data: righe, error: errUpd } = await supabase.from('dizionario_lemma')
+      .update(patch ?? {
+        stato: 'rifiutato', motivo_rifiuto: motivo || null, updated_at: new Date().toISOString(),
+      })
+      .eq('id', id).eq('stato', 'in_revisione')
+      .select('id, stato, validato_il');
+
+    if (errUpd) {
+      console.error('[guardiani] scrittura curatela fallita:', azione, id, errUpd.code, errUpd.message);
+      return json({ ok: false, error: 'scrittura_fallita', dettaglio: errUpd.message }, 500, c);
+    }
+    if (!righe || righe.length === 0) {
+      // Zero righe toccate: o il lemma non c'e' piu', o qualcuno l'ha gestito
+      // nel frattempo. In nessuno dei due casi si annuncia un successo.
+      const { data: ora } = await supabase.from('dizionario_lemma')
+        .select('stato').eq('id', id).maybeSingle();
+      return json({
+        ok: false,
+        error: ora ? 'gia_gestito' : 'non_trovato',
+        stato: ora?.stato ?? null,
+        lemma: lemma.lemma,
+      }, 200, c);
+    }
+
+    const riga = righe[0] as { stato: string };
+    return json({
+      ok: true, azione, stato: riga.stato, lemma: lemma.lemma,
+      message: azione === 'valida'
+        ? `«${lemma.lemma}» è ora nel glossario pubblico.`
+        : `«${lemma.lemma}» non entrerà nel glossario.`,
+    }, 200, c);
   }
 
   // ---- ramo INVIO CONTRIBUTO (POST dal form) -----------------------------

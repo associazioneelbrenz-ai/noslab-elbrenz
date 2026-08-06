@@ -127,13 +127,34 @@ Deno.serve(async (req: Request) => {
 
   const now = new Date().toISOString();
 
+  // [6/8/2026] Nessuna di queste azioni guardava l'esito della scrittura:
+  // `.update()` di supabase-js non solleva eccezioni, torna un oggetto con
+  // `error`, e la funzione rispondeva `ok: true` comunque. E' lo stesso difetto
+  // che il 6 agosto ha fatto credere al segretario di aver pubblicato quindici
+  // lemmi del glossario che a database non si sono mai mossi. Qui era peggio:
+  // all'autore partiva anche la mail «il tuo articolo e' stato pubblicato».
+  //
+  // scrivi() chiede la riga indietro e la restituisce solo se esiste davvero.
+  // Chi chiama non annuncia niente prima di averla vista.
+  async function scrivi(patch: Record<string, unknown>): Promise<{ riga: any } | { errore: string }> {
+    const { data, error } = await service.from('articolo')
+      .update(patch).eq('id', articoloId).select('id, stato').maybeSingle();
+    if (error) {
+      console.error('[articolo-azione] scrittura fallita:', articoloId, error.code, error.message);
+      return { errore: error.message };
+    }
+    if (!data) return { errore: 'nessuna riga aggiornata' };
+    return { riga: data };
+  }
+
   if (azione === 'invia') {
     if (art.autore_id !== userId) return json({ error: 'Puoi inviare solo i tuoi articoli.' }, 403, c);
     if (!['bozza', 'rifiutato'].includes(art.stato)) return json({ error: 'Solo bozze o articoli rifiutati possono essere inviati.' }, 409, c);
     const pulito = sanitize(String(art.corpo_html ?? ''));
-    await service.from('articolo').update({
+    const esito = await scrivi({
       stato: 'in_approvazione', inviato_at: now, corpo_html: pulito, motivo_rifiuto: null, updated_at: now,
-    }).eq('id', articoloId);
+    });
+    if ('errore' in esito) return json({ error: `Articolo non inviato: ${esito.errore}` }, 500, c);
     await inviaEmail(DIRETTIVO, `Redazione: nuovo articolo da approvare — ${art.titolo}`,
       `<p>Un editor ha inviato per approvazione l'articolo <strong>${art.titolo}</strong>.</p><p>Approvalo o rifiutalo dall'area redazione.</p>`);
     await notificaTelegram(`📝 **Articolo da approvare**\n${art.titolo}`);
@@ -147,9 +168,12 @@ Deno.serve(async (req: Request) => {
     try { const { data: au } = await service.auth.admin.getUserById(art.autore_id); emailAutore = au?.user?.email ?? null; } catch { /* */ }
 
     if (azione === 'approva') {
-      await service.from('articolo').update({
+      const esito = await scrivi({
         stato: 'pubblicato', pubblicato: true, pubblicato_at: now, approvato_da: userId, updated_at: now,
-      }).eq('id', articoloId);
+      });
+      // La mail all'autore parte SOLO dopo la riga cambiata: dirgli «e' stato
+      // pubblicato» quando non lo e' sarebbe la bugia peggiore delle tre.
+      if ('errore' in esito) return json({ error: `Articolo non pubblicato: ${esito.errore}` }, 500, c);
       // Ingestion Andreas KB: da wire con l'interfaccia di ingest-articoli (TODO).
       if (emailAutore) await inviaEmail(emailAutore, 'El Brenz — il tuo articolo è stato pubblicato',
         `<p>Il tuo articolo <strong>${art.titolo}</strong> è stato approvato e pubblicato. Grazie!</p>`);
@@ -157,9 +181,10 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, stato: 'pubblicato' }, 200, c);
     } else {
       const motivo = String(body.motivo ?? '').trim().slice(0, 1000);
-      await service.from('articolo').update({
+      const esito = await scrivi({
         stato: 'rifiutato', motivo_rifiuto: motivo || 'Nessun motivo specificato', approvato_da: userId, updated_at: now,
-      }).eq('id', articoloId);
+      });
+      if ('errore' in esito) return json({ error: `Rifiuto non salvato: ${esito.errore}` }, 500, c);
       if (emailAutore) await inviaEmail(emailAutore, 'El Brenz — il tuo articolo richiede modifiche',
         `<p>Il tuo articolo <strong>${art.titolo}</strong> è stato rimandato indietro.</p><p><em>Motivo:</em> ${motivo || 'non specificato'}</p><p>Puoi correggerlo e reinviarlo dall'area redazione.</p>`);
       return json({ ok: true, stato: 'rifiutato' }, 200, c);
