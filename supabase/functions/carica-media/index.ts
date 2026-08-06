@@ -17,8 +17,27 @@ const ALLOWED_ORIGINS = [
   "https://elbrenz.eu",
   "http://localhost:3000",
 ];
-// Cartella → livello minimo richiesto (socio=10). Solo queste sono ammesse.
-const CARTELLE: Record<string, number> = { storie: 10, "museo-gg": 10, community: 10 };
+// Cartella → bucket e livello minimo richiesto (socio=10). Solo queste ammesse.
+//
+// [6/8/2026] Aggiunta la cartella `donazioni`, che vive in un bucket PRIVATO.
+// Il motivo: `caricaFilePrivato` nell'app scriveva dritto sullo Storage, cosa
+// che il token del socio non e' autorizzato a fare, e il caricamento moriva
+// senza dirlo. E' lo stesso difetto che nel museo ha fatto sparire tutto quello
+// che i soci hanno caricato da luglio. Qui pesa di piu': sono fotografie e
+// carte di famiglia, e chi non le vede arrivare non ci riprova.
+//
+// Due condizioni ferme, e valgono gia' per costruzione:
+//   - si carica solo per se': il percorso e' {cartella}/{uid}/... e l'uid viene
+//     SEMPRE dal token verificato, mai dal corpo della richiesta;
+//   - niente indirizzo pubblico: per il bucket privato non si restituisce un
+//     getPublicUrl (che non funzionerebbe), ma il solo percorso. Chi ha titolo
+//     lo legge con un collegamento firmato al momento.
+const CARTELLE: Record<string, { bucket: string; liv: number; privato: boolean }> = {
+  storie:      { bucket: "assets-pubblici", liv: 10, privato: false },
+  "museo-gg":  { bucket: "assets-pubblici", liv: 10, privato: false },
+  community:   { bucket: "assets-pubblici", liv: 10, privato: false },
+  donazioni:   { bucket: "donazioni",       liv: 10, privato: true },
+};
 const EXT_OK = new Set(["jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "pdf"]);
 
 // 1/8/2026 — allineato a donazione-upload: 15 MB per file (erano 12).
@@ -94,8 +113,9 @@ Deno.serve(async (req: Request) => {
 
   // 2) Cartella whitelistata + livello minimo.
   const cartella = (req.headers.get("x-cartella") ?? "").trim();
-  const minLiv = CARTELLE[cartella];
-  if (minLiv === undefined) return J({ error: "cartella_non_ammessa" }, 400);
+  const conf = CARTELLE[cartella];
+  if (conf === undefined) return J({ error: "cartella_non_ammessa" }, 400);
+  const minLiv = conf.liv;
 
   const admin = createClient(SUPABASE_URL, SERVICE);
   const { data: ruoli } = await admin
@@ -121,11 +141,20 @@ Deno.serve(async (req: Request) => {
 
   // 4) Upload con service role in {cartella}/{uid}/{ts}-{rand}.{ext}.
   const rand = crypto.randomUUID().slice(0, 8);
-  const path = `${cartella}/${user.id}/${Date.now()}-${rand}.${tipo.ext}`;
+  // Nel bucket privato la cartella e' gia' il bucket: il percorso resta
+  // {uid}/... , cosi' le policy per proprietario continuano a valere.
+  const path = conf.privato
+    ? `${user.id}/${Date.now()}-${rand}.${tipo.ext}`
+    : `${cartella}/${user.id}/${Date.now()}-${rand}.${tipo.ext}`;
   const { error: upErr } = await admin.storage
-    .from("assets-pubblici").upload(path, bytes, { contentType: tipo.mime, upsert: false });
+    .from(conf.bucket).upload(path, bytes, { contentType: tipo.mime, upsert: false });
   if (upErr) return J({ error: "upload_failed", detail: upErr.message }, 500);
 
-  const url = admin.storage.from("assets-pubblici").getPublicUrl(path).data.publicUrl;
+  // Bucket privato: NESSUN indirizzo pubblico. Si restituisce il percorso, che
+  // e' quello che la donazione conserva; la lettura passa da un collegamento
+  // firmato generato al momento per chi ha titolo.
+  if (conf.privato) return J({ ok: true, path, privato: true });
+
+  const url = admin.storage.from(conf.bucket).getPublicUrl(path).data.publicUrl;
   return J({ ok: true, url, path });
 });

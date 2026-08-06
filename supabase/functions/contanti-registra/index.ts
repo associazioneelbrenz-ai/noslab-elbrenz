@@ -133,9 +133,45 @@ Deno.serve(async (req: Request) => {
 
   const anno = new Date(incassatoIl).getFullYear();
 
-  // 4) Domanda: aggiorna quella esistente (stessa email) o creala (iscrizione di persona).
-  const { data: esistente } = await admin
-    .from("domande_tesseramento").select("id").ilike("email", email).limit(1).maybeSingle();
+  // 4) Domanda: aggiorna quella esistente o creala (iscrizione di persona).
+  //
+  // [6/8/2026] QUI L'EMAIL FACEVA DA CHIAVE, E SU DUE CASE NON REGGE.
+  // Prima si prendeva `.ilike(email).limit(1)`, senza ordine e senza filtro di
+  // stato. Due situazioni reali la rompono:
+  //   - la casella condivisa (Diego Magnoni e Nadia Pangrazzi stanno sullo
+  //     stesso indirizzo, come Monica Valentinotti e Maria Luisa Battistini):
+  //     l'incasso di una poteva finire sulla posizione dell'altra;
+  //   - il doppione chiuso (il caso di Clarissa e Franca): il versamento poteva
+  //     attaccarsi alla domanda annullata.
+  // Su un movimento di cassa attribuire alla persona sbagliata e' peggio che
+  // fermarsi, perche' produce due errori insieme: manca a una e avanza all'altra.
+  //
+  // Ora: si guardano tutte le domande di quell'indirizzo, si scartano le chiuse,
+  // e se restano piu' persone si sceglie per NOME. Se il nome non decide, non si
+  // tira a indovinare: si chiede di precisare.
+  const { data: candidate } = await admin
+    .from("domande_tesseramento")
+    .select("id, nome, numero_socio, stato, stato_socio")
+    .ilike("email", email);
+
+  const vive = (candidate ?? []).filter((r: any) =>
+    r.stato !== "annullata" && r.stato !== "respinta" && (r.stato_socio ?? "attivo") !== "cessato");
+
+  const norm = (s: string) => (s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+  let esistente: { id: string } | null = null;
+  if (vive.length === 1) {
+    esistente = { id: (vive[0] as any).id };
+  } else if (vive.length > 1) {
+    const perNome = vive.filter((r: any) => norm(r.nome) === norm(nome));
+    if (perNome.length === 1) {
+      esistente = { id: (perNome[0] as any).id };
+    } else {
+      return J({
+        error: "persona_ambigua",
+        detail: `Su ${email} risultano piu' associati (${vive.map((r: any) => `${r.nome}${r.numero_socio ? ` n.${r.numero_socio}` : ""}`).join("; ")}). Il nome scritto non basta a distinguerli: correggilo perche' coincida con quello a registro.`,
+      }, 409);
+    }
+  }
 
   let domandaId: string;
   if (esistente) {
