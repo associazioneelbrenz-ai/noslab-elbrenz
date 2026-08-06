@@ -1,4 +1,40 @@
 User-agent: *
 Allow: /
 
+# [6/8/2026] Fuori dalla scansione le pagine di servizio.
+#
+# Due ragioni, e la seconda pesa piu' della prima.
+#
+# I consumi: sono le pagine generate a ogni richiesta, e un motore che ne
+# scandisce quaranta piu' volte al giorno consuma piu' di tutti i soci messi
+# insieme. I soci sono trentadue.
+#
+# La prudenza: alcune si aprono con un collegamento firmato. Un crawler che
+# segue quei collegamenti non consuma soltanto, puo' compiere un'operazione al
+# posto di una persona. E' lo stesso motivo per cui la conferma della newsletter
+# e' stata portata su una pagina intermedia.
+
+# Pannelli di curatela e aree riservate
+Disallow: /libro-soci
+Disallow: /tesseramento-curatela
+Disallow: /newsletter-curatela
+Disallow: /guardiani-curatela
+Disallow: /convenzioni-curatela
+Disallow: /custodi-curatela
+Disallow: /museo-gg-curatela
+Disallow: /radar-eventi
+Disallow: /accedi
+Disallow: /app/
+
+# Pagine personali e collegamenti firmati: non c'e' niente da indicizzare, e
+# dichiararle sarebbe solo un invito a provarci.
+Disallow: /paga-quota
+Disallow: /scheda-domanda
+Disallow: /rinnovo
+Disallow: /integrazione/
+Disallow: /tessera/
+Disallow: /guardiani/conferma
+Disallow: /newsletter/conferma
+Disallow: /newsletter/disiscrizione
+
 Sitemap: https://elbrenz.eu/sitemap-index.xml

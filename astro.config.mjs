@@ -233,6 +233,30 @@ export default defineConfig({
       // Pagine luogo, evento e articolo (SSR): non scoperte in automatico.
       customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI, ...MUSEO, ...RACCOLTE],
       filter: (page) => {
+        // [6/8/2026] LE PAGINE DI SERVIZIO, IN UN POSTO SOLO.
+        //
+        // Sotto si erano accumulate riga dopo riga, una per ogni volta che ci si
+        // accorgeva di una pagina di troppo, e una era rimasta scoperta: la
+        // scoperta del 6/8 e' che /libro-soci, che porta i dati dei soci, era
+        // DICHIARATA in sitemap. Non e' solo consumo: e' offrire ai motori un
+        // elenco di persone.
+        //
+        // Sono tutte pagine che restano dinamiche: pannelli di curatela, pagine
+        // raggiunte da un collegamento firmato, pagine personali. Un motore che
+        // le scandisce consuma invocazioni per niente, e su quelle firmate
+        // potrebbe perfino compiere un'operazione al posto di una persona.
+        // Vale anche il TODO lasciato in sospeso qui sotto su custodi-curatela e
+        // museo-gg-curatela: la decisione e' arrivata.
+        const RISERVATE = [
+          '/libro-soci', '/tesseramento-curatela', '/newsletter-curatela',
+          '/guardiani-curatela', '/convenzioni-curatela', '/custodi-curatela',
+          '/museo-gg-curatela', '/radar-eventi', '/accedi',
+          '/paga-quota', '/scheda-domanda', '/rinnovo', '/integrazione/',
+          '/tessera/', '/guardiani/conferma', '/newsletter/conferma',
+          '/newsletter/disiscrizione',
+        ];
+        for (const p of RISERVATE) if (page.includes(p)) return false;
+
         const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
         const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';
         if (!deLive && page.includes('/de/')) return false;
