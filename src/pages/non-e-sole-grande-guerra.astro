@@ -26,6 +26,11 @@ type Pezzo = {
   anno: number | null; periodo: string | null; luogo: string | null; valle: string | null;
   fonte: string; elaborazione: string | null; donatore: string | null; immagini_urls: string[];
 };
+type Raccolta = {
+  slug: string | null; titolo: string; occhiello: string | null;
+  sommario: string | null; copertina_url: string | null;
+};
+let raccolte: Raccolta[] = [];
 let pezzi: Pezzo[] = [];
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
@@ -35,6 +40,14 @@ try {
     .eq('stato', 'pubblicato')
     .order('ordine', { ascending: true }).order('anno', { ascending: true });
   pezzi = (data as Pezzo[]) ?? [];
+
+  // Le raccolte pubblicate: la RLS espone solo quelle. Se la lettura fallisce,
+  // la fascia semplicemente non compare e il mosaico resta al suo posto.
+  const { data: dRac } = await sb.from('museo_gg_raccolta')
+    .select('slug, titolo, occhiello, sommario, copertina_url')
+    .eq('stato', 'pubblicata')
+    .order('ordine', { ascending: true }).order('created_at', { ascending: false });
+  raccolte = (dRac as Raccolta[]) ?? [];
 } catch (e) {
   console.error('[museo-gg] lettura pezzi fallita:', e);
 }
@@ -111,6 +124,38 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
       </div>
 
       <section class="mt-10">
+        {/* I percorsi: le raccolte tematiche. Stanno PRIMA del mosaico perche' i
+            filtri servono a cercare e le raccolte a far leggere: chi arriva qui
+            senza sapere cosa cerca deve trovare una porta, non una griglia.
+            La fascia sparisce da sola finche' non ce n'e' nessuna pubblicata. */}
+        {raccolte.length > 0 && (
+          <div class="mb-12">
+            <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">I percorsi</h2>
+            <div class="grid sm:grid-cols-2 gap-4">
+              {raccolte.map((r) => (
+                <a href={r.slug ? `/non-e-sole-grande-guerra/raccolte/${r.slug}` : '#'}
+                  class="block no-underline border border-[#C8923E]/25 bg-[#F5EEDD] rounded-md overflow-hidden group">
+                  {r.copertina_url && (
+                    <span class="block overflow-hidden bg-[#e8dcc4]">
+                      <img src={r.copertina_url} alt={r.titolo} loading="lazy" decoding="async"
+                        class="w-full h-auto group-hover:scale-[1.03] transition-transform duration-300" />
+                    </span>
+                  )}
+                  <span class="block p-4">
+                    {r.occhiello && (
+                      <span class="block text-[10px] tracking-[0.16em] uppercase text-[#8a6215] mb-1" style="font-family: 'Inter', sans-serif;">{r.occhiello}</span>
+                    )}
+                    <span class="block text-lg leading-snug text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{r.titolo}</span>
+                    {r.sommario && (
+                      <span class="block text-sm text-[#1E2E26]/70 leading-relaxed mt-1" style="font-family: 'Inter', sans-serif;">{r.sommario}</span>
+                    )}
+                  </span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
         <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">La collezione</h2>
 
         {pezzi.length === 0 ? (

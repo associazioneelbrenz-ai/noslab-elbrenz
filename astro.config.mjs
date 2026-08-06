@@ -128,6 +128,27 @@ async function urlPezziMuseo() {
 }
 const MUSEO = await urlPezziMuseo();
 
+/** Le raccolte tematiche pubblicate. Stessa regola: solo `pubblicata`. */
+async function urlRaccolteMuseo() {
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return [];
+  try {
+    const r = await fetch(`${url}/rest/v1/museo_gg_raccolta?select=slug&stato=eq.pubblicata`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return [];
+    const righe = await r.json();
+    return righe
+      .map((x) => x.slug)
+      .filter(Boolean)
+      .map((s) => `https://elbrenz.eu/non-e-sole-grande-guerra/raccolte/${s}`);
+  } catch {
+    return []; // degrado silenzioso
+  }
+}
+const RACCOLTE = await urlRaccolteMuseo();
+
 /**
  * AGGIUNTA 2/8/2026 — gli articoli. Passando a leggere dal database la pagina
  * /articoli/<slug> e' diventata SSR, e la sitemap non scopre le rotte SSR: se
@@ -210,7 +231,7 @@ export default defineConfig({
     // noindex, quindi non devono comparire nella sitemap (audit 14/7).
     sitemap({
       // Pagine luogo, evento e articolo (SSR): non scoperte in automatico.
-      customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI, ...MUSEO],
+      customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI, ...MUSEO, ...RACCOLTE],
       filter: (page) => {
         const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
         const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';

@@ -1,0 +1,165 @@
+---
+/**
+ * /non-e-sole-grande-guerra/raccolte/<slug> — una raccolta tematica del Museo.
+ *
+ * Il terzo passo della vetrina: i filtri servono a CERCARE, le raccolte a far
+ * LEGGERE. Qui i pezzi non sono un risultato di query ma una sequenza scelta,
+ * tenuta insieme da un'introduzione e da una nota per ciascuno: «i ragazzi del
+ * 1899», «le donne rimaste», «il fronte in Val di Rabbi».
+ *
+ * SSR: la raccolta compare quando il curatore la pubblica, non al build. Le RLS
+ * fanno due filtri per noi: la raccolta solo se `pubblicata`, e i pezzi solo se
+ * `pubblicato` — quindi un pezzo ritirato sparisce dalla raccolta da solo,
+ * senza lasciare un buco da gestire nel markup.
+ */
+import Layout from '../../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+
+const { slug } = Astro.params;
+
+type Raccolta = {
+  id: string; slug: string; titolo: string; occhiello: string | null;
+  sommario: string | null; introduzione: string | null; copertina_url: string | null;
+};
+type Voce = {
+  ordine: number; nota: string | null;
+  pezzo: {
+    slug: string | null; titolo: string; tipo: string; anno: number | null;
+    periodo: string | null; luogo: string | null; immagini_urls: string[];
+  } | null;
+};
+
+let raccolta: Raccolta | null = null;
+let voci: Voce[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('museo_gg_raccolta')
+    .select('id, slug, titolo, occhiello, sommario, introduzione, copertina_url')
+    .eq('slug', slug).eq('stato', 'pubblicata').maybeSingle();
+  raccolta = (data as Raccolta) ?? null;
+
+  if (raccolta) {
+    const { data: d2 } = await sb.from('museo_gg_raccolta_pezzo')
+      .select('ordine, nota, pezzo:pezzo_id ( slug, titolo, tipo, anno, periodo, luogo, immagini_urls )')
+      .eq('raccolta_id', raccolta.id)
+      .order('ordine', { ascending: true });
+    // Il join lascia `pezzo` a null quando la RLS nasconde un pezzo non piu'
+    // pubblicato: si scarta qui, cosi' la sequenza resta senza vuoti.
+    voci = ((d2 as Voce[]) ?? []).filter((v) => !!v.pezzo);
+  }
+} catch (e) {
+  console.error('[raccolte/slug] lettura fallita:', e);
+}
+
+if (!raccolta) return Astro.redirect('/non-e-sole-grande-guerra', 302);
+
+const TIPO: Record<string, string> = {
+  foto: 'Fotografia', fotografia: 'Fotografia', cartolina: 'Cartolina',
+  lettera: 'Lettera', documento: 'Documento', oggetto: 'Oggetto',
+};
+const copertina = raccolta.copertina_url
+  || voci[0]?.pezzo?.immagini_urls?.[0]
+  || '/og/og-grande-guerra.jpg';
+const descrizioneSeo = (raccolta.sommario || raccolta.introduzione || '')
+  .replace(/\s+/g, ' ').trim().slice(0, 180)
+  || `Una raccolta del Museo della Grande Guerra delle Valli del Noce.`;
+const urlCanonico = `https://elbrenz.eu/non-e-sole-grande-guerra/raccolte/${raccolta.slug}`;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Collection',
+  name: raccolta.titolo,
+  description: descrizioneSeo,
+  url: urlCanonico,
+  isPartOf: {
+    '@type': 'Collection',
+    name: 'Museo della Grande Guerra · Non e Sole',
+    url: 'https://elbrenz.eu/non-e-sole-grande-guerra',
+  },
+  hasPart: voci.filter((v) => v.pezzo?.slug).map((v) => ({
+    '@type': 'CreativeWork',
+    name: v.pezzo!.titolo,
+    url: `https://elbrenz.eu/non-e-sole-grande-guerra/${v.pezzo!.slug}`,
+  })),
+};
+---
+
+<Layout
+  title={`${raccolta.titolo} · Museo della Grande Guerra · El Brenz`}
+  description={descrizioneSeo}
+  ogImage={copertina}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
+
+      <a href="/non-e-sole-grande-guerra"
+        class="inline-block text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold no-underline mb-4 hover:underline"
+        style="font-family: 'Inter', sans-serif;">← Museo della Grande Guerra</a>
+
+      {raccolta.occhiello && (
+        <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">{raccolta.occhiello}</p>
+      )}
+      <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-6"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;">{raccolta.titolo}</h1>
+
+      {raccolta.copertina_url && (
+        <img src={raccolta.copertina_url} alt={raccolta.titolo} loading="eager" decoding="async"
+          class="w-full h-auto rounded-md border border-[#C8923E]/25 mb-8" />
+      )}
+
+      {raccolta.introduzione && (
+        <div class="text-[#1E2E26]/85 leading-relaxed text-lg whitespace-pre-line mb-10"
+          style="font-family: 'Source Serif 4', Georgia, serif;">{raccolta.introduzione}</div>
+      )}
+
+      <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-6 pb-2 border-b border-[#C8923E]/30"
+        style="font-family: 'Inter', sans-serif;">
+        {voci.length === 1 ? 'Un pezzo' : `${voci.length} pezzi`}
+      </h2>
+
+      {voci.length === 0 ? (
+        <p class="text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
+          I pezzi di questa raccolta non sono al momento visibili.
+        </p>
+      ) : (
+        <ol class="list-none m-0 p-0 grid gap-10">
+          {voci.map((v, i) => (
+            <li class="m-0 p-0">
+              <a href={v.pezzo!.slug ? `/non-e-sole-grande-guerra/${v.pezzo!.slug}` : '#'}
+                class="block no-underline group">
+                {v.pezzo!.immagini_urls?.[0] && (
+                  <img src={v.pezzo!.immagini_urls[0]} alt={v.pezzo!.titolo} loading={i === 0 ? 'eager' : 'lazy'} decoding="async"
+                    class="w-full h-auto rounded-md border border-[#C8923E]/25 mb-3" />
+                )}
+                <p class="text-[10px] tracking-[0.14em] uppercase text-[#8a6215] m-0 mb-1" style="font-family: 'Inter', sans-serif;">
+                  {i + 1} · {TIPO[v.pezzo!.tipo] ?? v.pezzo!.tipo}
+                  {v.pezzo!.anno ? ` · ${v.pezzo!.anno}` : (v.pezzo!.periodo ? ` · ${v.pezzo!.periodo}` : '')}
+                  {v.pezzo!.luogo ? ` · ${v.pezzo!.luogo}` : ''}
+                </p>
+                <h3 class="text-xl text-[#1E2E26] m-0 group-hover:underline"
+                  style="font-family: 'Playfair Display', serif; font-weight: 500;">{v.pezzo!.titolo}</h3>
+              </a>
+              {v.nota && (
+                <p class="text-[#1E2E26]/80 leading-relaxed mt-2 m-0"
+                  style="font-family: 'Source Serif 4', Georgia, serif;">{v.nota}</p>
+              )}
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <p class="mt-12 text-sm text-[#1E2E26]/70 leading-relaxed" style="font-family: 'Inter', sans-serif;">
+        Hai materiale sulla Grande Guerra nelle nose valli?
+        <a href="/non-e-sole-grande-guerra#proponi" class="text-[#8a6215] font-semibold hover:underline">Proponilo al museo →</a>
+      </p>
+
+    </div>
+  </main>
+</Layout>
