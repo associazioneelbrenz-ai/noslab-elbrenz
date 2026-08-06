@@ -251,3 +251,8 @@ verify_jwt = false
 # (Trappola 12).
 [functions.solleciti-quota]
 verify_jwt = false
+
+# guardiani-digest: canale amministrativo (gate x-ingest-token), chiamato dal
+# cron. Nessun browser lo chiama: verify_jwt = false come gli altri server-to-server.
+[functions.guardiani-digest]
+verify_jwt = false

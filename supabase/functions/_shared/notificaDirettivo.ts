@@ -43,6 +43,17 @@ function componiTesto(
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
     // AGGIUNTA 31/7/2026 — digest settimanale del Radar eventi (GATE 3).
     // Elenco corto: il dettaglio sta nella pagina di curatela, non nel gruppo.
+    // [6/8/2026] Riepilogo giornaliero dei Guardiani. Sostituisce il messaggio
+    // per singolo lemma: il 6 agosto sono arrivati 23 termini da una persona
+    // sola, e ventitre' notifiche per un lavoro fatto in una seduta sono
+    // rumore, non informazione.
+    case 'guardiani_digest': {
+      const chi = Array.isArray(d.contributori) ? d.contributori : [];
+      r.push(`${d.totale ?? 0} termini nuovi in coda:`);
+      for (const c of chi.slice(0, 10)) r.push(`· ${c.quanti ?? '?'} da ${c.nome ?? '—'}`);
+      r.push(`Cura su ${site}/guardiani-curatela`);
+      break;
+    }
     case 'radar_digest': {
       const lista = Array.isArray(d.eventi) ? d.eventi : [];
       r.push(`${d.totale ?? lista.length} candidati sopra soglia:`);

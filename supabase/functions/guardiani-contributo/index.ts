@@ -245,14 +245,32 @@ Deno.serve(async (req: Request) => {
     }).select('id').single();
   if (errL || !lemma) { console.error('[guardiani] insert lemma:', errL); return json({ error: 'Errore interno, riprova.' }, 500, c); }
 
-  // Notifica Telegram al direttivo (16/7): nuovo lemma proposto, da validare.
-  // Best-effort, non blocca il flusso. PII minima (lemma + variante, no email).
+  // [6/8/2026] L'avviso per SINGOLO lemma e' stato spento: il 6 agosto sono
+  // arrivati 32 termini da cinque persone, 23 dei quali da Simone in una sola
+  // seduta, e il sistema trattava un lavoro fatto in blocco come 23 eventi
+  // separati (23 mail e 23 messaggi nel gruppo). Ora il riepilogo lo fa
+  // `guardiani-digest`, una volta al giorno e solo se e' arrivato qualcosa.
+  //
+  // La chiamata resta scritta qui, non cancellata, e resta governata dal toggle
+  // `telegram_notifica.guardiani_lemma` che ora e' spento: riaccenderlo
+  // ripristina il vecchio comportamento con un UPDATE, senza un deploy.
+  // Il problema non e' che arriva troppa roba: e' che l'avviso era dimensionato
+  // per otto lemmi al mese. Si allarga la porta, non si stringe il rubinetto.
   notificaDirettivo(supabase, 'guardiani_lemma', {
     lemma: termine, variante: VARIANTE_LABEL[variante] ?? variante,
   }).catch(() => {});
 
-  // email al curatore con link HMAC valida/rifiuta (best-effort)
-  if (adminSecret) {
+  // [6/8/2026] LA MAIL PER SINGOLO TERMINE E' SPENTA. Era il fastidio vero: 23
+  // contributi di Simone in una seduta = 23 mail nella casella. Ora il riepilogo
+  // lo fa `guardiani-digest` una volta al giorno, e porta DENTRO di se' i link
+  // valida/rifiuta di ogni lemma: nessuna maniglia si perde per strada.
+  //
+  // Il blocco resta qui intero, spento da un interruttore e non cancellato:
+  // basta impostare il secret GUARDIANI_MAIL_PER_LEMMA=true per riaverlo, senza
+  // rimettere mano al codice. Il giorno che i contributi tornassero rari, la
+  // mail immediata sarebbe di nuovo la cosa giusta.
+  const mailPerLemma = Deno.env.get('GUARDIANI_MAIL_PER_LEMMA') === 'true';
+  if (adminSecret && mailPerLemma) {
     const exp = Date.now() + TOKEN_TTL_MS;
     const tV = await firmaToken(adminSecret, 'guardiani-valida', lemma.id, exp);
     const tR = await firmaToken(adminSecret, 'guardiani-rifiuta', lemma.id, exp);
