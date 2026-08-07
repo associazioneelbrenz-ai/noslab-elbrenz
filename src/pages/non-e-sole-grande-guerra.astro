@@ -156,6 +156,71 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
           </div>
         )}
 
+        {/*
+          LA FACCIA DEL MUSEO. Mancava, e con due soli pezzi era la cosa piu'
+          importante: una pagina che si desse arie da museo ricco farebbe una
+          figura peggiore di una che dice, senza giri, che sta nascendo. Qui si
+          spiega cos'e', chi lo alimenta e come si contribuisce. E si mette in
+          evidenza il primo pezzo portato da un socio, perche' e' la prova che
+          la cosa funziona: non un esempio, un fatto.
+        */}
+        <section class="not-prose my-12 bg-[#F5EEDD] border border-[#C8923E]/35 rounded-lg p-6 md:p-8">
+          <h2 class="text-xl md:text-2xl leading-tight text-[#1E2E26] m-0 mb-3"
+              style="font-family: 'Playfair Display', serif; font-weight: 500;">Un museo che non ha una sede</h2>
+          <p class="text-[#1E2E26]/85 leading-relaxed m-0 mb-3" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Gli oggetti della Grande Guerra delle nostre valli non stanno in una vetrina: stanno nei
+            cassetti, nelle soffitte, dentro le scatole di latta che passano di padre in figlio. Una
+            cartolina dal fronte, una gavetta, la fotografia di un uomo in divisa di cui non si sa più
+            il nome. Questo archivio esiste per tenerne memoria dove sono, fotografandoli e
+            raccontandoli, senza chiedere a nessuno di separarsene.
+          </p>
+          <p class="text-[#1E2E26]/85 leading-relaxed m-0 mb-5" style="font-family: 'Source Serif 4', Georgia, serif;">
+            È appena cominciato: <strong>{pezzi.length === 1 ? 'un pezzo' : `${pezzi.length} pezzi`} in
+            catalogo</strong>, ciascuno con la sua fonte dichiarata e il consenso di chi lo custodisce.
+            Non è una collezione, è l'inizio di una. Cresce solo se qualcuno apre un cassetto.
+          </p>
+
+          {pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')) && (
+            <a href={`/non-e-sole-grande-guerra/${pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).slug}`}
+               class="block no-underline group border-t border-[#C8923E]/30 pt-5">
+              <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-2"
+                 style="font-family: 'Inter', sans-serif;">Il primo pezzo portato da un socio</p>
+              <div class="flex gap-4 items-start">
+                {pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).immagini_urls?.[0] && (
+                  <img src={pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).immagini_urls[0]}
+                       alt="" loading="lazy" decoding="async"
+                       class="w-24 h-24 md:w-32 md:h-32 object-cover rounded border border-[#E8DFC7] flex-none" />
+                )}
+                <div class="min-w-0">
+                  <h3 class="text-lg md:text-xl leading-snug text-[#1E2E26] m-0 mb-1 group-hover:underline decoration-1 underline-offset-4"
+                      style="font-family: 'Playfair Display', serif; font-weight: 500;">
+                    {pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).titolo}
+                  </h3>
+                  <p class="text-[#1E2E26]/75 text-sm leading-relaxed m-0"
+                     style="font-family: 'Source Serif 4', Georgia, serif;">
+                    Gli Standschützen al Tonale: la milizia dei troppo giovani e dei troppo vecchi,
+                    mandata a tenere i passi. Portato in archivio da un socio, con le sue fotografie.
+                  </p>
+                </div>
+              </div>
+            </a>
+          )}
+
+          <div class="border-t border-[#C8923E]/30 mt-5 pt-5">
+            <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-2"
+               style="font-family: 'Inter', sans-serif;">Come si contribuisce</p>
+            <p class="text-[#1E2E26]/85 leading-relaxed m-0 mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+              Si fotografa l'oggetto, si dice da dove viene e chi lo custodisce, e si dichiara di avere
+              il diritto di mostrarlo. Nient'altro. L'oggetto resta a casa tua: quello che entra in
+              archivio è la sua immagine e la sua storia. Ogni scheda passa da un curatore prima di
+              comparire qui, perché una fonte sbagliata resta sbagliata per sempre.
+            </p>
+            <a href="#dona-materiale"
+               class="inline-block bg-[#C8923E] text-[#1E2E26] font-semibold px-6 py-2.5 rounded-md no-underline hover:bg-[#D9A94E] transition-colors"
+               style="font-family: 'Inter', sans-serif;">Dona una fotografia o un oggetto</a>
+          </div>
+        </section>
+
         <h2 class="text-[13px] tracking-[0.2em] uppercase text-[#8a6215] font-medium mb-5 pb-2 border-b border-[#C8923E]/30" style="font-family: 'Inter', sans-serif;">La collezione</h2>
 
         {pezzi.length === 0 ? (

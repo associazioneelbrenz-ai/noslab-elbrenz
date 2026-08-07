@@ -1,15 +1,28 @@
 ---
 /**
- * /storie — "Storie dalle valli": vetrina pubblica delle storie che gli admin
- * hanno promosso (pubblica=true). SSR sulla vista v_storia_pubblica (l'anon
- * legge solo le promosse; RLS/vista lo garantiscono). Nessun dato di contatto
- * dell'autore. I contenuti delle storie sono nella lingua dell'autore (non
- * tradotti); la cornice è in italiano.
+ * /storie — "Storie dalle valli", vetrina.
+ *
+ * Era un elenco, ora e' una pagina che fa leggere. Con quattro racconti non
+ * serve un archivio: serve che il primo si veda da lontano e che gli altri
+ * stiano a portata di pollice. Chi arriva deve capire in cinque secondi cosa
+ * c'e' dentro, vedere subito una cosa bella e trovare la strada per il resto.
+ *
+ * PRERENDERIZZATA, non piu' SSR. Stiamo tagliando le invocazioni, e una pagina
+ * che cambia qualche volta al mese non ha ragione di essere ricostruita a ogni
+ * visita. Il prezzo e' che una storia nuova compare alla ricostruzione
+ * successiva, ed e' il prezzo giusto.
+ *
+ * LE FIRME NON CI SONO, ED E' UNA SCELTA. Tutti e quattro i racconti risultano
+ * scritti da un account la cui casella e' condivisa da DUE socie (Maria Luisa
+ * Battistini n. 94 e Monica Valentinotti n. 3), e su quell'account nome e
+ * cognome sono vuoti. Il database non sa quale delle due abbia scritto: fra
+ * mettere un nome che potrebbe essere sbagliato e non metterne nessuno, la
+ * seconda e' l'unica onesta. Una firma sbagliata su un racconto di famiglia
+ * non e' un dettaglio tecnico, e' un torto. Quando l'attribuzione sara' certa
+ * basta riaccendere `autore_nome` qui sotto: la vista lo fornisce gia'.
  */
 import Layout from '../../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
-
-export const prerender = false;
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
@@ -18,6 +31,7 @@ type Storia = {
   id: string; titolo: string; contenuto: string;
   immagini_urls: string[]; copertina_url: string | null; created_at: string; autore_nome: string;
 };
+
 let storie: Storia[] = [];
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
@@ -28,39 +42,129 @@ try {
 } catch (e) {
   console.error('[storie] lettura vista fallita:', e);
 }
-const dataIt = (iso: string) => new Date(iso).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
-const estratto = (t: string) => t.length > 150 ? t.slice(0, 150).trim() + '…' : t;
+
+const dataIt = (iso: string) =>
+  new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+
+// L'attacco: le prime righe vere del racconto, non un riassunto inventato.
+const attacco = (t: string, n: number) => {
+  const pulito = (t ?? '').replace(/\s+/g, ' ').trim();
+  return pulito.length > n ? pulito.slice(0, n).replace(/\s\S*$/, '') + '…' : pulito;
+};
+const copertina = (s: Storia) => s.copertina_url || s.immagini_urls?.[0] || null;
+
+const [prima, ...altre] = storie;
+const totaleImmagini = storie.reduce((n, s) => n + (s.immagini_urls?.length ?? 0), 0);
 ---
 
-<Layout title="Storie dalle valli · El Brenz" description="I racconti della comunità di El Brenz: memorie, luoghi e voci delle Valli del Noce, condivisi dai soci." ogImage="/og/og-default.jpg">
+<Layout
+  title="Storie dalle valli · El Brenz"
+  description="I racconti dei soci di El Brenz: l'emigrazione, le miniere, le pietre scritte e i versi di chi partì. Memorie delle Valli del Noce raccontate da chi le custodisce."
+  ogImage="/og/og-default.jpg"
+>
   <main class="bg-[#F8F1E4] min-h-screen">
-    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
-      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3" style="font-family: 'Inter', sans-serif;">La comunità racconta</p>
-      <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">Storie dalle valli</h1>
-      <p class="text-[#1E2E26]/75 leading-relaxed mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
-        Memorie, luoghi e voci delle nostre valli, raccontate dai soci di El Brenz.
-      </p>
 
-      {storie.length === 0 ? (
-        <p class="text-[#1E2E26]/70 text-lg py-4" style="font-family: 'Source Serif 4', Georgia, serif;">
+    {/* ── LA SOGLIA: cosa c'è qui dentro, in cinque secondi ── */}
+    <section class="max-w-4xl mx-auto px-6 pt-10 pb-8 md:pt-16 md:pb-10 text-center">
+      <p class="text-[11px] tracking-[0.24em] uppercase text-[#8a6215] font-semibold m-0 mb-4"
+         style="font-family: 'Inter', sans-serif;">Storie dalle valli</p>
+      <h1 class="text-3xl md:text-5xl leading-[1.12] text-[#1E2E26] m-0 mb-5"
+          style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Chi parte, chi resta,<br class="hidden md:block" /> chi scrive per non dimenticare.
+      </h1>
+      <p class="text-lg md:text-xl text-[#1E2E26]/80 leading-relaxed max-w-2xl mx-auto m-0"
+         style="font-family: 'Source Serif 4', Georgia, serif;">
+        Non sono saggi. Sono racconti che i soci portano da casa: una lastra romana tornata alla luce
+        in un campo, i turni nelle miniere di Comasine, il viaggio verso Ellis Island, i versi di un
+        uomo di Croviana arrivato fino a Parigi.
+      </p>
+      {storie.length > 0 && (
+        <p class="text-[12px] tracking-[0.14em] uppercase text-[#1E2E26]/50 mt-6 m-0"
+           style="font-family: 'Inter', sans-serif;">
+          {storie.length} {storie.length === 1 ? 'racconto' : 'racconti'} · {totaleImmagini} immagini
+        </p>
+      )}
+    </section>
+
+    {storie.length === 0 ? (
+      <section class="max-w-2xl mx-auto px-6 pb-20 text-center">
+        <p class="text-lg text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
           Le prime storie stanno arrivando. Presto qui i racconti della nosa comunità.
         </p>
-      ) : (
-        <div class="grid gap-5">
-          {storie.map((s) => (
-            <a href={`/storie/${s.id}`} class="block no-underline bg-white border border-[#E8DFC7] rounded-lg overflow-hidden hover:border-[#C8923E]/60 transition-colors">
-              {(s.copertina_url || s.immagini_urls[0]) && (
-                <img src={s.copertina_url || s.immagini_urls[0]} alt={s.titolo} loading="lazy" decoding="async" class="w-full h-48 object-cover" />
-              )}
-              <div class="p-5">
-                <h2 class="text-xl text-[#1E2E26] m-0 mb-1" style="font-family: 'Playfair Display', serif; font-weight: 500;">{s.titolo}</h2>
-                <p class="text-[12px] tracking-[0.06em] text-[#8a6215] m-0 mb-3" style="font-family: 'Inter', sans-serif;">di {s.autore_nome} · {dataIt(s.created_at)}</p>
-                <p class="text-[#1E2E26]/75 text-sm leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">{estratto(s.contenuto)}</p>
+      </section>
+    ) : (
+      <>
+        {/* ── LA COSA BELLA SUBITO: la storia più recente, grande ── */}
+        <section class="max-w-5xl mx-auto px-6 pb-12">
+          <a href={`/storie/${prima.id}`} class="block no-underline group">
+            {copertina(prima) && (
+              <div class="overflow-hidden rounded-lg border border-[#E8DFC7] bg-white mb-6">
+                <img src={copertina(prima)} alt={prima.titolo} loading="eager" decoding="async"
+                     class="w-full h-[240px] md:h-[440px] object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
               </div>
-            </a>
-          ))}
-        </div>
-      )}
-    </div>
+            )}
+            <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-3"
+               style="font-family: 'Inter', sans-serif;">L’ultima arrivata</p>
+            <h2 class="text-2xl md:text-4xl leading-tight text-[#1E2E26] m-0 mb-4 group-hover:underline decoration-1 underline-offset-4"
+                style="font-family: 'Playfair Display', serif; font-weight: 500;">{prima.titolo}</h2>
+            <p class="text-lg text-[#1E2E26]/80 leading-relaxed m-0 mb-3 max-w-3xl"
+               style="font-family: 'Source Serif 4', Georgia, serif;">{attacco(prima.contenuto, 260)}</p>
+            <p class="text-[12px] text-[#1E2E26]/50 m-0" style="font-family: 'Inter', sans-serif;">
+              {dataIt(prima.created_at)} · {prima.immagini_urls?.length ?? 0} immagini
+            </p>
+          </a>
+        </section>
+
+        {/* ── LE ALTRE: copertine grandi anche qui, il titolo si legge da lontano ── */}
+        {altre.length > 0 && (
+          <section class="max-w-5xl mx-auto px-6 pb-4">
+            <div class="grid gap-8 md:grid-cols-2">
+              {altre.map((s) => (
+                <a href={`/storie/${s.id}`} class="block no-underline group">
+                  {copertina(s) && (
+                    <div class="overflow-hidden rounded-lg border border-[#E8DFC7] bg-white mb-4">
+                      <img src={copertina(s)} alt={s.titolo} loading="lazy" decoding="async"
+                           class="w-full h-[200px] md:h-[260px] object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+                    </div>
+                  )}
+                  <h3 class="text-xl md:text-2xl leading-snug text-[#1E2E26] m-0 mb-2 group-hover:underline decoration-1 underline-offset-4"
+                      style="font-family: 'Playfair Display', serif; font-weight: 500;">{s.titolo}</h3>
+                  <p class="text-[#1E2E26]/75 leading-relaxed m-0 mb-2"
+                     style="font-family: 'Source Serif 4', Georgia, serif;">{attacco(s.contenuto, 150)}</p>
+                  <p class="text-[12px] text-[#1E2E26]/50 m-0" style="font-family: 'Inter', sans-serif;">
+                    {dataIt(s.created_at)}
+                  </p>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+      </>
+    )}
+
+    {/* ── LA PORTA: questa è la pagina dove qualcuno decide di raccontare la sua ── */}
+    <section class="bg-[#1E2E26] mt-14">
+      <div class="max-w-3xl mx-auto px-6 py-14 md:py-20 text-center">
+        <h2 class="text-2xl md:text-3xl leading-tight text-[#F5EEDD] m-0 mb-4"
+            style="font-family: 'Playfair Display', serif; font-weight: 500;">
+          Anche tu ne hai una.
+        </h2>
+        <p class="text-[#F5EEDD]/85 text-lg leading-relaxed m-0 mb-8 max-w-xl mx-auto"
+           style="font-family: 'Source Serif 4', Georgia, serif;">
+          Il nonno emigrato, la fotografia in fondo al cassetto, il soprannome di una casa che
+          nessuno sa più spiegare. Le storie delle valli non stanno negli archivi: stanno nelle
+          famiglie, e si perdono quando nessuno le scrive.
+        </p>
+        <a href="/tesseramento"
+           class="inline-block bg-[#C8923E] text-[#1E2E26] font-semibold px-7 py-3 rounded-md no-underline hover:bg-[#D9A94E] transition-colors"
+           style="font-family: 'Inter', sans-serif;">Racconta la tua storia</a>
+        <p class="text-[13px] text-[#F5EEDD]/60 mt-5 m-0" style="font-family: 'Inter', sans-serif;">
+          Le storie si scrivono dall’app dei soci. Scrivici a
+          <a href="mailto:info@elbrenz.eu" class="text-[#C8923E] hover:underline">info@elbrenz.eu</a>
+          se preferisci raccontarla a voce: la trascriviamo noi.
+        </p>
+      </div>
+    </section>
+
   </main>
 </Layout>
