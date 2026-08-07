@@ -1,0 +1,168 @@
+---
+/**
+ * /guardiani-de-la-lenga/<slug> — la voce di dizionario di una parola sola.
+ *
+ * Perche' esiste: cinquantasette parole non sono piu' un elenco, sono un
+ * dizionario piccolo, e un dizionario si cita. Senza un indirizzo per voce si
+ * puo' solo dire «guarda nel glossario e cerca», che non e' una citazione.
+ *
+ * PRERENDERIZZATA, non SSR: stiamo tagliando le invocazioni, e cinquantasette
+ * pagine generate a ogni richiesta sarebbero il modo piu' rapido per rimettere
+ * il sito nella condizione del 6 agosto. Il prezzo e' che una parola nuova
+ * compare alla ricostruzione successiva, ed e' un prezzo giusto per un
+ * contenuto che cambia qualche volta al giorno.
+ *
+ * LE VARIANTI sono il cuore. La stessa cosa detta in modo diverso a Male' e a
+ * Fondo non e' un doppione: e' il dato. Quando due lemmi condividono il
+ * significato in parlate diverse, la scheda li mostra affiancati, cosi' si vede
+ * la differenza fra le valli. Oggi non ce n'e' ancora nessuna coppia, e la
+ * sezione non compare: comparira' da sola il giorno che arriva.
+ */
+import Layout from '../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+type Voce = {
+  id: string; slug: string; termine: string; tipo: string | null;
+  categoria_gramm: string | null; variante: string | null; comune: string | null;
+  significato_it: string | null; esempio_uso: string | null;
+  etimologia: string | null; proverbi: string | null;
+  audio_url: string | null; contributore_firma: string | null;
+};
+
+export async function getStaticPaths() {
+  const url = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+  const anon = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+  if (!anon) return [];
+  const sb = createClient(url, anon, { auth: { persistSession: false } });
+  const { data } = await sb.from('glossario_pubblico').select('*');
+  const voci = (data as Voce[]) ?? [];
+  return voci.filter((v) => v.slug).map((v) => ({
+    params: { slug: v.slug },
+    // Le sorelle viaggiano con la voce: stesso significato, parlata diversa.
+    // Il confronto e' sul significato normalizzato, perche' e' quello che rende
+    // due parole varianti l'una dell'altra e non due parole qualsiasi.
+    props: {
+      voce: v,
+      sorelle: voci.filter((a) =>
+        a.id !== v.id &&
+        (a.significato_it ?? '').trim().toLowerCase() === (v.significato_it ?? '').trim().toLowerCase() &&
+        (a.significato_it ?? '').trim() !== ''),
+    },
+  }));
+}
+
+const { voce, sorelle } = Astro.props as { voce: Voce; sorelle: Voce[] };
+
+const PARLATA: Record<string, string> = {
+  noneso: 'Noneso · Val di Non', solander: 'Solander · Val di Sole',
+  rabies: 'Rabies · Val di Rabbi', pegaes: 'Pegaes · Val di Pejo',
+};
+const parlataL = voce.variante ? (PARLATA[voce.variante] ?? voce.variante) : null;
+const eDetto = voce.tipo && voce.tipo !== 'parola';
+
+const descrizione = [voce.significato_it, parlataL].filter(Boolean).join(' · ').slice(0, 180);
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'DefinedTerm',
+  name: voce.termine,
+  description: voce.significato_it ?? '',
+  inLanguage: 'lld',
+  url: `https://elbrenz.eu/guardiani-de-la-lenga/${voce.slug}`,
+  inDefinedTermSet: {
+    '@type': 'DefinedTermSet',
+    name: 'Guardiani de la lenga · glossario del ladino anaunico',
+    url: 'https://elbrenz.eu/guardiani-de-la-lenga',
+  },
+};
+---
+
+<Layout
+  title={`${voce.termine} · Guardiani de la lenga · El Brenz`}
+  description={descrizione}
+  ogImage="/og/og-default.jpg"
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
+
+      <a href="/guardiani-de-la-lenga"
+        class="inline-block text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold no-underline mb-5 hover:underline"
+        style="font-family: 'Inter', sans-serif;">← Guardiani de la lenga</a>
+
+      {/* Il lemma in evidenza, come in un dizionario vero. */}
+      <h1 class="text-3xl md:text-4xl leading-tight text-[#1E2E26] m-0"
+          style="font-family: 'Playfair Display', serif; font-weight: 500;" lang="lld-anau">{voce.termine}</h1>
+
+      <p class="text-[13px] text-[#1E2E26]/60 mt-2 mb-7" style="font-family: 'Inter', sans-serif;">
+        {[eDetto ? 'modo di dire' : voce.categoria_gramm, parlataL, voce.comune].filter(Boolean).join(' · ')}
+      </p>
+
+      {voce.significato_it && (
+        <p class="text-xl text-[#1E2E26] leading-relaxed m-0 mb-6"
+           style="font-family: 'Source Serif 4', Georgia, serif;">{voce.significato_it}</p>
+      )}
+
+      {voce.esempio_uso && (
+        <p class="text-lg text-[#1E2E26]/80 italic leading-relaxed border-l-2 border-[#C8923E]/50 pl-4 m-0 mb-6"
+           style="font-family: 'Source Serif 4', Georgia, serif;" lang="lld-anau">{voce.esempio_uso}</p>
+      )}
+
+      {voce.audio_url && (
+        <div class="mb-6">
+          <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">La voce</p>
+          <audio controls preload="none" src={voce.audio_url} class="w-full"></audio>
+        </div>
+      )}
+
+      {/* Etimologia e proverbi compaiono SOLO se ci sono: oggi sono a zero su
+          cinquantasette, e uno spazio vuoto sembrerebbe un difetto invece di
+          un'assenza. */}
+      {voce.etimologia && (
+        <div class="mb-6">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">Etimologia</h2>
+          <p class="text-[#1E2E26]/85 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">{voce.etimologia}</p>
+        </div>
+      )}
+
+      {voce.proverbi && (
+        <div class="mb-6">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">Proverbi e modi di dire</h2>
+          <p class="text-[#1E2E26]/85 leading-relaxed whitespace-pre-line m-0" style="font-family: 'Source Serif 4', Georgia, serif;">{voce.proverbi}</p>
+        </div>
+      )}
+
+      {/* LE VARIANTI: la stessa cosa detta in un'altra valle. */}
+      {sorelle.length > 0 && (
+        <div class="mt-10 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+            Come si dice altrove
+          </h2>
+          <div class="grid gap-3">
+            {sorelle.map((s) => (
+              <a href={`/guardiani-de-la-lenga/${s.slug}`} class="no-underline block">
+                <span class="text-lg text-[#1E2E26]" style="font-family: 'Playfair Display', serif;" lang="lld-anau">{s.termine}</span>
+                <span class="text-[12px] text-[#1E2E26]/60 ml-2" style="font-family: 'Inter', sans-serif;">
+                  {[s.variante ? (PARLATA[s.variante] ?? s.variante) : null, s.comune].filter(Boolean).join(' · ')}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {voce.contributore_firma && (
+        <p class="mt-10 text-sm text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">
+          Parola portata da <strong>{voce.contributore_firma}</strong>.
+        </p>
+      )}
+
+      <p class="mt-8 text-sm" style="font-family: 'Inter', sans-serif;">
+        <a href="/guardiani-de-la-lenga#proponi" class="text-[#8a6215] font-semibold hover:underline">
+          Conosci una parola che non c’è? Proponila →
+        </a>
+      </p>
+
+    </div>
+  </main>
+</Layout>

@@ -34,7 +34,17 @@ const VARIANTI: [string, string][] = [
 ];
 const TIPI: [string, string][] = [['parola', 'Parola'], ['frase', 'Frase'], ['espressione', 'Espressione']];
 
-type Voce = { id: string; termine: string; tipo: string | null; variante: string | null; comune: string | null; significato_it: string; esempio_uso: string | null; contributore_firma: string | null };
+type Voce = {
+  id: string; termine: string; tipo: string | null; variante: string | null;
+  comune: string | null; significato_it: string; esempio_uso: string | null;
+  contributore_firma: string | null;
+  // [7/8/2026] Aggiunti con il dizionario: lo slug per la scheda propria di
+  // ogni voce, la variante italiana perche' la ricerca funzioni anche partendo
+  // dall'italiano, la categoria grammaticale che in un dizionario e' parte
+  // della voce e non un dettaglio.
+  slug?: string | null; variante_italiana?: string | null;
+  categoria_gramm?: string | null; etimologia?: string | null; proverbi?: string | null;
+};
 let glossario: Voce[] = [];
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
@@ -43,6 +53,20 @@ try {
 } catch (e) {
   console.error('[guardiani] lettura glossario fallita:', e);
 }
+
+// [7/8/2026] LA RICERCA DEVE FUNZIONARE NELLE DUE DIREZIONI E PERDONARE.
+// Chi cerca «pipistrello» deve arrivare a Barbustel, e chi cerca «barbustel»
+// deve arrivare al pipistrello. E deve tollerare accenti e grafie
+// approssimate, perche' chi cerca non sa come si scrive: e' il motivo per cui
+// viene a cercare. La chiave di ricerca mette insieme lemma, significato,
+// variante italiana e comune, tutto senza accenti.
+function norm(t: unknown): string {
+  return (t ?? '').toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ').trim();
+}
+const comuniPresenti = [...new Set(glossario.map((v) => v.comune).filter(Boolean))].sort();
+const iniziali = [...new Set(glossario.map((v) => (v.termine ?? '?').trim().charAt(0).toUpperCase()))].sort();
 const VARIANTE_LABEL = Object.fromEntries(VARIANTI);
 const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]';
 ---
@@ -139,11 +163,24 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
             <select id="gloss-filtro" class="px-3 py-2 rounded bg-white border border-[#C8923E]/40 text-sm text-[#1E2E26] focus:outline-none focus:border-[#C8923E]">
               <option value="">Tutte le parlate</option>{VARIANTI.map(([v, l]) => <option value={v}>{l}</option>)}
             </select>
+            <select id="gloss-comune" class="px-3 py-2 rounded bg-white border border-[#C8923E]/40 text-sm text-[#1E2E26] focus:outline-none focus:border-[#C8923E]">
+              <option value="">Tutti i paesi</option>{comuniPresenti.map((c) => <option value={c}>{c}</option>)}
+            </select>
+            <select id="gloss-tipo" class="px-3 py-2 rounded bg-white border border-[#C8923E]/40 text-sm text-[#1E2E26] focus:outline-none focus:border-[#C8923E]">
+              <option value="">Parole e detti</option>
+              <option value="parola">Solo parole</option>
+              <option value="detto">Solo detti e modi di dire</option>
+            </select>
+          </div>
+          <div class="flex flex-wrap gap-1 justify-center mb-5" style="font-family: 'Inter', sans-serif;">
+            {iniziali.map((L) => (
+              <button type="button" class="gloss-lettera w-8 h-8 rounded text-sm text-[#1E2E26] border border-[#C8923E]/40 cursor-pointer transition-colors" data-lettera={L} style="background: transparent;">{L}</button>
+            ))}
           </div>
           <ul id="gloss-lista" class="grid gap-3 md:grid-cols-2 list-none p-0 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
             {glossario.map((v) => (
-              <li class="gloss-voce bg-white border-l-4 border-[#C8923E] px-4 py-3" data-t={`${v.termine} ${v.significato_it} ${v.comune ?? ''}`.toLowerCase()} data-v={v.variante ?? ''}>
-                <strong class="text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{v.termine}</strong>
+              <li class="gloss-voce bg-white border-l-4 border-[#C8923E] px-4 py-3" data-t={norm(`${v.termine} ${v.significato_it ?? ''} ${v.variante_italiana ?? ''} ${v.comune ?? ''}`)} data-v={v.variante ?? ''} data-c={v.comune ?? ''} data-tipo={v.tipo ?? 'parola'} data-l={(v.termine ?? '?').trim().charAt(0).toUpperCase()}>
+                <a href={v.slug ? `/guardiani-de-la-lenga/${v.slug}` : '#'} class="no-underline"><strong class="text-[#1E2E26] hover:underline" style="font-family: 'Playfair Display', serif;">{v.termine}</strong></a>
                 <span class="text-[10px] uppercase tracking-wider text-[#C8923E] ml-2" style="font-family: 'Inter', sans-serif;">{v.variante ? VARIANTE_LABEL[v.variante]?.split(' · ')[0] : ''}{v.comune ? ` · ${v.comune}` : ''}</span>
                 <p class="text-sm text-[#1E2E26]/80 m-0 mt-1">{v.significato_it}</p>
                 {v.esempio_uso && <p class="text-xs text-[#1E2E26]/55 italic m-0 mt-1">« {v.esempio_uso} »</p>}
@@ -228,12 +265,24 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
   const cerca = document.getElementById('gloss-cerca') as HTMLInputElement | null;
   const filtro = document.getElementById('gloss-filtro') as HTMLSelectElement | null;
   const vuoto = document.getElementById('gloss-vuoto');
+  const fComune = document.getElementById('gloss-comune') as HTMLSelectElement | null;
+  const fTipo = document.getElementById('gloss-tipo') as HTMLSelectElement | null;
+  let lettera = '';
+  // Stessa normalizzazione della chiave: senza, «perche'» non troverebbe
+  // «perche» e chi cerca penserebbe che la parola non c'e'.
+  const norma = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
   function applica() {
-    const q = (cerca?.value ?? '').trim().toLowerCase();
+    const q = norma(cerca?.value ?? '');
     const v = filtro?.value ?? '';
+    const c = fComune?.value ?? '';
+    const tp = fTipo?.value ?? '';
     let visibili = 0;
     document.querySelectorAll<HTMLElement>('.gloss-voce').forEach((li) => {
-      const ok = (!q || (li.dataset.t ?? '').includes(q)) && (!v || li.dataset.v === v);
+      const eDetto = (li.dataset.tipo ?? 'parola') !== 'parola';
+      const ok = (!q || (li.dataset.t ?? '').includes(q)) && (!v || li.dataset.v === v)
+        && (!c || li.dataset.c === c)
+        && (!tp || (tp === 'detto' ? eDetto : !eDetto))
+        && (!lettera || li.dataset.l === lettera);
       li.style.display = ok ? '' : 'none';
       if (ok) visibili++;
     });
@@ -241,4 +290,17 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
   }
   cerca?.addEventListener('input', applica);
   filtro?.addEventListener('change', applica);
+  fComune?.addEventListener('change', applica);
+  fTipo?.addEventListener('change', applica);
+  // L'indice alfabetico: in un dizionario e' il modo naturale di girare le
+  // pagine. Ricliccando la stessa lettera si torna a tutte.
+  document.querySelectorAll<HTMLElement>('.gloss-lettera').forEach((b) => {
+    b.addEventListener('click', () => {
+      lettera = lettera === b.dataset.lettera ? '' : (b.dataset.lettera ?? '');
+      document.querySelectorAll<HTMLElement>('.gloss-lettera').forEach((x) => {
+        x.style.background = x.dataset.lettera === lettera ? '#C8923E' : 'transparent';
+      });
+      applica();
+    });
+  });
 </script>
