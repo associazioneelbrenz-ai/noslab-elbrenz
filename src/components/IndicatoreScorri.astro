@@ -1,0 +1,81 @@
+---
+/**
+ * IndicatoreScorri — l'invito a scorrere in fondo alla prima schermata.
+ *
+ * Perche' esiste: Michele Corradini ha guardato delle persone usare il sito e
+ * ha visto cosa fanno. Arrivano in home, vedono una schermata che sembra
+ * conclusa, e cliccano sui menu senza sapere che sotto ci sono la mappa, gli
+ * eventi, gli articoli, il glossario. Non e' un'opinione di gusto: e'
+ * osservazione di persone vere, e vale piu' di qualunque analisi.
+ *
+ * E' un RINFORZO, non la correzione: la correzione vera e' che si intraveda la
+ * sezione successiva, ed e' stata fatta riducendo l'altezza della hero su
+ * telefono. Il cervello capisce da solo che c'e' altro quando vede una striscia
+ * di colore chiaro sotto il verde; questo lo dice a parole per chi non la coglie.
+ *
+ * Le accortezze, tutte deliberate:
+ *   - non intercetta i tocchi (pointer-events-none): chi lo ignora usa la
+ *     pagina come se non ci fosse;
+ *   - sparisce al primo scorrimento e non torna, perche' ha finito il suo lavoro;
+ *   - rispetta prefers-reduced-motion: chi ha spento le animazioni lo vede
+ *     fermo, non lo vede sparire;
+ *   - aria-hidden: per chi naviga con la tastiera o con un lettore di schermo
+ *     la pagina e' gia' scorribile, e annunciarlo sarebbe rumore.
+ */
+interface Props {
+  /** «Scorri» in italiano, «Scrollen» in tedesco, «Scroll» in inglese. */
+  testo?: string;
+}
+const { testo = 'Scorri' } = Astro.props;
+---
+
+<div
+  id="eb-scorri"
+  aria-hidden="true"
+  class="pointer-events-none absolute bottom-5 left-0 right-0 z-20 flex flex-col items-center gap-1 transition-opacity duration-500"
+>
+  <span
+    class="text-[11px] tracking-[0.28em] uppercase text-[#C8923E]"
+    style="font-family: 'Inter', sans-serif;"
+  >{testo}</span>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8923E"
+       stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="eb-scorri-freccia">
+    <path d="M12 5v14M19 12l-7 7-7-7" />
+  </svg>
+</div>
+
+<style>
+  /* Un alzarsi e riabbassarsi lento: e' cio' che distingue un invito da una
+     decorazione. Ampiezza piccola, apposta: deve suggerire, non agitarsi. */
+  @keyframes eb-scorri-su-giu {
+    0%, 100% { transform: translateY(0); opacity: .85; }
+    50%      { transform: translateY(5px); opacity: 1; }
+  }
+  .eb-scorri-freccia { animation: eb-scorri-su-giu 2.4s ease-in-out infinite; }
+
+  /* Chi ha spento le animazioni nelle impostazioni del proprio dispositivo lo
+     vede fermo. Resta visibile: il messaggio serve a lui quanto agli altri. */
+  @media (prefers-reduced-motion: reduce) {
+    .eb-scorri-freccia { animation: none; }
+  }
+
+  #eb-scorri.eb-scorri-via { opacity: 0; }
+</style>
+
+<script>
+  (function () {
+    var el = document.getElementById('eb-scorri');
+    if (!el) return;
+    function via() {
+      el.classList.add('eb-scorri-via');
+      window.removeEventListener('scroll', alPrimoScorrimento);
+    }
+    function alPrimoScorrimento() {
+      if (window.scrollY > 24) via();
+    }
+    // Se la pagina e' gia' scorsa (ritorno indietro, ancora nell'indirizzo),
+    // non si mostra affatto: sarebbe un invito a fare una cosa gia' fatta.
+    if (window.scrollY > 24) { el.classList.add('eb-scorri-via'); return; }
+    window.addEventListener('scroll', alPrimoScorrimento, { passive: true });
+  })();
+</script>
