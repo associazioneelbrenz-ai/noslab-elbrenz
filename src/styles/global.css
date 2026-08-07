@@ -233,3 +233,69 @@ html {
 body {
   overflow-x: hidden;
 }
+
+/*
+ * 3. L'ORO CHE SI LEGGE.
+ *
+ * #C8923E su crema fa 2,45:1. Il minimo per un testo e' 4,5:1, e per il testo
+ * grande 3:1: non passa nemmeno quello. Non e' una pedanteria da certificazione,
+ * e' la ragione per cui una didascalia dorata su fondo panna, letta al sole o da
+ * chi ha settant'anni, semplicemente non si vede.
+ *
+ * #8a6215 e' lo stesso oro portato in ombra: 4,87:1 sulla crema, resta caldo,
+ * resta nostro. Su fondo scuro invece l'oro pieno fa 5,18:1 ed e' giusto cosi':
+ * il difetto non e' il colore, e' l'accostamento.
+ *
+ * PERCHE' QUI E NON NEI 221 PUNTI IN CUI E' SCRITTO. La classe e' identica sul
+ * chiaro e sullo scuro: dal codice non si distingue quale sta su cosa, e
+ * sostituire a tappeto avrebbe spento l'oro anche dove funziona. La regola,
+ * invece, guarda l'antenato: e' il solo posto da cui si vede il contesto.
+ *
+ * COME FARE UN'ECCEZIONE: se un blocco scuro non usa una delle classi elencate
+ * qui sotto (per esempio ha lo sfondo in linea), l'oro vi tornerebbe spento.
+ * Si aggiunge il suo selettore all'elenco, oppure la classe .oro-su-scuro
+ * sull'elemento. Non si rimette #C8923E a mano: tornerebbe il difetto.
+ */
+:root {
+  --color-oro-leggibile: #8a6215;
+}
+
+.text-\[\#C8923E\],
+.text-\[\#C8923E\]\/70 { color: var(--color-oro-leggibile); }
+
+.hover\:text-\[\#C8923E\]:hover { color: var(--color-oro-leggibile); }
+.group:hover .group-hover\:text-\[\#C8923E\] { color: var(--color-oro-leggibile); }
+.group:focus-within .group-focus-within\:text-\[\#C8923E\] { color: var(--color-oro-leggibile); }
+
+/*
+ * Sul fondo scuro l'oro pieno passa (5,18:1) e va lasciato.
+ *
+ * L'ELENCO E' STATO RICAVATO MISURANDO, non a memoria: si estraggono dal
+ * costruito tutti i `bg-[#...]` con luminanza sotto 0,18 e si verifica quali
+ * contengono testo oro. Alla prima passata #16231D non c'era, e l'oro scurito
+ * ci sarebbe finito sopra a 2,95:1: peggio di quello che stavamo correggendo.
+ * Chi aggiunge un fondo scuro nuovo rifaccia quella misura.
+ */
+.bg-\[\#1E2E26\] .text-\[\#C8923E\],
+.bg-\[\#1E2E26\].text-\[\#C8923E\],
+.bg-\[\#2a3f34\] .text-\[\#C8923E\],
+.bg-\[\#8a3a3a\] .text-\[\#C8923E\],
+.bg-\[\#16231D\] .text-\[\#C8923E\],
+.bg-\[\#16231d\] .text-\[\#C8923E\],
+.bg-\[\#0F1D18\] .text-\[\#C8923E\],
+.bg-\[\#0f1d18\] .text-\[\#C8923E\],
+.article-hero-text .text-\[\#C8923E\],
+.oro-su-scuro,
+.oro-su-scuro .text-\[\#C8923E\] { color: var(--color-oro-ambra); }
+
+.bg-\[\#1E2E26\] .hover\:text-\[\#C8923E\]:hover,
+.bg-\[\#2a3f34\] .hover\:text-\[\#C8923E\]:hover,
+.oro-su-scuro .hover\:text-\[\#C8923E\]:hover { color: var(--color-oro-ambra); }
+
+/*
+ * IL MARCHIO NON SI TOCCA. Le WCAG (1.4.3) escludono esplicitamente i logotipi
+ * dal requisito di contrasto: il nome dell'Associazione e' un segno, non un
+ * testo da leggere, e scurirlo cambierebbe l'identita' senza aiutare nessuno.
+ */
+.wordmark .corsivo-oro,
+.wordmark .text-\[\#C8923E\] { color: var(--color-oro-ambra); }

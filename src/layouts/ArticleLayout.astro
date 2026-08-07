@@ -171,7 +171,8 @@ const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
     line-height: 0.85;
     float: left;
     margin: 0.05em 0.12em 0 -0.05em;
-    color: #C8923E;
+    /* [7/8] su #FDF9F0 l'oro pieno fa 2,45:1: illeggibile anche da grande */
+    color: #8a6215;
     font-weight: 500;
   }
   .article-prose h2 {
@@ -199,9 +200,10 @@ const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
     font-size: 1.25rem;
     line-height: 1.55;
   }
-  .article-prose em { color: #C8923E; font-style: italic; }
+  /* [7/8] il corsivo porta i termini in ladino: e' il testo piu' importante della pagina */
+  .article-prose em { color: #8a6215; font-style: italic; }
   .article-prose a {
-    color: #C8923E;
+    color: #8a6215;
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
