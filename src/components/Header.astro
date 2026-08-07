@@ -128,9 +128,17 @@ const navItems: NavItem[] = [
 ---
 
 <header class="border-b border-[#E5DFCF] bg-[#F8F1E4] sticky top-0 z-30">
-  <div class="max-w-7xl mx-auto px-6 py-7 flex items-center justify-between gap-8">
+  {/* [7/8/2026] IL MENU ERA TAGLIATO DAL BORDO DESTRO.
+      Questo blocco aveva `flex-shrink-0`: logo e titolo per esteso non potevano
+      cedere un pixel, e su schermo stretto spingevano l'hamburger fuori dallo
+      schermo. Ora il blocco puo' restringersi (`min-w-0` serve perche' un figlio
+      flex possa davvero farlo: senza, la larghezza minima resta quella del
+      contenuto), il logo resta intoccabile, e sotto i 400px la coda del titolo
+      lascia il posto al marchio. Anche il divario scende su mobile: trentadue
+      pixel di aria fra due elementi sono un lusso a 320. */}
+  <div class="max-w-7xl mx-auto px-4 md:px-6 py-7 flex items-center justify-between gap-3 md:gap-8">
 
-    <div class="flex items-center gap-3 flex-shrink-0">
+    <div class="flex items-center gap-3 min-w-0">
       <a href={homeHref} class="flex-shrink-0 leading-none" aria-label={homeLabel}>
         <img
           src="/logo-eb-header.png"
@@ -520,5 +528,13 @@ const navItems: NavItem[] = [
   }
   .drawer-section-toggle[aria-expanded="true"] .drawer-section-chevron {
     transform: rotate(180deg);
+  }
+
+  /* [7/8/2026] Sotto i 400px la coda del titolo lascia il posto al marchio.
+     «El Brenz» resta sempre: e' il nome. «da le Val del Nos» e' la specifica, e
+     su uno schermo da 320 pixel vale meno di un menu raggiungibile. Regola
+     confinata all'intestazione: nel piede e altrove il titolo resta intero. */
+  @media (max-width: 399px) {
+    header .wordmark .tondo:last-of-type { display: none; }
   }
 </style>

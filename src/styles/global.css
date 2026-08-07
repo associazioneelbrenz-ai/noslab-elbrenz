@@ -201,3 +201,35 @@
 }
 @media (hover: hover) { .app-card-phone .frame:hover { transform: perspective(1400px) rotateY(-9deg) rotateX(3deg) rotateZ(-1deg); } }
 @media (prefers-reduced-motion: reduce) { .app-card-phone .frame { transform: none; transition: none; } }
+
+/* ═══════════════════════════════════════════════════════════
+   IMPAGINAZIONE SU TELEFONO · 7 agosto 2026
+   Tre difetti segnalati da piu' utenti su iOS e Android.
+═══════════════════════════════════════════════════════════ */
+
+/*
+ * 1. GLI ANCORAGGI FINIVANO SOTTO LA BARRA.
+ *
+ * L'intestazione e' `sticky` e alta un centinaio di pixel, ma lo scorrimento
+ * non lo sapeva: `scroll-padding-top` era `auto`. Chi arrivava a un titolo da un
+ * collegamento interno se lo trovava mezzo coperto, ed e' esattamente il caso di
+ * «ladino anaunico» tagliato a meta'. Una riga, e vale per ogni ancoraggio di
+ * ogni pagina, presente e futuro.
+ */
+html {
+  scroll-padding-top: 5.5rem;
+}
+@media (min-width: 768px) {
+  html { scroll-padding-top: 7.5rem; }
+}
+
+/*
+ * 2. NESSUNO SCORRIMENTO ORIZZONTALE, MAI.
+ *
+ * Rete di sicurezza: se un elemento sfora, la pagina non deve diventare
+ * trascinabile di lato. Non nasconde il difetto (quello si corregge dov'e'),
+ * ma evita che il difetto renda la pagina scomoda mentre lo si cerca.
+ */
+body {
+  overflow-x: hidden;
+}
