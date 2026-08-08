@@ -1,0 +1,28 @@
+-- [8/8/2026] LE REAZIONI. Un solo meccanismo, tre significati.
+--
+-- Proposta di Giorgia (cuoricini), rielaborata su due dati misurati:
+-- forum_reazione esisteva dal 16 luglio con ZERO righe, mentre il glossario ha
+-- 103 lemmi di cui 80 con il comune di provenienza. Il problema non era la
+-- mancanza di un bottone: era che il bottone stava dove non succede niente.
+--
+-- IL GESTO CAMBIA SENSO SECONDO L'OGGETTO:
+--   post della community  -> «mi piace»
+--   TERMINE del glossario -> «la conosco anch'io», e porta il COMUNE di chi
+--                            preme: da li' nasce la mappa di diffusione di una
+--                            parola, che nessun questionario scoprirebbe
+--   pezzo del museo, storia -> «ricordo anch'io»
+--
+-- LA REGOLA: le reazioni NON contano nella curatela. Un lemma si pubblica se
+-- e' giusto, non se e' simpatico.
+--
+-- Il vincolo di unicita' sta nel DATABASE e non nell'interfaccia: un doppio
+-- tocco su un telefono lento non deve gonfiare un conteggio che poi qualcuno
+-- legge come dato linguistico.
+--
+-- La vista pubblica espone quanti e da dove, MAI chi.
+--
+-- COLLAUDO (transazione annullata): tre persone da Male' e Rabbi sulla stessa
+-- parola -> conteggio 3, due comuni distinti, quarto tocco della stessa
+-- persona respinto dal vincolo.
+--
+-- La definizione applicata e' quella della migrazione di pari nome.
