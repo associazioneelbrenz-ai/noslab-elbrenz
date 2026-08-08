@@ -157,6 +157,46 @@ const jsonLd = {
         </p>
       )}
 
+      {/*
+        «LA CONOSCO ANCH'IO».
+        Non e' un mi piace: e' la domanda che trasforma un applauso in un dato.
+        Chi preme dice che quella parola si usa anche da lui, e dice DA DOVE:
+        da li' nasce la mappa di diffusione di un termine, che nessun
+        questionario scoprirebbe e che cinquanta bottoni premuti si'.
+        Il conteggio si carica dopo, perche' la pagina e' prerenderizzata e un
+        numero cotto dentro l'HTML invecchierebbe entro un'ora.
+      */}
+      <div id="rz" class="mt-10 border-t border-[#C8923E]/30 pt-6" data-lemma={voce.id}>
+        <button id="rz-btn" type="button"
+          class="inline-flex items-center gap-2 bg-[#F5EEDD] border border-[#C8923E]/50 rounded-full px-5 py-2.5 cursor-pointer hover:bg-[#F0E6D0] transition-colors"
+          style="font-family: 'Inter', sans-serif; font-size: 15px; color: #1E2E26;">
+          <span id="rz-cuore" style="font-size: 17px;">♡</span>
+          <span id="rz-testo">La conosco anch’io</span>
+        </button>
+
+        {/* Il comune si chiede UNA VOLTA SOLA, e solo al primo tocco: chiederlo
+            prima sarebbe un modulo, e un modulo davanti a un gesto lo uccide. */}
+        <div id="rz-comune" class="hidden mt-4 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-4">
+          <label for="rz-comune-input" class="block text-[13px] text-[#1E2E26]/80 mb-2"
+                 style="font-family: 'Inter', sans-serif;">
+            In che paese la senti dire? Serve a capire fin dove arriva questa parola.
+          </label>
+          <div class="flex gap-2 flex-wrap">
+            <input id="rz-comune-input" type="text" placeholder="Malé, Fondo, Rabbi…" maxlength="60"
+              class="flex-1 min-w-0 px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]"
+              style="font-family: 'Inter', sans-serif;" />
+            <button id="rz-comune-ok" type="button"
+              class="bg-[#C8923E] text-[#1E2E26] font-semibold px-5 py-2 rounded cursor-pointer border-0 hover:bg-[#D9A94E]"
+              style="font-family: 'Inter', sans-serif;">Conferma</button>
+          </div>
+          <button id="rz-comune-salta" type="button"
+            class="mt-2 bg-transparent border-0 p-0 text-[13px] text-[#1E2E26]/55 underline cursor-pointer"
+            style="font-family: 'Inter', sans-serif;">Preferisco non dirlo</button>
+        </div>
+
+        <p id="rz-esito" class="text-[13px] text-[#1E2E26]/65 mt-3 m-0" style="font-family: 'Inter', sans-serif;"></p>
+      </div>
+
       <p class="mt-8 text-sm" style="font-family: 'Inter', sans-serif;">
         <a href="/guardiani-de-la-lenga#proponi" class="text-[#8a6215] font-semibold hover:underline">
           Conosci una parola che non c’è? Proponila →
@@ -166,3 +206,109 @@ const jsonLd = {
     </div>
   </main>
 </Layout>
+
+<script>
+  // «La conosco anch'io». Niente define:vars: l'identificativo del lemma sta in
+  // un attributo del DOM. E' la lezione del 4 agosto, quando un'annotazione di
+  // tipo dentro uno script inline ha ucciso 273 righe a build verde.
+  (() => {
+    const box = document.getElementById('rz');
+    if (!box) return;
+    const lemma = box.getAttribute('data-lemma');
+    if (!lemma) return;
+
+    const btn = document.getElementById('rz-btn');
+    const cuore = document.getElementById('rz-cuore');
+    const testo = document.getElementById('rz-testo');
+    const esito = document.getElementById('rz-esito');
+    const chiedi = document.getElementById('rz-comune');
+    const campo = document.getElementById('rz-comune-input');
+
+    const URL_FN = 'https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/reazione-pubblica';
+    const CHIAVE = document.documentElement.outerHTML.match(/sb_publishable_[A-Za-z0-9_-]+/);
+
+    // Il gettone identifica il browser, non la persona: serve a non contare due
+    // volte lo stesso pollice, non a sapere chi sia.
+    function gettone() {
+      let g = localStorage.getItem('eb_rz_gettone');
+      if (!g) {
+        g = 'g' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        localStorage.setItem('eb_rz_gettone', g);
+      }
+      return g;
+    }
+    const comuneNoto = () => localStorage.getItem('eb_rz_comune') || '';
+    let mia = false;
+
+    function dipingi(quante, comuni, sonoIo) {
+      mia = !!sonoIo;
+      if (cuore) cuore.textContent = mia ? '♥' : '♡';
+      if (testo) testo.textContent = mia ? 'La conosci anche tu' : 'La conosco anch’io';
+      if (btn) btn.style.background = mia ? '#F0E6D0' : '#F5EEDD';
+      if (!esito) return;
+      const n = Number(quante) || 0;
+      if (n === 0) {
+        // Mai «0»: un conteggio a zero e' un invito mancato, non un dato.
+        esito.textContent = 'Nessuno l’ha ancora riconosciuta. Puoi essere il primo.';
+      } else {
+        const luoghi = (comuni || []).filter(Boolean);
+        const dove = luoghi.length ? ' · si dice a ' + luoghi.join(', ') : '';
+        esito.textContent = (n === 1 ? 'Una persona la conosce' : n + ' persone la conoscono') + dove;
+      }
+    }
+
+    async function chiama(comune) {
+      if (!CHIAVE) return;
+      try {
+        const r = await fetch(URL_FN, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: CHIAVE[0] },
+          body: JSON.stringify({
+            oggetto_tipo: 'lemma', oggetto_id: lemma, tipo: 'conosco',
+            gettone: gettone(), comune: comune || null,
+          }),
+        });
+        const d = await r.json();
+        if (d && d.ok) dipingi(d.quante, d.comuni, d.mia);
+        else if (esito) esito.textContent = 'Non sono riuscito a registrarlo: riprova fra poco.';
+      } catch {
+        // Si dice. Un tocco che non arriva e non lo dice e' peggio di un tocco
+        // che non parte: la persona crede di aver contribuito e non e' vero.
+        if (esito) esito.textContent = 'Non sono riuscito a registrarlo: riprova fra poco.';
+      }
+    }
+
+    btn?.addEventListener('click', () => {
+      if (mia || comuneNoto()) return chiama(mia ? null : comuneNoto());
+      chiedi?.classList.remove('hidden');
+      campo?.focus();
+    });
+    document.getElementById('rz-comune-ok')?.addEventListener('click', () => {
+      const v = (campo && campo.value ? campo.value : '').trim();
+      if (v) localStorage.setItem('eb_rz_comune', v);
+      chiedi?.classList.add('hidden');
+      chiama(v);
+    });
+    document.getElementById('rz-comune-salta')?.addEventListener('click', () => {
+      chiedi?.classList.add('hidden');
+      chiama(null);
+    });
+    campo?.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') document.getElementById('rz-comune-ok')?.click();
+    });
+
+    // Il conteggio all'apertura, dalla vista pubblica: la pagina e'
+    // prerenderizzata e un numero cotto dentro l'HTML invecchierebbe subito.
+    (async () => {
+      if (!CHIAVE) return;
+      try {
+        const u = 'https://wacknihvdjxltiqvxtqr.supabase.co/rest/v1/v_reazioni_conteggio'
+          + '?select=quante,comuni&oggetto_tipo=eq.lemma&tipo=eq.conosco&oggetto_id=eq.' + lemma;
+        const r = await fetch(u, { headers: { apikey: CHIAVE[0] } });
+        const j = await r.json();
+        const riga = Array.isArray(j) && j[0] ? j[0] : { quante: 0, comuni: [] };
+        dipingi(riga.quante, riga.comuni, false);
+      } catch { /* il bottone resta usabile anche senza conteggio */ }
+    })();
+  })();
+</script>

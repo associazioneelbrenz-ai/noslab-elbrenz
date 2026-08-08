@@ -262,3 +262,9 @@ verify_jwt = false
 # fa da prima porta. Vedi Trappola 12: ogni function va dichiarata qui,
 # altrimenti un deploy la riporta al valore predefinito in silenzio.
 verify_jwt = true
+
+[functions.reazione-pubblica]
+# Pubblica: chiunque puo' dire «la conosco anch'io», anche senza account.
+# Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
+# verify_jwt=true e il gateway respingerebbe ogni tocco con un 401 muto.
+verify_jwt = false
