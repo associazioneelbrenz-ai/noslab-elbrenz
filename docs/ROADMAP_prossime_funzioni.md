@@ -77,14 +77,78 @@ prima. Vanno fatte gridare prima di aprire questa porta.
 
 ---
 
+## 3 · La scheda del socio
+
+**Da dove nasce.** Cinque card della plancia portano tutte a `/app/amministrazione`,
+cioè all'elenco soci: domande, pagamenti da riscontrare, soci senza incasso,
+email ferme. La card promette «guarda cosa è proposto» e consegna l'anagrafica.
+È una scorciatoia presa in fretta, e si sente.
+
+**L'idea di Cristian, che è quella giusta**: cliccando il nome di un socio si
+apre la sua scheda, con tutto quello che si può fare per lui in un posto solo.
+
+**Cosa ci sta dentro.** Posizione della quota (versato, manca, da quando), il
+suo link di pagamento già pronto da copiare, i solleciti già mandati e quando,
+la tessera e il suo codice, i ruoli, cosa ha contribuito (lemmi, storie, pezzi
+del museo), e le due o tre azioni vere: manda il link, registra un contante,
+assegna un ruolo.
+
+**Perché risolve più di un problema.** Oggi per fare una cosa a un socio si passa
+da tre schermate diverse e da una funzione senza maniglia. E soprattutto:
+**mostrare i solleciti già mandati impedisce di mandarne un secondo per
+distrazione**, che è il difetto che stamattina si è evitato solo perché qualcuno
+si è ricordato a mano.
+
+**Insieme a questa, le card della plancia vanno fatte puntare dove serve**: una
+coda di domande deve aprire le domande, non l'elenco soci. Dove una schermata
+dedicata non esiste, la card lo deve dire invece di scaricare l'utente altrove.
+
+---
+
+## 4 · Commenti e proposte di correzione sui termini del glossario
+
+**Da dove nasce.** Una parlata non si stabilisce a tavolino: si discute. Chi
+legge *Bedól* sa magari che a Rabbi si dice diversamente, o che l'accento va
+altrove, e oggi non ha modo di dirlo se non scrivendo una mail.
+
+**Due cose diverse, e conviene tenerle separate.**
+
+- **Proponi una correzione o un'aggiunta**: strutturata, sul singolo lemma.
+  Chi propone indica il campo (definizione, accento, esempio, comune) e cosa
+  suggerisce. Arriva in curatela come una proposta, accanto a quelle nuove.
+  Non modifica niente da sola: è la stessa regola della curatela obbligatoria.
+- **Commento pubblico**: libero, sotto la scheda della parola. È il dibattito,
+  e ha un valore diverso: «mia nonna la usava per dire un'altra cosa» non è una
+  correzione, è testimonianza, e va conservata come tale.
+
+**Fattibile: sì.** Il canale di proposta esiste già (`guardiani-contributo` con
+il suo rate limit e il consenso), e va esteso a «proposta su un lemma esistente»
+invece che solo «lemma nuovo». La scheda per parola c'è già, quindi il posto dove
+metterli c'è.
+
+**Le tre attenzioni.**
+
+- **Il commento pubblico va moderato prima di comparire**, altrimenti la prima
+  pagina del glossario che finisce su un social diventa una bacheca. Meglio: i
+  soci commentano e si vede subito, chi non è socio propone e passa dalla
+  curatela.
+- **Chi propone una correzione va ringraziato anche se si dice di no**, e va
+  detto perché: è il momento in cui una persona decide se contribuire ancora.
+- **Le proposte accettate cambiano un lemma pubblicato**, quindi questa funzione
+  dipende dalla numero 2 e dalle guardie che oggi tacciono.
+
+---
+
 ## Ordine consigliato
 
-Prima **la modifica del pubblicato**, che costa meno e toglie un fastidio
-quotidiano. Poi **l'OCR**, che porta più valore ma richiede una decisione sulla
-spesa.
-
-E prima ancora di entrambe, le due guardie che tacciono: sono la fondazione su
-cui poggia la seconda funzione.
+1. **Le due guardie che tacciono.** Non è una funzione, è la fondazione: finché
+   ripristinano in silenzio, ogni correzione può fallire senza dirlo.
+2. **La scheda del socio** e le card della plancia che puntano dove serve. Costa
+   poco, toglie un fastidio quotidiano, e impedisce un secondo sollecito per
+   distrazione.
+3. **La modifica del pubblicato**, che gli accenti sbagliati aspettano.
+4. **Commenti e proposte sui termini**, che poggia sulla 3.
+5. **L'OCR**, che porta più valore di tutte ma richiede una decisione sulla spesa.
 
 ---
 
