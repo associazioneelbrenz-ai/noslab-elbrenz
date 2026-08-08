@@ -268,3 +268,9 @@ verify_jwt = true
 # Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
 # verify_jwt=true e il gateway respingerebbe ogni tocco con un 401 muto.
 verify_jwt = false
+
+[functions.lemma-correzione]
+# Pubblica: chiunque legga una scheda puo' segnalare che qualcosa non torna.
+# Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
+# verify_jwt=true e ogni segnalazione morirebbe con un 401 muto al gateway.
+verify_jwt = false

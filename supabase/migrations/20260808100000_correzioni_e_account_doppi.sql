@@ -1,0 +1,20 @@
+-- [8/8/2026] Due cose applicate insieme.
+--
+-- 1) PROPONI UNA CORREZIONE. Tabella lemma_correzione + edge lemma-correzione.
+--    Una parlata non si stabilisce a tavolino: si discute. Chi legge una scheda
+--    sa magari che a Rabbi si dice diversamente, e finora non aveva modo di
+--    dirlo se non con una mail che nessuno ritrova. Ogni segnalazione persa e'
+--    una persona che smette di segnalare.
+--    Tabella a parte e non un campo sul lemma perche' una correzione NON e' un
+--    lemma: ha un autore diverso, puo' essere respinta senza toccare la voce, e
+--    soprattutto deve restare anche quando viene accolta. Chi propone dice «da
+--    noi si dice cosi'», e quella e' testimonianza: sopravvive alla decisione.
+--    Non modifica niente da sola: arriva in curatela come una proposta.
+--
+-- 2) IL SETTIMO CONTROLLO DELLA PLANCIA: la stessa persona con due account.
+--    E' il difetto che ha bloccato il Presidente fuori dalla sua Associazione:
+--    accedeva con diegomagnoni@live.it mentre punti e lemmi stavano su
+--    diegomagnoni9@gmail.com, e il sistema gli diceva che non era socio.
+--    Nessuno l'avrebbe visto se lui non si fosse lamentato.
+--    Segnala, non corregge: unire due account e' una decisione su una persona,
+--    e la prende un essere umano.
