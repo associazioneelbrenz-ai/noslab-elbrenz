@@ -12,6 +12,7 @@
 
 import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
 import SportelloContatti from '../components/SportelloContatti.astro';
+import StorieChePortate from '../components/StorieChePortate.astro';
 ---
 <PaginaIstituzionale ogImage="/og/og-contatti.jpg"
   occhiello="L'Associazione"
@@ -109,5 +110,9 @@ import SportelloContatti from '../components/SportelloContatti.astro';
       Diventa socio
     </a>
   </div>
+  {/* Le storie PRIMA dei moduli: chi sta valutando se affidarci un ricordo
+      deve vedere che fine fa, e vederlo prima di trovarsi davanti un campo da
+      compilare. */}
+  <StorieChePortate lingua="it" />
   <SportelloContatti />
 </PaginaIstituzionale>

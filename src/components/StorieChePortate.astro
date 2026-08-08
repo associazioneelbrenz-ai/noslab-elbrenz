@@ -1,0 +1,125 @@
+---
+/**
+ * StorieChePortate — le storie già portate dai soci, in fondo allo Sportello.
+ *
+ * PERCHE' ESISTE. La pagina /contatti si intitola «Porta la tua Storia» e
+ * invita chi legge ad affidare all'Associazione una memoria di famiglia. Poi
+ * passava dritta ai recapiti. Mancava la cosa che rende credibile l'invito:
+ * vedere che fine fa una storia una volta consegnata. E' come chiedere a
+ * qualcuno l'album di famiglia senza mostrargli dove va a finire.
+ *
+ * NON E' LA PAGINA DELL'ARCHIVIO. Qui si mostrano al massimo quattro storie,
+ * le piu' recenti: questa e' la pagina che convince qualcuno a farsi avanti,
+ * non quella che le raccoglie tutte. Il resto sta su /storie.
+ *
+ * SE LA LETTURA NON RIESCE LA SEZIONE NON COMPARE. Si tace, non si mente: una
+ * pagina che dicesse «nessuna storia» mentre ce ne sono quattro sarebbe peggio
+ * di una che non le mostra.
+ *
+ * LA FIRMA. Le quattro storie arrivano da un account la cui casella e'
+ * condivisa fra due socie: per un giorno sono rimaste senza nome, perche'
+ * firmare il lavoro di una persona col nome di un'altra e' peggio che non
+ * firmarlo. L'8 agosto l'identita' e' stata accertata su un fatto (sulla stessa
+ * casella c'e' un contributore del glossario registrato come «Monica», con
+ * tredici lemmi) e confermata dal segretario. La firma compare solo se il nome
+ * c'e' davvero: il ripiego «Socio» della vista resta escluso, cosi' un nome
+ * mancante non diventa mai una firma finta.
+ */
+import { createClient } from '@supabase/supabase-js';
+
+interface Props { lingua?: 'it' | 'de' | 'en' }
+const { lingua = 'it' } = Astro.props;
+
+type Storia = {
+  id: string; titolo: string; contenuto: string;
+  immagini_urls: string[]; copertina_url: string | null;
+  created_at: string; autore_nome: string;
+};
+
+let storie: Storia[] = [];
+try {
+  const sb = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL as string,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string,
+    { auth: { persistSession: false } },
+  );
+  const { data } = await sb.from('v_storia_pubblica')
+    .select('id, titolo, contenuto, immagini_urls, copertina_url, created_at, autore_nome')
+    .order('created_at', { ascending: false })
+    .limit(4);
+  storie = (data as Storia[]) ?? [];
+} catch (e) {
+  // Si tace. La sezione non compare e il resto della pagina resta intero.
+  console.error('[sportello] lettura storie fallita:', e);
+  storie = [];
+}
+
+const T = {
+  it: {
+    occhiello: 'Dalle famiglie',
+    titolo: 'Storie che altri hanno portato',
+    intro: 'Sono nate così: qualcuno si è fatto avanti con un ricordo, una fotografia, una carta di famiglia. Adesso sono qui, e restano.',
+    di: 'di',
+    tutte: 'Leggile tutte',
+  },
+  de: {
+    occhiello: 'Aus den Familien',
+    titolo: 'Geschichten, die andere gebracht haben',
+    intro: 'So sind sie entstanden: jemand kam mit einer Erinnerung, einem Foto, einem Familienpapier. Jetzt sind sie hier, und sie bleiben.',
+    di: 'von',
+    tutte: 'Alle lesen',
+  },
+  en: {
+    occhiello: 'From the families',
+    titolo: 'Stories others have brought',
+    intro: 'This is how they began: someone came forward with a memory, a photograph, a family paper. Now they are here, and here they stay.',
+    di: 'by',
+    tutte: 'Read them all',
+  },
+}[lingua];
+
+const attacco = (t: string, n = 120) => {
+  const pulito = (t ?? '').replace(/\s+/g, ' ').trim();
+  return pulito.length > n ? pulito.slice(0, n).replace(/\s\S*$/, '') + '…' : pulito;
+};
+const copertina = (s: Storia) => s.copertina_url || s.immagini_urls?.[0] || null;
+// Il ripiego della vista non e' una firma: se il nome manca, non si firma.
+const firma = (s: Storia) => (s.autore_nome && s.autore_nome !== 'Socio' ? s.autore_nome : null);
+---
+
+{storie.length > 0 && (
+  <section class="mt-16 pt-12 border-t border-[#E5DFCF]">
+    <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3"
+       style="font-family: 'Inter', sans-serif;">{T.occhiello}</p>
+    <h2 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-4"
+        style="font-family: 'Playfair Display', serif; font-weight: 500;">{T.titolo}</h2>
+    <p class="text-[#1E2E26]/80 leading-relaxed max-w-2xl m-0 mb-8 text-lg"
+       style="font-family: 'Source Serif 4', Georgia, serif;">{T.intro}</p>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      {storie.map((s) => (
+        <a href={`/storie/${s.id}`} class="block no-underline group">
+          {copertina(s) && (
+            <div class="overflow-hidden rounded-lg border border-[#E8DFC7] bg-white mb-3">
+              <img src={copertina(s)} alt={s.titolo} loading="lazy" decoding="async"
+                   class="w-full h-[170px] md:h-[200px] object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
+            </div>
+          )}
+          <h3 class="text-lg md:text-xl leading-snug text-[#1E2E26] m-0 mb-1 group-hover:underline decoration-1 underline-offset-4"
+              style="font-family: 'Playfair Display', serif; font-weight: 500;">{s.titolo}</h3>
+          <p class="text-[#1E2E26]/75 text-sm leading-relaxed m-0 mb-1"
+             style="font-family: 'Source Serif 4', Georgia, serif;">{attacco(s.contenuto)}</p>
+          {firma(s) && (
+            <p class="text-[12px] text-[#1E2E26]/55 m-0" style="font-family: 'Inter', sans-serif;">
+              {T.di + ' ' + firma(s)}
+            </p>
+          )}
+        </a>
+      ))}
+    </div>
+
+    <p class="mt-8 m-0" style="font-family: 'Inter', sans-serif;">
+      <a href="/storie" class="text-[#8a6215] font-semibold no-underline hover:underline">{T.tutte} →</a>
+    </p>
+  </section>
+)}
