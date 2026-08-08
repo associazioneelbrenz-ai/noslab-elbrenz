@@ -209,6 +209,59 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       </div>
     </div>
   </section>
+  {/*
+    IL POPUP DEI PUNTI. Compare SOLO dopo che una proposta e' andata a buon fine:
+    e' l'unico momento in cui un invito non suona come una richiesta, perche' la
+    persona ha appena dato qualcosa e le si sta dicendo che quel qualcosa vale.
+    Fuori di qui non compare mai, nemmeno al secondo invio nella stessa sessione.
+  */}
+  <div id="pop-punti" class="fixed inset-0 z-[60] hidden items-center justify-center px-5"
+       style="background: rgba(15,25,20,0.55); backdrop-filter: blur(2px);"
+       role="dialog" aria-modal="true" aria-labelledby="pop-punti-titolo">
+    <div class="bg-[#FDF9F0] rounded-xl border border-[#C8923E]/40 max-w-md w-full p-7 relative"
+         style="box-shadow: 0 18px 50px rgba(0,0,0,0.3);">
+
+      <button id="pop-punti-chiudi" type="button" aria-label="Chiudi"
+              class="absolute top-3 right-4 text-2xl leading-none text-[#1E2E26]/40 hover:text-[#1E2E26] bg-transparent border-0 cursor-pointer">×</button>
+
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3"
+         style="font-family: 'Inter', sans-serif;">Guardiani de la lenga</p>
+
+      <h2 id="pop-punti-titolo" class="text-2xl md:text-[28px] leading-tight text-[#1E2E26] m-0 mb-4"
+          style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Quella parola adesso è al sicuro.
+      </h2>
+
+      <p class="text-[#1E2E26]/85 leading-relaxed m-0 mb-4"
+         style="font-family: 'Source Serif 4', Georgia, serif;">
+        L’hai portata tu, e resta con il tuo nome accanto. Se diventi socio,
+        <strong id="pop-punti-cifra">ti aspettano già 25 punti</strong>: venticinque per ogni
+        parola che hai salvato, contati da quando hai cominciato.
+      </p>
+
+      <p class="text-[#1E2E26]/85 leading-relaxed m-0 mb-5"
+         style="font-family: 'Source Serif 4', Georgia, serif;">
+        Non è un gioco a premi: è il modo che abbiamo per dire chi tiene in piedi questo lavoro.
+        E conta anche fuori di qui: le attività convenzionate con El Brenz riservano
+        <strong>sconti e coupon</strong> a chi l’Associazione la tiene viva.
+      </p>
+
+      <a href="/tesseramento"
+         class="block text-center bg-[#C8923E] text-[#1E2E26] font-semibold px-6 py-3 rounded-md no-underline hover:bg-[#D9A94E] transition-colors mb-3"
+         style="font-family: 'Inter', sans-serif;">Scopri come tesserarsi</a>
+
+      <a href="/convenzioni"
+         class="block text-center text-[#8a6215] font-semibold no-underline hover:underline mb-4 text-sm"
+         style="font-family: 'Inter', sans-serif;">Guarda le convenzioni attive →</a>
+
+      {/* La via d'uscita, in chiaro. Un invito che non la offre e' una trappola,
+          e chi la sente non torna a proporre una seconda parola. */}
+      <p class="text-[13px] text-[#1E2E26]/60 text-center m-0" style="font-family: 'Inter', sans-serif;">
+        Nessuna fretta: le tue parole restano nostre comunque.
+      </p>
+    </div>
+  </div>
+
 </Layout>
 
 <script>
@@ -226,6 +279,41 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       feedback.textContent = msg;
       feedback.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+    // Il popup dei punti. La cifra e' quella VERA quando il server la manda:
+    // «ti aspettano gia' 125 punti» batte qualunque aggettivo, e non si puo'
+    // smentire. Se il server non la manda, si resta sul valore di una parola
+    // sola, che e' comunque vero e non promette niente di piu'.
+    function apriPopupPunti(email, gia) {
+      const pop = document.getElementById('pop-punti');
+      if (!pop) return;
+      const cifra = document.getElementById('pop-punti-cifra');
+      const n = Number(gia) || 0;
+      if (cifra) {
+        cifra.textContent = n > 0
+          ? `ti aspettano già ${n * 25} punti`
+          : 'ti aspettano già 25 punti';
+      }
+      pop.classList.remove('hidden');
+      pop.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+    function chiudiPopupPunti() {
+      const pop = document.getElementById('pop-punti');
+      if (!pop) return;
+      pop.classList.add('hidden');
+      pop.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+    document.getElementById('pop-punti-chiudi')?.addEventListener('click', chiudiPopupPunti);
+    // Si chiude toccando fuori e con Esc: su un telefono il tasto × e' piccolo,
+    // e un popup che non si chiude facilmente diventa un fastidio, non un invito.
+    document.getElementById('pop-punti')?.addEventListener('click', (ev) => {
+      if (ev.target === document.getElementById('pop-punti')) chiudiPopupPunti();
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') chiudiPopupPunti();
+    });
+
     function utm() {
       const q = new URLSearchParams(location.search);
       const u = { source: q.get('utm_source') || '', medium: q.get('utm_medium') || '', campaign: q.get('utm_campaign') || '' };
@@ -255,7 +343,14 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       try {
         const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const d = await r.json().catch(() => ({}));
-        if (r.ok && d.success) { mostra('Grazie! Il tuo contributo è arrivato: un curatore lo controlla e appena validato entra nel glossario.', true); form.reset(); }
+        if (r.ok && d.success) {
+          mostra('Grazie! Il tuo contributo è arrivato: un curatore lo controlla e appena validato entra nel glossario.', true);
+          // [8/8] Il momento in cui la persona ha appena dato qualcosa e' l'unico
+          // in cui un invito non suona come una richiesta. Il popup arriva qui e
+          // in nessun altro punto della pagina.
+          apriPopupPunti(payload.email, d.lemmi_pubblicati);
+          form.reset();
+        }
         else mostra(d.error || 'Si è verificato un errore: riprova o scrivi a info@elbrenz.eu.', false);
       } catch { mostra('Errore di rete: riprova.', false); }
       finally { invia.disabled = false; invia.textContent = 'Invia il contributo'; }
