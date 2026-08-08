@@ -166,3 +166,95 @@ fra due socie (non si indovina) e due indirizzi senza domanda collegata.
 cognome. Mostrare il cognome per intero è una scelta di riservatezza che riguarda
 persone che non sono state interpellate, quindi la prende il Direttivo, non il
 codice.
+
+---
+
+# 5 · Le reazioni, e come rendere viva la community
+
+> Proposta di Giorgia (cuoricini ai commenti e ai termini), rielaborata l'8 agosto
+> sulla base di due dati misurati.
+
+## I due dati da cui partire
+
+**`forum_reazione` esiste già dal 16 luglio e ha ZERO righe.** Il bottone c'è, e
+nessuno l'ha mai premuto. Quindi il problema della community non è la mancanza di
+un cuoricino: aggiungerne un altro significherebbe aggiungere un secondo bottone
+inutilizzato accanto al primo.
+
+**Il glossario invece è vivo**: 103 lemmi, sette contributori, decine di parole a
+settimana. E 80 lemmi su 103 portano il **comune** di provenienza, su tredici
+paesi da Castelfondo a Vermiglio.
+
+La conclusione è che non manca l'interazione: manca il **ponte**. La vita sta in
+una stanza e la piazza è nell'altra.
+
+## L'idea: un solo meccanismo, tre significati
+
+Una sola tabella `reazione` polimorfa (`oggetto_tipo`, `oggetto_id`, `utente_id`,
+`tipo`), ma il gesto cambia senso secondo l'oggetto. È qui che la cosa smette di
+essere un like e diventa uno strumento.
+
+| Oggetto | Il gesto | Cosa produce |
+|---|---|---|
+| Post della community | ❤️ mi piace | affetto, come ovunque |
+| **Termine del glossario** | **«la conosco anch'io»** | **dato linguistico** |
+| Pezzo del museo, storia | «mi ha colpito», «ricordo anch'io» | testimonianza |
+
+**Il cuore su una parola non deve essere un applauso.** Deve essere
+*«si dice anche da noi»*, e portarsi dietro il comune di chi lo preme.
+
+Da questo nasce una cosa che oggi non abbiamo: la **mappa di diffusione di una
+parola**. *Sghirlat* è di Malé o si dice fino a Rabbi? Nessun questionario lo
+scoprirebbe. Cinquanta persone che premono un bottone sì.
+
+Questo trasforma la vanità in corpus: la stessa interazione che rende vivace la
+pagina produce materiale che un linguista userebbe.
+
+## Il ponte che rende viva la community
+
+La community non si anima con i bottoni: si anima se **ci succede qualcosa**.
+
+Oggi tutto il movimento accade altrove e non lascia traccia in piazza. La
+proposta è un **fiume delle attività**, generato dai fatti e non scritto a mano:
+
+- «Simone ha portato quattro parole nuove da Croviana»
+- «Tre persone hanno riconosciuto *sghirlat* anche a Malé»
+- «Monica ha aggiunto una storia: Ellis Island»
+- «Michele ha catalogato un pezzo del museo»
+
+Ogni riga è cliccabile e porta alla cosa vera. Ogni riga è reagibile e
+commentabile. **Il feed non è un contenitore da riempire: è lo specchio di quello
+che l'Associazione sta già facendo**, e che oggi nessuno vede.
+
+Il materiale esiste già tutto: `punti_evento` registra ogni contributo con tipo,
+riferimento e data. Il fiume è una vista su quella tabella, non un lavoro nuovo.
+
+## Le regole che tengono in piedi la cosa
+
+- **Le reazioni NON contano nella curatela.** Un lemma non si pubblica perché ha
+  molti cuori: si pubblica se è giusto. Confondere le due cose significa che la
+  parola più simpatica batte la parola più esatta, ed è la fine di un glossario.
+- **Le reazioni valgono pochi punti, o zero.** Vale la produzione, non l'applauso.
+  Altrimenti si scoprono i cuori scambiati per salire in classifica, e il sistema
+  che doveva misurare la memoria misura la cortesia.
+- **Una reazione sola per persona e per oggetto**, e si può togliere. Vincolo di
+  unicità nel database, non nell'interfaccia.
+- **Chi non è socio può reagire?** No sui contenuti della community, sì sui
+  termini pubblici: «la conosco anch'io» è un dato che vale anche da chi non si è
+  ancora tesserato, ed è un motivo in più per tesserarsi.
+- **Niente conteggi pubblici a zero.** Un termine con zero cuori non deve
+  mostrare «0»: deve invitare a essere il primo.
+
+## Cosa serve, in ordine
+
+1. La tabella `reazione` polimorfa con il vincolo di unicità, e `forum_reazione`
+   che le confluisce dentro (senza cancellarla: i suoi zero record non fanno
+   danno, ma la strada va una sola).
+2. Il bottone sulle schede di parola, con la formula giusta: non «mi piace» ma
+   «la conosco anch'io», e il comune di chi preme.
+3. La vista del fiume delle attività, letta da `punti_evento`.
+4. La mappa di diffusione, che è il pezzo che nessun altro ha e che vale una
+   pubblicazione.
+
+I commenti (funzione 4) e le reazioni sono la stessa infrastruttura: conviene
+farli insieme.
