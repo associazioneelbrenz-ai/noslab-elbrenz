@@ -12,14 +12,16 @@
  * visita. Il prezzo e' che una storia nuova compare alla ricostruzione
  * successiva, ed e' il prezzo giusto.
  *
- * LE FIRME NON CI SONO, ED E' UNA SCELTA. Tutti e quattro i racconti risultano
- * scritti da un account la cui casella e' condivisa da DUE socie (Maria Luisa
- * Battistini n. 94 e Monica Valentinotti n. 3), e su quell'account nome e
- * cognome sono vuoti. Il database non sa quale delle due abbia scritto: fra
- * mettere un nome che potrebbe essere sbagliato e non metterne nessuno, la
- * seconda e' l'unica onesta. Una firma sbagliata su un racconto di famiglia
- * non e' un dettaglio tecnico, e' un torto. Quando l'attribuzione sara' certa
- * basta riaccendere `autore_nome` qui sotto: la vista lo fornisce gia'.
+ * LE FIRME, e perche' per un giorno non ci sono state. La casella da cui
+ * arrivano questi racconti e' condivisa da DUE socie (Monica Valentinotti n. 3
+ * e Maria Luisa Battistini n. 94), e sull'account nome e cognome erano vuoti:
+ * il database non sapeva quale delle due avesse scritto. Fra un nome che
+ * poteva essere sbagliato e nessun nome, si e' scelto nessun nome: una firma
+ * sbagliata su un racconto di famiglia non e' un dettaglio tecnico, e' un torto.
+ *
+ * L'8 agosto l'identita' e' stata accertata su un fatto, non su un'impressione:
+ * sulla stessa casella esiste un contributore del glossario registrato come
+ * «Monica» con tredici lemmi. Da li' la firma e' tornata.
  */
 import Layout from '../../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
@@ -110,7 +112,9 @@ const totaleImmagini = storie.reduce((n, s) => n + (s.immagini_urls?.length ?? 0
             <p class="text-lg text-[#1E2E26]/80 leading-relaxed m-0 mb-3 max-w-3xl"
                style="font-family: 'Source Serif 4', Georgia, serif;">{attacco(prima.contenuto, 260)}</p>
             <p class="text-[12px] text-[#1E2E26]/50 m-0" style="font-family: 'Inter', sans-serif;">
-              {dataIt(prima.created_at)} · {prima.immagini_urls?.length ?? 0} immagini
+              {[prima.autore_nome && prima.autore_nome !== 'Socio' ? `di ${prima.autore_nome}` : null,
+                dataIt(prima.created_at),
+                `${prima.immagini_urls?.length ?? 0} immagini`].filter(Boolean).join(' · ')}
             </p>
           </a>
         </section>
@@ -132,7 +136,8 @@ const totaleImmagini = storie.reduce((n, s) => n + (s.immagini_urls?.length ?? 0
                   <p class="text-[#1E2E26]/75 leading-relaxed m-0 mb-2"
                      style="font-family: 'Source Serif 4', Georgia, serif;">{attacco(s.contenuto, 150)}</p>
                   <p class="text-[12px] text-[#1E2E26]/50 m-0" style="font-family: 'Inter', sans-serif;">
-                    {dataIt(s.created_at)}
+                    {[s.autore_nome && s.autore_nome !== 'Socio' ? `di ${s.autore_nome}` : null,
+                      dataIt(s.created_at)].filter(Boolean).join(' · ')}
                   </p>
                 </a>
               ))}
