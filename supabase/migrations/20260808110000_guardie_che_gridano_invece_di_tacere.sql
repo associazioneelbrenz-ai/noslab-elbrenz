@@ -1,0 +1,39 @@
+-- [8/8/2026] LE DUE GUARDIE CHE ANNULLAVANO IN SILENZIO.
+--
+-- IL DIFETTO. storia_guardia e donazione_guardia, davanti a chi non
+-- riconoscevano come amministratore, rimettevano i valori vecchi:
+--     new.pubblica := old.pubblica;   -- e altri quattro campi
+-- Nessun errore, nessuna traccia, e updated_at scritto lo stesso. Chi provava a
+-- promuovere una storia leggeva «salvato» e non era vero. E' successo il 7
+-- agosto e ci sono volute ore per capirlo, perche' un database che tace non
+-- lascia niente da leggere.
+--
+-- PERCHE' SUCCEDEVA ANCHE AL CAPO DELL'ASSOCIAZIONE. La guardia chiede
+-- has_ruolo_min(auth.uid(), 50). Da un canale SENZA JWT - service role, editor
+-- SQL, edge function - auth.uid() e' NULLO, la funzione risponde «no», e il
+-- super admin viene trattato da estraneo. In silenzio.
+--
+-- LA CORREZIONE, in tre parti:
+-- 1. Si SOLLEVA un errore invece di ripristinare. Un rifiuto che si sente si
+--    corregge in un minuto; un rifiuto muto costa una giornata.
+-- 2. Solo se si e' DAVVERO provato a cambiare quei campi (`is distinct from`):
+--    un socio che corregge un refuso nella propria storia non deve vedere
+--    niente. La guardia protegge quei campi, non l'intera riga.
+-- 3. Il messaggio nomina il caso di auth.uid() nullo, perche' e' quello che ha
+--    fatto perdere piu' tempo: chi lo legge capisce subito se il problema e' il
+--    permesso o il canale da cui sta scrivendo.
+--
+-- COSA NON CAMBIA: chi puo' fare cosa. Nessun permesso nuovo a nessuno.
+--
+-- COLLAUDO (transazioni annullate):
+--   storia, tocca `pubblica`      -> protesta con insufficient_privilege
+--   storia, tocca solo il testo   -> passa, updated_at scritto
+--   donazione, tocca `stato`      -> protesta
+--   donazione, tocca descrizione  -> passa
+--
+-- CHI NE RISENTE, verificato: nessuna edge function fa UPDATE su quei campi col
+-- service role. L'app scrive con la sessione della persona e RILANCIA l'errore,
+-- quindi promuoviStoria - che prima diceva «fatto» mentre il trigger annullava -
+-- adesso mostra il motivo.
+--
+-- La definizione applicata e' quella della migrazione di pari nome.
