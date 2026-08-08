@@ -1,0 +1,21 @@
+-- [8/8/2026] Due allarmi che dicevano il falso, corretti sul posto.
+--
+-- 1) «Email preparate e mai partite» contava `stato <> 'inviata'`, quindi una
+--    bozza parcheggiata APPOSTA - la copia di prova che aspetta il segretario -
+--    compariva sotto «NON FUNZIONA» in rosso. Una cosa tenuta ferma di
+--    proposito non e' un guasto: e' una decisione. Ora il rosso e' solo per lo
+--    stato 'errore', e le bozze hanno una voce loro, in attesa e non rotta.
+--
+-- 2) «Annunci a zero destinatari» contava una riga PER DESTINATARIO invece che
+--    per annuncio. Con undici soci e due telefoni ogni annuncio produceva nove
+--    righe «zero» pur avendo raggiunto due persone: 108 righe erano circa dodici
+--    annunci ANDATI A BUON FINE. La misura giusta chiede se l'annuncio ha
+--    raggiunto qualcuno, non se ha raggiunto tutti. Dopo la correzione: 0.
+--
+-- Il testo e' stato sostituito DENTRO le funzioni invece di riscriverle: le
+-- altre venti misure non c'entravano nulla e non andavano toccate. La
+-- sostituzione fallisce rumorosamente se il testo atteso non si trova, cosi'
+-- una modifica futura non passa in silenzio.
+--
+-- La definizione applicata e' quella della migrazione di pari nome sul
+-- database. Qui resta la ragione, che e' la parte che non si ricostruisce.
