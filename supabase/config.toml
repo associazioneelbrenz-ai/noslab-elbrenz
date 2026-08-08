@@ -256,3 +256,9 @@ verify_jwt = false
 # cron. Nessun browser lo chiama: verify_jwt = false come gli altri server-to-server.
 [functions.guardiani-digest]
 verify_jwt = false
+
+[functions.link-pagamento]
+# Riservata: la funzione richiede una sessione e ruolo >= 50, e il gateway
+# fa da prima porta. Vedi Trappola 12: ogni function va dichiarata qui,
+# altrimenti un deploy la riporta al valore predefinito in silenzio.
+verify_jwt = true
