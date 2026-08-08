@@ -1,0 +1,27 @@
+-- [8/8/2026] L'invito a tesserarsi a chi contribuisce senza essere socio.
+--
+-- L'IDEA. Chi porta una parola al glossario ha gia' fatto la cosa piu' difficile:
+-- si e' fidato. Ringraziarlo e dirgli che esiste una porta e' naturale. Ma va
+-- fatto RARAMENTE e solo a chi ha contribuito davvero, altrimenti diventa la
+-- solita insistenza che allontana.
+--
+-- IL DIFETTO CHE HA DECISO IL DISEGNO. Confrontando i soli indirizzi, tre
+-- contributori risultavano non soci: Simone (17 lemmi), Diego Magnoni (6) e
+-- Roberta (5). Ma Simone e Diego SONO soci, con un secondo indirizzo. Diego
+-- Magnoni e' il Presidente. Una funzione ingenua avrebbe mandato al Presidente
+-- un cortese invito a tesserarsi. Quindi qui si guarda l'indirizzo E il nome, e
+-- nel dubbio non si manda: e' meglio perdere un invito che farne uno ridicolo.
+--
+-- PREPARA, NON MANDA. Come i promemoria della quota: la catena e' completa e
+-- collaudata, ma scrive le email in BOZZA. Il via lo da' una persona.
+--
+-- La definizione completa della funzione e della tabella e' quella applicata al
+-- database con la migrazione di pari nome: vedi `prepara_inviti_tesseramento`
+-- e `invito_tesseramento`. Le due manopole stanno in config_app
+-- (`inviti_soglia_contributi`, `inviti_tesseramento_attivi`) perche' si cambino
+-- senza deploy.
+--
+-- COLLAUDO ESEGUITO (transazioni annullate):
+--   forestiero con 4 lemmi pubblicati  -> candidato
+--   omonimo del Presidente con 9 lemmi -> ESCLUSO
+--   stato reale oggi                   -> nessun candidato (Roberta gia' invitata)
