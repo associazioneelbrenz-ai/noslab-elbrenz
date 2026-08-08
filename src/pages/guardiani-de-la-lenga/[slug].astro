@@ -197,6 +197,81 @@ const jsonLd = {
         <p id="rz-esito" class="text-[13px] text-[#1E2E26]/65 mt-3 m-0" style="font-family: 'Inter', sans-serif;"></p>
       </div>
 
+      {/*
+        PROPONI UNA CORREZIONE.
+        Una parlata non si stabilisce a tavolino: si discute. Chi legge sa magari
+        che a Rabbi si dice diversamente, o che l'accento va altrove, e finora
+        non aveva modo di dirlo se non con una mail che nessuno ritrova. Ogni
+        segnalazione persa e' una persona che smette di segnalare.
+        Il modulo sta CHIUSO: aperto sempre farebbe sembrare la scheda un
+        cantiere invece che una voce di dizionario.
+      */}
+      <div id="cx" class="mt-6" data-lemma={voce.id}>
+        <button id="cx-apri" type="button"
+          class="bg-transparent border-0 p-0 text-sm text-[#8a6215] font-semibold underline cursor-pointer"
+          style="font-family: 'Inter', sans-serif;">
+          Qui c’è qualcosa che non torna? Proponi una correzione
+        </button>
+
+        <form id="cx-form" class="hidden mt-4 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 grid gap-3"
+              novalidate style="font-family: 'Inter', sans-serif;">
+          <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
+
+          <p class="text-[13px] text-[#1E2E26]/75 m-0 leading-relaxed">
+            Nessuna correzione entra da sola: la legge un curatore. Anche se non
+            viene accolta, quello che scrivi resta agli atti come testimonianza.
+          </p>
+
+          <label class="text-[13px] text-[#1E2E26]/80">
+            Che cosa non torna
+            <select name="campo" class="mt-1 w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]">
+              <option value="definizione">Il significato</option>
+              <option value="grafia_accento">La grafia o l’accento</option>
+              <option value="esempio">L’esempio d’uso</option>
+              <option value="comune">Il paese</option>
+              <option value="parlata">La parlata</option>
+              <option value="etimologia">L’etimologia</option>
+              <option value="altro">Altro</option>
+            </select>
+          </label>
+
+          <label class="text-[13px] text-[#1E2E26]/80">
+            Come andrebbe secondo te
+            <textarea name="proposta" rows="3" maxlength="1200" required
+              placeholder="Da noi si dice…"
+              class="mt-1 w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]"></textarea>
+          </label>
+
+          <label class="text-[13px] text-[#1E2E26]/80">
+            Come lo sai (facoltativo)
+            <textarea name="motivazione" rows="2" maxlength="1200"
+              placeholder="Me lo diceva mia nonna, a Rabbi si usa così…"
+              class="mt-1 w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]"></textarea>
+          </label>
+
+          <div class="grid md:grid-cols-2 gap-3">
+            <input type="text" name="nome" maxlength="80" placeholder="Il tuo nome (facoltativo)"
+              class="px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]" />
+            <input type="email" name="email" maxlength="160" placeholder="La tua email (facoltativa)"
+              class="px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]" />
+          </div>
+          <p class="text-[12px] text-[#1E2E26]/55 m-0 -mt-1">
+            L’email serve solo per dirti com’è andata. Puoi anche non lasciarla.
+          </p>
+
+          <div class="flex gap-3 items-center flex-wrap">
+            <button type="submit" id="cx-invia"
+              class="bg-[#C8923E] text-[#1E2E26] font-semibold px-5 py-2.5 rounded cursor-pointer border-0 hover:bg-[#D9A94E]">
+              Manda la segnalazione
+            </button>
+            <button type="button" id="cx-annulla"
+              class="bg-transparent border-0 p-0 text-sm text-[#1E2E26]/55 underline cursor-pointer">Lascia stare</button>
+          </div>
+
+          <p id="cx-esito" class="text-[13px] m-0 leading-relaxed"></p>
+        </form>
+      </div>
+
       <p class="mt-8 text-sm" style="font-family: 'Inter', sans-serif;">
         <a href="/guardiani-de-la-lenga#proponi" class="text-[#8a6215] font-semibold hover:underline">
           Conosci una parola che non c’è? Proponila →
@@ -295,6 +370,75 @@ const jsonLd = {
     });
     campo?.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') document.getElementById('rz-comune-ok')?.click();
+    });
+
+    // ── PROPONI UNA CORREZIONE ──────────────────────────────────────────────
+    const cx = document.getElementById('cx');
+    const cxForm = document.getElementById('cx-form');
+    const cxEsito = document.getElementById('cx-esito');
+    const cxInvia = document.getElementById('cx-invia');
+    const apertoIl = Date.now();
+
+    document.getElementById('cx-apri')?.addEventListener('click', () => {
+      cxForm?.classList.toggle('hidden');
+      if (!cxForm?.classList.contains('hidden')) {
+        cxForm?.querySelector('[name=proposta]')?.focus();
+      }
+    });
+    document.getElementById('cx-annulla')?.addEventListener('click', () => {
+      cxForm?.classList.add('hidden');
+      if (cxEsito) cxEsito.textContent = '';
+    });
+
+    cxForm?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!CHIAVE || !cx) return;
+      const val = (n) => {
+        const el = cxForm.querySelector('[name=' + n + ']');
+        return el && el.value ? el.value.trim() : '';
+      };
+      if (!val('proposta')) {
+        if (cxEsito) { cxEsito.style.color = '#a33'; cxEsito.textContent = 'Scrivi come andrebbe secondo te.'; }
+        return;
+      }
+      if (cxInvia) { cxInvia.disabled = true; cxInvia.textContent = 'Mando…'; }
+      try {
+        const r = await fetch('https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/lemma-correzione', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: CHIAVE[0] },
+          body: JSON.stringify({
+            lemma_id: cx.getAttribute('data-lemma'),
+            campo: val('campo') || 'altro',
+            proposta: val('proposta'),
+            motivazione: val('motivazione'),
+            nome: val('nome'),
+            email: val('email'),
+            _honeypot: val('_honeypot'),
+            _ts: apertoIl,
+          }),
+        });
+        const d = await r.json();
+        if (cxEsito) {
+          if (d && d.ok) {
+            // Si dichiara riuscito solo cio' che il server ha confermato.
+            cxEsito.style.color = '#2d8659';
+            cxEsito.textContent = d.messaggio || 'Grazie: la tua segnalazione è arrivata a un curatore.';
+            cxForm.querySelectorAll('input, textarea').forEach((el) => { el.value = ''; });
+          } else {
+            cxEsito.style.color = '#a33';
+            cxEsito.textContent = d && d.errore === 'troppe_proposte'
+              ? 'Hai già mandato diverse segnalazioni: riprova fra un’ora.'
+              : 'Non sono riuscito a mandarla: riprova o scrivi a info@elbrenz.eu.';
+          }
+        }
+      } catch {
+        if (cxEsito) {
+          cxEsito.style.color = '#a33';
+          cxEsito.textContent = 'Non sono riuscito a mandarla: riprova o scrivi a info@elbrenz.eu.';
+        }
+      } finally {
+        if (cxInvia) { cxInvia.disabled = false; cxInvia.textContent = 'Manda la segnalazione'; }
+      }
     });
 
     // Il conteggio all'apertura, dalla vista pubblica: la pagina e'
