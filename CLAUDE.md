@@ -276,6 +276,41 @@ Regole:
 3. Lo smoke test di chiusura di qualunque lavoro che tocca un form è l'**invio
    reale dal browser**, non il curl.
 
+### Trappola 13 — Graffe dentro un commento `{/* */}` in Astro
+
+Un commento JSX che **contiene delle graffe** rompe la build: Astro le interpreta
+come espressioni anche lì dentro. L'errore è `Expected ")" but found "$$render"`
+con **posizione fasulla** (indica una riga che non c'entra), esattamente come la
+Trappola 11.
+
+```astro
+{/* fra {T.di} e {firma(s)} manca lo spazio */}   ← BUILD ROTTA
+{/* fra le due espressioni manca lo spazio */}    ← ok
+```
+
+Regola: nei commenti Astro **non si citano mai espressioni con le graffe**.
+Si descrive a parole, oppure si usa un commento `//` nel frontmatter.
+(Scoperta 8/8/2026, su `StorieChePortate.astro`: il commento che spiegava una
+correzione ha rotto la build che quella correzione doveva sistemare.)
+
+### Trappola 14 — Due espressioni accostate perdono lo spazio
+
+`{T.di} {firma(s)}` non rende «di Monica V.» ma **«diMonica V.»**: fra due
+espressioni adiacenti Astro non conserva lo spazio letterale. Vale ovunque si
+accostino due `{...}`.
+
+```astro
+{T.di} {firma(s)}          ← esce «diMonica V.»
+{T.di + ' ' + firma(s)}    ← corretto
+```
+
+Attenzione a NON risolverlo con un template literal come figlio diretto
+(`{` + backtick + `}`): rompe il compilatore con lo stesso errore fasullo della
+Trappola 13. La concatenazione è la via sicura.
+
+Il difetto è invisibile a build verde e si vede solo nell'HTML prodotto: dopo
+ogni modifica a un testo composto, `grep` sul `dist/` e leggere la stringa vera.
+
 ## Cose da NON fare mai
 
 - ❌ Modificare il codice direttamente in produzione (anche se il sito è giù)
@@ -323,4 +358,4 @@ Regole:
 
 ---
 
-*Ultimo aggiornamento: 31 maggio 2026. Mantenere sincronizzato con HANDOFF e debt_tracker.*
+*Ultimo aggiornamento: 8 agosto 2026 (Trappole 13 e 14). Mantenere sincronizzato con HANDOFF e debt_tracker.*
