@@ -1,0 +1,34 @@
+-- [8/8/2026] AUDIT PROFONDO · le tre correzioni applicate.
+--
+-- 1) UNA VISTA DEFINER SCAVALCAVA LA RLS DELLA SUA TABELLA (difetto mio, di
+--    oggi). `v_modifiche_recenti` e `v_ocr_consumo` erano concesse a TUTTI gli
+--    autenticati mentre le tabelle sotto sono riservate a ruolo >= 25: una
+--    vista senza security_invoker gira coi privilegi del proprietario e non
+--    applica la RLS di chi legge. Qualunque socio poteva vedere chi ha cambiato
+--    cosa nei contenuti.
+--    E' lo stesso meccanismo che il 7 agosto ha reso SICURA la revoca delle
+--    letture anonime, ma qui lavora al contrario: cio' che rende comode le
+--    viste pubbliche rende pericolose quelle riservate.
+--    LA REGOLA: vista pubblica -> definer + dichiarata in
+--    permesso_anon_lettura_attesa; vista riservata -> security_invoker = true.
+--
+-- 2) FUNZIONI PERICOLOSE ESEGUIBILI DALL'ANONIMO. La piu' grave:
+--    `lancia_guardiani_digest(p_esegui => true)` era chiamabile da chiunque,
+--    non si difendeva da sola, e FA PARTIRE un messaggio Telegram vero al
+--    direttivo. Bastava conoscerne il nome. Con lei
+--    `annuncia_lemmi_pubblicati()`, che scrive una notifica a ogni socio.
+--    Revocate anche le funzioni di trigger, la plancia e la diagnostica.
+--    NON toccate has_ruolo/has_ruolo_min/peso_ruolo/puo_gestione_associativa:
+--    sono chiamate DENTRO le politiche RLS, e togliere l'esecuzione all'anon
+--    spegnerebbe il sito pubblico. Ne' tessera_verifica, che e' la verifica del
+--    QR sulla tessera e deve funzionare per chiunque lo inquadri.
+--
+-- 3) DIECI COLLEGAMENTI ROTTI nelle versioni tedesca e inglese (correzione nel
+--    codice del sito, non qui): /de/tesseramento, /de/rievocazioni e i link agli
+--    articoli /de/ e /en/ erano 404. Le traduzioni sono parziali e quelle pagine
+--    non sono mai state scritte: ora puntano all'italiano, che esiste. Il piu'
+--    grave era il percorso di adesione, rotto per chi arriva in tedesco.
+--
+-- VERIFICATO DOPO: undici pagine pubbliche 200, contenuti invariati (106 voci,
+-- 108 articoli, 57 luoghi), nessun 401 sulle edge pubbliche (Trappola 12 non
+-- scattata dopo sette deploy), sette cron su sette puliti nelle 24 ore.
