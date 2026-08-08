@@ -88,6 +88,24 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
         <div id="cc-lista" class="grid gap-4"></div>
         <p id="cc-vuoto" class="hidden text-[#1E2E26]/65" style="font-family: 'Source Serif 4', Georgia, serif;"></p>
+
+        {/*
+          COSA E' STATO CAMBIATO DOPO LA PUBBLICAZIONE.
+          Il permesso di correggere un contenuto pubblicato c'era gia': mancava
+          sapere chi ha cambiato cosa. Non serve a sorvegliare i curatori, serve
+          a poter dire a chi ha contribuito «e' stato cambiato questo, il tuo
+          testo era questo», e a poter tornare indietro.
+        */}
+        <section class="mt-14 pt-8 border-t border-[#E5DFCF]">
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+            Cambiato dopo la pubblicazione
+          </h2>
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-5">
+            Le correzioni fatte su contenuti già pubblici, con quello che c’era prima.
+            Le modifiche in curatela non compaiono: qui c’è solo ciò che il pubblico aveva già visto.
+          </p>
+          <div id="cc-modifiche" class="grid gap-3"></div>
+        </section>
       </section>
     </div>
   </main>
@@ -133,6 +151,47 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if ($('cc-utente')) $('cc-utente').textContent = nome;
     mostra('cc-pannello');
     carica();
+    caricaModifiche();
+  }
+
+  async function caricaModifiche() {
+    const box = $('cc-modifiche');
+    if (!box) return;
+    const { data, error } = await supabase
+      .from('v_modifiche_recenti')
+      .select('id, dove, cosa, campo, prima, dopo, chi, quando')
+      .order('quando', { ascending: false })
+      .limit(30);
+
+    if (error) {
+      // Si dice. Un elenco vuoto per un guasto di lettura significherebbe
+      // «nessuno ha cambiato niente», che e' l'unica cosa da non far credere.
+      box.innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere le modifiche: ' + H(error.message) + '</p>';
+      return;
+    }
+    const righe = data ?? [];
+    if (!righe.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessun contenuto pubblicato è stato modificato finora.</p>';
+      return;
+    }
+    box.innerHTML = '';
+    for (const r of righe) {
+      const el = document.createElement('div');
+      el.className = 'bg-white border border-[#E5DFCF] rounded p-4';
+      const taglia = (t) => {
+        const s = String(t ?? '');
+        return s.length > 160 ? H(s.slice(0, 160)) + '…' : H(s) || '<em class="text-[#1E2E26]/45">vuoto</em>';
+      };
+      el.innerHTML =
+        '<p class="m-0 mb-1 text-[13px]"><span class="text-[#8a6215] font-semibold">' + H(r.dove) + '</span>'
+        + ' · <strong>' + H(r.cosa || '(rimosso)') + '</strong> · ' + H(r.campo) + '</p>'
+        + '<p class="m-0 text-[13px] text-[#1E2E26]/60">Prima: ' + taglia(r.prima) + '</p>'
+        + '<p class="m-0 text-[13px] text-[#1E2E26]">Adesso: ' + taglia(r.dopo) + '</p>'
+        + '<p class="m-0 mt-1 text-[12px] text-[#1E2E26]/50">' + H(r.chi) + ' · '
+        + new Date(r.quando).toLocaleString('it-IT', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })
+        + '</p>';
+      box.appendChild(el);
+    }
   }
 
   async function carica() {
@@ -274,7 +333,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   });
 
   $('cc-back')?.addEventListener('click', () => { nascondi('cc-login-2'); mostra('cc-login-1'); });
-  $('cc-ricarica')?.addEventListener('click', carica);
+  $('cc-ricarica')?.addEventListener('click', () => { carica(); caricaModifiche(); });
   const esci = async () => { await supabase.auth.signOut(); window.location.reload(); };
   $('cc-esci')?.addEventListener('click', esci);
   $('cc-esci-2')?.addEventListener('click', esci);

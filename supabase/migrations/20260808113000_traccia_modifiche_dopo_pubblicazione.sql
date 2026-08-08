@@ -1,0 +1,35 @@
+-- [8/8/2026] LA TRACCIA DELLE MODIFICHE DOPO LA PUBBLICAZIONE.
+--
+-- COSA MANCAVA DAVVERO. Il permesso di correggere un contenuto pubblicato c'era
+-- gia': dizionario_lemma lo concede da livello 25, museo_gg_pezzo agli admin e
+-- al curatore, articolo all'autore. Mancava la cosa che rende quel permesso
+-- accettabile: sapere CHI ha cambiato COSA, e cosa c'era prima.
+--
+-- PERCHE' CONTA PIU' DEL PERMESSO. Correggere un accento e' innocuo. Correggere
+-- il significato di una parola portata da un'altra persona, senza lasciare riga,
+-- e' una cosa che si fa una volta sola: poi quella persona non manda piu' niente.
+-- La traccia non serve a sorvegliare i curatori: serve a poter dire a chi ha
+-- contribuito «e' stato cambiato questo, il tuo testo era questo», e a tornare
+-- indietro.
+--
+-- SOLO DOPO LA PUBBLICAZIONE. Le modifiche durante la curatela sono il lavoro
+-- normale e riempirebbero la tabella di rumore: la clausola WHEN fa scattare la
+-- traccia solo se la riga era GIA' pubblica quando e' cambiata.
+--
+-- GENERICA PER COSTRUZIONE. Una funzione sola confronta OLD e NEW come jsonb e
+-- registra una riga per ogni campo cambiato. Aggiungere una tabella e' un
+-- trigger, non codice nuovo: cosi' la prossima non verra' dimenticata.
+--
+-- Il testo si conserva INTERO (fino a 20.000 caratteri), non riassunto: serve a
+-- tornare indietro, e un troncamento renderebbe la traccia inutile proprio
+-- quando serve.
+--
+-- COLLAUDO (transazione annullata):
+--   modifica su lemma pubblicato -> 2 righe, una per campo, con prima e dopo
+--   modifica su bozza            -> 0 righe
+--
+-- La vista v_modifiche_recenti aggiunge il NOME della cosa cambiata e di chi
+-- l'ha cambiata: una traccia che nessuno riesce a leggere e' un archivio, non
+-- un controllo. Si legge in fondo a /guardiani-correzioni.
+--
+-- La definizione applicata e' quella delle migrazioni di pari nome.
