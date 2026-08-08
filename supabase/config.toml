@@ -280,3 +280,9 @@ verify_jwt = false
 # Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
 # verify_jwt=true e ogni ricordo morirebbe con un 401 muto al gateway.
 verify_jwt = false
+
+[functions.ocr-trascrivi]
+# Riservata ai curatori: ogni chiamata costa. La funzione verifica la
+# sessione e il ruolo >= 25, il gateway fa da prima porta.
+# Trappola 12: va dichiarata, altrimenti un deploy la riporta al default.
+verify_jwt = true

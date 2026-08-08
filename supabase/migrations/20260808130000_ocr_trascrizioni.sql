@@ -1,0 +1,35 @@
+-- [8/8/2026] LA TRASCRIZIONE DEI TESTI FOTOGRAFATI.
+--
+-- IL PROBLEMA. La storia di Coredo e la peste e' una fotografia di pagina
+-- stampata: bella da vedere, e per un motore di ricerca un rettangolo muto.
+-- Nessuno la trova cercando «peste Coredo», Andreas non puo' citarla, e chi usa
+-- un lettore di schermo non la legge affatto.
+--
+-- LA REGOLA CHE NON SI TOCCA. Il testo estratto NON si pubblica da solo. L'OCR
+-- sulla stampa dell'Ottocento confonde la esse lunga, mangia gli accenti e
+-- spezza le parole a fine riga: un testo pubblicato senza rilettura sarebbe
+-- PEGGIO di nessun testo, perche' sembrerebbe una trascrizione fedele e verrebbe
+-- citato come tale.
+--
+-- Per questo vive in una tabella sua e non in un campo del contenuto: finche'
+-- non e' confermata non puo' finire in pagina per sbaglio. La vista pubblica
+-- espone SOLO le confermate: e' il muro fra «la macchina ha letto» e «lo
+-- pubblichiamo a nostro nome».
+--
+-- IL COSTO SI PAGA A IMMAGINE, quindi si registra: ogni riga porta modello e
+-- token, e v_ocr_consumo li somma per mese. Un consumo che nessuno vede e' una
+-- spesa che cresce finche' non arriva la fattura. Il tetto mensile e
+-- l'interruttore stanno in config_app: si cambiano senza deploy.
+--
+-- ANCHE I FALLIMENTI SI SCRIVONO: un tentativo che non lascia traccia verrebbe
+-- rifatto all'infinito, pagandolo ogni volta.
+--
+-- L'ISTRUZIONE AL MODELLO chiede di trascrivere e basta: niente riassunti,
+-- niente modernizzazione dell'ortografia, niente correzioni. Se il testo dice
+-- «ne'» con l'accento che oggi sarebbe sbagliato, quello E' il documento. Chi
+-- trascrive una fonte storica non la migliora.
+--
+-- Solo immagini del nostro archivio: un indirizzo altrui trasformerebbe la
+-- funzione in un lettore di pagine per chiunque, a spese dell'Associazione.
+--
+-- La definizione applicata e' quella della migrazione di pari nome.

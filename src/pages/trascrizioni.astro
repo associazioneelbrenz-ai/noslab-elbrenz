@@ -1,0 +1,229 @@
+---
+/**
+ * /trascrizioni — dove le pagine fotografate diventano testo leggibile.
+ *
+ * PERCHE' ESISTE. Una scansione e' muta: nessun motore di ricerca la trova,
+ * Andreas non puo' citarla, un lettore di schermo non la legge. L'OCR la
+ * trascrive, ma quello che la macchina ha letto NON e' ancora un documento:
+ * sulla stampa dell'Ottocento sbaglia gli accenti, confonde la esse lunga e
+ * spezza le parole. Qui una persona rilegge e conferma. Solo dopo la
+ * trascrizione compare in pagina.
+ *
+ * Il muro fra «la macchina ha letto» e «lo pubblichiamo a nostro nome» e' questa
+ * pagina, e la vista pubblica mostra solo cio' che e' stato confermato.
+ *
+ * Accesso con codice via email, poi ruolo >= 25 (curatori).
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Trascrizioni · El Brenz" description="Area riservata: rilettura delle trascrizioni automatiche." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-4xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Curatela</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Trascrizioni
+      </h1>
+      <p class="text-[#1E2E26]/75 m-0 mb-8 max-w-2xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Quello che la macchina ha letto dentro le pagine fotografate. Non è ancora
+        un documento: va riletto. Compare sul sito solo dopo che l’hai confermato.
+      </p>
+
+      <p id="tr-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      <section id="tr-login-1" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti inviamo un codice di sei cifre.</p>
+        <input class={inputCls} type="email" id="tr-email" autocomplete="email" placeholder="nome@esempio.it" />
+        <button type="button" id="tr-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-semibold cursor-pointer border-0">Invia codice</button>
+        <p id="tr-err1" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      <section id="tr-login-2" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Codice inviato a <strong id="tr-echo"></strong>.</p>
+        <input class={inputCls} type="text" id="tr-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+        <button type="button" id="tr-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold cursor-pointer border-0">Verifica e accedi</button>
+        <p id="tr-err2" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      <section id="tr-nego" class="hidden bg-white border-l-4 border-[#a33] rounded p-6">
+        <p class="m-0 text-[#1E2E26]">Questa pagina è riservata ai curatori.</p>
+      </section>
+
+      <section id="tr-pannello" class="hidden">
+        <div class="flex items-center justify-between gap-3 flex-wrap mb-6">
+          <p class="text-sm text-[#1E2E26]/70 m-0">Sei <strong id="tr-utente"></strong> · <span id="tr-consumo" class="text-[#1E2E26]/55"></span></p>
+          <button type="button" id="tr-ricarica" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Ricarica</button>
+        </div>
+
+        <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 mb-8">
+          <h2 class="text-base text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Trascrivi una pagina</h2>
+          <p class="text-[13px] text-[#1E2E26]/70 m-0 mb-3">
+            Incolla l’indirizzo di un’immagine già caricata sul nostro archivio e scegli a che cosa appartiene.
+            Ogni estrazione costa: si fa una volta sola per immagine.
+          </p>
+          <div class="grid gap-2">
+            <input type="text" id="tr-url" placeholder="https://…/storage/v1/object/public/…" class={inputCls} />
+            <div class="grid md:grid-cols-3 gap-2">
+              <select id="tr-tipo" class={inputCls}>
+                <option value="storia">Storia</option>
+                <option value="museo_pezzo">Pezzo del museo</option>
+                <option value="archivio">Archivio</option>
+              </select>
+              <input type="text" id="tr-oid" placeholder="identificativo del contenuto" class={inputCls} />
+              <button type="button" id="tr-vai" class="bg-[#C8923E] text-[#1E2E26] font-semibold px-5 py-2.5 rounded cursor-pointer border-0 hover:bg-[#D9A94E]">Trascrivi</button>
+            </div>
+          </div>
+          <p id="tr-esito" class="text-[13px] m-0 mt-3"></p>
+        </div>
+
+        <div id="tr-lista" class="grid gap-5"></div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const supabase = createClient(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
+  const $ = (id) => document.getElementById(id);
+  const mostra = (id) => $(id)?.classList.remove('hidden');
+  const nascondi = (id) => $(id)?.classList.add('hidden');
+  const H = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  async function avvia() {
+    const { data: { session } } = await supabase.auth.getSession();
+    nascondi('tr-loading');
+    if (!session) { mostra('tr-login-1'); return; }
+    const { data: ruoli } = await supabase.from('utente_ruolo')
+      .select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', session.user.id);
+    const puo = (ruoli ?? []).map((r) => r.ruolo).filter(Boolean).some((r) => (r.livello ?? 0) >= 25);
+    if (!puo) { mostra('tr-nego'); return; }
+    if ($('tr-utente')) $('tr-utente').textContent = session.user.user_metadata?.nome || session.user.email;
+    mostra('tr-pannello');
+    carica();
+  }
+
+  async function carica() {
+    const box = $('tr-lista');
+    if (!box) return;
+
+    // Il consumo in chiaro: un tetto che nessuno confronta con la realta' non
+    // e' un tetto.
+    const { data: cons } = await supabase.from('v_ocr_consumo').select('*').limit(1);
+    if ($('tr-consumo') && cons && cons[0]) {
+      $('tr-consumo').textContent = cons[0].estrazioni + ' trascrizioni questo mese, '
+        + cons[0].confermate + ' confermate';
+    }
+
+    const { data, error } = await supabase.from('ocr_trascrizione')
+      .select('id, oggetto_tipo, oggetto_id, immagine_url, testo, testo_grezzo, stato, errore, created_at')
+      .in('stato', ['da_rivedere', 'fallita'])
+      .order('created_at', { ascending: false }).limit(30);
+
+    if (error) {
+      box.innerHTML = '<p class="text-[#a33]">Non riesco a leggere le trascrizioni: ' + H(error.message) + '</p>';
+      return;
+    }
+    const righe = data ?? [];
+    if (!righe.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/60">Nessuna trascrizione da rileggere.</p>';
+      return;
+    }
+    box.innerHTML = '';
+    for (const r of righe) {
+      const el = document.createElement('div');
+      el.className = 'bg-white border border-[#E5DFCF] rounded-lg p-5';
+      el.innerHTML =
+        '<div class="grid md:grid-cols-2 gap-4">'
+        + '<div><img src="' + H(r.immagine_url) + '" alt="" class="w-full rounded border border-[#E8DFC7]" loading="lazy" /></div>'
+        + '<div>'
+        + (r.stato === 'fallita'
+            ? '<p class="text-[#a33] text-sm m-0">Non è stato possibile leggerla.' + (r.errore ? ' ' + H(r.errore) : '') + '</p>'
+            : '<textarea class="tr-testo w-full h-64 px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 text-[14px] leading-relaxed" style="font-family: Source Serif 4, Georgia, serif;">' + H(r.testo || '') + '</textarea>'
+              + (r.errore ? '<p class="text-[12px] text-[#a33] m-0 mt-1">' + H(r.errore) + '</p>' : '')
+              + '<div class="flex gap-2 mt-3 flex-wrap">'
+              + '<button type="button" class="tr-ok bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer" data-id="' + r.id + '">Confermo</button>'
+              + '<button type="button" class="tr-no bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm border border-[#C8923E]/50 cursor-pointer" data-id="' + r.id + '">Scarta</button>'
+              + '</div>')
+        + '<p class="tr-msg text-[13px] m-0 mt-2"></p>'
+        + '</div></div>';
+      box.appendChild(el);
+    }
+    box.querySelectorAll('.tr-ok').forEach((b) => b.addEventListener('click', () => decidi(b, 'confermata')));
+    box.querySelectorAll('.tr-no').forEach((b) => b.addEventListener('click', () => decidi(b, 'scartata')));
+  }
+
+  async function decidi(btn, esito) {
+    const card = btn.closest('div.bg-white');
+    const testo = card?.querySelector('.tr-testo')?.value ?? null;
+    const msg = card?.querySelector('.tr-msg');
+    const { data: { session } } = await supabase.auth.getSession();
+    btn.disabled = true;
+
+    // Si salva anche il testo corretto a mano: la conferma NON e' un timbro su
+    // quello che ha scritto la macchina, e' il testo che il curatore fa suo.
+    const { data, error } = await supabase.from('ocr_trascrizione')
+      .update({
+        stato: esito,
+        testo: esito === 'confermata' ? testo : null,
+        confermata_da: session?.user?.id ?? null,
+        confermata_il: new Date().toISOString(),
+      })
+      .eq('id', btn.getAttribute('data-id'))
+      .select('id');
+
+    if (error || !data || !data.length) {
+      btn.disabled = false;
+      if (msg) { msg.style.color = '#a33'; msg.textContent = error ? 'Non salvato: ' + error.message : 'Non salvato: nessuna riga è cambiata.'; }
+      return;
+    }
+    if (msg) { msg.style.color = '#2d8659'; msg.textContent = esito === 'confermata' ? 'Confermata. Compare in pagina alla prossima ricostruzione.' : 'Scartata.'; }
+    setTimeout(carica, 900);
+  }
+
+  $('tr-vai')?.addEventListener('click', async () => {
+    const url = ($('tr-url')?.value || '').trim();
+    const tipo = $('tr-tipo')?.value || 'storia';
+    const oid = ($('tr-oid')?.value || '').trim();
+    const es = $('tr-esito');
+    if (!url || !oid) { if (es) { es.style.color = '#a33'; es.textContent = 'Servono l’indirizzo dell’immagine e l’identificativo.'; } return; }
+    const b = $('tr-vai'); b.disabled = true; b.textContent = 'Leggo…';
+    const { data, error } = await supabase.functions.invoke('ocr-trascrivi', {
+      body: { oggetto_tipo: tipo, oggetto_id: oid, immagine_url: url },
+    });
+    b.disabled = false; b.textContent = 'Trascrivi';
+    if (es) {
+      if (error) { es.style.color = '#a33'; es.textContent = 'Non riuscita: ' + error.message; }
+      else if (data?.errore) { es.style.color = '#a33'; es.textContent = 'Non riuscita: ' + data.errore; }
+      else { es.style.color = '#2d8659'; es.textContent = data?.messaggio || 'Fatta.'; carica(); }
+    }
+  });
+
+  $('tr-send')?.addEventListener('click', async () => {
+    const email = ($('tr-email')?.value || '').trim().toLowerCase();
+    const err = $('tr-err1');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { if (err) err.textContent = 'Email non valida.'; return; }
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    if (error || !data?.ok) { if (err) err.textContent = 'Impossibile inviare il codice.'; return; }
+    window._trEmail = email;
+    if ($('tr-echo')) $('tr-echo').textContent = email;
+    nascondi('tr-login-1'); mostra('tr-login-2');
+  });
+
+  $('tr-verify')?.addEventListener('click', async () => {
+    const codice = ($('tr-code')?.value || '').trim();
+    const err = $('tr-err2');
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: window._trEmail, codice } });
+    if (error || !data?.ok || !data?.session) { if (err) err.textContent = 'Codice non valido o scaduto.'; return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+
+  $('tr-ricarica')?.addEventListener('click', carica);
+  avvia();
+</script>
