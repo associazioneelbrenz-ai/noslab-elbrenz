@@ -274,3 +274,9 @@ verify_jwt = false
 # Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
 # verify_jwt=true e ogni segnalazione morirebbe con un 401 muto al gateway.
 verify_jwt = false
+
+[functions.lemma-commento]
+# Pubblica: chiunque legga una parola puo' lasciare la sua testimonianza.
+# Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
+# verify_jwt=true e ogni ricordo morirebbe con un 401 muto al gateway.
+verify_jwt = false

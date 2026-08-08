@@ -1,0 +1,30 @@
+-- [8/8/2026] I COMMENTI SUI TERMINI. L'altra meta' della proposta di Giorgia.
+--
+-- Il cuore («la conosco anch'io») dice QUANTI e DA DOVE. Il commento dice COSA,
+-- e serve a un'altra cosa.
+--
+-- NON E' UNA CORREZIONE, ed e' per questo che sta in una tabella sua.
+-- «Mia nonna la usava per dire un'altra cosa» non chiede a nessuno di cambiare
+-- la scheda: e' testimonianza, e va conservata come tale. Chi vuole proporre una
+-- modifica ha gia' il suo modulo (lemma_correzione), che finisce in curatela con
+-- un esito. Confonderle significherebbe o trasformare ogni ricordo in lavoro per
+-- il curatore, o far sparire i ricordi che nessuno accoglie.
+--
+-- TUTTO PASSA DALLA MODERAZIONE, e non e' diffidenza: la pagina di una parola e'
+-- un documento che resta, e il giorno che una scheda finisce su un social senza
+-- filtro diventa una bacheca. Il prezzo e' che un commento non compare subito; il
+-- prezzo dell'alternativa e' non poter piu' mostrare il glossario a un linguista.
+-- La risposta all'utente lo dice in chiaro invece di far credere che sia online.
+--
+-- Sul sito pubblico non c'e' sessione, quindi non si distingue un socio da un
+-- visitatore: la regola «i soci vedono subito» si potra' fare nell'app, dove
+-- l'identita' c'e'. Meglio una regola sola applicata bene che due a meta'.
+--
+-- La vista pubblica espone testo, firma e COMUNE, mai l'email: «a Rabbi la
+-- usiamo cosi'» senza il paese perde meta' del suo valore.
+--
+-- COLLAUDO dal vivo: ricordo valido accolto, esca ignorata in silenzio, voce
+-- inesistente respinta, e - il piu' importante - il commento NON e' visibile
+-- nella vista pubblica prima dell'approvazione.
+--
+-- La definizione applicata e' quella della migrazione di pari nome.

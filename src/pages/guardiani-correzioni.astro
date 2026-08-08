@@ -90,11 +90,26 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
         <p id="cc-vuoto" class="hidden text-[#1E2E26]/65" style="font-family: 'Source Serif 4', Georgia, serif;"></p>
 
         {/*
-          COSA E' STATO CAMBIATO DOPO LA PUBBLICAZIONE.
+          LE VOCI DA APPROVARE. Un ricordo che resta in coda per settimane
+          equivale a un ricordo cestinato, con l'aggravante che chi l'ha scritto
+          torna a controllare.
+        */}
+        <section class="mt-14 pt-8 border-t border-[#E5DFCF]">
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+            Voci da approvare
+          </h2>
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-5">
+            I ricordi lasciati sotto le parole. Non sono correzioni: nessuno chiede
+            di cambiare la scheda, chiedono solo di restare.
+          </p>
+          <div id="cc-voci" class="grid gap-3"></div>
+        </section>
+
+        {/*
           Il permesso di correggere un contenuto pubblicato c'era gia': mancava
           sapere chi ha cambiato cosa. Non serve a sorvegliare i curatori, serve
-          a poter dire a chi ha contribuito «e' stato cambiato questo, il tuo
-          testo era questo», e a poter tornare indietro.
+          a poter dire a chi ha contribuito che cosa e' stato cambiato, e a
+          poter tornare indietro.
         */}
         <section class="mt-14 pt-8 border-t border-[#E5DFCF]">
           <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">
@@ -151,7 +166,81 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
     if ($('cc-utente')) $('cc-utente').textContent = nome;
     mostra('cc-pannello');
     carica();
+    caricaVoci();
     caricaModifiche();
+  }
+
+  async function caricaVoci() {
+    const box = $('cc-voci');
+    if (!box) return;
+    const { data, error } = await supabase
+      .from('lemma_commento')
+      .select('id, testo, nome, comune, email, created_at, dizionario_lemma(lemma, slug)')
+      .eq('stato', 'in_attesa')
+      .order('created_at', { ascending: true })
+      .limit(50);
+
+    if (error) {
+      box.innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere le voci: ' + H(error.message) + '</p>';
+      return;
+    }
+    const righe = data ?? [];
+    if (!righe.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessuna voce in attesa.</p>';
+      return;
+    }
+    box.innerHTML = '';
+    for (const r of righe) {
+      const voce = r.dizionario_lemma || {};
+      const el = document.createElement('div');
+      el.className = 'bg-white border border-[#E5DFCF] rounded-lg p-4';
+      el.innerHTML =
+        '<p class="m-0 mb-2 text-[13px]"><span class="text-[#8a6215] font-semibold">'
+        + H(voce.lemma || '(voce rimossa)') + '</span>'
+        + (voce.slug ? ' · <a class="text-[#8a6215] underline" target="_blank" href="/guardiani-de-la-lenga/' + H(voce.slug) + '">apri</a>' : '')
+        + '</p>'
+        + '<p class="m-0 mb-2 text-[#1E2E26]" style="font-family: Source Serif 4, Georgia, serif;">' + H(r.testo) + '</p>'
+        + '<p class="text-[12px] text-[#1E2E26]/55 m-0 mb-3">'
+        + [r.nome ? H(r.nome) : 'Anonimo', r.comune ? H(r.comune) : null,
+           new Date(r.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })].filter(Boolean).join(' · ')
+        + '</p>'
+        + '<div class="flex gap-2 flex-wrap">'
+        + '<button type="button" class="cv-ok bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer" data-id="' + r.id + '">Pubblica</button>'
+        + '<button type="button" class="cv-no bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm border border-[#C8923E]/50 cursor-pointer" data-id="' + r.id + '">Non pubblicare</button>'
+        + '</div>'
+        + '<p class="cv-esito text-[13px] m-0 mt-2"></p>';
+      box.appendChild(el);
+    }
+    box.querySelectorAll('.cv-ok').forEach((b) => b.addEventListener('click', () => moderaVoce(b, 'pubblicato')));
+    box.querySelectorAll('.cv-no').forEach((b) => b.addEventListener('click', () => moderaVoce(b, 'respinto')));
+  }
+
+  async function moderaVoce(btn, esito) {
+    const card = btn.closest('div.bg-white');
+    const msg = card?.querySelector('.cv-esito');
+    const { data: { session } } = await supabase.auth.getSession();
+    btn.disabled = true;
+    const { data, error } = await supabase
+      .from('lemma_commento')
+      .update({ stato: esito, moderato_da: session?.user?.id ?? null, moderato_il: new Date().toISOString() })
+      .eq('id', btn.getAttribute('data-id'))
+      .select('id');
+
+    if (error || !data || !data.length) {
+      btn.disabled = false;
+      if (msg) {
+        msg.style.color = '#a33';
+        msg.textContent = error ? 'Non salvato: ' + error.message : 'Non salvato: nessuna riga è cambiata.';
+      }
+      return;
+    }
+    if (msg) {
+      msg.style.color = '#2d8659';
+      msg.textContent = esito === 'pubblicato'
+        ? 'Pubblicata. Compare sotto la parola alla prossima ricostruzione del sito.'
+        : 'Non pubblicata.';
+    }
+    setTimeout(caricaVoci, 900);
   }
 
   async function caricaModifiche() {
@@ -333,7 +422,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   });
 
   $('cc-back')?.addEventListener('click', () => { nascondi('cc-login-2'); mostra('cc-login-1'); });
-  $('cc-ricarica')?.addEventListener('click', () => { carica(); caricaModifiche(); });
+  $('cc-ricarica')?.addEventListener('click', () => { carica(); caricaVoci(); caricaModifiche(); });
   const esci = async () => { await supabase.auth.signOut(); window.location.reload(); };
   $('cc-esci')?.addEventListener('click', esci);
   $('cc-esci-2')?.addEventListener('click', esci);

@@ -272,6 +272,66 @@ const jsonLd = {
         </form>
       </div>
 
+      {/*
+        LE VOCI. Non e' una sezione commenti da blog: e' il posto dove finisce
+        «mia nonna la usava per dire un'altra cosa». Non chiede di cambiare la
+        scheda, e infatti non passa dal modulo di correzione: e' testimonianza,
+        e resta anche quando la voce non cambia.
+        La sezione compare solo se c'e' qualcosa da mostrare o da scrivere: un
+        contenitore vuoto sotto una parola la fa sembrare abbandonata.
+      */}
+      <section id="cm" class="mt-12 border-t border-[#C8923E]/30 pt-8" data-lemma={voce.id}>
+        <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-4"
+            style="font-family: 'Inter', sans-serif;">Le voci</h2>
+
+        <div id="cm-lista" class="grid gap-4 mb-6"></div>
+
+        <button id="cm-apri" type="button"
+          class="bg-transparent border-0 p-0 text-sm text-[#8a6215] font-semibold underline cursor-pointer"
+          style="font-family: 'Inter', sans-serif;">
+          Da voi si dice così? Raccontacelo
+        </button>
+
+        <form id="cm-form" class="hidden mt-4 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 grid gap-3"
+              novalidate style="font-family: 'Inter', sans-serif;">
+          <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
+
+          <p class="text-[13px] text-[#1E2E26]/75 m-0 leading-relaxed">
+            Un ricordo, un uso diverso, una frase che vi diceva qualcuno in casa.
+            Non serve che sia una correzione: qui si raccoglie come si parla, non
+            si stabilisce come si deve parlare.
+          </p>
+
+          <textarea name="testo" rows="3" maxlength="1500" required
+            placeholder="Da noi a Rabbi si diceva…"
+            class="w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]"></textarea>
+
+          <div class="grid md:grid-cols-3 gap-3">
+            <input type="text" name="nome" maxlength="80" placeholder="Il tuo nome (facoltativo)"
+              class="px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]" />
+            <input type="text" name="comune" maxlength="60" placeholder="Il tuo paese"
+              class="px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]" />
+            <input type="email" name="email" maxlength="160" placeholder="Email (facoltativa)"
+              class="px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#C8923E]/40 focus:outline-none focus:border-[#C8923E]" />
+          </div>
+          <p class="text-[12px] text-[#1E2E26]/55 m-0 -mt-1">
+            Il paese è la cosa più utile: una parola senza il luogo perde metà del suo valore.
+            L’email non compare mai in pagina.
+          </p>
+
+          <div class="flex gap-3 items-center flex-wrap">
+            <button type="submit" id="cm-invia"
+              class="bg-[#C8923E] text-[#1E2E26] font-semibold px-5 py-2.5 rounded cursor-pointer border-0 hover:bg-[#D9A94E]">
+              Manda il tuo ricordo
+            </button>
+            <button type="button" id="cm-annulla"
+              class="bg-transparent border-0 p-0 text-sm text-[#1E2E26]/55 underline cursor-pointer">Lascia stare</button>
+          </div>
+
+          <p id="cm-esito" class="text-[13px] m-0 leading-relaxed"></p>
+        </form>
+      </section>
+
       <p class="mt-8 text-sm" style="font-family: 'Inter', sans-serif;">
         <a href="/guardiani-de-la-lenga#proponi" class="text-[#8a6215] font-semibold hover:underline">
           Conosci una parola che non c’è? Proponila →
@@ -440,6 +500,98 @@ const jsonLd = {
         if (cxInvia) { cxInvia.disabled = false; cxInvia.textContent = 'Manda la segnalazione'; }
       }
     });
+
+    // ── LE VOCI ─────────────────────────────────────────────────────────────
+    const cm = document.getElementById('cm');
+    const cmLista = document.getElementById('cm-lista');
+    const cmForm = document.getElementById('cm-form');
+    const cmEsito = document.getElementById('cm-esito');
+    const cmInvia = document.getElementById('cm-invia');
+
+    document.getElementById('cm-apri')?.addEventListener('click', () => {
+      cmForm?.classList.toggle('hidden');
+      if (!cmForm?.classList.contains('hidden')) cmForm?.querySelector('[name=testo]')?.focus();
+    });
+    document.getElementById('cm-annulla')?.addEventListener('click', () => {
+      cmForm?.classList.add('hidden');
+      if (cmEsito) cmEsito.textContent = '';
+    });
+
+    async function caricaVoci() {
+      if (!CHIAVE || !cmLista || !cm) return;
+      try {
+        const u = 'https://wacknihvdjxltiqvxtqr.supabase.co/rest/v1/v_lemma_commento_pubblico'
+          + '?select=testo,firma,comune,created_at&order=created_at.asc&lemma_id=eq.' + cm.getAttribute('data-lemma');
+        const r = await fetch(u, { headers: { apikey: CHIAVE[0] } });
+        const voci = await r.json();
+        cmLista.innerHTML = '';
+        if (!Array.isArray(voci) || !voci.length) return;
+        for (const v of voci) {
+          const el = document.createElement('div');
+          el.className = 'bg-[#F5EEDD] border-l-2 border-[#C8923E]/50 pl-4 py-2';
+          const attr = [v.firma, v.comune].filter(Boolean).join(' · ');
+          el.innerHTML =
+            '<p class="m-0 text-[#1E2E26] leading-relaxed" style="font-family: Source Serif 4, Georgia, serif;">'
+            + String(v.testo).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>'
+            + (attr ? '<p class="m-0 mt-1 text-[12px] text-[#1E2E26]/55" style="font-family: Inter, sans-serif;">'
+                      + attr.replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</p>' : '');
+          cmLista.appendChild(el);
+        }
+      } catch {
+        // Si tace: un errore di rete non deve riempire la scheda di allarmi.
+        // Il modulo per scrivere resta comunque utilizzabile.
+      }
+    }
+
+    cmForm?.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (!CHIAVE || !cm) return;
+      const v = (n) => {
+        const el = cmForm.querySelector('[name=' + n + ']');
+        return el && el.value ? el.value.trim() : '';
+      };
+      if (!v('testo')) {
+        if (cmEsito) { cmEsito.style.color = '#a33'; cmEsito.textContent = 'Scrivi il tuo ricordo.'; }
+        return;
+      }
+      if (cmInvia) { cmInvia.disabled = true; cmInvia.textContent = 'Mando…'; }
+      try {
+        const r = await fetch('https://wacknihvdjxltiqvxtqr.supabase.co/functions/v1/lemma-commento', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: CHIAVE[0] },
+          body: JSON.stringify({
+            lemma_id: cm.getAttribute('data-lemma'),
+            testo: v('testo'), nome: v('nome'), comune: v('comune'), email: v('email'),
+            _honeypot: v('_honeypot'), _ts: apertoIl,
+          }),
+        });
+        const d = await r.json();
+        if (cmEsito) {
+          if (d && d.ok) {
+            cmEsito.style.color = '#2d8659';
+            // Si dice che NON compare subito. Promettere una comparsa immediata
+            // e non mantenerla e' il modo piu' rapido per far tornare qualcuno a
+            // controllare, non vedere niente, e non scrivere piu'.
+            cmEsito.textContent = d.messaggio || 'Grazie: il tuo ricordo compare appena un curatore lo approva.';
+            cmForm.querySelectorAll('textarea').forEach((el) => { el.value = ''; });
+          } else {
+            cmEsito.style.color = '#a33';
+            cmEsito.textContent = d && d.errore === 'troppi_commenti'
+              ? 'Hai già mandato diversi ricordi: riprova fra un’ora.'
+              : 'Non sono riuscito a mandarlo: riprova o scrivi a info@elbrenz.eu.';
+          }
+        }
+      } catch {
+        if (cmEsito) {
+          cmEsito.style.color = '#a33';
+          cmEsito.textContent = 'Non sono riuscito a mandarlo: riprova o scrivi a info@elbrenz.eu.';
+        }
+      } finally {
+        if (cmInvia) { cmInvia.disabled = false; cmInvia.textContent = 'Manda il tuo ricordo'; }
+      }
+    });
+
+    caricaVoci();
 
     // Il conteggio all'apertura, dalla vista pubblica: la pagina e'
     // prerenderizzata e un numero cotto dentro l'HTML invecchierebbe subito.
