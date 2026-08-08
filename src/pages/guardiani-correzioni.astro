@@ -1,0 +1,293 @@
+---
+/**
+ * /guardiani-correzioni — il pannello dove le correzioni proposte vengono lette.
+ *
+ * PERCHE' ESISTE. Dall'8 agosto chiunque legga una scheda del glossario puo'
+ * dire che qualcosa non torna. Senza questo pannello quelle segnalazioni
+ * finirebbero in una tabella che nessuno apre, ed e' la cosa peggiore: una
+ * persona che scrive «da noi si dice cosi'» e non riceve mai risposta non
+ * scrive una seconda volta.
+ *
+ * Gemella delle altre curatele: accesso con codice via email (otp-request /
+ * otp-verify), poi ruolo >= 50 oppure `curatore_linguistico`. Le scritture
+ * passano dalla RLS con la sessione dell'utente, non da una edge: qui chi
+ * scrive ha un'identita' vera, e la policy correzione_update_curatori fa da
+ * seconda porta anche se questa pagina venisse aggirata.
+ *
+ * COSA NON FA, ED E' VOLUTO. Accogliere una correzione NON modifica il lemma.
+ * Segna la proposta come accolta e lascia al curatore il gesto di correggere la
+ * voce: una modifica automatica su un testo scritto da un'altra persona e' cio'
+ * che fa smettere di contribuire. E la correzione resta comunque agli atti,
+ * accolta o respinta, perche' «da noi si dice cosi'» e' testimonianza e non
+ * smette di esserlo quando il curatore decide diversamente.
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = false;
+
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout
+  title="Correzioni proposte · Guardiani de la lenga"
+  description="Area riservata: le correzioni proposte sui termini del glossario."
+  ogImage="/og/og-default.jpg"
+  noindex={true}
+>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Curatela</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Correzioni proposte
+      </h1>
+      <p class="text-[#1E2E26]/75 m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Quello che i lettori segnalano sulle schede del glossario. Accogliere una
+        proposta non cambia la voce da sola: la voce la correggi tu.
+      </p>
+
+      <p id="cc-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* ── ACCESSO ── */}
+      <section id="cc-login-1" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti inviamo un codice di sei cifre.</p>
+        <label class="block text-sm text-[#1E2E26]/75 mb-1" for="cc-email">Email</label>
+        <input class={inputCls} type="email" id="cc-email" autocomplete="email" placeholder="nome@esempio.it" />
+        <button type="button" id="cc-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-semibold cursor-pointer border-0">Invia codice</button>
+        <p id="cc-login-err" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      <section id="cc-login-2" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice inviato a <strong id="cc-email-echo"></strong>.</p>
+        <input class={inputCls} type="text" id="cc-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+        <button type="button" id="cc-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold cursor-pointer border-0">Verifica e accedi</button>
+        <button type="button" id="cc-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        <p id="cc-verify-err" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      {/* ── NON AUTORIZZATO ── */}
+      <section id="cc-nego" class="hidden bg-white border-l-4 border-[#a33] rounded p-6">
+        <p class="m-0 text-[#1E2E26]">Questa pagina è riservata ai curatori del glossario e al direttivo.</p>
+        <button type="button" id="cc-esci-2" class="mt-4 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+      </section>
+
+      {/* ── PANNELLO ── */}
+      <section id="cc-pannello" class="hidden">
+        <div class="flex items-center justify-between gap-3 flex-wrap mb-6">
+          <p class="text-sm text-[#1E2E26]/70 m-0">Sei <strong id="cc-utente"></strong></p>
+          <div class="flex gap-3 items-center">
+            <button type="button" id="cc-ricarica" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Ricarica</button>
+            <button type="button" id="cc-esci" class="text-sm text-[#1E2E26]/55 underline bg-transparent border-0 cursor-pointer">Esci</button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mb-6 flex-wrap">
+          <button type="button" data-filtro="nuova" class="cc-f bg-[#C8923E] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Da esaminare</button>
+          <button type="button" data-filtro="accolta" class="cc-f bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm border border-[#C8923E]/40 cursor-pointer">Accolte</button>
+          <button type="button" data-filtro="respinta" class="cc-f bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm border border-[#C8923E]/40 cursor-pointer">Respinte</button>
+        </div>
+
+        <div id="cc-lista" class="grid gap-4"></div>
+        <p id="cc-vuoto" class="hidden text-[#1E2E26]/65" style="font-family: 'Source Serif 4', Georgia, serif;"></p>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+  );
+
+  const $ = (id) => document.getElementById(id);
+  const mostra = (id) => $(id)?.classList.remove('hidden');
+  const nascondi = (id) => $(id)?.classList.add('hidden');
+  const H = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const CAMPO = {
+    definizione: 'Il significato', grafia_accento: 'La grafia o l’accento',
+    esempio: 'L’esempio d’uso', comune: 'Il paese', parlata: 'La parlata',
+    etimologia: 'L’etimologia', altro: 'Altro',
+  };
+
+  let filtro = 'nuova';
+
+  async function avvia() {
+    const { data: { session } } = await supabase.auth.getSession();
+    nascondi('cc-loading');
+    if (!session) { mostra('cc-login-1'); return; }
+
+    // Il cancello guarda l'APPARTENENZA a un incarico, non solo il livello:
+    // promuovere un curatore non deve togliergli il pannello, ed e' il difetto
+    // che a inizio agosto aveva chiuso fuori il curatore del museo.
+    const { data: ruoli } = await supabase
+      .from('utente_ruolo').select('ruolo:ruolo_id ( nome, livello )')
+      .eq('utente_id', session.user.id);
+    const elenco = (ruoli ?? []).map((r) => r.ruolo).filter(Boolean);
+    const puo = elenco.some((r) => (r.livello ?? 0) >= 50 || r.nome === 'curatore_linguistico');
+    if (!puo) { mostra('cc-nego'); return; }
+
+    const nome = session.user.user_metadata?.nome || session.user.email;
+    if ($('cc-utente')) $('cc-utente').textContent = nome;
+    mostra('cc-pannello');
+    carica();
+  }
+
+  async function carica() {
+    const lista = $('cc-lista');
+    const vuoto = $('cc-vuoto');
+    if (!lista) return;
+    lista.innerHTML = '<p class="text-[#1E2E26]/60">Carico…</p>';
+
+    const { data, error } = await supabase
+      .from('lemma_correzione')
+      .select('id, lemma_id, campo, proposta, motivazione, nome, email, stato, nota_curatore, created_at, dizionario_lemma(lemma, slug, definizione, parlata, comune)')
+      .eq('stato', filtro)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (error) {
+      // Si dice. Una lista vuota per un errore di lettura farebbe credere che
+      // non ci sia niente da fare mentre qualcuno aspetta una risposta.
+      lista.innerHTML = '<p class="text-[#a33]">Non riesco a leggere le correzioni: ' + H(error.message) + '</p>';
+      return;
+    }
+
+    const righe = data ?? [];
+    lista.innerHTML = '';
+    if (!righe.length) {
+      vuoto?.classList.remove('hidden');
+      if (vuoto) {
+        vuoto.textContent = filtro === 'nuova'
+          ? 'Nessuna correzione da esaminare. La coda è pulita.'
+          : 'Nessuna correzione in questo stato.';
+      }
+      return;
+    }
+    vuoto?.classList.add('hidden');
+
+    for (const r of righe) {
+      const voce = r.dizionario_lemma || {};
+      const el = document.createElement('div');
+      el.className = 'bg-white border border-[#E5DFCF] rounded-lg p-5';
+      el.innerHTML =
+        '<div class="flex items-baseline justify-between gap-3 flex-wrap mb-2">'
+        + '<p class="m-0 text-lg text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(voce.lemma || '(voce rimossa)') + '</p>'
+        + '<span class="text-[11px] tracking-[0.16em] uppercase text-[#8a6215] font-semibold">' + H(CAMPO[r.campo] || r.campo) + '</span>'
+        + '</div>'
+        + (voce.definizione ? '<p class="text-[13px] text-[#1E2E26]/60 m-0 mb-3">Oggi dice: ' + H(voce.definizione) + '</p>' : '')
+        + '<p class="m-0 mb-2 text-[#1E2E26]" style="font-family: Source Serif 4, Georgia, serif;"><strong>Proposta:</strong> ' + H(r.proposta) + '</p>'
+        + (r.motivazione ? '<p class="m-0 mb-2 text-[#1E2E26]/80 italic" style="font-family: Source Serif 4, Georgia, serif;">' + H(r.motivazione) + '</p>' : '')
+        + '<p class="text-[12px] text-[#1E2E26]/55 m-0 mb-3">'
+        + (r.nome ? 'Da ' + H(r.nome) : 'Anonima')
+        + (r.email ? ' · ' + H(r.email) : ' · nessun recapito')
+        + ' · ' + new Date(r.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })
+        + (voce.slug ? ' · <a class="text-[#8a6215] underline" target="_blank" href="/guardiani-de-la-lenga/' + H(voce.slug) + '">apri la scheda</a>' : '')
+        + '</p>'
+        + (r.stato === 'nuova'
+          ? '<div class="grid gap-2">'
+            + '<input type="text" class="cc-nota w-full border border-[#E5DFCF] bg-white px-3 py-2 rounded text-sm" placeholder="Nota per gli atti (facoltativa)" maxlength="500" />'
+            + '<div class="flex gap-2 flex-wrap">'
+            + '<button type="button" class="cc-ok bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer" data-id="' + r.id + '">Accolgo</button>'
+            + '<button type="button" class="cc-no bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm border border-[#C8923E]/50 cursor-pointer" data-id="' + r.id + '">Non accolgo</button>'
+            + '</div>'
+            + '<p class="text-[12px] text-[#1E2E26]/55 m-0">Accogliere non cambia la voce: la correzione la fai tu sulla scheda.</p>'
+            + '</div>'
+          : '<p class="text-[13px] text-[#1E2E26]/60 m-0">'
+            + (r.stato === 'accolta' ? 'Accolta' : 'Non accolta')
+            + (r.nota_curatore ? ' · ' + H(r.nota_curatore) : '') + '</p>')
+        + '<p class="cc-esito text-[13px] m-0 mt-2"></p>';
+      lista.appendChild(el);
+    }
+
+    lista.querySelectorAll('.cc-ok').forEach((b) => b.addEventListener('click', () => decidi(b, 'accolta')));
+    lista.querySelectorAll('.cc-no').forEach((b) => b.addEventListener('click', () => decidi(b, 'respinta')));
+  }
+
+  async function decidi(btn, esito) {
+    const card = btn.closest('div.bg-white');
+    const nota = card?.querySelector('.cc-nota')?.value?.trim() || null;
+    const msg = card?.querySelector('.cc-esito');
+    const { data: { session } } = await supabase.auth.getSession();
+    btn.disabled = true;
+
+    // .select() dopo la scrittura: si dichiara fatto solo cio' che ha
+    // restituito una riga. Senza, una UPDATE respinta dalla RLS non e' un
+    // errore ma zero righe toccate, e il pannello direbbe «accolta» a vuoto.
+    const { data, error } = await supabase
+      .from('lemma_correzione')
+      .update({
+        stato: esito,
+        nota_curatore: nota,
+        esaminata_da: session?.user?.id ?? null,
+        esaminata_il: new Date().toISOString(),
+      })
+      .eq('id', btn.getAttribute('data-id'))
+      .select('id');
+
+    if (error || !data || !data.length) {
+      btn.disabled = false;
+      if (msg) {
+        msg.style.color = '#a33';
+        msg.textContent = error
+          ? 'Non sono riuscito a salvare: ' + error.message
+          : 'Non sono riuscito a salvare: nessuna riga è cambiata.';
+      }
+      return;
+    }
+    if (msg) { msg.style.color = '#2d8659'; msg.textContent = esito === 'accolta' ? 'Accolta.' : 'Non accolta.'; }
+    setTimeout(carica, 700);
+  }
+
+  // ── accesso ──
+  $('cc-send')?.addEventListener('click', async () => {
+    const email = ($('cc-email')?.value || '').trim().toLowerCase();
+    const err = $('cc-login-err');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { if (err) err.textContent = 'Email non valida.'; return; }
+    const b = $('cc-send'); b.disabled = true; b.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    b.disabled = false; b.textContent = 'Invia codice';
+    if (error || !data?.ok) { if (err) err.textContent = 'Impossibile inviare il codice. Riprova.'; return; }
+    window._ccEmail = email;
+    if ($('cc-email-echo')) $('cc-email-echo').textContent = email;
+    nascondi('cc-login-1'); mostra('cc-login-2');
+    setTimeout(() => $('cc-code')?.focus(), 100);
+  });
+
+  $('cc-verify')?.addEventListener('click', async () => {
+    const codice = ($('cc-code')?.value || '').trim();
+    const err = $('cc-verify-err');
+    const b = $('cc-verify'); b.disabled = true; b.textContent = 'Verifico…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: window._ccEmail, codice } });
+    if (error || !data?.ok || !data?.session) {
+      b.disabled = false; b.textContent = 'Verifica e accedi';
+      if (err) err.textContent = 'Codice non valido o scaduto.';
+      return;
+    }
+    await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+    window.location.reload();
+  });
+
+  $('cc-back')?.addEventListener('click', () => { nascondi('cc-login-2'); mostra('cc-login-1'); });
+  $('cc-ricarica')?.addEventListener('click', carica);
+  const esci = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  $('cc-esci')?.addEventListener('click', esci);
+  $('cc-esci-2')?.addEventListener('click', esci);
+
+  document.querySelectorAll('.cc-f').forEach((b) => b.addEventListener('click', () => {
+    filtro = b.getAttribute('data-filtro');
+    document.querySelectorAll('.cc-f').forEach((x) => {
+      const attivo = x === b;
+      x.className = 'cc-f px-4 py-2 rounded text-sm cursor-pointer border-0 '
+        + (attivo ? 'bg-[#C8923E] text-[#1E2E26] font-semibold' : 'bg-[#F5EEDD] text-[#1E2E26] border border-[#C8923E]/40');
+    });
+    carica();
+  }));
+
+  avvia();
+</script>
