@@ -27,8 +27,20 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
-interface Props { lingua?: 'it' | 'de' | 'en' }
-const { lingua = 'it' } = Astro.props;
+/**
+ * [9/8/2026] `posizione` — perche' la separazione ha un verso.
+ *
+ * Nata in fondo allo Sportello, la sezione portava il suo tratto di stacco
+ * SOPRA di se': e' cosi' che ci si separa da cio' che viene prima. Sui Custodi
+ * sta invece in cima, e li' quel tratto diventa un filo orizzontale appeso al
+ * nulla sotto il titolo. Il tratto non sparisce, si gira: sotto invece che
+ * sopra, perche' li' quello che c'e' da separare e' cio' che viene DOPO.
+ */
+interface Props { lingua?: 'it' | 'de' | 'en'; posizione?: 'in-fondo' | 'in-cima' }
+const { lingua = 'it', posizione = 'in-fondo' } = Astro.props;
+const stacco = posizione === 'in-cima'
+  ? 'mb-16 pb-12 border-b border-[#E5DFCF]'
+  : 'mt-16 pt-12 border-t border-[#E5DFCF]';
 
 type Storia = {
   id: string; titolo: string; contenuto: string;
@@ -82,13 +94,42 @@ const attacco = (t: string, n = 120) => {
   const pulito = (t ?? '').replace(/\s+/g, ' ').trim();
   return pulito.length > n ? pulito.slice(0, n).replace(/\s\S*$/, '') + '…' : pulito;
 };
-const copertina = (s: Storia) => s.copertina_url || s.immagini_urls?.[0] || null;
+/**
+ * [9/8/2026] LE COPERTINE NON SI VEDEVANO PIU' DAL TELEFONO.
+ *
+ * Non era un permesso e non era un guasto: era il peso. Qui si mettevano nei
+ * riquadri gli ORIGINALI usciti dal telefono di chi ha scritto la storia —
+ * misurati: 2,0 e 2,7 megabyte l'uno, 2084x4624 pixel — per riempire uno spazio
+ * alto duecento. Quattro copertine fanno nove megabyte. Dal Mac in fibra
+ * arrivano in sette secondi; da un telefono nelle valli scadono i tempi e il
+ * browser disegna il quadratino col punto interrogativo. Le foto c'erano
+ * sempre state: non arrivavano.
+ *
+ * Supabase sa ridimensionare mentre serve. Stessa immagine a 800 di larghezza:
+ * 349 kilobyte in 1,4 secondi invece di 2,7 megabyte in 7,4. Otto volte meno.
+ *
+ * Si tocca SOLO ciò che sta nello storage pubblico di Supabase, riconosciuto
+ * dal percorso: un indirizzo di altra provenienza passa intatto, perche' su
+ * quello l'endpoint di trasformazione non esiste e lo romperemmo.
+ *
+ * 800 e non 400: i telefoni hanno schermi a doppia densita', e una copertina
+ * servita alla misura esatta del riquadro si vede sgranata proprio su di loro.
+ */
+const RIDIMENSIONA = '/storage/v1/object/public/';
+const leggera = (url: string, larghezza = 800) =>
+  url.includes(RIDIMENSIONA)
+    ? `${url.replace(RIDIMENSIONA, '/storage/v1/render/image/public/')}?width=${larghezza}&quality=70`
+    : url;
+const copertina = (s: Storia) => {
+  const grezza = s.copertina_url || s.immagini_urls?.[0] || null;
+  return grezza ? leggera(grezza) : null;
+};
 // Il ripiego della vista non e' una firma: se il nome manca, non si firma.
 const firma = (s: Storia) => (s.autore_nome && s.autore_nome !== 'Socio' ? s.autore_nome : null);
 ---
 
 {storie.length > 0 && (
-  <section class="mt-16 pt-12 border-t border-[#E5DFCF]">
+  <section class={stacco}>
     <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3"
        style="font-family: 'Inter', sans-serif;">{T.occhiello}</p>
     <h2 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-4"

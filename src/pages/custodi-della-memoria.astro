@@ -17,6 +17,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+import StorieChePortate from '../components/StorieChePortate.astro';
 
 export const prerender = false;
 
@@ -38,15 +39,41 @@ type Custode = {
   categoria_ordine: number | null;
 };
 
+/**
+ * [9/8/2026] «NON CI SONO CUSTODI» E «NON RIESCO A LEGGERLI» NON SONO LA STESSA COSA.
+ *
+ * Qui si prendeva solo `data` e si buttava via `error`. Il `catch` intercetta le
+ * eccezioni di rete, ma un rifiuto di permesso non lancia niente: torna dentro
+ * `error`, che non veniva nemmeno guardato. Risultato: `data` nullo, elenco
+ * vuoto, e la pagina scriveva «Il primo custode potresti essere tu» mentre in
+ * realta' il database le stava chiudendo la porta in faccia.
+ *
+ * Oggi non fa danno, perche' la tabella e' davvero vuota (verificato il 9/8:
+ * zero righe, undici categorie pronte, permesso di lettura per anon al suo
+ * posto). Ma e' esattamente il difetto che rende invisibile il guasto di domani:
+ * se la revoca delle letture anonime del 7/8 avesse toccato questa vista,
+ * nessuno se ne sarebbe accorto guardando la pagina.
+ *
+ * Ora l'invito compare SOLO quando sappiamo che custodi non ce ne sono. Se la
+ * lettura fallisce si tace davvero: niente elenco e niente invito, perche' un
+ * invito e' un'affermazione sul registro, e sul registro in quel momento non
+ * sappiamo niente. Si tace, non si mente.
+ */
 let custodi: Custode[] = [];
+let letturaRiuscita = false;
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
-  const { data } = await sb.from('v_custodi_memoria').select('*')
+  const { data, error } = await sb.from('v_custodi_memoria').select('*')
     .eq('sezione', 'custodi')  // la Grande Guerra è una sezione a sé (/non-e-sole-grande-guerra)
     .order('categoria_ordine', { ascending: true, nullsFirst: false })
     .order('anno', { ascending: false })
     .order('nome_pubblico');
-  custodi = (data as Custode[]) ?? [];
+  if (error) {
+    console.error('[custodi] lettura vista rifiutata:', error.code, error.message);
+  } else {
+    custodi = (data as Custode[]) ?? [];
+    letturaRiuscita = true;
+  }
 } catch (e) {
   console.error('[custodi] lettura vista fallita:', e);
 }
@@ -91,16 +118,20 @@ const gruppi = [...mappa.values()].sort((a, b) => a.ordine - b.ordine);
   intro="Le famiglie e le persone che hanno affidato a El Brenz un pezzo della nosa storia. A loro il grazie delle valli."
   metaDescription="I Custodi della Memoria: le famiglie e le persone che hanno donato o prestato a El Brenz fotografie, documenti, oggetti e parole delle Valli del Noce, per temi della nosa storia."
 >
+  <StorieChePortate lingua="it" posizione="in-cima" />
+
   {gruppi.length === 0 ? (
-    <div class="text-center py-10">
-      <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
-        Il primo custode potresti essere tu: una fotografia, un documento,
-        una parola della <em>nosa</em> parlata bastano ad accendere una storia.
-      </p>
-      <a href="/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">
-        Porta la tua Storia
-      </a>
-    </div>
+    letturaRiuscita && (
+      <div class="text-center py-10">
+        <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Il primo custode potresti essere tu: una fotografia, un documento,
+          una parola della <em>nosa</em> parlata bastano ad accendere una storia.
+        </p>
+        <a href="/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">
+          Porta la tua Storia
+        </a>
+      </div>
+    )
   ) : (
     <div class="space-y-12">
       {gruppi.map((g) => (

@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import PaginaIstituzionale from '../../components/PaginaIstituzionale.astro';
+import StorieChePortate from '../../components/StorieChePortate.astro';
 
 export const prerender = false;
 
@@ -24,15 +25,23 @@ type Custode = {
   categoria_ordine: number | null;
 };
 
+// [9/8/2026] Vedi la nota lunga sulla pagina italiana: «non ci sono custodi» e
+// «non riesco a leggerli» non sono la stessa cosa, e `error` non veniva guardato.
 let custodi: Custode[] = [];
+let letturaRiuscita = false;
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
-  const { data } = await sb.from('v_custodi_memoria').select('*')
+  const { data, error } = await sb.from('v_custodi_memoria').select('*')
     .eq('sezione', 'custodi')  // la Grande Guerra è una sezione a sé (/non-e-sole-grande-guerra)
     .order('categoria_ordine', { ascending: true, nullsFirst: false })
     .order('anno', { ascending: false })
     .order('nome_pubblico');
-  custodi = (data as Custode[]) ?? [];
+  if (error) {
+    console.error('[custodi] lettura vista rifiutata:', error.code, error.message);
+  } else {
+    custodi = (data as Custode[]) ?? [];
+    letturaRiuscita = true;
+  }
 } catch (e) {
   console.error('[custodi] lettura vista fallita:', e);
 }
@@ -79,16 +88,20 @@ const gruppi = [...mappa.values()].sort((a, b) => a.ordine - b.ordine);
   intro="The families and people who have entrusted a piece of the nosa storia (our history) to El Brenz. To them go the thanks of the valleys."
   metaDescription="The Keepers of Memory: the families and people who have donated or lent to El Brenz photographs, documents, objects and words from the Valli del Noce, grouped by themes of our history."
 >
+  <StorieChePortate lingua="en" posizione="in-cima" />
+
   {gruppi.length === 0 ? (
-    <div class="text-center py-10">
-      <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
-        You could be the very first keeper: a photograph, a document,
-        a word of the <em>nosa</em> parlata (our local speech) is enough to kindle a story.
-      </p>
-      <a href="/en/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">
-        Share your story
-      </a>
-    </div>
+    letturaRiuscita && (
+      <div class="text-center py-10">
+        <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+          You could be the very first keeper: a photograph, a document,
+          a word of the <em>nosa</em> parlata (our local speech) is enough to kindle a story.
+        </p>
+        <a href="/en/contatti#porta" class="inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]" style="font-family: 'Inter', sans-serif;">
+          Share your story
+        </a>
+      </div>
+    )
   ) : (
     <div class="space-y-12">
       {gruppi.map((g) => (
