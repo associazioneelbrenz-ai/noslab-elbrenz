@@ -32,11 +32,11 @@ const { testo = 'Scorri' } = Astro.props;
 <div
   id="eb-scorri"
   aria-hidden="true"
-  class="pointer-events-none absolute bottom-5 left-0 right-0 z-20 flex flex-col items-center gap-1 transition-opacity duration-500"
+  class="pointer-events-none fixed bottom-5 left-0 right-0 z-20 flex flex-col items-center gap-1 transition-opacity duration-500"
 >
   <span
-    class="text-[11px] tracking-[0.28em] uppercase text-[#C8923E]"
-    style="font-family: 'Inter', sans-serif;"
+    class="text-[11px] tracking-[0.28em] uppercase text-[#C8923E] px-3 py-1 rounded-full"
+    style="font-family: 'Inter', sans-serif; background: rgba(30,46,38,.55); backdrop-filter: blur(3px);"
   >{testo}</span>
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C8923E"
        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="eb-scorri-freccia">
@@ -63,19 +63,24 @@ const { testo = 'Scorri' } = Astro.props;
 </style>
 
 <script>
-  (function () {
-    var el = document.getElementById('eb-scorri');
+  (() => {
+    const el = document.getElementById('eb-scorri');
     if (!el) return;
-    function via() {
-      el.classList.add('eb-scorri-via');
-      window.removeEventListener('scroll', alPrimoScorrimento);
-    }
-    function alPrimoScorrimento() {
-      if (window.scrollY > 24) via();
-    }
-    // Se la pagina e' gia' scorsa (ritorno indietro, ancora nell'indirizzo),
-    // non si mostra affatto: sarebbe un invito a fare una cosa gia' fatta.
-    if (window.scrollY > 24) { el.classList.add('eb-scorri-via'); return; }
-    window.addEventListener('scroll', alPrimoScorrimento, { passive: true });
+    const via = () => el.classList.add('eb-scorri-via');
+
+    // [9/8] Come per «torna su»: NON si guarda window.scrollY, che su questo
+    // sito resta a zero perche' l'overflow su html sposta lo scorrimento.
+    // Una sentinella alta mezzo schermo in cima: appena esce dalla vista,
+    // l'invito ha finito il suo lavoro e si toglie di mezzo.
+    const sentinella = document.createElement('div');
+    sentinella.setAttribute('aria-hidden', 'true');
+    sentinella.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:50vh;pointer-events:none;opacity:0';
+    document.body.prepend(sentinella);
+    new IntersectionObserver(([v]) => { if (!v.isIntersecting) via(); }, { threshold: 0 })
+      .observe(sentinella);
+
+    // Reti di sicurezza: chi tocca lo schermo o preme una freccia ha capito.
+    ['wheel', 'touchmove', 'keydown'].forEach((e) =>
+      window.addEventListener(e, via, { once: true, passive: true }));
   })();
 </script>

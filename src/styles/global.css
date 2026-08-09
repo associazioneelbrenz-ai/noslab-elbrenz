@@ -224,15 +224,22 @@ html {
 }
 
 /*
- * 2. NESSUNO SCORRIMENTO ORIZZONTALE, MAI.
+ * 2. NIENTE SCORRIMENTO ORIZZONTALE: la regola c'era gia', e la mia la rompeva.
  *
- * Rete di sicurezza: se un elemento sfora, la pagina non deve diventare
- * trascinabile di lato. Non nasconde il difetto (quello si corregge dov'e'),
- * ma evita che il difetto renda la pagina scomoda mentre lo si cerca.
+ * [9/8/2026] Qui, il 7 agosto, avevo aggiunto `body { overflow-x: hidden }`
+ * come «rete di sicurezza». Era una duplicazione di una regola che esiste da
+ * prima, sopra, con il valore GIUSTO: `html, body { overflow-x: clip }`.
+ *
+ * La differenza non e' cosmetica ed e' scritta nel commento di quella regola:
+ * `clip` blocca l'overflow SENZA creare un contesto di scroll, `hidden` lo
+ * crea. Il mio `hidden` trasformava il body in un contenitore scorrevole
+ * (`overflow-y: auto` implicito), e da li' `window.scrollY` smetteva di
+ * seguire lo scorrimento vero: ogni cosa che dipende dalla posizione - un
+ * bottone «torna su», un indicatore che deve sparire, un'intestazione che si
+ * assottiglia - vedeva sempre zero.
+ *
+ * La rete di sicurezza che serviva c'era gia'. Rimossa la mia.
  */
-body {
-  overflow-x: hidden;
-}
 
 /*
  * 3. L'ORO CHE SI LEGGE.

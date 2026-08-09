@@ -23,6 +23,7 @@ import FirmaNosLab from '../components/FirmaNosLab.astro';
 import BandieraLadina from '../components/BandieraLadina.astro';
 import Header from '../components/Header.astro';
 import FabAndreas from '../components/FabAndreas.astro';
+import TornaSu from '../components/TornaSu.astro';
 import CookieConsent from '../components/CookieConsent.astro';
 import {
   useTranslations, htmlLang, ogLocale,
@@ -335,6 +336,8 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     </footer>
 
     <FabAndreas pathname={currentPath} />
+
+    <TornaSu />
 
     <CookieConsent />
 

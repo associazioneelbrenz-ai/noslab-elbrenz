@@ -1,0 +1,93 @@
+---
+/**
+ * TornaSu — il bottone per risalire, chiesto da Michele il 9 agosto 2026.
+ *
+ * PERCHE'. La home e' lunga: chi arriva in fondo e vuole tornare al principio
+ * oggi deve trascinare per parecchi schermi, e su un telefono e' un lavoro.
+ *
+ * COMPARE SOLO QUANDO SERVE: dopo due schermate di scorrimento. Un bottone
+ * «torna su» visibile mentre sei gia' in cima e' rumore, e ruba lo spazio che
+ * in fondo alla pagina serve all'invito a scorrere.
+ *
+ * SI FA DA PARTE PER IL FAB DI ANDREAS, che sta in basso a destra: questo va a
+ * SINISTRA. Due bottoni rotondi nello stesso angolo si coprirebbero, ed e' il
+ * genere di scontro che si vede solo su uno schermo piccolo.
+ *
+ * RISPETTA `prefers-reduced-motion`: chi ha chiesto meno animazioni riceve un
+ * salto secco invece di uno scorrimento morbido. Non e' un dettaglio: per chi
+ * soffre di vertigini un movimento lungo e' un sintomo, non un effetto.
+ */
+interface Props { etichetta?: string }
+const { etichetta = 'Torna su' } = Astro.props;
+---
+
+<button
+  id="eb-torna-su"
+  type="button"
+  aria-label={etichetta}
+  title={etichetta}
+  class="fixed bottom-5 left-5 z-30 hidden h-11 w-11 cursor-pointer items-center justify-center rounded-full border-0 shadow-lg transition-opacity duration-300"
+  style="background: rgba(30,46,38,.85); backdrop-filter: blur(4px); opacity: 0;"
+>
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C8923E"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </svg>
+</button>
+
+<script>
+  (() => {
+    const b = document.getElementById('eb-torna-su');
+    if (!b) return;
+
+    // [9/8] NON si guarda `window.scrollY`, e non e' pignoleria.
+    //
+    // Una pagina puo' scorrere dentro un elemento invece che nella finestra:
+    // basta un `overflow` su html o body, e su questo sito ce n'e' uno
+    // deliberato (`overflow-x: clip`, che protegge lo sticky dell'intestazione).
+    // In quei casi `window.scrollY` resta a zero mentre la pagina scorre
+    // benissimo, e ogni cosa che ci si appoggia smette di funzionare in
+    // silenzio - senza un errore, senza una traccia.
+    //
+    // Una SENTINELLA invisibile in cima alla pagina, osservata da
+    // IntersectionObserver, dice la stessa cosa senza chiedersi CHI sta
+    // scorrendo: se la sentinella non si vede piu', vuol dire che ci siamo
+    // allontanati dalla cima. Funziona uguale nella finestra, dentro un
+    // contenitore, e domani in qualunque impaginazione.
+    const sentinella = document.createElement('div');
+    sentinella.setAttribute('aria-hidden', 'true');
+    sentinella.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:200vh;pointer-events:none;opacity:0';
+    document.body.prepend(sentinella);
+
+    let visibile = false;
+    function mostra(deve) {
+      if (deve === visibile) return;
+      visibile = deve;
+      if (deve) {
+        b.classList.remove('hidden');
+        b.classList.add('flex');
+        requestAnimationFrame(() => { b.style.opacity = '1'; });
+      } else {
+        b.style.opacity = '0';
+        // Si toglie dal flusso solo a dissolvenza finita: sparire di scatto
+        // sembra un difetto.
+        setTimeout(() => {
+          if (!visibile) { b.classList.add('hidden'); b.classList.remove('flex'); }
+        }, 300);
+      }
+    }
+
+    const osservatore = new IntersectionObserver(
+      ([voce]) => mostra(!voce.isIntersecting),
+      { threshold: 0 },
+    );
+    osservatore.observe(sentinella);
+
+    b.addEventListener('click', () => {
+      const secco = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Si porta in cima la sentinella, non la finestra: cosi' funziona anche
+      // se a scorrere e' un contenitore e non il documento.
+      sentinella.scrollIntoView({ block: 'start', behavior: secco ? 'auto' : 'smooth' });
+    });
+  })();
+</script>
