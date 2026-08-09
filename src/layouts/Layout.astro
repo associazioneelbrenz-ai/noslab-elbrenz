@@ -103,6 +103,76 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     <meta name="description" content={description} />
     {effectiveNoindex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="generator" content={Astro.generator} />
+
+{/*
+  DATI STRUTTURATI DI SITO. Stanno qui e non nelle singole pagine perche'
+  l'entita' «Associazione El Brenz» e' la stessa ovunque: ripeterla pagina per
+  pagina significherebbe sessantatre copie che prima o poi divergono.
+  Le pagine che hanno un tipo proprio (DefinedTerm sulle voci del glossario,
+  Article sugli articoli) lo aggiungono in piu': avere entrambi e' corretto e
+  atteso, non un doppione.
+  Sulle pagine noindex non si emette: dichiarare un'entita' a un motore a cui
+  si e' appena detto di non indicizzare e' un segnale contraddittorio, ed e' lo
+  stesso ragionamento per cui non emettiamo hreflang li'.
+  I dati sono quelli veri del footer: stessa fonte, cosi' non possono divergere.
+*/}
+{!effectiveNoindex && (
+  <script type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': ['Organization', 'NGO'],
+        '@id': 'https://elbrenz.eu/#associazione',
+        name: 'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce',
+        alternateName: 'El Brenz',
+        url: 'https://elbrenz.eu',
+        email: 'info@elbrenz.eu',
+        logo: 'https://elbrenz.eu/apple-touch-icon.png',
+        taxID: '92019480224',
+        description: "Associazione di promozione sociale che custodisce la storia, la lingua ladino-anaunica e la cultura delle Valli del Noce: Val di Non, Val di Sole, Val di Rabbi e Val di Pejo.",
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: 'Via Trento 40, II piano',
+          postalCode: '38027',
+          addressLocality: 'Malè',
+          addressRegion: 'TN',
+          addressCountry: 'IT',
+        },
+        areaServed: [
+          { '@type': 'Place', name: 'Val di Non' },
+          { '@type': 'Place', name: 'Val di Sole' },
+          { '@type': 'Place', name: 'Val di Rabbi' },
+          { '@type': 'Place', name: 'Val di Pejo' },
+        ],
+        knowsLanguage: ['it', 'lld', 'de'],
+        sameAs: [
+          'https://www.facebook.com/ASSOCIAZIONELBRENZ',
+          'https://www.instagram.com/elbrenzass',
+          'https://www.youtube.com/@elbrenz',
+        ],
+      },
+      {
+        '@type': 'WebSite',
+        '@id': 'https://elbrenz.eu/#sito',
+        url: 'https://elbrenz.eu',
+        name: 'El Brenz da le Val del Nos',
+        inLanguage: pl,
+        publisher: { '@id': 'https://elbrenz.eu/#associazione' },
+      },
+      {
+        '@type': 'WebPage',
+        '@id': canonicalURL.href + '#pagina',
+        url: canonicalURL.href,
+        name: fullTitle,
+        description: description,
+        inLanguage: pl,
+        isPartOf: { '@id': 'https://elbrenz.eu/#sito' },
+        about: { '@id': 'https://elbrenz.eu/#associazione' },
+      },
+    ],
+  })} />
+)}
+
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
