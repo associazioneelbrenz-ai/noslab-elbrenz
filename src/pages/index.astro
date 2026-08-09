@@ -371,7 +371,11 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
       </svg>
     </div>
 
-    <div class="relative max-w-4xl mx-auto px-6 pt-16 pb-28 md:py-40 text-center">
+    {/* [9/8] pb-40 su telefono: l'invito a scorrere e' ancorato al fondo della
+     finestra, e con pb-28 cadeva SOPRA i due pulsanti. Lo spazio in fondo
+     non e' aria sprecata: e' cio' che tiene separate due cose che chiedono
+     azioni diverse. */}
+    <div class="relative max-w-4xl mx-auto px-6 pt-16 pb-40 md:py-40 text-center">
 
       <span
         class="inline-block bg-[#C8923E]/15 border border-[#C8923E] text-[#C8923E] px-4 py-1.5 text-[11px] font-medium tracking-[0.2em] uppercase mb-10"
