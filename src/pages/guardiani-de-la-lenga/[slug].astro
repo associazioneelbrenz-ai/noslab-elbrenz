@@ -60,6 +60,12 @@ const PARLATA: Record<string, string> = {
 const parlataL = voce.variante ? (PARLATA[voce.variante] ?? voce.variante) : null;
 const eDetto = voce.tipo && voce.tipo !== 'parola';
 
+// [9/8] IL TITOLO DEVE STARE NEI SESSANTA CARATTERI CHE GOOGLE MOSTRA.
+// Prima era «{parola} · Guardiani de la lenga · El Brenz» e col suffisso del
+// Layout arrivava a 126: la PAROLA, l'unica cosa che distingue questa pagina
+// dalle altre centocinque, finiva tagliata. Ora dice la parola e il suo
+// significato, che e' esattamente cio' che qualcuno sta cercando.
+const titoloSeo = voce.termine + (voce.significato_it ? ', ' + voce.significato_it.slice(0, 40) : ' · ladino anaunico');
 const descrizione = [voce.significato_it, parlataL].filter(Boolean).join(' · ').slice(0, 180);
 const jsonLd = {
   '@context': 'https://schema.org',
@@ -77,7 +83,7 @@ const jsonLd = {
 ---
 
 <Layout
-  title={`${voce.termine} · Guardiani de la lenga · El Brenz`}
+  title={titoloSeo}
   description={descrizione}
   ogImage="/og/og-default.jpg"
 >
