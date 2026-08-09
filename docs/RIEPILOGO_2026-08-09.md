@@ -182,3 +182,70 @@ correzione ha rotto la build che quella correzione doveva sistemare.
 - La revisione di Brunella per il tedesco
 - Gli incassi in contanti dei quattro solleciti, da registrare in prima nota
 - Il giro di allineamento del Mac Mini
+
+---
+
+# Parte seconda · 9 agosto, mattina
+
+## 9 · SEO, dati strutturati, traduzioni
+
+- **Tre home con lo stesso titolo**, in italiano: Google le vedeva come
+  duplicati. Ora zero duplicati.
+- **La parola spariva dal risultato**: le schede del glossario avevano titoli da
+  126 caratteri e il termine finiva tagliato. Media da 126 a 56.
+- **Dati strutturati dal 62% all'82%**: l'entità dell'Associazione nel Layout,
+  ereditata da ogni pagina indicizzabile. Non emessa sulle `noindex`.
+- **Tedesco e inglese accesi**: erano `noindex`, cioè invisibili. Il tedesco è
+  scritto bene. Tolto «Accedi» dalla cornice: ora *Anmelden* e *Sign in*.
+- **Predefinito invertito** (`!== 'false'`): acceso salvo spegnimento esplicito,
+  perché `.env.local` non viaggia con git e la prima build dal Mac Mini avrebbe
+  fatto sparire sedici pagine da Google in silenzio.
+
+## 10 · Contributi: l'italiano sì, il ladino no
+
+Quattro lemmi con errori, tutti di Diego. Le forme dialettali **non toccate**: un
+lemma scritto come il contributore lo dice *è il dato*. Sette correzioni nel
+registro con prima e dopo, primo uso vero della traccia costruita poche ore prima.
+
+## 11 · Lo scorrimento della home
+
+**L'osservazione di Michele**: molti guardano il titolo e chiudono.
+
+La causa era misurabile e non era la mancanza di un invito. L'indicatore «Scorri»
+c'era, in fondo alla prima sezione, ma quella sezione è alta 917px: l'indicatore
+cominciava a 958px, e su un iPhone da 844 **finiva fuori schermo**. Per vedere
+l'invito a scorrere bisognava aver già scorso.
+
+Cosa è stato fatto, in quattro passaggi guidati dai suoi screenshot:
+
+1. **Ancorato alla finestra** invece che alla sezione.
+2. **Pastiglia piena** verde bosco: in oro su oro spariva, e cadeva sopra i
+   pulsanti.
+3. **Eroe accorciato su telefono** di circa 250px, perché si intraveda la sezione
+   successiva. Nessuna freccia convince quanto vedere che qualcosa comincia.
+   Ogni valore `md:` invariato: sul desktop la pagina non cambia di un pixel.
+4. **Durata e ritorno**: la sentinella da mezzo schermo a poco più di uno, e
+   l'invito torna se si risale — **ma non a chi ha già visto la fine**, perché
+   ripeterglielo sarebbe rumore.
+
+**Aggiunto il «torna su»** chiesto da Michele: compare dopo due schermate, sta a
+sinistra perché a destra c'è il FAB di Andreas, e rispetta
+`prefers-reduced-motion`.
+
+### Due difetti miei, trovati strada facendo
+
+Il 7 agosto avevo aggiunto `body { overflow-x: hidden }` come «rete di
+sicurezza», **duplicando una regola che esisteva già col valore giusto**
+(`clip`), e il cui commento avvertiva esattamente di questo: `clip` blocca
+l'overflow senza creare un contesto di scroll, `hidden` lo crea.
+
+E i componenti guardavano `window.scrollY`, che su questo sito resta a zero.
+Ora usano sentinelle osservate da `IntersectionObserver`: dicono se ci si è
+allontanati dalla cima **senza chiedersi chi stia scorrendo**.
+
+### La lezione
+
+Una misura in pixel dice *dove* sta un elemento. Non dice se si vede, né se
+litiga con quello che ha accanto. Le tre correzioni successive alla prima sono
+arrivate tutte da uno screenshot di una persona su un telefono vero.
+
