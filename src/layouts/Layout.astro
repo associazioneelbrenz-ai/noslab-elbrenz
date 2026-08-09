@@ -73,10 +73,23 @@ const currentPath = Astro.url.pathname;
 // Gate traduzioni: finché la lingua non è "live" (DE rivisto da Brunella, EN
 // dal revisore), le pagine di quella lingua restano `noindex` (SEO protetta
 // da testi non ancora approvati), pur essendo raggiungibili e nello switcher.
+// [9/8/2026] ACCESO SALVO SPEGNIMENTO ESPLICITO, non piu' il contrario.
+//
+// Il valore predefinito era `false`: le traduzioni erano invisibili a Google
+// finche' qualcuno non accendeva un flag. Aveva senso quando aspettavano una
+// revisione; ora che Cristian le ha dichiarate live, quel predefinito e' una
+// trappola. Netlify NON builda da git (deploy_source: cli): la build avviene
+// sulla macchina di chi lavora, leggendo il suo .env.local. La prima build dal
+// Mac Mini, che quel file non ce l'ha, avrebbe rimesso DE ed EN in noindex
+// SENZA CHE NESSUNO SE NE ACCORGESSE - e le pagine sarebbero sparite da Google
+// in silenzio.
+//
+// Con `!== 'false'` il predefinito e' acceso e lo spegnimento resta possibile,
+// ma diventa una decisione esplicita invece di una dimenticanza.
 const localeLive: Record<PublicLocale, boolean> = {
   it: true,
-  de: import.meta.env.TRADUZIONI_DE_LIVE === 'true',
-  en: import.meta.env.TRADUZIONI_EN_LIVE === 'true',
+  de: import.meta.env.TRADUZIONI_DE_LIVE !== 'false',
+  en: import.meta.env.TRADUZIONI_EN_LIVE !== 'false',
 };
 const effectiveNoindex = noindex || (pl !== 'it' && !localeLive[pl]);
 
