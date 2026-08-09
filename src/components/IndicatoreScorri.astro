@@ -66,21 +66,45 @@ const { testo = 'Scorri' } = Astro.props;
   (() => {
     const el = document.getElementById('eb-scorri');
     if (!el) return;
-    const via = () => el.classList.add('eb-scorri-via');
+    const mostra = () => el.classList.remove('eb-scorri-via');
+    const nascondi = () => el.classList.add('eb-scorri-via');
 
-    // [9/8] Come per «torna su»: NON si guarda window.scrollY, che su questo
-    // sito resta a zero perche' l'overflow su html sposta lo scorrimento.
-    // Una sentinella alta mezzo schermo in cima: appena esce dalla vista,
-    // l'invito ha finito il suo lavoro e si toglie di mezzo.
-    const sentinella = document.createElement('div');
-    sentinella.setAttribute('aria-hidden', 'true');
-    sentinella.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:50vh;pointer-events:none;opacity:0';
-    document.body.prepend(sentinella);
-    new IntersectionObserver(([v]) => { if (!v.isIntersecting) via(); }, { threshold: 0 })
-      .observe(sentinella);
+    // [9/8] NON si guarda `window.scrollY`: su questo sito resta a zero, perche'
+    // l'overflow su html sposta lo scorrimento. Due sentinelle invisibili dicono
+    // la stessa cosa senza chiedersi CHI stia scorrendo, e funzionano uguale
+    // nella finestra, dentro un contenitore e in qualunque impaginazione futura.
+    const crea = (stile) => {
+      const d = document.createElement('div');
+      d.setAttribute('aria-hidden', 'true');
+      d.style.cssText = 'position:absolute;left:0;width:1px;pointer-events:none;opacity:0;' + stile;
+      return d;
+    };
 
-    // Reti di sicurezza: chi tocca lo schermo o preme una freccia ha capito.
-    ['wheel', 'touchmove', 'keydown'].forEach((e) =>
-      window.addEventListener(e, via, { once: true, passive: true }));
+    // Sentinella ALTA: alta poco piu' di una schermata. L'invito resta finche'
+    // non si e' scorso davvero. Prima era mezzo schermo, e un colpo di pollice
+    // lo faceva sparire prima che l'occhio lo registrasse.
+    const cima = crea('top:0;height:115vh');
+    // Sentinella IN FONDO: serve a sapere se la persona ha visto la fine.
+    const fondo = crea('bottom:0;height:60vh');
+    document.body.prepend(cima);
+    document.body.append(fondo);
+
+    // Chi e' arrivato in fondo ha capito benissimo che la pagina scorre:
+    // rimettergli l'invito quando risale sarebbe dirgli una cosa che ha appena
+    // dimostrato di sapere. Chi invece scorre un poco e torna su, quello si'.
+    let vistaLaFine = false;
+    new IntersectionObserver(([v]) => { if (v.isIntersecting) vistaLaFine = true; }, { threshold: 0 })
+      .observe(fondo);
+
+    new IntersectionObserver(([v]) => {
+      if (!v.isIntersecting) nascondi();
+      else if (!vistaLaFine) mostra();
+    }, { threshold: 0 }).observe(cima);
+
+    // Il tasto Fine e la barra spaziatrice sono intenzioni esplicite, non
+    // sfioramenti: li' l'invito ha finito il suo lavoro.
+    window.addEventListener('keydown', (e) => {
+      if (['End', 'PageDown', ' '].includes(e.key)) nascondi();
+    }, { passive: true });
   })();
 </script>
