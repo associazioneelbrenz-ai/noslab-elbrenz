@@ -1,0 +1,111 @@
+---
+/**
+ * Condividi — il tasto per mandare un contenuto su WhatsApp o dove si vuole.
+ * Consiglio di Michele Corradini, 9 agosto 2026.
+ *
+ * NON COSTRUIAMO NOI L'ELENCO DELLE APP. `navigator.share` apre il pannello di
+ * condivisione NATIVO del telefono: WhatsApp, Telegram, Messaggi, Mail, Copia,
+ * nell'ordine che la persona si e' abituata a vedere. Un elenco di iconcine
+ * fatto da noi sarebbe sempre incompleto (manca sempre quella che usa proprio
+ * lei), andrebbe mantenuto a mano, e su iPhone sarebbe un gesto estraneo dove
+ * ce n'e' gia' uno che tutti conoscono.
+ *
+ * DOVE IL PANNELLO NON C'E' — i browser da scrivania, in larga parte — si
+ * ripiega sul copiare il link. Non si finge: l'etichetta cambia in «Link
+ * copiato» per due secondi, cosi' si sa che e' successo qualcosa. Se anche gli
+ * appunti sono negati (succede senza HTTPS, o con permessi stretti) il tasto
+ * lo dice invece di restare muto.
+ *
+ * L'INDIRIZZO SI PUO' FORZARE, ed e' il motivo per cui `url` e' una proprieta'
+ * e non `location.href`. Dall'app dei soci una storia va condivisa con
+ * l'indirizzo PUBBLICO su elbrenz.eu, non con quello dentro l'area riservata:
+ * chi riceve il link e non e' socio deve trovare la storia, non la schermata
+ * di accesso.
+ *
+ * PERCHE' SOLO SU CONTENUTI PUBBLICI. Un tasto condividi e' una promessa: che
+ * dall'altra parte si apra qualcosa. Sul forum non si mette, e non e' una
+ * dimenticanza — «il forum e' la conversazione fra soci, non una bacheca
+ * pubblica», ed e' scritto nelle migrazioni dei permessi.
+ */
+interface Props {
+  /** Titolo che accompagna il link nel pannello di condivisione. */
+  titolo: string;
+  /** Riga di accompagnamento, facoltativa. */
+  testo?: string;
+  /** Indirizzo da condividere. Se assente, quello della pagina corrente. */
+  url?: string;
+  /** Etichetta accanto all'icona. Vuota = solo icona. */
+  etichetta?: string;
+  /** Classi aggiuntive per collocarlo nella pagina. */
+  class?: string;
+}
+const { titolo, testo, url, etichetta = 'Condividi', class: extra = '' } = Astro.props;
+---
+
+<button
+  type="button"
+  data-eb-condividi
+  data-titolo={titolo}
+  data-testo={testo ?? ''}
+  data-url={url ?? ''}
+  aria-label={`${etichetta}: ${titolo}`}
+  class={`inline-flex items-center gap-2 cursor-pointer border border-[#C8923E]/40 bg-transparent rounded-md px-3 py-2 text-[13px] text-[#8a6215] hover:bg-[#C8923E]/10 transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E] ${extra}`}
+  style="font-family: 'Inter', sans-serif;"
+>
+  {/* Il quadrato con la freccia in su: su iPhone significa gia' «condividi». */}
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="flex-none">
+    <path d="M12 16V4" />
+    <path d="M8 8l4-4 4 4" />
+    <path d="M5 14v5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5" />
+  </svg>
+  <span data-eb-condividi-testo>{etichetta}</span>
+</button>
+
+<script>
+  (() => {
+    // Un solo ascoltatore per tutta la pagina: i tasti possono essere molti
+    // (un elenco di storie) e possono comparire dopo, e cosi' funzionano tutti.
+    if ((window as any).__ebCondividi) return;
+    (window as any).__ebCondividi = true;
+
+    const ATTESA = 2000;
+
+    document.addEventListener('click', async (ev) => {
+      const bottone = (ev.target as HTMLElement)?.closest?.('[data-eb-condividi]') as HTMLElement | null;
+      if (!bottone) return;
+      ev.preventDefault();
+
+      const etichetta = bottone.querySelector('[data-eb-condividi-testo]') as HTMLElement | null;
+      const originale = etichetta?.textContent ?? '';
+      const dillo = (msg: string) => {
+        if (!etichetta) return;
+        etichetta.textContent = msg;
+        window.setTimeout(() => { etichetta.textContent = originale; }, ATTESA);
+      };
+
+      const titolo = bottone.dataset.titolo || document.title;
+      const testo = bottone.dataset.testo || '';
+      const url = bottone.dataset.url || window.location.href;
+
+      // Il pannello nativo, quando c'e'.
+      if (typeof navigator.share === 'function') {
+        try {
+          await navigator.share(testo ? { title: titolo, text: testo, url } : { title: titolo, url });
+          return;
+        } catch (e: any) {
+          // Annullare non e' un errore: si e' cambiato idea, e non va detto niente.
+          if (e && e.name === 'AbortError') return;
+          // Qualunque altro intoppo: si ripiega sul copiare invece di arrendersi.
+        }
+      }
+
+      try {
+        await navigator.clipboard.writeText(url);
+        dillo('Link copiato');
+      } catch {
+        dillo('Copia non riuscita');
+      }
+    });
+  })();
+</script>

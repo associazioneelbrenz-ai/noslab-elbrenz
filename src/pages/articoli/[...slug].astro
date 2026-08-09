@@ -32,6 +32,7 @@ import { createClient } from '@supabase/supabase-js';
 import { nomePilastro, formatDataIT } from '../../lib/articoli';
 import { titoloSeo, OG_DEFAULT } from '../../lib/seoArticoli';
 import { schemaArticle, schemaBreadcrumb } from '../../lib/schema';
+import Condividi from '../../components/Condividi.astro';
 
 export const prerender = false;
 
@@ -117,4 +118,9 @@ const ldBreadcrumb = schemaBreadcrumb([
       nostro, scritto dai collaboratori e approvato prima della pubblicazione,
       non contenuto di terzi. */}
   <div set:html={articolo.corpo_html ?? ''} />
+
+  {/* Dopo l'articolo, non prima: si passa a qualcuno cio' che si e' letto. */}
+  <div class="mt-10 pt-6 border-t border-[#E5DFCF] not-prose">
+    <Condividi titolo={articolo.titolo} testo={descrizionePagina} />
+  </div>
 </ArticleLayout>

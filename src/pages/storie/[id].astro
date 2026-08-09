@@ -15,6 +15,7 @@ import { createClient } from '@supabase/supabase-js';
  * gli originali restano interi su Storage.
  */
 import { imgRid, srcSetCard } from '../../lib/immagini';
+import Condividi from '../../components/Condividi.astro';
 
 export const prerender = false;
 
@@ -59,6 +60,12 @@ const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
           {galleria.map((u, i) => <img src={imgRid(u, 1440)} srcset={srcSetCard(u, 720)} sizes="(min-width: 768px) 720px, 100vw" alt={`${s!.titolo} ${i + 1}`} loading="lazy" decoding="async" class="w-full h-auto rounded-md" />)}
         </div>
       )}
+
+      {/* In fondo e non in cima: si condivide una storia dopo averla letta,
+          non prima. Chi la vuole passare a qualcuno ci arriva naturalmente. */}
+      <div class="mt-10 pt-6 border-t border-[#E5DFCF]">
+        <Condividi titolo={s.titolo} testo={`Una storia dalle Valli del Noce, di ${s.autore_nome}.`} />
+      </div>
     </div>
   </main>
 </Layout>
