@@ -10,6 +10,9 @@
  */
 import Layout from '../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
+// [9/8/2026] I pezzi del museo sono fotografati dai soci e caricati interi:
+// stessa storia delle copertine delle storie. Vedi lib/immagini.
+import { imgRid, srcSetCard } from '../lib/immagini';
 
 export const prerender = false;
 
@@ -137,7 +140,9 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
                   class="block no-underline border border-[#C8923E]/25 bg-[#F5EEDD] rounded-md overflow-hidden group">
                   {r.copertina_url && (
                     <span class="block overflow-hidden bg-[#e8dcc4]">
-                      <img src={r.copertina_url} alt={r.titolo} loading="lazy" decoding="async"
+                      <img src={imgRid(r.copertina_url, 800)} srcset={srcSetCard(r.copertina_url, 400)}
+                        sizes="(min-width: 768px) 400px, 100vw"
+                        alt={r.titolo} loading="lazy" decoding="async"
                         class="w-full h-auto group-hover:scale-[1.03] transition-transform duration-300" />
                     </span>
                   )}
@@ -187,7 +192,9 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
                  style="font-family: 'Inter', sans-serif;">Il primo pezzo portato da un socio</p>
               <div class="flex gap-4 items-start">
                 {pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).immagini_urls?.[0] && (
-                  <img src={pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).immagini_urls[0]}
+                  <img src={imgRid(pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).immagini_urls[0], 256)}
+                       srcset={srcSetCard(pezzi.find((p: any) => /standschutzen-di-cusiano/i.test(p.slug ?? '')).immagini_urls[0], 128)}
+                       sizes="(min-width: 768px) 128px, 96px"
                        alt="" loading="lazy" decoding="async"
                        class="w-24 h-24 md:w-32 md:h-32 object-cover rounded border border-[#E8DFC7] flex-none" />
                 )}
@@ -267,7 +274,9 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
                 >
                   <span class="block overflow-hidden bg-[#e8dcc4]">
                     {p.immagini_urls[0] && (
-                      <img src={p.immagini_urls[0]} alt={p.titolo} loading="lazy" decoding="async"
+                      <img src={imgRid(p.immagini_urls[0], 600)} srcset={srcSetCard(p.immagini_urls[0], 300)}
+                        sizes="(min-width: 768px) 300px, 50vw"
+                        alt={p.titolo} loading="lazy" decoding="async"
                         class="w-full h-auto group-hover:scale-[1.03] transition-transform duration-300" />
                     )}
                   </span>
@@ -474,9 +483,20 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
       const riga = (k: string, v: string | null) =>
         v ? `<div><dt class="inline font-semibold text-[#8a6215]">${k}:</dt> <dd class="inline m-0">${v}</dd></div>` : '';
 
+      // [9/8/2026] La scheda si costruisce qui nel browser, dove `imgRid` di
+      // lib/immagini non arriva: stessa regola, riscritta in dieci righe. Senza,
+      // aprire un pezzo scaricava le foto originali dei soci a piena
+      // risoluzione — e' il difetto che sul telefono lasciava i riquadri vuoti.
+      const rid = (u: string, larghezza: number) => {
+        const PUBBLICO = '/storage/v1/object/public/';
+        if (!u || !u.includes(PUBBLICO)) return u;
+        const v = u.replace(PUBBLICO, '/storage/v1/render/image/public/');
+        return `${v}${v.includes('?') ? '&' : '?'}width=${larghezza}&quality=75`;
+      };
+
       function apri(p: any) {
         elImg.innerHTML = (p.immagini_urls || [])
-          .map((u: string) => `<img src="${u}" alt="${(p.titolo || '').replace(/"/g, '&quot;')}" class="w-full h-auto rounded" loading="lazy" />`)
+          .map((u: string) => `<img src="${rid(u, 1200)}" srcset="${rid(u, 600)} 600w, ${rid(u, 1200)} 1200w" sizes="(min-width: 768px) 600px, 100vw" alt="${(p.titolo || '').replace(/"/g, '&quot;')}" class="w-full h-auto rounded" loading="lazy" />`)
           .join('');
         elTit.textContent = p.titolo || '';
         elDes.textContent = p.descrizione || '';

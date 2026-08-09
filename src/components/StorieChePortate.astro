@@ -26,6 +26,7 @@
  * mancante non diventa mai una firma finta.
  */
 import { createClient } from '@supabase/supabase-js';
+import { imgRid, srcSetCard } from '../lib/immagini';
 
 /**
  * [9/8/2026] `posizione` — perche' la separazione ha un verso.
@@ -105,25 +106,13 @@ const attacco = (t: string, n = 120) => {
  * browser disegna il quadratino col punto interrogativo. Le foto c'erano
  * sempre state: non arrivavano.
  *
- * Supabase sa ridimensionare mentre serve. Stessa immagine a 800 di larghezza:
- * 349 kilobyte in 1,4 secondi invece di 2,7 megabyte in 7,4. Otto volte meno.
- *
- * Si tocca SOLO ciò che sta nello storage pubblico di Supabase, riconosciuto
- * dal percorso: un indirizzo di altra provenienza passa intatto, perche' su
- * quello l'endpoint di trasformazione non esiste e lo romperemmo.
- *
- * 800 e non 400: i telefoni hanno schermi a doppia densita', e una copertina
- * servita alla misura esatta del riquadro si vede sgranata proprio su di loro.
+ * La medicina esisteva gia' da luglio e non era stata portata qui: `imgRid` di
+ * lib/immagini, scritta per questo identico motivo. Stessa immagine servita a
+ * 800: 257 kilobyte in WebP invece di 2761 in JPEG, dieci volte meno. Con
+ * `srcSetCard` il browser sceglie da solo fra 400 e 800 secondo la densita'
+ * dello schermo, cosi' i telefoni non prendono ne' troppo ne' troppo poco.
  */
-const RIDIMENSIONA = '/storage/v1/object/public/';
-const leggera = (url: string, larghezza = 800) =>
-  url.includes(RIDIMENSIONA)
-    ? `${url.replace(RIDIMENSIONA, '/storage/v1/render/image/public/')}?width=${larghezza}&quality=70`
-    : url;
-const copertina = (s: Storia) => {
-  const grezza = s.copertina_url || s.immagini_urls?.[0] || null;
-  return grezza ? leggera(grezza) : null;
-};
+const copertinaGrezza = (s: Storia) => s.copertina_url || s.immagini_urls?.[0] || null;
 // Il ripiego della vista non e' una firma: se il nome manca, non si firma.
 const firma = (s: Storia) => (s.autore_nome && s.autore_nome !== 'Socio' ? s.autore_nome : null);
 ---
@@ -140,9 +129,12 @@ const firma = (s: Storia) => (s.autore_nome && s.autore_nome !== 'Socio' ? s.aut
     <div class="grid gap-6 md:grid-cols-2">
       {storie.map((s) => (
         <a href={`/storie/${s.id}`} class="block no-underline group">
-          {copertina(s) && (
+          {copertinaGrezza(s) && (
             <div class="overflow-hidden rounded-lg border border-[#E8DFC7] bg-white mb-3">
-              <img src={copertina(s)} alt={s.titolo} loading="lazy" decoding="async"
+              <img src={imgRid(copertinaGrezza(s), 800)}
+                   srcset={srcSetCard(copertinaGrezza(s), 400)}
+                   sizes="(min-width: 768px) 400px, 100vw"
+                   alt={s.titolo} loading="lazy" decoding="async"
                    class="w-full h-[170px] md:h-[200px] object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
             </div>
           )}

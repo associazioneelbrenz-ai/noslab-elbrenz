@@ -25,6 +25,10 @@
  */
 import Layout from '../../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
+// [9/8/2026] Le copertine sono le foto originali di chi ha scritto la storia,
+// fino a 2,7 MB l'una: servite intere non arrivano su rete mobile. Vedi
+// lib/immagini e la nota in StorieChePortate.
+import { imgRid, srcSetCard } from '../../lib/immagini';
 
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
@@ -101,7 +105,10 @@ const totaleImmagini = storie.reduce((n, s) => n + (s.immagini_urls?.length ?? 0
           <a href={`/storie/${prima.id}`} class="block no-underline group">
             {copertina(prima) && (
               <div class="overflow-hidden rounded-lg border border-[#E8DFC7] bg-white mb-6">
-                <img src={copertina(prima)} alt={prima.titolo} loading="eager" decoding="async"
+                <img src={imgRid(copertina(prima), 1200)}
+                     srcset={srcSetCard(copertina(prima), 600)}
+                     sizes="(min-width: 1024px) 976px, 100vw"
+                     alt={prima.titolo} loading="eager" decoding="async"
                      class="w-full h-[240px] md:h-[440px] object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
               </div>
             )}
@@ -127,7 +134,10 @@ const totaleImmagini = storie.reduce((n, s) => n + (s.immagini_urls?.length ?? 0
                 <a href={`/storie/${s.id}`} class="block no-underline group">
                   {copertina(s) && (
                     <div class="overflow-hidden rounded-lg border border-[#E8DFC7] bg-white mb-4">
-                      <img src={copertina(s)} alt={s.titolo} loading="lazy" decoding="async"
+                      <img src={imgRid(copertina(s), 960)}
+                           srcset={srcSetCard(copertina(s), 480)}
+                           sizes="(min-width: 768px) 472px, 100vw"
+                           alt={s.titolo} loading="lazy" decoding="async"
                            class="w-full h-[200px] md:h-[260px] object-cover transition-transform duration-500 group-hover:scale-[1.02]" />
                     </div>
                   )}

@@ -6,6 +6,15 @@
  */
 import Layout from '../../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
+/**
+ * [9/8/2026] Qui le immagini sono CONTENUTO, non miniature: restano grandi.
+ * Ma «grande» vuol dire quanto il testo e' largo — la colonna e' 720 —, non
+ * 2084x4624 pixel per 2,7 MB come uscivano dal telefono di chi ha scritto.
+ * 1440 = 720 al doppio della densita', il massimo che uno schermo possa
+ * mostrare qui. L'archivio non si tocca: questi sono indirizzi derivati,
+ * gli originali restano interi su Storage.
+ */
+import { imgRid, srcSetCard } from '../../lib/immagini';
 
 export const prerender = false;
 
@@ -34,12 +43,12 @@ const descr = s.contenuto.length > 155 ? s.contenuto.slice(0, 155).trim() + '…
 const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
 ---
 
-<Layout title={`${s.titolo} · Storie El Brenz`} description={descr} ogImage={s.copertina_url ?? s.immagini_urls[0] ?? '/og/og-default.jpg'}>
+<Layout title={`${s.titolo} · Storie El Brenz`} description={descr} ogImage={imgRid(s.copertina_url ?? s.immagini_urls[0] ?? null, 1200) ?? '/og/og-default.jpg'}>
   <main class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
       <p class="mb-6"><a href="/storie" class="text-[#8a6215] text-sm no-underline hover:underline" style="font-family: 'Inter', sans-serif;">← Storie dalle valli</a></p>
 
-      {s.copertina_url && <img src={s.copertina_url} alt={s.titolo} width="1200" height="675" class="w-full h-auto rounded-md mb-6" loading="eager" decoding="async" />}
+      {s.copertina_url && <img src={imgRid(s.copertina_url, 1440)} srcset={srcSetCard(s.copertina_url, 720)} sizes="(min-width: 768px) 720px, 100vw" alt={s.titolo} width="1200" height="675" class="w-full h-auto rounded-md mb-6" loading="eager" decoding="async" />}
       <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">{s.titolo}</h1>
       <p class="text-[12px] tracking-[0.06em] text-[#8a6215] m-0 mb-6" style="font-family: 'Inter', sans-serif;">di {s.autore_nome} · {dataIt}</p>
 
@@ -47,7 +56,7 @@ const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
 
       {galleria.length > 0 && (
         <div class="grid gap-4 mt-8">
-          {galleria.map((u, i) => <img src={u} alt={`${s!.titolo} ${i + 1}`} loading="lazy" decoding="async" class="w-full h-auto rounded-md" />)}
+          {galleria.map((u, i) => <img src={imgRid(u, 1440)} srcset={srcSetCard(u, 720)} sizes="(min-width: 768px) 720px, 100vw" alt={`${s!.titolo} ${i + 1}`} loading="lazy" decoding="async" class="w-full h-auto rounded-md" />)}
         </div>
       )}
     </div>
