@@ -23,7 +23,11 @@
  */
 import Layout from '../layouts/Layout.astro';
 
-export const prerender = false;
+// [9/8/2026] STATICA, non piu' SSR. Il frontmatter non legge niente: tutto
+// quello che si vede qui arriva dal browser dopo l'accesso. Essere dinamica
+// costava un'invocazione a ogni visita senza dare niente in cambio, ed e' fra
+// le quaranta pagine che il 6 agosto hanno superato la soglia di Netlify.
+export const prerender = true;
 
 const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
 ---

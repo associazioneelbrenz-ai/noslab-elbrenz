@@ -1,0 +1,23 @@
+-- [9/8/2026] IL NOME AVEVA DUE FONTI, E L'APP LEGGEVA QUELLA VUOTA.
+--
+-- Il nome di una persona viveva in due posti: `utente.nome` (che si riempie e si
+-- corregge) e `auth.users.raw_user_meta_data->>'nome'` (che si scrive una volta
+-- sola all'iscrizione, e con l'accesso tramite codice via email non si scrive
+-- affatto). TREDICI account su quattordici avevano il nome nel primo e il vuoto
+-- nel secondo, e il profilo leggeva il secondo: Monica Valentinotti apriva il
+-- suo profilo e vedeva «Socio» al posto del proprio nome.
+--
+-- Applicato: allineamento dei tredici, piu' un trigger che tiene la copia in
+-- pari quando il nome cambia. Il trigger e' la cintura, non la cura: la cura e'
+-- nel codice dell'app, che ora legge da `utente` e basta (AuthContext espone
+-- nomeCompleto, e ogni schermata lo prende da li').
+--
+-- Perche' la copia resta comunque: i metadati dell'autenticazione sono letti
+-- anche da Supabase per le proprie email. Una copia che diverge in silenzio e'
+-- esattamente il difetto che stiamo correggendo, quindi si tiene allineata.
+--
+-- Aggiorna solo se il valore cambia davvero: un trigger che riscrive a ogni
+-- salvataggio genererebbe rumore in auth.users senza motivo.
+--
+-- Restano senza nome due account e non e' un difetto: quello di servizio
+-- (info@elbrenz.eu) e uno senza domanda collegata.
