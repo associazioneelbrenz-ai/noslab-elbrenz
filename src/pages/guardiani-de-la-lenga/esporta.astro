@@ -1,0 +1,235 @@
+---
+/**
+ * /guardiani-de-la-lenga/esporta — il glossario portato fuori.
+ *
+ * PERCHE' ESISTE. Serve a tre cose concrete: mandarlo all'Union Ladin Nonesa,
+ * allegarlo a una domanda di contributo, e avere una copia che esiste anche se
+ * un giorno il sistema non ci fosse piu'. Un archivio linguistico che vive in
+ * un solo posto non e' un archivio.
+ *
+ * PRERENDERIZZATA. Questa pagina E' la copia: l'HTML esce dalla build con
+ * dentro tutti i lemmi, quindi si salva, si stampa e si legge anche senza
+ * database e senza rete. I due pulsanti di scarico costruiscono i file dal DOM,
+ * non da una chiamata: se la rete non c'e', funzionano lo stesso.
+ *
+ * Ordinata per parlata e, dentro ciascuna, alfabeticamente: e' l'ordine di un
+ * dizionario, e chi lo riceve non deve dover riordinare niente.
+ */
+import Layout from '../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
+
+export const prerender = true;
+
+type Voce = {
+  id: string; slug: string | null; termine: string; tipo: string | null;
+  categoria_gramm: string | null; variante: string | null; comune: string | null;
+  significato_it: string | null; esempio_uso: string | null;
+  etimologia: string | null; proverbi: string | null; variante_italiana: string | null;
+  audio_url: string | null; contributore_firma: string | null; audio_voce_di: string | null;
+};
+
+const PARLATA: Record<string, string> = {
+  noneso: 'Noneso · Val di Non', solander: 'Solander · Val di Sole',
+  rabies: 'Rabies · Val di Rabbi', pegaes: 'Pegaes · Val di Pejo',
+};
+const ORDINE = ['noneso', 'solander', 'rabies', 'pegaes'];
+
+let voci: Voce[] = [];
+try {
+  const url = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+  const anon = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+  if (anon) {
+    const sb = createClient(url, anon, { auth: { persistSession: false } });
+    const { data } = await sb.from('glossario_pubblico').select('*');
+    voci = (data as Voce[]) ?? [];
+  }
+} catch (e) {
+  console.error('[esporta] lettura glossario fallita:', e);
+}
+
+const collator = new Intl.Collator('it', { sensitivity: 'base' });
+const parlatePresenti = [
+  ...ORDINE.filter((p) => voci.some((v) => v.variante === p)),
+  ...[...new Set(voci.map((v) => v.variante ?? '').filter((p) => p && !ORDINE.includes(p)))],
+  ...(voci.some((v) => !v.variante) ? [''] : []),
+];
+const perParlata = parlatePresenti.map((p) => ({
+  chiave: p,
+  titolo: PARLATA[p] ?? (p || 'Parlata non indicata'),
+  righe: voci.filter((v) => (v.variante ?? '') === p).sort((a, b) => collator.compare(a.termine, b.termine)),
+}));
+
+const oggi = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+---
+
+<Layout
+  title="Il glossario, da portare fuori · Guardiani de la lenga"
+  description="Il glossario del ladino anaunico in una pagina sola: da leggere, stampare e scaricare."
+  ogImage="/og/og-guardiani.jpg"
+  noindex={true}
+>
+  <main class="bg-white min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
+
+      <div class="gc-nostampa">
+        <a href="/guardiani-de-la-lenga"
+          class="inline-block text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold no-underline mb-5 hover:underline"
+          style="font-family: 'Inter', sans-serif;">← Guardiani de la lenga</a>
+      </div>
+
+      <h1 class="text-3xl md:text-4xl leading-tight text-[#1E2E26] m-0 mb-2"
+          style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Guardiani de la lenga
+      </h1>
+      <p class="text-[#1E2E26]/75 m-0 mb-1" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Glossario del ladino anaunico delle Valli del Noce · {voci.length} voci · aggiornato al {oggi}
+      </p>
+      <p class="text-[13px] text-[#1E2E26]/60 m-0 mb-8" style="font-family: 'Inter', sans-serif;">
+        Associazione Storico Culturale Linguistica El Brenz · elbrenz.eu ·
+        contributi ceduti dai proponenti con licenza CC BY 4.0
+      </p>
+
+      <div class="gc-nostampa flex gap-2 flex-wrap mb-10" style="font-family: 'Inter', sans-serif;">
+        <button type="button" id="es-stampa"
+          class="bg-[#C8923E] text-[#1E2E26] px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Stampa o salva in PDF</button>
+        <button type="button" id="es-md"
+          class="bg-[#F5EEDD] text-[#1E2E26] border border-[#C8923E]/50 px-5 py-2.5 rounded text-sm cursor-pointer">Scarica in testo</button>
+        <button type="button" id="es-csv"
+          class="bg-[#F5EEDD] text-[#1E2E26] border border-[#C8923E]/50 px-5 py-2.5 rounded text-sm cursor-pointer">Scarica in tabella</button>
+      </div>
+
+      {voci.length === 0 && (
+        <p class="text-[#a33]" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Non sono riuscito a leggere il glossario in fase di costruzione. La pagina
+          va rigenerata: non è vuoto l’archivio, è vuota questa copia.
+        </p>
+      )}
+
+      {perParlata.map((gruppo) => (
+        <section class="mb-10">
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-1 pb-1 border-b-2 border-[#C8923E]"
+              style="font-family: 'Playfair Display', serif; font-weight: 500;">{gruppo.titolo}</h2>
+          <p class="text-[12px] text-[#1E2E26]/55 m-0 mb-4" style="font-family: 'Inter', sans-serif;">
+            {gruppo.righe.length === 1 ? '1 voce' : gruppo.righe.length + ' voci'}
+          </p>
+          <dl class="m-0">
+            {gruppo.righe.map((v) => (
+              <div class="mb-4 break-inside-avoid">
+                <dt class="m-0">
+                  <span class="text-lg text-[#1E2E26]" style="font-family: 'Playfair Display', serif;" lang="lld-anau">{v.termine}</span>
+                  <span class="text-[12px] text-[#1E2E26]/55 ml-2" style="font-family: 'Inter', sans-serif;">
+                    {[v.categoria_gramm, v.comune].filter(Boolean).join(' · ')}
+                  </span>
+                </dt>
+                <dd class="m-0 ml-0 text-[#1E2E26]/90" style="font-family: 'Source Serif 4', Georgia, serif;">
+                  {v.significato_it}
+                  {v.esempio_uso && (
+                    <span class="block text-[#1E2E26]/70 italic" lang="lld-anau">« {v.esempio_uso} »</span>
+                  )}
+                  {v.etimologia && (
+                    <span class="block text-[13px] text-[#1E2E26]/65">Etimologia: {v.etimologia}</span>
+                  )}
+                  {v.proverbi && (
+                    <span class="block text-[13px] text-[#1E2E26]/65">Detti: {v.proverbi}</span>
+                  )}
+                  {(v.contributore_firma || v.audio_voce_di) && (
+                    <span class="block text-[12px] text-[#8a6215]" style="font-family: 'Inter', sans-serif;">
+                      {[v.contributore_firma, v.audio_voce_di && v.audio_voce_di !== v.contributore_firma ? 'voce di ' + v.audio_voce_di : null].filter(Boolean).join(' · ')}
+                    </span>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
+
+      <p class="mt-12 pt-6 border-t border-[#E5DFCF] text-[13px] text-[#1E2E26]/60"
+         style="font-family: 'Inter', sans-serif;">
+        Raìs fonde no le ’nglacia · Associazione El Brenz APS · info@elbrenz.eu
+      </p>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  @media print {
+    .gc-nostampa { display: none !important; }
+    main { background: #fff !important; }
+    a { text-decoration: none; color: inherit; }
+  }
+</style>
+
+<script>
+  // I file si costruiscono dai dati gia' presenti nella pagina: nessuna
+  // chiamata, quindi funziona anche offline, che e' meta' del motivo per cui
+  // questa pagina esiste.
+  (() => {
+    const sezioni = Array.from(document.querySelectorAll('main section'));
+    if (!sezioni.length) return;
+
+    function leggi() {
+      const fuori = [];
+      for (const s of sezioni) {
+        const parlata = s.querySelector('h2')?.textContent?.trim() ?? '';
+        for (const riga of Array.from(s.querySelectorAll('dl > div'))) {
+          const dt = riga.querySelector('dt');
+          const dd = riga.querySelector('dd');
+          const termine = dt?.querySelector('span')?.textContent?.trim() ?? '';
+          const meta = dt?.querySelectorAll('span')[1]?.textContent?.trim() ?? '';
+          const blocchi = Array.from(dd?.querySelectorAll(':scope > span') ?? [])
+            .map((x) => x.textContent.trim());
+          // Il primo nodo di testo del dd e' la definizione; i blocchi sono
+          // esempio, etimologia, detti e attribuzione, nell'ordine in cui la
+          // pagina li mostra.
+          const definizione = (dd?.childNodes[0]?.textContent ?? '').trim();
+          fuori.push({ parlata, termine, meta, definizione, blocchi });
+        }
+      }
+      return fuori;
+    }
+
+    function scarica(nome, testo, tipo) {
+      const b = new Blob([testo], { type: tipo + ';charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    }
+
+    const oggi = new Date().toISOString().slice(0, 10);
+
+    document.getElementById('es-stampa')?.addEventListener('click', () => window.print());
+
+    document.getElementById('es-md')?.addEventListener('click', () => {
+      const righe = leggi();
+      let out = '# Guardiani de la lenga\n\nGlossario del ladino anaunico delle Valli del Noce\n'
+        + 'Associazione Storico Culturale Linguistica El Brenz · elbrenz.eu\n'
+        + 'Contributi ceduti dai proponenti con licenza CC BY 4.0\n'
+        + righe.length + ' voci · esportato il ' + oggi + '\n';
+      let parlata = null;
+      for (const r of righe) {
+        if (r.parlata !== parlata) { parlata = r.parlata; out += '\n\n## ' + parlata + '\n'; }
+        out += '\n**' + r.termine + '**' + (r.meta ? '  _' + r.meta + '_' : '') + '\n'
+          + r.definizione + '\n'
+          + r.blocchi.map((b) => '- ' + b).join('\n') + (r.blocchi.length ? '\n' : '');
+      }
+      out += '\n\nRaìs fonde no le ’nglacia\n';
+      scarica('guardiani-de-la-lenga-' + oggi + '.md', out, 'text/markdown');
+    });
+
+    document.getElementById('es-csv')?.addEventListener('click', () => {
+      const q = (s) => '"' + String(s ?? '').replace(/"/g, '""') + '"';
+      const righe = leggi();
+      const out = ['parlata,lemma,categoria_e_paese,definizione,altro']
+        .concat(righe.map((r) => [r.parlata, r.termine, r.meta, r.definizione, r.blocchi.join(' | ')].map(q).join(',')))
+        .join('\n');
+      // Il BOM serve a Excel, che senza legge le accentate come geroglifici e
+      // fa sembrare rotto un file che non lo e'.
+      scarica('guardiani-de-la-lenga-' + oggi + '.csv', '﻿' + out, 'text/csv');
+    });
+  })();
+</script>

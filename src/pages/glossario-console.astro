@@ -1,0 +1,1123 @@
+---
+/**
+ * /glossario-console — lo strumento di lavoro dei curatori linguistici.
+ *
+ * PERCHE' ESISTE. Il glossario e' passato da otto lemmi a centoquarantasei in
+ * sei giorni, portati da dieci contributori su quattro parlate. Non e' piu' una
+ * raccolta: e' un archivio, e un archivio senza strumenti di manutenzione
+ * degrada. Fino a ieri si poteva approvare o rifiutare, e nient'altro: non
+ * correggere, non ritirare, non collegare due parole che sono la stessa cosa
+ * detta in due valli.
+ *
+ * ACCESSO. Codice via email (otp-request / otp-verify), poi ruolo >= 25 oppure
+ * `curatore_linguistico`. Le scritture passano dalla RLS con la sessione della
+ * persona, mai da una edge con la chiave di servizio: qui chi scrive ha
+ * un'identita' vera, e le policy fanno da seconda porta se questa pagina
+ * venisse aggirata.
+ *
+ * LA REGOLA CHE REGGE TUTTO. Un curatore non valida e non modifica i propri
+ * lemmi. Non e' sfiducia: e' la ragione per cui un dizionario e' credibile
+ * quando qualcuno lo consulta fra dieci anni. La policy RESTRICTIVE
+ * `dz_non_i_propri` lo impedisce a database; qui si vede prima, perche' un
+ * pannello che lascia scrivere e poi dice «zero righe cambiate» mente per
+ * omissione.
+ *
+ * STATICA, non SSR. Il frontmatter non legge niente: tutto arriva dal browser
+ * dopo l'accesso. Essere dinamica costerebbe un'invocazione a ogni visita
+ * senza dare niente in cambio.
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+const inputCls = 'w-full border border-[#E5DFCF] bg-white px-3 py-2 text-[#1E2E26] rounded text-sm focus:outline-none focus:border-[#C8923E]';
+const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#C8923E]/40 bg-[#F5EEDD] text-[#1E2E26]';
+---
+
+<Layout
+  title="Console del glossario · Guardiani de la lenga"
+  description="Area riservata: manutenzione del glossario del ladino anaunico."
+  ogImage="/og/og-default.jpg"
+  noindex={true}
+>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-6xl mx-auto px-5 py-10 md:py-14" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Curatela linguistica</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        La console del glossario
+      </h1>
+      <p class="text-[#1E2E26]/75 m-0 mb-8 max-w-3xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Correggere, ritirare, collegare le varianti, vedere dove l’archivio è
+        debole. Ogni modifica lascia traccia di chi, quando e di che cosa c’era
+        prima: in un dizionario la storia di una voce è parte del dato.
+      </p>
+
+      <p id="gc-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* ── ACCESSO ── */}
+      <section id="gc-login-1" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti inviamo un codice di sei cifre.</p>
+        <label class="block text-sm text-[#1E2E26]/75 mb-1" for="gc-email">Email</label>
+        <input class={inputCls} type="email" id="gc-email" autocomplete="email" placeholder="nome@esempio.it" />
+        <button type="button" id="gc-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-semibold cursor-pointer border-0">Invia codice</button>
+        <p id="gc-login-err" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      <section id="gc-login-2" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice inviato a <strong id="gc-email-echo"></strong>.</p>
+        <input class={inputCls} type="text" id="gc-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+        <button type="button" id="gc-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold cursor-pointer border-0">Verifica e accedi</button>
+        <button type="button" id="gc-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        <p id="gc-verify-err" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      <section id="gc-nego" class="hidden bg-white border-l-4 border-[#a33] rounded p-6 max-w-xl">
+        <p class="m-0 text-[#1E2E26]">Questa pagina è riservata ai curatori del glossario e al direttivo.</p>
+        <button type="button" id="gc-esci-2" class="mt-4 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+      </section>
+
+      {/* ── PANNELLO ── */}
+      <section id="gc-pannello" class="hidden">
+        <div class="flex items-center justify-between gap-3 flex-wrap mb-6">
+          <p class="text-sm text-[#1E2E26]/70 m-0">Sei <strong id="gc-utente"></strong> <span id="gc-miei" class="text-[#1E2E26]/50"></span></p>
+          <div class="flex gap-3 items-center">
+            <a href="/guardiani-correzioni" class="text-sm text-[#8a6215] underline">Correzioni proposte</a>
+            <a href="/guardiani-de-la-lenga/esporta" class="text-sm text-[#8a6215] underline">Esporta</a>
+            <button type="button" id="gc-esci" class="text-sm text-[#1E2E26]/55 underline bg-transparent border-0 cursor-pointer">Esci</button>
+          </div>
+        </div>
+
+        <div class="flex gap-2 mb-7 flex-wrap">
+          <button type="button" data-t="lemmi" class={tabCls}>I lemmi</button>
+          <button type="button" data-t="varianti" class={tabCls}>Le varianti</button>
+          <button type="button" data-t="qualita" class={tabCls}>La qualità</button>
+          <button type="button" data-t="vocabolario" class={tabCls}>Il vocabolario</button>
+          <button type="button" data-t="audio" class={tabCls}>Le voci</button>
+        </div>
+
+        {/* ══════════ I LEMMI ══════════ */}
+        <div id="pan-lemmi" class="gc-pan">
+          <div class="grid gap-3 md:grid-cols-4 mb-4">
+            <input id="fl-cerca" type="search" placeholder="Cerca parola o significato…" class={inputCls} />
+            <select id="fl-stato" class={inputCls}>
+              <option value="pubblicato">Pubblicati</option>
+              <option value="in_revisione">In revisione</option>
+              <option value="ritirato">Ritirati</option>
+              <option value="rifiutato">Rifiutati</option>
+              <option value="">Tutti gli stati</option>
+            </select>
+            <select id="fl-parlata" class={inputCls}><option value="">Tutte le parlate</option></select>
+            <select id="fl-manca" class={inputCls}>
+              <option value="">Completi e incompleti</option>
+              <option value="senza_categoria">Senza categoria grammaticale</option>
+              <option value="senza_comune">Senza paese</option>
+              <option value="def_breve">Con definizione troppo breve</option>
+              <option value="senza_esempio">Senza esempio d’uso</option>
+              <option value="senza_etimologia">Senza etimologia</option>
+              <option value="senza_proverbi">Senza proverbi</option>
+              <option value="senza_audio">Senza voce registrata</option>
+            </select>
+          </div>
+
+          {/* La correzione in blocco. Ventiquattro lemmi senza paese e
+              centoquarantasei senza categoria non si sistemano uno per volta. */}
+          <div id="bl-barra" class="hidden bg-[#1E2E26] text-[#F5EEDD] rounded-lg p-4 mb-4">
+            <p class="m-0 mb-3 text-sm"><strong id="bl-quanti"></strong> selezionati · <button type="button" id="bl-nessuno" class="underline bg-transparent border-0 text-[#D9A94E] cursor-pointer p-0">deseleziona tutti</button></p>
+            <div class="grid gap-2 md:grid-cols-4">
+              <select id="bl-campo" class="px-3 py-2 rounded text-sm text-[#1E2E26] border-0">
+                <option value="comune">Assegna il paese</option>
+                <option value="parlata">Assegna la parlata</option>
+                <option value="categoria_gramm">Assegna la categoria</option>
+                <option value="tipo">Assegna il tipo</option>
+              </select>
+              <select id="bl-valore" class="px-3 py-2 rounded text-sm text-[#1E2E26] border-0"></select>
+              <button type="button" id="bl-anteprima" class="bg-[#C8923E] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Vedi che cosa cambia</button>
+              <button type="button" id="bl-pubblica" class="bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Pubblica i selezionati</button>
+            </div>
+            <div id="bl-esito" class="mt-3 text-sm"></div>
+          </div>
+
+          <div class="grid lg:grid-cols-[1fr_1.15fr] gap-6 items-start">
+            <div>
+              <div class="flex items-center gap-3 mb-2">
+                <button type="button" id="fl-tutti" class="text-[13px] text-[#8a6215] underline bg-transparent border-0 cursor-pointer p-0">seleziona tutti i visibili</button>
+                <span id="fl-conta" class="text-[13px] text-[#1E2E26]/55"></span>
+              </div>
+              <div id="fl-lista" class="grid gap-2 max-h-[70vh] overflow-y-auto pr-1"></div>
+            </div>
+
+            {/* LA SCHEDA DI LAVORO */}
+            <div id="sc-vuota" class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-lg p-6 text-[#1E2E26]/65 text-sm">
+              Scegli una parola dall’elenco per aprirne la scheda.
+            </div>
+            <div id="sc-box" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-5 md:p-6 sticky top-4">
+              <div class="flex items-baseline justify-between gap-3 flex-wrap mb-1">
+                <h2 id="sc-titolo" class="text-2xl text-[#1E2E26] m-0" style="font-family: 'Playfair Display', serif; font-weight: 500;"></h2>
+                <span id="sc-stato" class="text-[11px] tracking-[0.16em] uppercase text-[#8a6215] font-semibold"></span>
+              </div>
+              <p id="sc-meta" class="text-[12px] text-[#1E2E26]/55 m-0 mb-4"></p>
+
+              <div id="sc-mio" class="hidden bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded p-3 mb-4 text-[13px] text-[#1E2E26]/85">
+                Questa parola l’hai portata tu. Non puoi validarla né modificarla:
+                serve a tenere credibile il dizionario, non è sfiducia. Chiedi
+                all’altro curatore.
+              </div>
+
+              <div class="grid gap-3">
+                <div class="grid md:grid-cols-2 gap-3">
+                  <label class="text-[13px] text-[#1E2E26]/80">Lemma
+                    <input id="sc-lemma" class={inputCls} maxlength="200" /></label>
+                  <label class="text-[13px] text-[#1E2E26]/80">Variante italiana
+                    <input id="sc-variante_italiana" class={inputCls} maxlength="200" /></label>
+                  <label class="text-[13px] text-[#1E2E26]/80">Parlata
+                    <select id="sc-parlata" class={inputCls}></select></label>
+                  <label class="text-[13px] text-[#1E2E26]/80">Paese
+                    <select id="sc-comune" class={inputCls}></select></label>
+                  <label class="text-[13px] text-[#1E2E26]/80">Categoria grammaticale
+                    <select id="sc-categoria_gramm" class={inputCls}></select></label>
+                  <label class="text-[13px] text-[#1E2E26]/80">Tipo
+                    <select id="sc-tipo" class={inputCls}>
+                      <option value="parola">Parola</option>
+                      <option value="frase">Frase</option>
+                      <option value="espressione">Espressione</option>
+                    </select></label>
+                </div>
+                <label class="text-[13px] text-[#1E2E26]/80">Definizione
+                  <textarea id="sc-definizione" rows="3" class={inputCls}></textarea>
+                  <span id="sc-def-conta" class="text-[12px]"></span></label>
+                <label class="text-[13px] text-[#1E2E26]/80">Esempio d’uso
+                  <textarea id="sc-esempi_uso" rows="2" class={inputCls}></textarea></label>
+                <label class="text-[13px] text-[#1E2E26]/80">Etimologia
+                  <textarea id="sc-etimologia" rows="2" class={inputCls}></textarea></label>
+                <label class="text-[13px] text-[#1E2E26]/80">Proverbi e modi di dire
+                  <textarea id="sc-proverbi" rows="2" class={inputCls}></textarea></label>
+              </div>
+
+              <div class="flex gap-2 flex-wrap mt-4 items-center">
+                <button type="button" id="sc-salva" class="bg-[#C8923E] text-[#1E2E26] px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Salva</button>
+                <button type="button" id="sc-pubblica" class="hidden bg-[#2d8659] text-white px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Pubblica</button>
+                <button type="button" id="sc-ritira-apri" class="hidden bg-[#F5EEDD] text-[#a33] border border-[#d97a7a] px-4 py-2 rounded text-sm cursor-pointer">Ritira dal glossario</button>
+                <a id="sc-apri" href="#" target="_blank" class="text-[13px] text-[#8a6215] underline">apri la scheda pubblica</a>
+              </div>
+              <p id="sc-esito" class="text-[13px] m-0 mt-3"></p>
+
+              {/* IL RITIRO. Un lemma sbagliato esce dal glossario pubblico e
+                  resta a database con il motivo: cancellare il lavoro di una
+                  persona senza lasciare traccia e' cio' che fa smettere di
+                  contribuire. */}
+              <div id="sc-ritira" class="hidden mt-4 bg-[#FDF9F0] border border-[#C8923E]/40 rounded p-4">
+                <p class="text-[13px] text-[#1E2E26]/80 m-0 mb-2">
+                  Esce dal glossario pubblico e resta agli atti con il motivo. Non viene cancellata.
+                </p>
+                <input id="sc-motivo" class={inputCls} maxlength="500" placeholder="Perché la ritiri (obbligatorio)" />
+                <div class="flex gap-2 mt-3">
+                  <button type="button" id="sc-ritira-ok" class="bg-[#a33] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Sì, ritira</button>
+                  <button type="button" id="sc-ritira-no" class="bg-transparent border-0 text-sm text-[#1E2E26]/55 underline cursor-pointer">Lascia stare</button>
+                </div>
+              </div>
+
+              {/* LO STORICO, consultabile dalla scheda e non nascosto in una
+                  tabella: fra cinque anni sapere che una definizione e' stata
+                  corretta, e da chi, vale quanto la definizione stessa. */}
+              <div class="mt-6 pt-5 border-t border-[#E5DFCF]">
+                <h3 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-3">Che cosa è cambiato</h3>
+                <div id="sc-storico" class="grid gap-2"></div>
+              </div>
+
+              {/* Le varianti collegate a questa voce, dalla scheda stessa. */}
+              <div class="mt-6 pt-5 border-t border-[#E5DFCF]">
+                <h3 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-3">Collegamenti</h3>
+                <div id="sc-rel" class="grid gap-2 mb-3"></div>
+                <div class="flex gap-2 flex-wrap items-center">
+                  <input id="sc-rel-cerca" class={inputCls + ' flex-1 min-w-[10rem]'} placeholder="Cerca la parola da collegare…" />
+                  <select id="sc-rel-tipo" class="px-3 py-2 rounded text-sm border border-[#E5DFCF] bg-white">
+                    <option value="variante">è la stessa cosa (variante)</option>
+                    <option value="vedi_anche">vedi anche</option>
+                  </select>
+                </div>
+                <div id="sc-rel-esiti" class="grid gap-1 mt-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ══════════ LE VARIANTI ══════════ */}
+        <div id="pan-varianti" class="gc-pan hidden">
+          <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-lg p-5 mb-6">
+            <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Coppie da guardare</h2>
+            <p class="text-sm text-[#1E2E26]/75 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+              Il sistema propone, e non collega niente da solo: qui sotto ci sono
+              parole che <em>potrebbero</em> essere la stessa cosa, perché hanno
+              la stessa traduzione o una grafia quasi uguale. Solo una persona
+              che conosce la lingua sa se lo sono davvero.
+            </p>
+          </div>
+          <div id="va-candidate" class="grid gap-3 mb-10"></div>
+
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">Collegamenti già fatti</h2>
+          <div id="va-esistenti" class="grid gap-2"></div>
+        </div>
+
+        {/* ══════════ LA QUALITÀ ══════════ */}
+        <div id="pan-qualita" class="gc-pan hidden">
+          <p class="text-sm text-[#1E2E26]/75 m-0 mb-5 max-w-2xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Dove l’archivio è debole, con i numeri veri. Nessuna percentuale e
+            nessun voto: serve sapere che cosa manca, non ricevere una pagella.
+          </p>
+          <div id="qu-voci" class="grid gap-2 md:grid-cols-2 mb-10"></div>
+
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Grafie che divergono</h2>
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">
+            Valori usati nei lemmi che non stanno nel vocabolario. È il difetto che si accumula in silenzio.
+          </p>
+          <div id="qu-fuori" class="grid gap-2 mb-10"></div>
+
+          <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">La stessa persona due volte</h2>
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">
+            Contributori con due indirizzi. Unirli è un gesto da fare a mano, guardando i lemmi di ciascuno.
+          </p>
+          <div id="qu-doppi" class="grid gap-2"></div>
+        </div>
+
+        {/* ══════════ IL VOCABOLARIO ══════════ */}
+        <div id="pan-vocabolario" class="gc-pan hidden">
+          <p class="text-sm text-[#1E2E26]/75 m-0 mb-5 max-w-2xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Parlate, paesi e categorie grammaticali. Gli elenchi vivono qui e non
+            nel codice: chi propone una parola non deve dover indovinare come si
+            scrive il nome della sua parlata.
+          </p>
+          <div class="flex gap-2 mb-5 flex-wrap">
+            <button type="button" data-d="comune" class="vd-t px-4 py-2 rounded text-sm cursor-pointer border border-[#C8923E]/40 bg-[#F5EEDD]">Paesi</button>
+            <button type="button" data-d="parlata" class="vd-t px-4 py-2 rounded text-sm cursor-pointer border border-[#C8923E]/40 bg-[#F5EEDD]">Parlate</button>
+            <button type="button" data-d="categoria_gramm" class="vd-t px-4 py-2 rounded text-sm cursor-pointer border border-[#C8923E]/40 bg-[#F5EEDD]">Categorie</button>
+          </div>
+
+          <div class="bg-white border border-[#E5DFCF] rounded-lg p-4 mb-5 grid gap-2 md:grid-cols-4 items-end">
+            <label class="text-[13px] text-[#1E2E26]/80">Nuovo valore
+              <input id="vo-nuovo" class={inputCls} maxlength="80" /></label>
+            <label class="text-[13px] text-[#1E2E26]/80">Etichetta (facoltativa)
+              <input id="vo-etichetta" class={inputCls} maxlength="120" /></label>
+            <label class="text-[13px] text-[#1E2E26]/80">Gruppo (facoltativo)
+              <input id="vo-gruppo" class={inputCls} maxlength="60" placeholder="Val di Non…" /></label>
+            <button type="button" id="vo-aggiungi" class="bg-[#C8923E] text-[#1E2E26] px-4 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Aggiungi</button>
+          </div>
+
+          <div class="bg-white border border-[#E5DFCF] rounded-lg p-4 mb-6 grid gap-2 md:grid-cols-4 items-end">
+            <label class="text-[13px] text-[#1E2E26]/80">Unisci questo…
+              <select id="vo-da" class={inputCls}></select></label>
+            <label class="text-[13px] text-[#1E2E26]/80">…dentro questo
+              <select id="vo-a" class={inputCls}></select></label>
+            <button type="button" id="vo-unisci" class="bg-[#1E2E26] text-[#F5EEDD] px-4 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Unisci e sposta i lemmi</button>
+            <p id="vo-unisci-esito" class="text-[13px] m-0"></p>
+          </div>
+
+          <div id="vo-lista" class="grid gap-2"></div>
+        </div>
+
+        {/* ══════════ LE VOCI (audio) ══════════ */}
+        <div id="pan-audio" class="gc-pan hidden">
+          <p class="text-sm text-[#1E2E26]/75 m-0 mb-5 max-w-2xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Un audio si ascolta prima di pubblicarlo, come si legge una
+            definizione. Ma un audio imperfetto non si scarta: una registrazione
+            fatta col telefono in cucina, con la televisione accesa, vale
+            infinitamente più di nessuna registrazione. Si scarta solo ciò che è
+            inutilizzabile o problematico, non ciò che è brutto.
+          </p>
+          <div id="au-lista" class="grid gap-3"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+  );
+
+  const $ = (id) => document.getElementById(id);
+  const mostra = (id) => $(id)?.classList.remove('hidden');
+  const nascondi = (id) => $(id)?.classList.add('hidden');
+  const H = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // Si chiama `quando` e non `data`: dentro queste funzioni `data` e' sempre il
+  // corpo della risposta di supabase-js, e due cose con lo stesso nome nello
+  // stesso file prima o poi si scambiano di posto.
+  const quando = (t) => (t ? new Date(t).toLocaleString('it-IT', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
+
+  const PARLATA = {
+    noneso: 'Noneso', solander: 'Solander', rabies: 'Rabies', pegaes: 'Pegaes',
+  };
+  const CAMPO_NOME = {
+    lemma: 'il lemma', definizione: 'la definizione', esempi_uso: 'l’esempio',
+    etimologia: 'l’etimologia', proverbi: 'i proverbi', comune: 'il paese',
+    parlata: 'la parlata', categoria_gramm: 'la categoria', tipo: 'il tipo',
+    variante_italiana: 'la variante italiana', stato: 'lo stato',
+    motivo_ritiro: 'il motivo del ritiro', audio_id: 'la voce registrata',
+  };
+
+  let lemmi = [];
+  let miei = new Set();
+  let voc = { comune: [], parlata: [], categoria_gramm: [] };
+  let selezionati = new Set();
+  let apertoId = null;
+  let ultimaOperazione = null;
+  let vocDominio = 'comune';
+
+  // ── ACCESSO ─────────────────────────────────────────────────────────────
+  async function avvia() {
+    const { data: { session } } = await supabase.auth.getSession();
+    nascondi('gc-loading');
+    if (!session) { mostra('gc-login-1'); return; }
+
+    // Il cancello guarda l'APPARTENENZA a un incarico, non solo il livello:
+    // promuovere un curatore non deve togliergli il pannello, ed e' il difetto
+    // che a inizio agosto aveva chiuso fuori il curatore del museo.
+    const { data: ruoli } = await supabase
+      .from('utente_ruolo').select('ruolo:ruolo_id ( nome, livello )')
+      .eq('utente_id', session.user.id);
+    const elenco = (ruoli ?? []).map((r) => r.ruolo).filter(Boolean);
+    const puo = elenco.some((r) => (r.livello ?? 0) >= 25 || r.nome === 'curatore_linguistico');
+    if (!puo) { mostra('gc-nego'); return; }
+
+    $('gc-utente').textContent = session.user.user_metadata?.nome || session.user.email;
+    mostra('gc-pannello');
+
+    await caricaVocabolario();
+    await caricaMiei();
+    await caricaLemmi();
+    caricaQualita();
+    caricaCandidate();
+    caricaRelazioni();
+    caricaDoppi();
+    caricaAudio();
+    rendiVocabolario();
+
+    // Si puo' arrivare qui da un collegamento della pagina della qualita':
+    // /glossario-console#senza_comune apre subito l'elenco filtrato.
+    const h = location.hash.replace('#', '');
+    if (h && $('fl-manca')?.querySelector('[value="' + h + '"]')) {
+      $('fl-manca').value = h;
+      rendiLemmi();
+    }
+  }
+
+  async function caricaMiei() {
+    const { data, error } = await supabase.rpc('glossario_miei_lemmi');
+    if (error) return;
+    miei = new Set((data ?? []).map((r) => (typeof r === 'string' ? r : r.glossario_miei_lemmi)));
+    if (miei.size) {
+      $('gc-miei').textContent = '· ' + miei.size + (miei.size === 1 ? ' lemma è tuo, e non puoi toccarlo' : ' lemmi sono tuoi, e non puoi toccarli');
+    }
+  }
+
+  async function caricaVocabolario() {
+    const { data, error } = await supabase
+      .from('vocabolario_voce')
+      .select('id, dominio, valore, etichetta, gruppo, ordine, stato, unito_in, proposto_da')
+      .order('ordine').order('valore');
+    if (error) return;
+    voc = { comune: [], parlata: [], categoria_gramm: [] };
+    for (const v of data ?? []) if (voc[v.dominio]) voc[v.dominio].push(v);
+    riempiSelect('fl-parlata', 'parlata', 'Tutte le parlate');
+    riempiSelect('sc-parlata', 'parlata', '— nessuna —');
+    riempiSelect('sc-comune', 'comune', '— nessuno —');
+    riempiSelect('sc-categoria_gramm', 'categoria_gramm', '— nessuna —');
+    aggiornaValoriBlocco();
+  }
+
+  function attivi(dominio) {
+    return (voc[dominio] ?? []).filter((v) => v.stato === 'attivo');
+  }
+
+  function riempiSelect(id, dominio, vuoto) {
+    const el = $(id);
+    if (!el) return;
+    const gruppi = {};
+    for (const v of attivi(dominio)) {
+      const g = v.gruppo || '';
+      if (!gruppi[g]) gruppi[g] = [];
+      gruppi[g].push(v);
+    }
+    let html = '<option value="">' + H(vuoto) + '</option>';
+    for (const g of Object.keys(gruppi)) {
+      const dentro = gruppi[g].map((v) => '<option value="' + H(v.valore) + '">' + H(v.etichetta || v.valore) + '</option>').join('');
+      html += g ? '<optgroup label="' + H(g) + '">' + dentro + '</optgroup>' : dentro;
+    }
+    el.innerHTML = html;
+  }
+
+  // ── I LEMMI ─────────────────────────────────────────────────────────────
+  async function caricaLemmi() {
+    const { data, error } = await supabase
+      .from('dizionario_lemma')
+      .select('id, lemma, slug, parlata, comune, categoria_gramm, tipo, definizione, esempi_uso, etimologia, proverbi, variante_italiana, stato, audio_id, contributore_id, motivo_ritiro, validato_da, validato_il, created_at')
+      .order('lemma');
+    if (error) {
+      $('fl-lista').innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere i lemmi: ' + H(error.message) + '</p>';
+      return;
+    }
+    lemmi = data ?? [];
+    rendiLemmi();
+  }
+
+  // I segni diacritici si scrivono come intervallo di codici e non come
+  // caratteri veri: incollati in un file diventano invisibili e chi legge il
+  // codice fra un anno non capisce piu' che cosa toglie questa riga.
+  const norma = (t) => String(t ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  function manca(l, chiave) {
+    if (chiave === 'senza_categoria') return !l.categoria_gramm;
+    if (chiave === 'senza_comune') return !l.comune;
+    if (chiave === 'def_breve') return String(l.definizione ?? '').length < 15;
+    if (chiave === 'senza_esempio') return !l.esempi_uso;
+    if (chiave === 'senza_etimologia') return !l.etimologia;
+    if (chiave === 'senza_proverbi') return !l.proverbi;
+    if (chiave === 'senza_audio') return !l.audio_id;
+    return true;
+  }
+
+  function visibili() {
+    const q = norma($('fl-cerca')?.value);
+    const st = $('fl-stato')?.value ?? '';
+    const pa = $('fl-parlata')?.value ?? '';
+    const mk = $('fl-manca')?.value ?? '';
+    return lemmi.filter((l) => (!st || l.stato === st)
+      && (!pa || l.parlata === pa)
+      && (!mk || manca(l, mk))
+      && (!q || norma(l.lemma + ' ' + (l.definizione ?? '') + ' ' + (l.variante_italiana ?? '')).includes(q)));
+  }
+
+  function rendiLemmi() {
+    const box = $('fl-lista');
+    const righe = visibili();
+    $('fl-conta').textContent = righe.length + (righe.length === 1 ? ' voce' : ' voci');
+    if (!righe.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessuna voce con questi filtri.</p>';
+      return;
+    }
+    box.innerHTML = righe.map((l) => {
+      const mio = miei.has(l.id);
+      const buchi = ['senza_categoria', 'senza_comune', 'def_breve', 'senza_esempio', 'senza_audio']
+        .filter((k) => manca(l, k)).length;
+      return '<div class="gc-riga flex items-start gap-2 bg-white border border-[#E5DFCF] rounded px-3 py-2 cursor-pointer hover:border-[#C8923E]" data-id="' + l.id + '">'
+        + '<input type="checkbox" class="gc-check mt-1 accent-[#C8923E]" data-id="' + l.id + '"'
+        + (selezionati.has(l.id) ? ' checked' : '') + (mio ? ' disabled title="l’hai proposto tu"' : '') + ' />'
+        + '<div class="min-w-0 flex-1">'
+        + '<p class="m-0 text-[15px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(l.lemma)
+        + (mio ? ' <span class="text-[11px] text-[#8a6215]">· tua</span>' : '') + '</p>'
+        + '<p class="m-0 text-[12px] text-[#1E2E26]/60 truncate">' + H(l.definizione ?? '') + '</p>'
+        + '<p class="m-0 text-[11px] text-[#1E2E26]/45">'
+        + [PARLATA[l.parlata] || l.parlata, l.comune, l.stato !== 'pubblicato' ? l.stato : null].filter(Boolean).map(H).join(' · ')
+        + (buchi ? ' · <span class="text-[#C8923E]">' + buchi + ' da completare</span>' : '')
+        + '</p></div></div>';
+    }).join('');
+
+    box.querySelectorAll('.gc-riga').forEach((el) => el.addEventListener('click', (ev) => {
+      if (ev.target.classList.contains('gc-check')) return;
+      apriScheda(el.getAttribute('data-id'));
+    }));
+    box.querySelectorAll('.gc-check').forEach((el) => el.addEventListener('change', () => {
+      const id = el.getAttribute('data-id');
+      if (el.checked) selezionati.add(id); else selezionati.delete(id);
+      aggiornaBarra();
+    }));
+  }
+
+  function aggiornaBarra() {
+    const n = selezionati.size;
+    $('bl-quanti').textContent = n + (n === 1 ? ' lemma' : ' lemmi');
+    $('bl-barra')?.classList.toggle('hidden', n === 0);
+  }
+
+  function aggiornaValoriBlocco() {
+    const d = $('bl-campo')?.value ?? 'comune';
+    const el = $('bl-valore');
+    if (!el) return;
+    if (d === 'tipo') {
+      el.innerHTML = '<option value="parola">Parola</option><option value="frase">Frase</option><option value="espressione">Espressione</option>';
+      return;
+    }
+    el.innerHTML = attivi(d).map((v) => '<option value="' + H(v.valore) + '">' + H(v.etichetta || v.valore) + '</option>').join('');
+  }
+
+  // ── LA SCHEDA ───────────────────────────────────────────────────────────
+  function apriScheda(id) {
+    const l = lemmi.find((x) => x.id === id);
+    if (!l) return;
+    apertoId = id;
+    nascondi('sc-vuota'); mostra('sc-box');
+    $('sc-titolo').textContent = l.lemma;
+    $('sc-stato').textContent = l.stato;
+    $('sc-meta').textContent = [
+      'creata il ' + quando(l.created_at),
+      l.validato_da ? 'validata da ' + l.validato_da : null,
+      l.motivo_ritiro ? 'ritirata: ' + l.motivo_ritiro : null,
+    ].filter(Boolean).join(' · ');
+
+    for (const c of ['lemma', 'definizione', 'esempi_uso', 'etimologia', 'proverbi', 'variante_italiana']) {
+      $('sc-' + c).value = l[c] ?? '';
+    }
+    for (const c of ['parlata', 'comune', 'categoria_gramm', 'tipo']) {
+      const el = $('sc-' + c);
+      // Un valore fuori vocabolario non deve sparire dalla scheda solo perche'
+      // non e' nell'elenco: si aggiunge come opzione e si vede che e' anomalo.
+      if (l[c] && !Array.from(el.options).some((o) => o.value === l[c])) {
+        el.insertAdjacentHTML('beforeend', '<option value="' + H(l[c]) + '">' + H(l[c]) + ' (fuori vocabolario)</option>');
+      }
+      el.value = l[c] ?? '';
+    }
+    contaDef();
+
+    const mio = miei.has(id);
+    $('sc-mio')?.classList.toggle('hidden', !mio);
+    $('sc-box').querySelectorAll('input, textarea, select, button').forEach((el) => {
+      if (el.id === 'sc-rel-cerca' || el.id === 'sc-rel-tipo') return;
+      el.disabled = mio;
+    });
+    $('sc-pubblica')?.classList.toggle('hidden', l.stato === 'pubblicato' || mio);
+    $('sc-ritira-apri')?.classList.toggle('hidden', l.stato !== 'pubblicato' || mio);
+    nascondi('sc-ritira');
+    $('sc-apri').href = l.slug ? '/guardiani-de-la-lenga/' + l.slug : '#';
+    $('sc-esito').textContent = '';
+    storico(id);
+    relazioniDi(id);
+  }
+
+  function contaDef() {
+    const n = ($('sc-definizione')?.value ?? '').trim().length;
+    const el = $('sc-def-conta');
+    if (!el) return;
+    if (n >= 15) { el.style.color = '#2d8659'; el.textContent = n + ' caratteri: va bene.'; }
+    else { el.style.color = '#a33'; el.textContent = n + ' caratteri. Sotto i quindici è una traduzione, non una definizione: «il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello».'; }
+  }
+
+  async function salvaScheda() {
+    if (!apertoId) return;
+    const esito = $('sc-esito');
+    const patch = {};
+    for (const c of ['lemma', 'definizione', 'esempi_uso', 'etimologia', 'proverbi', 'variante_italiana', 'parlata', 'comune', 'categoria_gramm', 'tipo']) {
+      const v = ($('sc-' + c)?.value ?? '').trim();
+      patch[c] = v === '' ? null : v;
+    }
+    if (!patch.lemma) { esito.style.color = '#a33'; esito.textContent = 'Il lemma non può restare vuoto.'; return; }
+
+    // .select() dopo la scrittura: si dichiara fatto solo cio' che ha
+    // restituito una riga. Senza, un UPDATE respinto dalla RLS non e' un
+    // errore ma zero righe toccate, e il pannello direbbe «salvato» a vuoto.
+    const { data, error } = await supabase
+      .from('dizionario_lemma').update(patch).eq('id', apertoId).select('id');
+    if (error || !data || !data.length) {
+      esito.style.color = '#a33';
+      esito.textContent = error ? 'Non salvato: ' + error.message : 'Non salvato: nessuna riga è cambiata (forse è una voce tua).';
+      return;
+    }
+    esito.style.color = '#2d8659';
+    esito.textContent = 'Salvato. Sul sito pubblico compare alla prossima ricostruzione.';
+    await caricaLemmi();
+    apriScheda(apertoId);
+  }
+
+  async function pubblicaUno() {
+    if (!apertoId) return;
+    const esito = $('sc-esito');
+    const chi = (await supabase.auth.getSession()).data.session?.user?.email ?? 'curatela';
+    const { data, error } = await supabase.from('dizionario_lemma')
+      .update({ stato: 'pubblicato', validato_da: chi, validato_il: new Date().toISOString() })
+      .eq('id', apertoId).select('id');
+    if (error || !data || !data.length) {
+      esito.style.color = '#a33';
+      // Il messaggio del database dice gia' quale campo manca: la guardia
+      // parla italiano apposta.
+      esito.textContent = error ? error.message : 'Non pubblicato: nessuna riga è cambiata.';
+      return;
+    }
+    esito.style.color = '#2d8659';
+    esito.textContent = 'Pubblicato.';
+    await caricaLemmi(); apriScheda(apertoId); caricaQualita();
+  }
+
+  async function ritira() {
+    const motivo = ($('sc-motivo')?.value ?? '').trim();
+    const esito = $('sc-esito');
+    if (motivo.length < 3) { esito.style.color = '#a33'; esito.textContent = 'Scrivi perché la ritiri: fra cinque anni un ritiro senza motivo è indistinguibile da una cancellazione.'; return; }
+    const sess = (await supabase.auth.getSession()).data.session;
+    const { data, error } = await supabase.from('dizionario_lemma')
+      .update({ stato: 'ritirato', motivo_ritiro: motivo, ritirato_da: sess?.user?.id ?? null, ritirato_il: new Date().toISOString() })
+      .eq('id', apertoId).select('id');
+    if (error || !data || !data.length) {
+      esito.style.color = '#a33';
+      esito.textContent = error ? 'Non ritirato: ' + error.message : 'Non ritirato: nessuna riga è cambiata.';
+      return;
+    }
+    esito.style.color = '#2d8659';
+    esito.textContent = 'Ritirata. Esce dal glossario pubblico alla prossima ricostruzione e resta agli atti con il motivo.';
+    nascondi('sc-ritira');
+    await caricaLemmi(); apriScheda(apertoId); caricaQualita();
+  }
+
+  async function storico(id) {
+    const box = $('sc-storico');
+    const { data, error } = await supabase
+      .from('v_modifiche_recenti')
+      .select('id, campo, prima, dopo, chi, quando')
+      .eq('riga_id', id).order('quando', { ascending: false }).limit(40);
+    if (error) {
+      box.innerHTML = '<p class="text-[#a33] text-[13px] m-0">Non riesco a leggere lo storico: ' + H(error.message) + '</p>';
+      return;
+    }
+    if (!data || !data.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/55 text-[13px] m-0">Da quando è pubblicata non è ancora stata toccata.</p>';
+      return;
+    }
+    const taglia = (t) => {
+      const s = String(t ?? '');
+      if (!s) return '<em class="text-[#1E2E26]/40">vuoto</em>';
+      return H(s.length > 140 ? s.slice(0, 140) + '…' : s);
+    };
+    box.innerHTML = data.map((r) =>
+      '<div class="bg-[#F5EEDD] border-l-2 border-[#C8923E]/50 pl-3 py-1.5">'
+      + '<p class="m-0 text-[12px] text-[#1E2E26]/70">' + H(CAMPO_NOME[r.campo] || r.campo) + ' · ' + H(r.chi) + ' · ' + H(quando(r.quando)) + '</p>'
+      + '<p class="m-0 text-[13px] text-[#1E2E26]/55">prima: ' + taglia(r.prima) + '</p>'
+      + '<p class="m-0 text-[13px] text-[#1E2E26]">adesso: ' + taglia(r.dopo) + '</p>'
+      + '</div>').join('');
+  }
+
+  // ── LA CORREZIONE IN BLOCCO ─────────────────────────────────────────────
+  async function blocco(prova) {
+    const esito = $('bl-esito');
+    const ids = Array.from(selezionati);
+    const campo = $('bl-campo').value;
+    const valore = $('bl-valore').value;
+    const { data, error } = await supabase.rpc('glossario_correzione_blocco', {
+      p_ids: ids, p_campo: campo, p_valore: valore, p_prova: prova,
+    });
+    if (error) { esito.innerHTML = '<span class="text-[#ffb4b4]">' + H(error.message) + '</span>'; return; }
+    rendiEsitoBlocco(data, prova);
+    if (!prova) {
+      ultimaOperazione = data.operazione ?? null;
+      selezionati.clear(); aggiornaBarra();
+      await caricaLemmi(); caricaQualita();
+    }
+  }
+
+  function rendiEsitoBlocco(d, prova) {
+    const esito = $('bl-esito');
+    const quali = (d.quali ?? []).map((x) => H(x.lemma) + (x.prima ? ' <span class="opacity-60">(era ' + H(x.prima) + ')</span>' : ' <span class="opacity-60">(era vuoto)</span>')).join(', ');
+    const esclusi = (d.esclusi ?? []).map((x) => H(x.lemma) + ' <span class="opacity-60">(' + H(x.perche) + ')</span>').join(', ');
+    let html = '';
+    if (prova) {
+      html += '<p class="m-0 mb-1"><strong>' + (d.quanti ?? 0) + '</strong> cambieranno' + (quali ? ': ' + quali : '.') + '</p>';
+      if (esclusi) html += '<p class="m-0 mb-2 text-[#D9A94E]">Esclusi: ' + esclusi + '</p>';
+      if (d.quanti > 0) html += '<button type="button" id="bl-applica" class="bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Sì, applica a tutti</button>';
+    } else if (d.ok) {
+      html += '<p class="m-0 mb-2 text-[#9be3bd]"><strong>' + d.quanti + '</strong> corretti' + (esclusi ? ' · esclusi: ' + esclusi : '') + '.</p>';
+      html += '<button type="button" id="bl-annulla" class="bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Annulla questa operazione</button>';
+    } else {
+      html += '<p class="m-0 text-[#ffb4b4]">' + H(d.messaggio || 'Non è cambiato niente.') + (esclusi ? ' Esclusi: ' + esclusi : '') + '</p>';
+    }
+    esito.innerHTML = html;
+    $('bl-applica')?.addEventListener('click', () => blocco(false));
+    $('bl-annulla')?.addEventListener('click', annullaOperazione);
+  }
+
+  async function annullaOperazione() {
+    if (!ultimaOperazione) return;
+    const esito = $('bl-esito');
+    const { data, error } = await supabase.rpc('glossario_annulla_operazione', { p_id: ultimaOperazione });
+    if (error) { esito.innerHTML = '<span class="text-[#ffb4b4]">' + H(error.message) + '</span>'; return; }
+    esito.innerHTML = data?.ok
+      ? '<p class="m-0 text-[#9be3bd]">Annullata: ' + data.rimessi + ' voci sono tornate com’erano.</p>'
+      : '<p class="m-0 text-[#ffb4b4]">' + H(data?.messaggio || 'Non annullata.') + '</p>';
+    ultimaOperazione = null;
+    await caricaLemmi(); caricaQualita();
+  }
+
+  async function pubblicaBlocco(prova) {
+    const esito = $('bl-esito');
+    const { data, error } = await supabase.rpc('glossario_pubblica_blocco', {
+      p_ids: Array.from(selezionati), p_prova: prova,
+    });
+    if (error) { esito.innerHTML = '<span class="text-[#ffb4b4]">' + H(error.message) + '</span>'; return; }
+    const quali = (data.quali ?? []).map((x) => H(x.lemma)).join(', ');
+    const esclusi = (data.esclusi ?? []).map((x) => H(x.lemma) + ' <span class="opacity-60">(' + H(x.perche) + ')</span>').join(', ');
+    if (prova) {
+      let html = '<p class="m-0 mb-1"><strong>' + (data.quanti ?? 0) + '</strong> pubblicabili' + (quali ? ': ' + quali : '.') + '</p>';
+      if (esclusi) html += '<p class="m-0 mb-2 text-[#D9A94E]">Esclusi e non pubblicati: ' + esclusi + '</p>';
+      if (data.quanti > 0) html += '<button type="button" id="bl-pub-ok" class="bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Sì, pubblica</button>';
+      esito.innerHTML = html;
+      $('bl-pub-ok')?.addEventListener('click', () => pubblicaBlocco(false));
+      return;
+    }
+    ultimaOperazione = data.operazione ?? null;
+    esito.innerHTML = data.ok
+      ? '<p class="m-0 mb-2 text-[#9be3bd]"><strong>' + data.quanti + '</strong> pubblicati' + (esclusi ? ' · esclusi: ' + esclusi : '') + '.</p>'
+        + '<button type="button" id="bl-annulla" class="bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Annulla</button>'
+      : '<p class="m-0 text-[#ffb4b4]">' + H(data.messaggio || '') + (esclusi ? ' Esclusi: ' + esclusi : '') + '</p>';
+    $('bl-annulla')?.addEventListener('click', annullaOperazione);
+    selezionati.clear(); aggiornaBarra();
+    await caricaLemmi(); caricaQualita();
+  }
+
+  // ── LE VARIANTI ─────────────────────────────────────────────────────────
+  async function caricaCandidate() {
+    const box = $('va-candidate');
+    const { data, error } = await supabase.from('v_variante_candidate')
+      .select('*').order('stessa_parlata').order('forza', { ascending: false }).limit(100);
+    if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">' + H(error.message) + '</p>'; return; }
+    if (!data || !data.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessuna coppia da guardare in questo momento. Ricompariranno da sole quando arriveranno parole nuove.</p>';
+      return;
+    }
+    box.innerHTML = data.map((c) => {
+      const lato = (l, p, m, s) => '<div class="flex-1 min-w-[9rem]">'
+        + '<p class="m-0 text-lg text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(l) + '</p>'
+        + '<p class="m-0 text-[12px] text-[#1E2E26]/55">' + [PARLATA[p] || p, m].filter(Boolean).map(H).join(' · ') + '</p>'
+        + '<p class="m-0 text-[12px] text-[#1E2E26]/70">' + H(s ?? '') + '</p></div>';
+      return '<div class="bg-white border border-[#E5DFCF] rounded-lg p-4" data-a="' + c.a_id + '" data-b="' + c.b_id + '">'
+        + '<p class="m-0 mb-2 text-[11px] tracking-[0.16em] uppercase text-[#8a6215] font-semibold">'
+        + (c.motivo === 'traduzione' ? 'stessa traduzione' : 'grafia simile')
+        + (c.stessa_parlata ? ' · stessa parlata' : ' · valli diverse') + '</p>'
+        + '<div class="flex gap-4 flex-wrap items-start mb-3">' + lato(c.a_lemma, c.a_parlata, c.a_comune, c.a_definizione)
+        + '<span class="text-[#C8923E] text-xl self-center">·</span>'
+        + lato(c.b_lemma, c.b_parlata, c.b_comune, c.b_definizione) + '</div>'
+        + '<div class="flex gap-2 flex-wrap">'
+        + '<button type="button" class="va-var bg-[#C8923E] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Sono la stessa cosa</button>'
+        + '<button type="button" class="va-vedi bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded text-sm border border-[#C8923E]/50 cursor-pointer">Imparentate: vedi anche</button>'
+        + '</div><p class="va-esito text-[13px] m-0 mt-2"></p></div>';
+    }).join('');
+    box.querySelectorAll('.va-var').forEach((b) => b.addEventListener('click', () => collegaDaCard(b, 'variante')));
+    box.querySelectorAll('.va-vedi').forEach((b) => b.addEventListener('click', () => collegaDaCard(b, 'vedi_anche')));
+  }
+
+  async function collegaDaCard(btn, tipo) {
+    const card = btn.closest('[data-a]');
+    const msg = card.querySelector('.va-esito');
+    btn.disabled = true;
+    const ok = await collega(card.getAttribute('data-a'), card.getAttribute('data-b'), tipo, msg);
+    if (ok) { caricaCandidate(); caricaRelazioni(); }
+    else btn.disabled = false;
+  }
+
+  async function collega(a, b, tipo, msg) {
+    const sess = (await supabase.auth.getSession()).data.session;
+    const { data, error } = await supabase.from('lemma_relazione')
+      .insert({ a_id: a, b_id: b, tipo, creata_da: sess?.user?.id ?? null })
+      .select('id');
+    if (error || !data || !data.length) {
+      if (msg) { msg.style.color = '#a33'; msg.textContent = error ? 'Non collegate: ' + error.message : 'Non collegate: nessuna riga scritta.'; }
+      return false;
+    }
+    if (msg) { msg.style.color = '#2d8659'; msg.textContent = 'Collegate. Compaiono affiancate sulle due schede pubbliche alla prossima ricostruzione.'; }
+    return true;
+  }
+
+  async function caricaRelazioni() {
+    const box = $('va-esistenti');
+    const { data, error } = await supabase.from('lemma_relazione')
+      .select('id, tipo, created_at, a:a_id ( lemma, parlata, comune, slug ), b:b_id ( lemma, parlata, comune, slug )')
+      .order('created_at', { ascending: false }).limit(200);
+    if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">' + H(error.message) + '</p>'; return; }
+    if (!data || !data.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessun collegamento, per ora.</p>';
+      return;
+    }
+    box.innerHTML = data.map((r) => '<div class="flex items-center justify-between gap-3 bg-white border border-[#E5DFCF] rounded px-4 py-2 flex-wrap">'
+      + '<p class="m-0 text-[14px] text-[#1E2E26]">'
+      + '<strong style="font-family: Playfair Display, serif;">' + H(r.a?.lemma ?? '?') + '</strong>'
+      + ' <span class="text-[12px] text-[#1E2E26]/50">' + H(PARLATA[r.a?.parlata] || r.a?.parlata || '') + '</span>'
+      + (r.tipo === 'variante' ? ' <span class="text-[#C8923E]">=</span> ' : ' <span class="text-[#C8923E]">→</span> ')
+      + '<strong style="font-family: Playfair Display, serif;">' + H(r.b?.lemma ?? '?') + '</strong>'
+      + ' <span class="text-[12px] text-[#1E2E26]/50">' + H(PARLATA[r.b?.parlata] || r.b?.parlata || '') + '</span>'
+      + ' <span class="text-[11px] uppercase tracking-wider text-[#8a6215] ml-2">' + (r.tipo === 'variante' ? 'variante' : 'vedi anche') + '</span></p>'
+      + '<button type="button" class="va-tog text-[13px] text-[#a33] underline bg-transparent border-0 cursor-pointer" data-id="' + r.id + '">togli il collegamento</button>'
+      + '</div>').join('');
+    box.querySelectorAll('.va-tog').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const { error } = await supabase.from('lemma_relazione').delete().eq('id', b.getAttribute('data-id'));
+      if (error) { b.disabled = false; b.textContent = 'non riesco: ' + error.message; return; }
+      caricaRelazioni(); caricaCandidate();
+      if (apertoId) relazioniDi(apertoId);
+    }));
+  }
+
+  async function relazioniDi(id) {
+    const box = $('sc-rel');
+    const { data } = await supabase.from('v_lemma_relazione_pubblica')
+      .select('tipo, verso_lemma, verso_parlata, verso_comune').eq('da_id', id);
+    if (!data || !data.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/55 text-[13px] m-0">Nessun collegamento.</p>';
+      return;
+    }
+    box.innerHTML = data.map((r) => '<p class="m-0 text-[13px] text-[#1E2E26]">'
+      + (r.tipo === 'variante' ? 'è la stessa cosa di ' : 'vedi anche ')
+      + '<strong>' + H(r.verso_lemma) + '</strong> <span class="text-[#1E2E26]/55">'
+      + [PARLATA[r.verso_parlata] || r.verso_parlata, r.verso_comune].filter(Boolean).map(H).join(' · ') + '</span></p>').join('');
+  }
+
+  function cercaDaCollegare() {
+    const q = norma($('sc-rel-cerca')?.value);
+    const box = $('sc-rel-esiti');
+    if (!box) return;
+    if (q.length < 2) { box.innerHTML = ''; return; }
+    const trovati = lemmi.filter((l) => l.id !== apertoId && l.stato === 'pubblicato' && norma(l.lemma + ' ' + (l.definizione ?? '')).includes(q)).slice(0, 6);
+    box.innerHTML = trovati.map((l) => '<button type="button" class="sc-rel-go text-left bg-[#F5EEDD] border border-[#C8923E]/40 rounded px-3 py-1.5 text-[13px] cursor-pointer" data-id="' + l.id + '">'
+      + H(l.lemma) + ' <span class="text-[#1E2E26]/55">' + [PARLATA[l.parlata] || l.parlata, l.comune].filter(Boolean).map(H).join(' · ') + '</span></button>').join('')
+      || '<p class="text-[13px] text-[#1E2E26]/55 m-0">Nessuna parola trovata.</p>';
+    box.querySelectorAll('.sc-rel-go').forEach((b) => b.addEventListener('click', async () => {
+      const msg = document.createElement('p');
+      msg.className = 'text-[13px] m-0';
+      box.appendChild(msg);
+      const ok = await collega(apertoId, b.getAttribute('data-id'), $('sc-rel-tipo').value, msg);
+      if (ok) { $('sc-rel-cerca').value = ''; box.innerHTML = ''; relazioniDi(apertoId); caricaRelazioni(); caricaCandidate(); }
+    }));
+  }
+
+  // ── LA QUALITÀ ──────────────────────────────────────────────────────────
+  async function caricaQualita() {
+    const box = $('qu-voci');
+    const { data, error } = await supabase.from('v_glossario_qualita').select('*').order('ordine');
+    if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">' + H(error.message) + '</p>'; return; }
+    box.innerHTML = (data ?? []).map((v) => '<button type="button" class="qu-vai text-left bg-white border border-[#E5DFCF] rounded-lg p-4 cursor-pointer hover:border-[#C8923E]" data-k="' + H(v.chiave) + '">'
+      + '<p class="m-0 flex items-baseline gap-3"><span class="text-3xl text-[#C8923E]" style="font-family: Playfair Display, serif;">' + v.quanti + '</span>'
+      + '<span class="text-[15px] text-[#1E2E26]">' + H(v.etichetta) + '</span></p>'
+      + '<p class="m-0 mt-1 text-[13px] text-[#1E2E26]/60">' + H(v.spiega) + '</p>'
+      + '<p class="m-0 mt-2 text-[12px] text-[#8a6215] underline">apri l’elenco filtrato →</p></button>').join('');
+    box.querySelectorAll('.qu-vai').forEach((b) => b.addEventListener('click', () => {
+      apriTab('lemmi');
+      $('fl-stato').value = 'pubblicato';
+      $('fl-manca').value = b.getAttribute('data-k');
+      rendiLemmi();
+      $('fl-lista').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+    caricaFuori();
+  }
+
+  async function caricaFuori() {
+    const box = $('qu-fuori');
+    const { data, error } = await supabase.from('v_glossario_fuori_vocabolario').select('*').order('quanti', { ascending: false });
+    if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">' + H(error.message) + '</p>'; return; }
+    if (!data || !data.length) { box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Tutti i valori usati stanno nel vocabolario.</p>'; return; }
+    box.innerHTML = data.map((r) => '<div class="bg-white border border-[#E5DFCF] rounded px-4 py-3">'
+      + '<p class="m-0 text-[15px] text-[#1E2E26]"><strong>' + H(r.valore) + '</strong> '
+      + '<span class="text-[13px] text-[#1E2E26]/55">· ' + r.quanti + ' lemmi · ' + H(r.dominio === 'comune' ? 'paese' : r.dominio === 'parlata' ? 'parlata' : 'categoria') + '</span></p>'
+      + '<p class="m-0 text-[13px] text-[#1E2E26]/70">'
+      + (r.forse_e ? 'Scritto diversamente da <strong>' + H(r.forse_e) + '</strong>: sono la stessa cosa.'
+        : 'Non è nel vocabolario. Il più simile è <strong>' + H(r.il_piu_simile ?? '—') + '</strong>.')
+      + '</p></div>').join('');
+  }
+
+  async function caricaDoppi() {
+    const box = $('qu-doppi');
+    const { data, error } = await supabase.rpc('glossario_contributori_doppi');
+    if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">' + H(error.message) + '</p>'; return; }
+    if (!data || !data.length) { box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessun doppione.</p>'; return; }
+    box.innerHTML = data.map((r) => '<div class="bg-white border border-[#E5DFCF] rounded px-4 py-3">'
+      + '<p class="m-0 text-[14px] text-[#1E2E26]">' + H(r.a_nome) + ' · ' + H(r.a_email) + ' <span class="text-[#1E2E26]/55">(' + r.a_lemmi + ' lemmi)</span></p>'
+      + '<p class="m-0 text-[14px] text-[#1E2E26]">' + H(r.b_nome) + ' · ' + H(r.b_email) + ' <span class="text-[#1E2E26]/55">(' + r.b_lemmi + ' lemmi)</span></p>'
+      + '<p class="m-0 mt-1 text-[12px] text-[#8a6215]">' + H(r.motivo) + '</p></div>').join('');
+  }
+
+  // ── IL VOCABOLARIO ──────────────────────────────────────────────────────
+  function rendiVocabolario() {
+    const box = $('vo-lista');
+    const righe = voc[vocDominio] ?? [];
+    const opz = attivi(vocDominio).map((v) => '<option value="' + H(v.valore) + '">' + H(v.etichetta || v.valore) + '</option>').join('');
+    $('vo-da').innerHTML = righe.map((v) => '<option value="' + H(v.valore) + '">' + H(v.valore) + '</option>').join('');
+    $('vo-a').innerHTML = opz;
+    if (!righe.length) { box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Elenco vuoto.</p>'; return; }
+    box.innerHTML = righe.map((v) => {
+      const usato = lemmi.filter((l) => l[vocDominio === 'categoria_gramm' ? 'categoria_gramm' : vocDominio] === v.valore).length;
+      return '<div class="flex items-center justify-between gap-3 bg-white border border-[#E5DFCF] rounded px-4 py-2 flex-wrap" data-id="' + v.id + '">'
+        + '<p class="m-0 text-[14px] text-[#1E2E26]"><strong>' + H(v.valore) + '</strong>'
+        + (v.etichetta && v.etichetta !== v.valore ? ' <span class="text-[#1E2E26]/55">' + H(v.etichetta) + '</span>' : '')
+        + (v.gruppo ? ' <span class="text-[12px] text-[#8a6215]">' + H(v.gruppo) + '</span>' : '')
+        + ' <span class="text-[12px] text-[#1E2E26]/45">· ' + usato + ' lemmi</span>'
+        + (v.stato !== 'attivo' ? ' <span class="text-[11px] uppercase tracking-wider text-[#a33]">' + H(v.stato) + (v.unito_in ? ' in ' + H(v.unito_in) : '') + '</span>' : '')
+        + (v.proposto_da ? ' <span class="text-[12px] text-[#8a6215]">proposto da ' + H(v.proposto_da) + '</span>' : '')
+        + '</p>'
+        + '<span class="flex gap-3">'
+        + (v.stato === 'attivo'
+          ? '<button type="button" class="vo-st text-[13px] text-[#a33] underline bg-transparent border-0 cursor-pointer" data-id="' + v.id + '" data-s="ritirato">ritira</button>'
+          : '<button type="button" class="vo-st text-[13px] text-[#2d8659] underline bg-transparent border-0 cursor-pointer" data-id="' + v.id + '" data-s="attivo">rendi attivo</button>')
+        + '</span></div>';
+    }).join('');
+    box.querySelectorAll('.vo-st').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true;
+      const { data, error } = await supabase.from('vocabolario_voce')
+        .update({ stato: b.getAttribute('data-s') }).eq('id', b.getAttribute('data-id')).select('id');
+      if (error || !data || !data.length) { b.disabled = false; b.textContent = 'non riesco'; return; }
+      await caricaVocabolario(); rendiVocabolario();
+    }));
+  }
+
+  async function aggiungiVoce() {
+    const valore = ($('vo-nuovo').value || '').trim();
+    if (!valore) return;
+    const { error } = await supabase.from('vocabolario_voce').insert({
+      dominio: vocDominio, valore,
+      etichetta: ($('vo-etichetta').value || '').trim() || null,
+      gruppo: ($('vo-gruppo').value || '').trim() || null,
+      stato: 'attivo',
+    });
+    if (error) { $('vo-unisci-esito').style.color = '#a33'; $('vo-unisci-esito').textContent = error.message; return; }
+    $('vo-nuovo').value = ''; $('vo-etichetta').value = ''; $('vo-gruppo').value = '';
+    await caricaVocabolario(); rendiVocabolario();
+  }
+
+  async function unisciVoci() {
+    const esito = $('vo-unisci-esito');
+    const { data, error } = await supabase.rpc('vocabolario_unisci', {
+      p_dominio: vocDominio, p_da: $('vo-da').value, p_a: $('vo-a').value,
+    });
+    if (error) { esito.style.color = '#a33'; esito.textContent = error.message; return; }
+    esito.style.color = '#2d8659';
+    esito.textContent = data + (data === 1 ? ' lemma spostato.' : ' lemmi spostati.');
+    await caricaVocabolario(); await caricaLemmi(); rendiVocabolario(); caricaQualita();
+  }
+
+  // ── LE VOCI (audio) ─────────────────────────────────────────────────────
+  async function caricaAudio() {
+    const box = $('au-lista');
+    const { data, error } = await supabase.from('archivio_audio')
+      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, lemma_id, created_at, mime_originale')
+      .eq('stato', 'in_attesa').order('created_at').limit(80);
+    if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere le registrazioni: ' + H(error.message) + '</p>'; return; }
+    if (!data || !data.length) {
+      box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessuna registrazione in attesa. Oggi l’archivio delle voci è a zero su centoquarantasei parole: è la voce più importante della pagina della qualità.</p>';
+      return;
+    }
+    box.innerHTML = data.map((a) => '<div class="bg-white border border-[#E5DFCF] rounded-lg p-4" data-id="' + a.id + '">'
+      + '<p class="m-0 mb-1 text-[16px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(a.termine_ladino || a.titolo) + '</p>'
+      + '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/60">'
+      + [a.durata_secondi ? a.durata_secondi + 's' : null, a.mime_originale, 'portata da ' + H(a.portato_da_nome || '—'), quando(a.created_at)].filter(Boolean).join(' · ')
+      + '</p>'
+      + (a.voce_di_altri
+        ? '<p class="m-0 mb-2 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33]') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
+          + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
+        : '<p class="m-0 mb-2 text-[13px] text-[#1E2E26]/70">È la voce di chi ha caricato.</p>')
+      + '<audio controls preload="none" src="' + H(a.file_url) + '" class="w-full mb-3"></audio>'
+      + '<div class="flex gap-2 flex-wrap items-center">'
+      + '<button type="button" class="au-ok bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Pubblica sotto la parola</button>'
+      + '<input class="au-motivo border border-[#E5DFCF] rounded px-3 py-2 text-sm flex-1 min-w-[8rem]" maxlength="300" placeholder="Motivo (se la scarti)" />'
+      + '<button type="button" class="au-no bg-[#F5EEDD] text-[#a33] border border-[#d97a7a] px-4 py-2 rounded text-sm cursor-pointer">Scarta</button>'
+      + '</div><p class="au-esito text-[13px] m-0 mt-2"></p></div>').join('');
+    box.querySelectorAll('.au-ok').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'pubblicato')));
+    box.querySelectorAll('.au-no').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'rifiutato')));
+  }
+
+  async function decidiAudio(btn, esito) {
+    const card = btn.closest('[data-id]');
+    const msg = card.querySelector('.au-esito');
+    const motivo = (card.querySelector('.au-motivo')?.value || '').trim();
+    const id = card.getAttribute('data-id');
+    const sess = (await supabase.auth.getSession()).data.session;
+    btn.disabled = true;
+
+    const { data, error } = await supabase.from('archivio_audio')
+      .update({
+        stato: esito, motivo_rifiuto: esito === 'rifiutato' ? (motivo || null) : null,
+        ascoltato_da: sess?.user?.id ?? null, ascoltato_il: new Date().toISOString(),
+      }).eq('id', id).select('id, lemma_id');
+    if (error || !data || !data.length) {
+      btn.disabled = false;
+      msg.style.color = '#a33';
+      msg.textContent = error ? 'Non salvato: ' + error.message : 'Non salvato: nessuna riga è cambiata.';
+      return;
+    }
+    // La voce si attacca alla parola SOLO quando e' stata ascoltata e
+    // approvata: finche' e' in attesa il lemma non la conosce nemmeno.
+    if (esito === 'pubblicato' && data[0].lemma_id) {
+      const { error: e2 } = await supabase.from('dizionario_lemma')
+        .update({ audio_id: id }).eq('id', data[0].lemma_id).select('id');
+      if (e2) { msg.style.color = '#a33'; msg.textContent = 'Registrazione approvata ma non agganciata alla parola: ' + e2.message; return; }
+    }
+    msg.style.color = '#2d8659';
+    msg.textContent = esito === 'pubblicato' ? 'Pubblicata sotto la parola.' : 'Scartata, e resta agli atti con il motivo.';
+    setTimeout(() => { caricaAudio(); caricaLemmi(); caricaQualita(); }, 800);
+  }
+
+  // ── TAB ─────────────────────────────────────────────────────────────────
+  function apriTab(nome) {
+    document.querySelectorAll('.gc-pan').forEach((p) => p.classList.add('hidden'));
+    $('pan-' + nome)?.classList.remove('hidden');
+    document.querySelectorAll('.gc-tab').forEach((b) => {
+      const attivo = b.getAttribute('data-t') === nome;
+      b.style.background = attivo ? '#C8923E' : '#F5EEDD';
+      b.style.fontWeight = attivo ? '600' : '400';
+    });
+  }
+
+  // ── EVENTI ──────────────────────────────────────────────────────────────
+  document.querySelectorAll('.gc-tab').forEach((b) => b.addEventListener('click', () => apriTab(b.getAttribute('data-t'))));
+  document.querySelectorAll('.vd-t').forEach((b) => b.addEventListener('click', () => {
+    vocDominio = b.getAttribute('data-d');
+    document.querySelectorAll('.vd-t').forEach((x) => { x.style.background = x === b ? '#C8923E' : '#F5EEDD'; });
+    rendiVocabolario();
+  }));
+
+  ['fl-cerca', 'fl-stato', 'fl-parlata', 'fl-manca'].forEach((id) => {
+    $(id)?.addEventListener('input', rendiLemmi);
+    $(id)?.addEventListener('change', rendiLemmi);
+  });
+  $('fl-tutti')?.addEventListener('click', () => {
+    visibili().forEach((l) => { if (!miei.has(l.id)) selezionati.add(l.id); });
+    rendiLemmi(); aggiornaBarra();
+  });
+  $('bl-nessuno')?.addEventListener('click', () => { selezionati.clear(); rendiLemmi(); aggiornaBarra(); });
+  $('bl-campo')?.addEventListener('change', aggiornaValoriBlocco);
+  $('bl-anteprima')?.addEventListener('click', () => blocco(true));
+  $('bl-pubblica')?.addEventListener('click', () => pubblicaBlocco(true));
+
+  $('sc-salva')?.addEventListener('click', salvaScheda);
+  $('sc-pubblica')?.addEventListener('click', pubblicaUno);
+  $('sc-definizione')?.addEventListener('input', contaDef);
+  $('sc-ritira-apri')?.addEventListener('click', () => mostra('sc-ritira'));
+  $('sc-ritira-no')?.addEventListener('click', () => nascondi('sc-ritira'));
+  $('sc-ritira-ok')?.addEventListener('click', ritira);
+  $('sc-rel-cerca')?.addEventListener('input', cercaDaCollegare);
+
+  $('vo-aggiungi')?.addEventListener('click', aggiungiVoce);
+  $('vo-unisci')?.addEventListener('click', unisciVoci);
+
+  $('gc-send')?.addEventListener('click', async () => {
+    const email = ($('gc-email')?.value || '').trim().toLowerCase();
+    const err = $('gc-login-err');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.textContent = 'Email non valida.'; return; }
+    const b = $('gc-send'); b.disabled = true; b.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    b.disabled = false; b.textContent = 'Invia codice';
+    if (error || !data?.ok) { err.textContent = 'Impossibile inviare il codice. Riprova.'; return; }
+    window._gcEmail = email;
+    $('gc-email-echo').textContent = email;
+    nascondi('gc-login-1'); mostra('gc-login-2');
+    setTimeout(() => $('gc-code')?.focus(), 100);
+  });
+
+  $('gc-verify')?.addEventListener('click', async () => {
+    const codice = ($('gc-code')?.value || '').trim();
+    const err = $('gc-verify-err');
+    const b = $('gc-verify'); b.disabled = true; b.textContent = 'Verifico…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: window._gcEmail, codice } });
+    if (error || !data?.ok || !data?.session) {
+      b.disabled = false; b.textContent = 'Verifica e accedi';
+      err.textContent = 'Codice non valido o scaduto.';
+      return;
+    }
+    await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
+    window.location.reload();
+  });
+
+  $('gc-back')?.addEventListener('click', () => { nascondi('gc-login-2'); mostra('gc-login-1'); });
+  const esci = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  $('gc-esci')?.addEventListener('click', esci);
+  $('gc-esci-2')?.addEventListener('click', esci);
+
+  apriTab('lemmi');
+  avvia();
+</script>

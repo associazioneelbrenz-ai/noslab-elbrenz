@@ -24,6 +24,7 @@ export const prerender = false;
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 const ENDPOINT = `${SUPABASE_URL}/functions/v1/guardiani-contributo`;
+const ENDPOINT_AUDIO = `${SUPABASE_URL}/functions/v1/glossario-audio`;
 const LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
 
 const VARIANTI: [string, string][] = [
@@ -46,13 +47,30 @@ type Voce = {
   categoria_gramm?: string | null; etimologia?: string | null; proverbi?: string | null;
 };
 let glossario: Voce[] = [];
+// [10/8/2026] IL VOCABOLARIO CONTROLLATO.
+// Paesi e categorie grammaticali non sono piu' testo libero: con dieci
+// contributori diventerebbero dieci grafie della stessa cosa, e nei dati c'e'
+// gia' «RALLO» tutto maiuscolo accanto agli altri paesi scritti normalmente.
+// Gli elenchi vivono a database e li governano i curatori: chi propone una
+// parola non deve dover indovinare come si scrive il nome del suo paese.
+type VocVoce = { dominio: string; valore: string; etichetta: string; gruppo: string | null; ordine: number };
+let comuni: VocVoce[] = [];
+let categorie: VocVoce[] = [];
 try {
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
   const { data } = await sb.from('glossario_pubblico').select('*').order('termine').limit(300);
   glossario = (data as Voce[]) ?? [];
+  const { data: vv } = await sb.from('vocabolario_pubblico').select('*').order('ordine').order('etichetta');
+  for (const v of (vv as VocVoce[]) ?? []) {
+    if (v.dominio === 'comune') comuni.push(v);
+    else if (v.dominio === 'categoria_gramm') categorie.push(v);
+  }
 } catch (e) {
   console.error('[guardiani] lettura glossario fallita:', e);
 }
+// I paesi si mostrano raggruppati per valle: un elenco di sessanta nomi in fila
+// e' un elenco che non si legge.
+const gruppiComuni = [...new Set(comuni.map((c) => c.gruppo ?? ''))];
 
 // [7/8/2026] LA RICERCA DEVE FUNZIONARE NELLE DUE DIREZIONI E PERDONARE.
 // Chi cerca «pipistrello» deve arrivare a Barbustel, e chi cerca «barbustel»
@@ -129,16 +147,131 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       {/* 3. FORM DI CONTRIBUTO */}
       <div id="proponi" class="bg-[#F5EEDD] border border-[#C8923E]/50 rounded-md p-6 md:p-8 mb-16 scroll-mt-20">
         <h2 class="text-2xl text-[#1E2E26] m-0 mb-1" style="font-family: 'Playfair Display', serif; font-weight: 500;">Proponi un termine</h2>
-        <p class="text-sm text-[#1E2E26]/70 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">I campi con * sono necessari. Il contributo appare nel glossario solo dopo la validazione di un curatore.</p>
-        <form id="guardiani-form" data-endpoint={ENDPOINT} class="grid gap-4" novalidate style="font-family: 'Inter', sans-serif;">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">Serve poco: la parola, dove si dice, e una riga che la spieghi. Tutto il resto è facoltativo e si può aggiungere anche dopo. Il contributo appare nel glossario solo dopo la validazione di un curatore.</p>
+        <form id="guardiani-form" data-endpoint={ENDPOINT} data-audio={ENDPOINT_AUDIO} class="grid gap-4" novalidate style="font-family: 'Inter', sans-serif;">
           <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="hidden" />
           <div class="grid md:grid-cols-2 gap-4">
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Termine, frase o proverbio *</label><input name="termine" required maxlength="200" class={input} placeholder="in ladino anaunico" /></div>
-            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Significato in italiano *</label><input name="significato" required maxlength="2000" class={input} /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Parlata *</label><select name="variante" required class={input}><option value="">Scegli…</option>{VARIANTI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Tipo *</label><select name="tipo" required class={input}><option value="">Scegli…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
-            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Paese o frazione</label><input name="comune" maxlength="100" class={input} placeholder="es. Rabbi, Croviana…" /></div>
-            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Esempio d’uso</label><input name="esempio" maxlength="1000" class={input} /></div>
+            {/* IL PAESE. Mancava in ventiquattro casi su centoquarantasei, e chi
+                propone una parola sa sempre dove si dice: qui diventa
+                obbligatorio, ma con la strada per chi non trova il suo. */}
+            <div>
+              <label class="block text-sm mb-1 text-[#1E2E26]/80">Paese o frazione *</label>
+              <select name="comune_scelta" required class={input}>
+                <option value="">Scegli…</option>
+                {gruppiComuni.map((g) => (
+                  g
+                    ? <optgroup label={g}>{comuni.filter((c) => (c.gruppo ?? '') === g).map((c) => <option value={c.valore}>{c.etichetta}</option>)}</optgroup>
+                    : <>{comuni.filter((c) => !c.gruppo).map((c) => <option value={c.valore}>{c.etichetta}</option>)}</>
+                ))}
+                <option value="__altro">Il mio paese non c’è nell’elenco…</option>
+              </select>
+              <input name="comune_altro" maxlength="100" class={input + ' mt-2 hidden'} id="gu-comune-altro" placeholder="Scrivi il nome del paese" />
+            </div>
+          </div>
+
+          {/* LA DEFINIZIONE. Novanta lemmi su centoquarantasei stanno sotto i
+              quindici caratteri: sono traduzioni, non definizioni. L'esempio
+              accanto vale piu' di qualunque regola. */}
+          <div>
+            <label class="block text-sm mb-1 text-[#1E2E26]/80">Che cosa vuol dire, in italiano *</label>
+            <textarea name="significato" required rows="2" maxlength="2000" class={input} placeholder="il pipistrello, che d’estate esce al tramonto dai fienili"></textarea>
+            <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">
+              Una riga che spieghi la cosa, non solo la traduzione: «il pipistrello,
+              che d’estate esce al tramonto dai fienili» dice molto più di «pipistrello».
+            </p>
+            <p id="gu-def-conta" class="text-[12px] m-0 mt-1"></p>
+          </div>
+
+          {/* I TRE CAMPI CHE NESSUNO COMPILAVA. Erano vuoti sul cento per cento
+              dei lemmi, e non per disinteresse: il modulo non diceva cosa
+              scriverci. Restano facoltativi, con un esempio breve accanto. */}
+          <div class="grid md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm mb-1 text-[#1E2E26]/80">Esempio d’uso</label>
+              <input name="esempio" maxlength="1000" class={input} placeholder="una frase in cui la parola compare" />
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">Come la diresti tu, in ladino.</p>
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-[#1E2E26]/80">Che parte del discorso è</label>
+              <select name="categoria" class={input}>
+                <option value="">Non lo so / lascio in bianco</option>
+                {categorie.map((c) => <option value={c.valore}>{c.etichetta}</option>)}
+              </select>
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">Se sei in dubbio, lascia stare: lo mette un curatore.</p>
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-[#1E2E26]/80">Da dove viene la parola</label>
+              <textarea name="etimologia" rows="2" maxlength="1500" class={input}></textarea>
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">Se lo sai: dal latino, dal tedesco, da un mestiere. Se non lo sai, meglio vuoto che inventato.</p>
+            </div>
+            <div>
+              <label class="block text-sm mb-1 text-[#1E2E26]/80">Un detto in cui compare</label>
+              <textarea name="proverbi" rows="2" maxlength="1500" class={input}></textarea>
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">Un modo di dire, una filastrocca, una frase che diceva qualcuno in casa.</p>
+            </div>
+          </div>
+
+          {/* ══════ LA VOCE ══════
+              E' il pezzo che vale piu' di tutto il resto. La grafia del ladino
+              anaunico non e' normalizzata: chi legge «Barbustel» non sa come
+              suona. E soprattutto l'archivio delle voci comincia a riempirsi
+              senza che nessuno organizzi interviste.
+              Il pulsante che registra viene PRIMA del caricamento di un file:
+              nessuno apre l'applicazione dei memo, registra, salva, torna qui e
+              cerca il file; ma tutti tengono premuto un pulsante e dicono una
+              parola. */}
+          <div class="border-t border-[#C8923E]/30 pt-4">
+            <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0 mb-1">La voce · facoltativa</p>
+            <p class="text-sm text-[#1E2E26]/75 m-0 mb-3" style="font-family: 'Source Serif 4', Georgia, serif;">
+              Dilla ad alta voce: bastano tre secondi. È la cosa più preziosa che
+              puoi darci, perché la scrittura non dice come suona.
+            </p>
+
+            <div class="flex gap-2 flex-wrap items-center">
+              <button type="button" id="au-rec" class="bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">● Registra</button>
+              <button type="button" id="au-stop" class="hidden bg-[#a33] text-white px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">■ Ferma</button>
+              <span id="au-timer" class="text-sm text-[#1E2E26]/70"></span>
+              <label class="text-sm text-[#8a6215] underline cursor-pointer">
+                oppure carica un file
+                <input type="file" id="au-file" accept="audio/*,.m4a,.mp3,.wav,.ogg,.webm,.3gp,.caf,.amr" class="hidden" />
+              </label>
+            </div>
+            <p id="au-nota" class="text-[12px] text-[#1E2E26]/60 m-0 mt-2"></p>
+
+            <div id="au-pronta" class="hidden mt-3 bg-white border border-[#C8923E]/40 rounded p-4">
+              <audio id="au-play" controls class="w-full mb-3"></audio>
+              <button type="button" id="au-rifai" class="bg-transparent border-0 p-0 text-sm text-[#8a6215] underline cursor-pointer mb-3">Rifacciamola</button>
+
+              <p class="text-sm text-[#1E2E26]/80 m-0 mb-2">Chi sta parlando?</p>
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80 mb-1">
+                <input type="radio" name="au_chi" value="io" checked class="mt-1 accent-[#C8923E]" />
+                <span>Sono io. So che la registrazione sarà pubblicata nel glossario con il mio nome, e che posso chiedere di toglierla.</span>
+              </label>
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80">
+                <input type="radio" name="au_chi" value="altri" class="mt-1 accent-[#C8923E]" />
+                <span>È un’altra persona che ha acconsentito.</span>
+              </label>
+
+              <div id="au-altri" class="hidden mt-3 grid gap-2">
+                <input id="au-parlante" maxlength="120" class={input} placeholder="Nome di chi parla" />
+                <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80">
+                  <input type="checkbox" id="au-consenso" class="mt-1 accent-[#C8923E]" />
+                  <span>Confermo che chi parla è d’accordo che la sua voce sia pubblicata nel glossario. Il consenso lo dà chi parla, non chi registra.</span>
+                </label>
+              </div>
+
+              <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80 mt-3">
+                <input type="checkbox" id="au-anonimo" class="mt-1 accent-[#C8923E]" />
+                <span>Pubblicatela senza il nome di chi parla.</span>
+              </label>
+              <p class="text-[12px] text-[#1E2E26]/55 m-0 mt-2">
+                Un curatore ascolta prima di pubblicare. Come trattiamo la voce sta
+                nell’<a href="/privacy" target="_blank" class="text-[#8a6215] underline">informativa privacy</a>.
+              </p>
+            </div>
           </div>
           <div class="border-t border-[#C8923E]/30 pt-4 grid md:grid-cols-2 gap-4">
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Il tuo nome *</label><input name="nome" required maxlength="100" class={input} /></div>
@@ -189,6 +322,13 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
             ))}
           </ul>
           <p id="gloss-vuoto" class="hidden text-center text-sm text-[#1E2E26]/60 mt-4">Nessun termine trovato.</p>
+          {/* Un archivio linguistico che vive in un solo posto non e' un
+              archivio: la copia da stampare e da portarsi via sta qui. */}
+          <p class="text-center text-sm mt-6 m-0" style="font-family: 'Inter', sans-serif;">
+            <a href="/guardiani-de-la-lenga/esporta" class="text-[#8a6215] underline">
+              Il glossario intero in una pagina, da leggere, stampare o scaricare
+            </a>
+          </p>
         </>
       ) : (
         <p class="text-center text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">Il primo termine potresti proporlo tu: <a href="#proponi" class="text-[#8a6215] underline">comincia da qui</a>.</p>
@@ -235,9 +375,12 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       <p class="text-[#1E2E26]/85 leading-relaxed m-0 mb-4"
          style="font-family: 'Source Serif 4', Georgia, serif;">
         L’hai portata tu, e resta con il tuo nome accanto. Se diventi socio,
-        <strong id="pop-punti-cifra">ti aspettano già 25 punti</strong>: venticinque per ogni
-        parola che hai salvato, contati da quando hai cominciato.
+        <strong id="pop-punti-cifra">i tuoi punti ti aspettano</strong>: contati
+        da quando hai cominciato.
       </p>
+
+      <p id="pop-punti-spiega" class="text-[#1E2E26]/75 leading-relaxed m-0 mb-4 text-[15px]"
+         style="font-family: 'Source Serif 4', Georgia, serif;"></p>
 
       <p class="text-[#1E2E26]/85 leading-relaxed m-0 mb-5"
          style="font-family: 'Source Serif 4', Georgia, serif;">
@@ -283,15 +426,28 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
     // «ti aspettano gia' 125 punti» batte qualunque aggettivo, e non si puo'
     // smentire. Se il server non la manda, si resta sul valore di una parola
     // sola, che e' comunque vero e non promette niente di piu'.
-    function apriPopupPunti(email, gia) {
+    // [10/8] LA CIFRA ARRIVA DAL SERVER E NON SI INVENTA PIU'.
+    // Prima moltiplicava per venticinque un numero che il server non mandava
+    // mai: la frase era quindi sempre la stessa, e da oggi sarebbe anche
+    // sbagliata, perche' i valori stanno in configurazione e una parola secca
+    // vale meno di una parola fatta bene. Se il server non manda niente, si
+    // tace sulla cifra invece di dirne una a caso.
+    function apriPopupPunti(email, punti) {
       const pop = document.getElementById('pop-punti');
       if (!pop) return;
       const cifra = document.getElementById('pop-punti-cifra');
-      const n = Number(gia) || 0;
+      const n = punti && Number(punti.lemmi_pubblicati) || 0;
+      const per = punti && Number(punti.per_parola) || 0;
       if (cifra) {
-        cifra.textContent = n > 0
-          ? `ti aspettano già ${n * 25} punti`
-          : 'ti aspettano già 25 punti';
+        cifra.textContent = (n > 0 && per > 0)
+          ? `ti aspettano già ${n * per} punti`
+          : 'i tuoi punti ti aspettano';
+      }
+      const spiega = document.getElementById('pop-punti-spiega');
+      if (spiega && punti) {
+        spiega.textContent = 'Una parola con la definizione vera, l’esempio e il paese vale '
+          + punti.per_parola_completa + ' punti invece di ' + punti.per_parola
+          + '. E una parola detta con la tua voce ne vale ' + punti.per_voce + ': è l’unica cosa, in tutto l’archivio, che se si perde non torna.';
       }
       pop.classList.remove('hidden');
       pop.classList.add('flex');
@@ -319,6 +475,162 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       const u = { source: q.get('utm_source') || '', medium: q.get('utm_medium') || '', campaign: q.get('utm_campaign') || '' };
       return u.source || u.medium || u.campaign ? u : null;
     }
+
+    // ── IL PAESE CHE NON C'E' NELL'ELENCO ────────────────────────────────
+    const comuneSel = form.querySelector('[name=comune_scelta]');
+    const comuneAltro = document.getElementById('gu-comune-altro');
+    comuneSel?.addEventListener('change', () => {
+      const altro = comuneSel.value === '__altro';
+      comuneAltro?.classList.toggle('hidden', !altro);
+      if (altro) comuneAltro?.focus();
+    });
+    function comuneScelto() {
+      if (!comuneSel) return '';
+      return comuneSel.value === '__altro'
+        ? (comuneAltro?.value || '').trim()
+        : comuneSel.value;
+    }
+
+    // ── LA DEFINIZIONE, contata mentre si scrive ─────────────────────────
+    // Non e' un capriccio sul numero di caratteri: e' il modo di far vedere,
+    // nel momento in cui uno scrive «pipistrello», che manca qualcosa.
+    const defEl = form.querySelector('[name=significato]');
+    const defConta = document.getElementById('gu-def-conta');
+    function contaDef() {
+      if (!defEl || !defConta) return;
+      const n = defEl.value.trim().length;
+      if (n === 0) { defConta.textContent = ''; return; }
+      if (n >= 15) { defConta.style.color = '#2d8659'; defConta.textContent = 'Così va bene.'; }
+      else { defConta.style.color = '#a33'; defConta.textContent = 'Ancora un po’: questa è la traduzione, non la spiegazione.'; }
+    }
+    defEl?.addEventListener('input', contaDef);
+
+    // ── LA VOCE ───────────────────────────────────────────────────────────
+    // MediaRecorder c'e' su iOS dal 14.3 ma con regole sue: il tipo lo sceglie
+    // il browser (Safari da' audio/mp4, Chrome audio/webm), e chiederne uno
+    // che non conosce fa fallire la costruzione in silenzio. Percio' si prova
+    // in ordine e si accetta il predefinito. Se non funziona niente, il
+    // caricamento del file resta la strada di riserva, e resta sempre visibile.
+    const MAX_SEC = 90;
+    let registratore = null;
+    let pezzi = [];
+    let audioBlob = null;
+    let audioNome = 'voce.webm';
+    let tSpento = null;
+    let partito = 0;
+    const btnRec = document.getElementById('au-rec');
+    const btnStop = document.getElementById('au-stop');
+    const timer = document.getElementById('au-timer');
+    const nota = document.getElementById('au-nota');
+    const pronta = document.getElementById('au-pronta');
+    const play = document.getElementById('au-play');
+
+    if (!navigator.mediaDevices || typeof window.MediaRecorder === 'undefined') {
+      btnRec?.classList.add('hidden');
+      if (nota) nota.textContent = 'Il tuo browser non registra: puoi comunque caricare un file audio (un memo vocale va benissimo).';
+    }
+
+    function mostraPronta(blob, nomeFile) {
+      audioBlob = blob;
+      audioNome = nomeFile;
+      if (play) play.src = URL.createObjectURL(blob);
+      pronta?.classList.remove('hidden');
+      if (nota) nota.textContent = 'Riascoltala: se non ti convince, rifalla. Meglio una registrazione fatta in cucina che nessuna registrazione.';
+    }
+
+    btnRec?.addEventListener('click', async () => {
+      try {
+        const flusso = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const tipi = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', ''];
+        let scelto = '';
+        for (const t of tipi) {
+          if (t === '' || (window.MediaRecorder.isTypeSupported && window.MediaRecorder.isTypeSupported(t))) { scelto = t; break; }
+        }
+        registratore = scelto ? new window.MediaRecorder(flusso, { mimeType: scelto }) : new window.MediaRecorder(flusso);
+        pezzi = [];
+        registratore.ondataavailable = (ev) => { if (ev.data && ev.data.size) pezzi.push(ev.data); };
+        registratore.onstop = () => {
+          flusso.getTracks().forEach((t) => t.stop());
+          const tipo = registratore.mimeType || 'audio/webm';
+          const est = tipo.indexOf('mp4') >= 0 ? 'm4a' : tipo.indexOf('ogg') >= 0 ? 'ogg' : 'webm';
+          mostraPronta(new Blob(pezzi, { type: tipo }), 'voce.' + est);
+        };
+        registratore.start();
+        partito = Date.now();
+        btnRec.classList.add('hidden');
+        btnStop?.classList.remove('hidden');
+        pronta?.classList.add('hidden');
+        if (nota) nota.textContent = 'Sto registrando. Dì la parola, poi ferma.';
+        tSpento = setInterval(() => {
+          const s = Math.floor((Date.now() - partito) / 1000);
+          if (timer) timer.textContent = s + 's';
+          // Trenta secondi per una parola, un minuto e mezzo per una frase.
+          // Non e' un archivio di interviste: quello e' un'altra cosa.
+          if (s >= MAX_SEC) btnStop?.click();
+        }, 250);
+      } catch (err) {
+        if (nota) nota.textContent = 'Non riesco ad accedere al microfono. Controlla il permesso nel browser, oppure carica un file audio.';
+      }
+    });
+
+    btnStop?.addEventListener('click', () => {
+      if (tSpento) { clearInterval(tSpento); tSpento = null; }
+      try { registratore && registratore.state !== 'inactive' && registratore.stop(); } catch { /* gia' fermo */ }
+      btnStop.classList.add('hidden');
+      btnRec?.classList.remove('hidden');
+    });
+
+    document.getElementById('au-rifai')?.addEventListener('click', () => {
+      audioBlob = null;
+      pronta?.classList.add('hidden');
+      if (timer) timer.textContent = '';
+      if (nota) nota.textContent = '';
+    });
+
+    document.getElementById('au-file')?.addEventListener('change', (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      if (f.size > 6 * 1024 * 1024) {
+        if (nota) nota.textContent = 'Il file è troppo grande: al massimo 6 MB. Per una parola bastano pochi secondi.';
+        return;
+      }
+      mostraPronta(f, f.name || 'voce');
+    });
+
+    document.querySelectorAll('[name=au_chi]').forEach((r) => r.addEventListener('change', () => {
+      document.getElementById('au-altri')?.classList.toggle('hidden', r.value !== 'altri' || !r.checked);
+    }));
+
+    async function mandaVoce(lemmaId) {
+      if (!audioBlob || !lemmaId) return null;
+      const altri = document.querySelector('[name=au_chi]:checked')?.value === 'altri';
+      const parlante = (document.getElementById('au-parlante')?.value || '').trim();
+      const consenso = !!document.getElementById('au-consenso')?.checked;
+      if (altri && (!parlante || !consenso)) {
+        return 'Per la voce di un’altra persona servono il nome e la conferma del consenso: la parola è arrivata lo stesso, la voce no.';
+      }
+      const fd = new FormData();
+      fd.append('audio', audioBlob, audioNome);
+      fd.append('lemma_id', lemmaId);
+      fd.append('voce_di_altri', altri ? 'true' : 'false');
+      fd.append('nome_parlante', parlante);
+      fd.append('consenso_parlante', consenso ? 'true' : 'false');
+      fd.append('anonimo', document.getElementById('au-anonimo')?.checked ? 'true' : 'false');
+      fd.append('portato_da_nome', (form.querySelector('[name=nome]')?.value || '').trim());
+      fd.append('portato_da_email', (form.querySelector('[name=email]')?.value || '').trim());
+      fd.append('durata', String(Math.round((Date.now() - partito) / 1000) || 0));
+      fd.append('mime', audioBlob.type || '');
+      try {
+        const r = await fetch(form.dataset.audio, { method: 'POST', body: fd });
+        const d = await r.json().catch(() => ({}));
+        // Si dice com'e' andata davvero: una voce data per salvata e persa e'
+        // peggio di una voce mai chiesta.
+        return d && d.ok ? null : 'La parola è arrivata, la voce no: ' + (d.dettaglio || d.errore || 'errore sconosciuto') + '. Puoi riprovare dalla scheda quando sarà pubblicata.';
+      } catch {
+        return 'La parola è arrivata, la voce no (errore di rete). Riprova più tardi.';
+      }
+    }
+
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       feedback.classList.add('hidden');
@@ -326,7 +638,9 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       const payload = {
         termine: g('termine').value.trim(), significato: g('significato').value.trim(),
         variante: g('variante').value, tipo: g('tipo').value,
-        comune: g('comune').value.trim(), esempio: g('esempio').value.trim(),
+        comune: comuneScelto(), esempio: g('esempio').value.trim(),
+        categoria: g('categoria').value, etimologia: g('etimologia').value.trim(),
+        proverbi: g('proverbi').value.trim(),
         nome: g('nome').value.trim(), email: g('email').value.trim(),
         consenso_glossario: g('consenso_glossario').checked,
         licenza_accettata: g('licenza_accettata').checked,
@@ -335,8 +649,10 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
         _honeypot: (form.querySelector('[name=_honeypot]') as HTMLInputElement).value,
         _ts: aperto, utm: utm(),
       };
-      if (!payload.termine || !payload.significato) return mostra('Scrivi il termine e il suo significato.', false);
+      if (!payload.termine) return mostra('Scrivi il termine.', false);
       if (!payload.variante || !payload.tipo) return mostra('Scegli parlata e tipo.', false);
+      if (!payload.comune) return mostra('Dicci in che paese si dice: una parola senza il luogo perde metà del suo valore.', false);
+      if (payload.significato.length < 15) return mostra('Scrivi una riga che spieghi la cosa, non solo la traduzione: «il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello».', false);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return mostra('Email non valida.', false);
       if (!payload.consenso_glossario || !payload.licenza_accettata) return mostra('Servono il consenso al glossario e l’accettazione della licenza.', false);
       invia.disabled = true; invia.textContent = 'Invio…';
@@ -344,12 +660,23 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
         const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         const d = await r.json().catch(() => ({}));
         if (r.ok && d.success) {
-          mostra('Grazie! Il tuo contributo è arrivato: un curatore lo controlla e appena validato entra nel glossario.', true);
+          const guaioVoce = await mandaVoce(d.lemma_id);
+          mostra(guaioVoce
+            ? guaioVoce
+            : (audioBlob
+              ? 'Grazie! La parola e la tua voce sono arrivate: un curatore le controlla e appena validate entrano nel glossario.'
+              : 'Grazie! Il tuo contributo è arrivato: un curatore lo controlla e appena validato entra nel glossario.'),
+            !guaioVoce);
           // [8/8] Il momento in cui la persona ha appena dato qualcosa e' l'unico
           // in cui un invito non suona come una richiesta. Il popup arriva qui e
           // in nessun altro punto della pagina.
-          apriPopupPunti(payload.email, d.lemmi_pubblicati);
+          apriPopupPunti(payload.email, d.punti);
           form.reset();
+          audioBlob = null;
+          pronta?.classList.add('hidden');
+          if (timer) timer.textContent = '';
+          if (defConta) defConta.textContent = '';
+          comuneAltro?.classList.add('hidden');
         }
         else mostra(d.error || 'Si è verificato un errore: riprova o scrivi a info@elbrenz.eu.', false);
       } catch { mostra('Errore di rete: riprova.', false); }

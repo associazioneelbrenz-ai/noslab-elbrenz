@@ -286,3 +286,12 @@ verify_jwt = false
 # sessione e il ruolo >= 25, il gateway fa da prima porta.
 # Trappola 12: va dichiarata, altrimenti un deploy la riporta al default.
 verify_jwt = true
+
+[functions.glossario-audio]
+# Pubblica: chi propone una parola deve poterla DIRE, e non e' loggato.
+# La funzione controlla da sola origine, formato reale del file (magic bytes),
+# esistenza del lemma e consenso di chi parla; il file finisce in un contenitore
+# dedicato e la riga nasce «in_attesa» di un ascolto umano.
+# Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
+# verify_jwt=true e ogni registrazione morirebbe con un 401 muto al gateway.
+verify_jwt = false

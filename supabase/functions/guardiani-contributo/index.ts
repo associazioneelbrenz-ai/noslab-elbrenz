@@ -29,6 +29,28 @@ const SITO = 'https://elbrenz.eu';
 const LOGO_URL = `${SITO}/logo-eb-footer@2x.png`;
 const VARIANTI = ['noneso', 'solander', 'rabies', 'pegaes'];
 const TIPI = ['parola', 'frase', 'espressione'];
+
+// [10/8/2026] TRE OBBLIGHI, NON DI PIU'.
+//
+// Decisione del segretario, presa dopo aver valutato l'alternativa. Rendere
+// obbligatori tutti i campi sembra la strada rapida per un archivio completo,
+// ma i dati dicono il contrario: etimologia, proverbi e categoria erano vuoti
+// sul CENTO PER CENTO dei centoquarantasei lemmi, e non per disinteresse.
+// Nessuno lascia vuota l'etimologia dopo aver dedicato una sera a ricordare le
+// parole di casa sua: la lascia vuota perche' non sa cosa scriverci. Un campo
+// obbligatorio che non si capisce non viene compilato meglio, viene riempito a
+// caso, e un'etimologia inventata dentro un dizionario e' un danno permanente.
+//
+// C'e' anche il conto delle persone: Simone ha portato sessantatre parole. Con
+// cinque campi obbligatori ne avrebbe portate cinque.
+//
+// Quindi qui si chiedono solo: il termine, la parlata, IL PAESE (mancava in
+// ventiquattro casi su centoquarantasei, e chi propone una parola sa sempre
+// dove si dice) e una DEFINIZIONE VERA. Novanta lemmi su centoquarantasei
+// stanno sotto i quindici caratteri: sono traduzioni, non definizioni.
+// Tutto il resto resta facoltativo, e si puo' aggiungere dopo.
+const DEF_MIN = 15;
+const CATEGORIE = ['sostantivo', 'verbo', 'aggettivo', 'avverbio', 'modo di dire'];
 const VARIANTE_LABEL: Record<string, string> = {
   noneso: 'Noneso (Val di Non)', solander: 'Solander (Val di Sole)',
   rabies: 'Rabies (Val di Rabbi)', pegaes: 'Pegaes (Val di Pejo)',
@@ -244,6 +266,12 @@ Deno.serve(async (req: Request) => {
   const significato = str('significato', 2000);
   const comune = str('comune', 100);
   const esempio = str('esempio', 1000);
+  // [10/8] I tre campi che nessuno compilava. Restano facoltativi: nel modulo
+  // ora hanno accanto un esempio breve che spiega cosa scriverci, che e' la
+  // causa a monte del cento per cento di caselle vuote.
+  const categoria = str('categoria', 40);
+  const etimologia = str('etimologia', 1500);
+  const proverbi = str('proverbi', 1500);
   const nome = str('nome', 100);
   const email = str('email', 200).toLowerCase();  // audit 14/7: lowercase per coerenza con unsubscribe/broadcast (GDPR opt-out)
   const consensoGlossario = body.consenso_glossario === true;
@@ -266,7 +294,13 @@ Deno.serve(async (req: Request) => {
   if (termine.length < 1) return json({ error: 'Scrivi il termine o la frase.' }, 400, c);
   if (!VARIANTI.includes(variante)) return json({ error: 'Scegli una variante valida.' }, 400, c);
   if (!TIPI.includes(tipo)) return json({ error: 'Scegli il tipo (parola, frase o espressione).' }, 400, c);
-  if (significato.length < 2) return json({ error: 'Spiega il significato in italiano.' }, 400, c);
+  if (significato.length < DEF_MIN) {
+    return json({
+      error: 'Scrivi una riga che spieghi la cosa, non solo la traduzione: «il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello».',
+    }, 400, c);
+  }
+  if (comune.length < 2) return json({ error: 'Dicci in che paese si dice: una parola senza il luogo perde metà del suo valore.' }, 400, c);
+  if (categoria && !CATEGORIE.includes(categoria)) return json({ error: 'Categoria grammaticale non valida.' }, 400, c);
   if (nome.length < 2) return json({ error: 'Inserisci il tuo nome.' }, 400, c);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: 'Email non valida.' }, 400, c);
   if (!consensoGlossario) return json({ error: 'Serve il consenso all’uso del contributo nel glossario.' }, 400, c);
@@ -288,9 +322,30 @@ Deno.serve(async (req: Request) => {
     .insert({
       lemma: termine, parlata: variante, tipo, definizione: significato,
       comune: comune || null, esempi_uso: esempio || null,
+      categoria_gramm: categoria || null,
+      etimologia: etimologia || null, proverbi: proverbi || null,
       stato: 'in_revisione', contributore_id: contrib.id, sorgente_utm: utm,
     }).select('id').single();
   if (errL || !lemma) { console.error('[guardiani] insert lemma:', errL); return json({ error: 'Errore interno, riprova.' }, 500, c); }
+
+  // [10/8] IL PAESE CHE NON C'E' ANCORA NELL'ELENCO.
+  //
+  // Nel modulo il paese e' una scelta, ma con la possibilita' di scriverne uno
+  // nuovo: chi propone una parola non deve dover indovinare come si scrive il
+  // nome della sua frazione, e non deve nemmeno rinunciare se la sua non c'e'.
+  // Il valore nuovo entra nel vocabolario come «proposto», cioe' invisibile nel
+  // modulo finche' un curatore non lo rende attivo. Cosi' l'elenco cresce senza
+  // riempirsi di refusi.
+  if (comune) {
+    const { data: gia } = await supabase.from('vocabolario_voce')
+      .select('id').eq('dominio', 'comune').eq('valore', comune).maybeSingle();
+    if (!gia) {
+      await supabase.from('vocabolario_voce').insert({
+        dominio: 'comune', valore: comune, stato: 'proposto',
+        proposto_da: nome, nota: 'arrivato dal modulo pubblico',
+      });
+    }
+  }
 
   // [6/8/2026] L'avviso per SINGOLO lemma e' stato spento: il 6 agosto sono
   // arrivati 32 termini da cinque persone, 23 dei quali da Simone in una sola
@@ -373,5 +428,30 @@ Deno.serve(async (req: Request) => {
         </div></body></html>`);
   }
 
-  return json({ success: true }, 200, c);
+  // [10/8] Si restituisce l'identificativo del lemma perche' subito dopo la
+  // pagina puo' mandare la VOCE con `glossario-audio`: e' un lemma appena
+  // proposto e non ancora pubblico, quindi non rivela niente a nessuno.
+  //
+  // E si restituiscono i punti veri. Il popup diceva «venticinque per ogni
+  // parola» leggendo un campo che questa funzione non ha mai mandato: dal
+  // 10/8 i valori stanno in configurazione (una parola secca vale meno, una
+  // parola fatta bene molte volte tanto) e una cifra inventata in pagina
+  // sarebbe una promessa che nessuno mantiene.
+  let punti: Record<string, unknown> | null = null;
+  try {
+    const { data: cfg } = await supabase.from('config_app')
+      .select('valore').eq('chiave', 'glossario_punti').maybeSingle();
+    const { count } = await supabase.from('dizionario_lemma')
+      .select('id', { count: 'exact', head: true })
+      .eq('contributore_id', contrib.id).eq('stato', 'pubblicato');
+    const v = (cfg?.valore ?? {}) as Record<string, number>;
+    punti = {
+      lemmi_pubblicati: count ?? 0,
+      per_parola: v.lemma_secco ?? 5,
+      per_parola_completa: v.lemma_completo ?? 22,
+      per_voce: v.lemma_audio ?? 150,
+    };
+  } catch { /* il punteggio e' un di piu': non deve far fallire l'invio */ }
+
+  return json({ success: true, lemma_id: lemma.id, punti }, 200, c);
 });

@@ -27,6 +27,17 @@ type Voce = {
   significato_it: string | null; esempio_uso: string | null;
   etimologia: string | null; proverbi: string | null;
   audio_url: string | null; contributore_firma: string | null;
+  audio_voce_di?: string | null;
+};
+// [10/8/2026] I collegamenti scritti da un curatore. La macchina puo'
+// proporre, ma solo una persona che conosce la lingua sa se due parole sono la
+// stessa cosa o due cose che si somigliano: le proposte stanno nella console,
+// qui arriva soltanto cio' che qualcuno ha deciso.
+type Legame = {
+  tipo: string; da_id: string; verso_id: string;
+  verso_slug: string | null; verso_lemma: string;
+  verso_parlata: string | null; verso_comune: string | null;
+  verso_definizione: string | null;
 };
 
 export async function getStaticPaths() {
@@ -36,13 +47,20 @@ export async function getStaticPaths() {
   const sb = createClient(url, anon, { auth: { persistSession: false } });
   const { data } = await sb.from('glossario_pubblico').select('*');
   const voci = (data as Voce[]) ?? [];
+  const { data: rel } = await sb.from('v_lemma_relazione_pubblica').select('*');
+  const legami = (rel as Legame[]) ?? [];
   return voci.filter((v) => v.slug).map((v) => ({
     params: { slug: v.slug },
-    // Le sorelle viaggiano con la voce: stesso significato, parlata diversa.
-    // Il confronto e' sul significato normalizzato, perche' e' quello che rende
-    // due parole varianti l'una dell'altra e non due parole qualsiasi.
     props: {
       voce: v,
+      // I collegamenti curati, divisi per che cosa dicono.
+      varianti: legami.filter((r) => r.da_id === v.id && r.tipo === 'variante'),
+      vediAnche: legami.filter((r) => r.da_id === v.id && r.tipo === 'vedi_anche'),
+      // Le sorelle di prima: stesso significato, trovate confrontando il testo.
+      // NON sono state tolte, ma adesso valgono solo come ripiego, quando su
+      // questa voce nessun curatore si e' ancora pronunciato. Il giorno che si
+      // pronuncia, la sua parola vince su quella dell'algoritmo — che e' il
+      // punto di tutto il lavoro del 10 agosto.
       sorelle: voci.filter((a) =>
         a.id !== v.id &&
         (a.significato_it ?? '').trim().toLowerCase() === (v.significato_it ?? '').trim().toLowerCase() &&
@@ -51,7 +69,12 @@ export async function getStaticPaths() {
   }));
 }
 
-const { voce, sorelle } = Astro.props as { voce: Voce; sorelle: Voce[] };
+const { voce, sorelle, varianti, vediAnche } = Astro.props as {
+  voce: Voce; sorelle: Voce[]; varianti: Legame[]; vediAnche: Legame[];
+};
+// Quando i collegamenti curati ci sono, l'accostamento automatico si fa da
+// parte: due elenchi che dicono quasi la stessa cosa confondono e basta.
+const mostraSorelle = varianti.length === 0 && sorelle.length > 0;
 
 const PARLATA: Record<string, string> = {
   noneso: 'Noneso · Val di Non', solander: 'Solander · Val di Sole',
@@ -114,9 +137,14 @@ const jsonLd = {
            style="font-family: 'Source Serif 4', Georgia, serif;" lang="lld-anau">{voce.esempio_uso}</p>
       )}
 
+      {/* LA VOCE. `preload="none"` non e' un dettaglio: un audio che parte da
+          solo, o che si scarica senza che nessuno l'abbia chiesto, e' un
+          fastidio su un telefono con la connessione delle valli. */}
       {voce.audio_url && (
         <div class="mb-6">
-          <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">La voce</p>
+          <p class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">
+            {voce.audio_voce_di ? 'La voce di ' + voce.audio_voce_di : 'La voce'}
+          </p>
           <audio controls preload="none" src={voce.audio_url} class="w-full"></audio>
         </div>
       )}
@@ -138,8 +166,51 @@ const jsonLd = {
         </div>
       )}
 
-      {/* LE VARIANTI: la stessa cosa detta in un'altra valle. */}
-      {sorelle.length > 0 && (
+      {/* LE VARIANTI: la stessa cosa detta in un'altra valle.
+          E' la ragione per cui questo glossario non e' un elenco di
+          traduzioni. La parola in noneso, quella in solander, quella in
+          rabies, con il paese di ciascuna: un dizionario che le tiene in due
+          righe lontane butta via l'informazione piu' preziosa che ha. */}
+      {varianti.length > 0 && (
+        <div class="mt-10 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-3" style="font-family: 'Inter', sans-serif;">
+            Come si dice altrove
+          </h2>
+          <div class="grid gap-3">
+            {varianti.map((s) => (
+              <a href={s.verso_slug ? `/guardiani-de-la-lenga/${s.verso_slug}` : '#'} class="no-underline block">
+                <span class="text-lg text-[#1E2E26]" style="font-family: 'Playfair Display', serif;" lang="lld-anau">{s.verso_lemma}</span>
+                <span class="text-[12px] text-[#1E2E26]/60 ml-2" style="font-family: 'Inter', sans-serif;">
+                  {[s.verso_parlata ? (PARLATA[s.verso_parlata] ?? s.verso_parlata) : null, s.verso_comune].filter(Boolean).join(' · ')}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* PAROLE IMPARENTATE MA NON EQUIVALENTI. In un dizionario serve quasi
+          quanto la variante, e va tenuta distinta da quella: dire «e' la
+          stessa cosa» quando non lo e' fa piu' danno che tacere. */}
+      {vediAnche.length > 0 && (
+        <div class="mt-5 border-l-2 border-[#C8923E]/40 pl-4">
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">
+            Vedi anche
+          </h2>
+          <div class="grid gap-2">
+            {vediAnche.map((s) => (
+              <a href={s.verso_slug ? `/guardiani-de-la-lenga/${s.verso_slug}` : '#'} class="no-underline block">
+                <span class="text-[#1E2E26]" style="font-family: 'Playfair Display', serif;" lang="lld-anau">{s.verso_lemma}</span>
+                <span class="text-[12px] text-[#1E2E26]/60 ml-2" style="font-family: 'Inter', sans-serif;">
+                  {[s.verso_parlata ? (PARLATA[s.verso_parlata] ?? s.verso_parlata) : null, s.verso_comune].filter(Boolean).join(' · ')}
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mostraSorelle && (
         <div class="mt-10 bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5">
           <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] m-0 mb-3" style="font-family: 'Inter', sans-serif;">
             Come si dice altrove
@@ -157,9 +228,17 @@ const jsonLd = {
         </div>
       )}
 
-      {voce.contributore_firma && (
+      {/* Chi porta la voce compare accanto a chi ha portato la parola, quando
+          sono persone diverse: sono due lavori distinti e vanno riconosciuti
+          tutti e due. */}
+      {(voce.contributore_firma || voce.audio_voce_di) && (
         <p class="mt-10 text-sm text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">
-          Parola portata da <strong>{voce.contributore_firma}</strong>.
+          {voce.contributore_firma && (
+            <span>Parola portata da <strong>{voce.contributore_firma}</strong>.</span>
+          )}
+          {voce.audio_voce_di && voce.audio_voce_di !== voce.contributore_firma && (
+            <span> Voce di <strong>{voce.audio_voce_di}</strong>.</span>
+          )}
         </p>
       )}
 
