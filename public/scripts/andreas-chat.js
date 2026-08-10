@@ -186,7 +186,13 @@ Da dove vuoi partire?`;
     const chips = [
       { text: 'Chi era Andreas Hofer?', q: 'Chi era Andreas Hofer?' },
       { text: 'Cosa sono state le Guerre Rustiche?', q: 'Cosa sono state le Guerre Rustiche nelle Valli del Noce?' },
-      { text: "Come si dice 'casa' in nones?", q: "Come si dice 'casa' in nones?" },
+      // [10/8/2026 sera] Era «Come si dice 'casa' in nones?», e il glossario la
+      // parola «casa» non ce l'ha ancora: la domanda piu' in vista era proprio
+      // quella a cui non sapevamo rispondere, e Andreas rispondeva «cia», che
+      // e' la culla dei bambini. Adesso si propone una parola che c'e' davvero
+      // ed e' stata verificata sul recupero. Il giorno che «ciasa» viene
+      // validata, questa riga puo' tornare com'era.
+      { text: "Come si dice 'sasso' in solander?", q: "Come si dice 'sasso' in solander?" },
       { text: "Quando nasce l'Associazione El Brenz?", q: "Quando nasce l'Associazione El Brenz?" },
     ];
 
@@ -586,7 +592,7 @@ L'Associazione opera nell'intero territorio delle Valli del Noce (Non, Sole, Rab
       ok: true,
       response: `Mi spiace, in modalità MOCK posso rispondere solo alle 4 domande di esempio. Per testare la chat con risposte reali, configura l'edge function come da documentazione.
 
-Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustiche? · Come si dice "casa" in nones? · Quando nasce l'Associazione El Brenz?`,
+Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustiche? · Come si dice "sasso" in solander? · Quando nasce l'Associazione El Brenz?`,
       sourcesDedup: [],
     };
   }
