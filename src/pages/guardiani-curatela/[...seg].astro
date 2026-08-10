@@ -49,6 +49,16 @@ const EDGE = `${SB_URL}/functions/v1/guardiani-contributo/azione/${azione}/${id}
       try {
         const r = await fetch(edge, { headers: { Accept: 'application/json' } });
         const d = await r.json();
+        // [10/8/2026] I link valida/rifiuta delle email sono chiusi: si cura
+        // dalla console. Chi apre un link vecchio non deve trovare un errore
+        // muto ma la porta giusta, aperta, con dentro il lemma che cercava.
+        if (d.error === 'si_passa_dalla_console') {
+          body.innerHTML = titolo('Si cura dalla console')
+            + testo(H(d.message || 'Le validazioni via email sono state chiuse.'))
+            + testo('Nella console vedi la voce intera prima di decidere, la decisione porta il tuo nome, e nessuno può approvare le parole che ha portato lui.')
+            + `<p style="margin-top:20px;"><a href="${H(d.console || '/glossario-console')}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 26px;border-radius:4px;text-decoration:none;font-weight:600;font-size:14px;">Apri la console del glossario</a></p>`;
+          return;
+        }
         if (d.error === 'gia_gestito') {
           body.innerHTML = titolo('Già gestito') + testo(`Il termine «${H(d.lemma || '')}» risulta già <strong>${H(d.stato || '')}</strong>.`);
           return;

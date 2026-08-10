@@ -173,6 +173,30 @@ Deno.serve(async (req: Request) => {
     // Risposte in JSON (la piattaforma Supabase forza text/plain sull'HTML
     // servito dalle edge: la conferma renderizzata la fa la pagina
     // /guardiani-curatela su elbrenz.eu, che chiama questo endpoint).
+    // [10/8/2026] SI PASSA TUTTI DALLA CONSOLE.
+    //
+    // Questi link nascono il 6 agosto, quando un pannello non c'era e quindi
+    // erano l'unico modo di curare. Adesso c'e', e loro hanno due difetti che
+    // con un curatore solo erano imprecisioni e con due diventano bugie negli
+    // atti del dizionario: girano con la chiave di servizio, quindi ogni
+    // validazione si firma «Commissione Linguistica (via email)» invece del
+    // nome di chi ha deciso; e scavalcano la regola per cui un curatore non
+    // valida i propri lemmi, perche' chi apre un link non ha un'identita'.
+    //
+    // Il ramo resta INTERO, spento da un interruttore e non cancellato: basta
+    // il secret GUARDIANI_LINK_EMAIL=true per riaverlo. Il giorno che la
+    // console fosse irraggiungibile, queste maniglie tornerebbero utili.
+    // Anche i link gia' spediti smettono di funzionare, ed e' voluto: erano
+    // validi trenta giorni, e una porta di servizio aperta per un mese vale
+    // quanto non aver chiuso niente.
+    if (Deno.env.get('GUARDIANI_LINK_EMAIL') !== 'true') {
+      return json({
+        ok: false,
+        error: 'si_passa_dalla_console',
+        console: `${SITO}/glossario-console`,
+        message: 'Le validazioni via email sono state chiuse: adesso si cura dalla console, dove la decisione porta il nome di chi la prende.',
+      }, 200, c);
+    }
     if (!adminSecret) return json({ ok: false, error: 'config_mancante' }, 500, c);
     const azione = mAz[1] as 'valida' | 'rifiuta';
     const id = mAz[2]; const exp = parseInt(mAz[3], 10); const t = mAz[4];

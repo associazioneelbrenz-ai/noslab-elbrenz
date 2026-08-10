@@ -98,20 +98,38 @@ Deno.serve(async (req: Request) => {
   const adminSecret = Deno.env.get('ADMIN_ACTION_SECRET');
   let mailOk = false;
   if (sendSecret) {
-    // I link valida/rifiuta stanno DENTRO il riepilogo, uno per riga. Senza
-    // questo, spegnere la mail per singolo termine toglierebbe l'unico modo di
-    // curare: i link HMAC nascevano li', e il pannello non c'e' ancora. Una
-    // mail sola, ma con tutte le maniglie.
+    // [10/8/2026] I LINK VALIDA/RIFIUTA SONO SPENTI: SI PASSA TUTTI DALLA
+    // CONSOLE. (Decisione di Cristian, il giorno stesso in cui i curatori sono
+    // diventati due.)
+    //
+    // Nascevano il 6 agosto perche' un pannello non c'era, e allora erano
+    // l'unico modo di curare. Adesso c'e', e quei link hanno due difetti che
+    // prima non pesavano e adesso si': girano con la chiave di servizio, quindi
+    // firmano ogni validazione «Commissione Linguistica (via email)» invece del
+    // nome di chi ha deciso, e SCAVALCANO la regola per cui un curatore non
+    // valida i propri lemmi, perche' chi apre un link non ha un'identita'.
+    // Con un curatore solo era una imprecisione; con due sarebbe una bugia
+    // scritta negli atti del dizionario.
+    //
+    // Il codice resta intero, spento da un interruttore e non cancellato:
+    // basta il secret GUARDIANI_LINK_EMAIL=true per riaverlo, senza rimettere
+    // mano a niente. Il giorno che la console fosse irraggiungibile, quelle
+    // maniglie tornerebbero a essere la cosa giusta.
+    const linkEmail = Deno.env.get('GUARDIANI_LINK_EMAIL') === 'true';
     const exp = Date.now() + TOKEN_TTL_MS;
     const righeHtml: string[] = [];
     for (const l of (lemmi as any[]).slice(0, 40)) {
       let azioni = '';
-      if (adminSecret) {
+      if (adminSecret && linkEmail) {
         const tV = await firmaToken(adminSecret, 'guardiani-valida', l.id, exp);
         const tR = await firmaToken(adminSecret, 'guardiani-rifiuta', l.id, exp);
         azioni = `<a href="${SITO}/guardiani-curatela/valida/${l.id}/${exp}/${tV}" style="color:#2d8659;font-weight:600;text-decoration:none;">valida</a>
                   &nbsp;·&nbsp;
                   <a href="${SITO}/guardiani-curatela/rifiuta/${l.id}/${exp}/${tR}" style="color:#a33;text-decoration:none;">rifiuta</a>`;
+      } else {
+        // Si apre la scheda, non si timbra dall'elenco. E' il punto di tutto il
+        // cambiamento: la decisione la si prende avendo davanti la voce intera.
+        azioni = `<a href="${SITO}/glossario-console" style="color:#8a6215;font-weight:600;text-decoration:none;">apri</a>`;
       }
       // La definizione sta NELLA riga, non dietro un link: si approva quello che
       // si e' potuto leggere. Un elenco di soli lemmi con accanto «valida»
@@ -137,8 +155,12 @@ Deno.serve(async (req: Request) => {
           ${nuoviOggi > 0 ? `Oggi sono arrivati <strong>${nuoviOggi} termini</strong>. ` : ''}In coda ce ne sono <strong>${totale}</strong>: ${esc(rigaSintesi)}.
         </p>
         <table style="border-collapse:collapse;font-size:14px;margin:0 0 20px;">${elenco}</table>
-        ${totale > 40 ? `<p style="color:#666;font-size:13px;margin:0 0 16px;">…e altri ${totale - 40}: li trovi nel riepilogo di domani o nel pannello.</p>` : ''}
-        <p style="color:#999;font-size:12px;margin:18px 0 0;">Un solo messaggio al giorno. Se non arriva niente, non arriva nemmeno questo.</p>
+        ${totale > 40 ? `<p style="color:#666;font-size:13px;margin:0 0 16px;">…e altri ${totale - 40}: li trovi nella console.</p>` : ''}
+        ${linkEmail ? '' : `<p style="text-align:center;margin:22px 0 6px;">
+          <a href="${SITO}/glossario-console" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 26px;text-decoration:none;font-weight:600;font-size:15px;border-radius:4px;">Apri la console del glossario</a>
+        </p>
+        <p style="color:#666;font-size:13px;line-height:1.6;margin:10px 0 0;">Da qui non si valida più: si valida nella console, dove la decisione porta il tuo nome e dove nessuno può approvare le parole che ha portato lui.</p>`}
+        <p style="color:#999;font-size:12px;margin:18px 0 0;">Questo riepilogo arriva solo quando c’è qualcosa di nuovo da dire.</p>
       </div></body></html>`;
     try {
       const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
