@@ -812,12 +812,52 @@ Nel frattempo prova: Chi era Andreas Hofer? · Cosa sono state le Guerre Rustich
         return emb.access_token;
       }
     } catch (_) { /* si prosegue con localStorage */ }
+    // [10/8/2026] Poi il COOKIE CONDIVISO su .elbrenz.eu. E' la correzione del
+    // difetto vero: il sito e l'app dei soci stanno su due sottodomini e il
+    // localStorage non li attraversa, quindi un socio autenticato nell'app,
+    // qui, era uno sconosciuto con tre domande. Adesso la sessione vive in un
+    // cookie che entrambi vedono (src/lib/sessione-condivisa.ts). Il
+    // localStorage resta il ripiego: se i cookie fossero bloccati, si torna
+    // esattamente al comportamento di prima.
+    const daCookie = leggiSessioneCookie('elbrenz-auth');
+    if (daCookie) return daCookie;
+
     try {
       const raw = localStorage.getItem('elbrenz-auth');
       if (!raw) return null;
       const session = JSON.parse(raw);
       if (session && session.expires_at && session.expires_at * 1000 < Date.now()) return null;
       return (session && session.access_token) ? session.access_token : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /**
+   * Legge la sessione dal cookie condiviso, ricomponendola se e' stata spezzata
+   * in piu' pezzi (una sessione di Supabase puo' superare i quattromila byte di
+   * un cookie solo). Torna l'access_token, oppure null se manca o e' scaduto.
+   */
+  function leggiSessioneCookie(nome) {
+    try {
+      var tutti = {};
+      document.cookie.split(';').forEach(function (parte) {
+        var i = parte.indexOf('=');
+        if (i < 1) return;
+        tutti[decodeURIComponent(parte.slice(0, i).trim())] = parte.slice(i + 1).trim();
+      });
+      var grezzo = tutti[nome] || '';
+      if (!grezzo) {
+        for (var i = 0; i < 6; i++) {
+          var p = tutti[nome + '.' + i];
+          if (!p) break;
+          grezzo += p;
+        }
+      }
+      if (!grezzo) return null;
+      var s = JSON.parse(decodeURIComponent(grezzo));
+      if (s && s.expires_at && s.expires_at * 1000 < Date.now()) return null;
+      return (s && s.access_token) ? s.access_token : null;
     } catch (_) {
       return null;
     }

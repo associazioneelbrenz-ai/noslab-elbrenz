@@ -331,7 +331,6 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
 </Layout>
 
 <script>
-  import { createClient } from '@supabase/supabase-js';
 
   // [10/8/2026] LA SESSIONE DEL SITO E' UNA SOLA.
   // Questi pannelli creavano un client senza `storageKey`, quindi la sessione
@@ -341,18 +340,12 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   // altre pagine, e soprattutto ANDREAS non lo riconosceva, perche' il widget
   // legge `elbrenz-auth`: un curatore autenticato si ritrovava le tre domande
   // dell'anonimo. Stesse opzioni del client condiviso, una chiave sola.
-  const supabase = createClient(
-    import.meta.env.PUBLIC_SUPABASE_URL,
-    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false,
-        storageKey: 'elbrenz-auth',
-      },
-    },
-  );
+  // [10/8/2026] Il client CONDIVISO, non uno proprio. Prima ogni pannello ne
+  // creava uno per conto suo e la sessione finiva in un cassetto diverso: chi
+  // entrava da qui non risultava autenticato altrove, e Andreas gli dava le tre
+  // domande dell'anonimo. Adesso e' la stessa sessione di tutto il dominio, che
+  // vive in un cookie su .elbrenz.eu (src/lib/sessione-condivisa.ts).
+  import { supabase } from '../lib/supabase';
 
   const $ = (id) => document.getElementById(id);
   const mostra = (id) => $(id)?.classList.remove('hidden');
