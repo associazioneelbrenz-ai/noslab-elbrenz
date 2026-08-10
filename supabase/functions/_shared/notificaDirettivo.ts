@@ -38,7 +38,7 @@ function componiTesto(
     case 'donazione':          r.push(`${d.nome ?? 'Anonimo'} · ${d.importo ?? '?'} €`); break;
     case 'integrazione_quota': r.push(`${d.nome ?? '—'} · ${d.importo ?? '?'} €`); break;
     case 'ricevuta_bonifico':  r.push(`${d.nome ?? '—'} · ricevuta bonifico da verificare${d.anomalia ? ' ⚠ anomalia OCR' : ''}`); break;
-    case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/guardiani-curatela`); break;
+    case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/glossario-console`); break;
     case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto: ${d.contatto ?? '—'}`, `Gestisci su ${site}/museo-gg-curatela`); break;
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
     // AGGIUNTA 31/7/2026 — digest settimanale del Radar eventi (GATE 3).
@@ -51,7 +51,7 @@ function componiTesto(
       const chi = Array.isArray(d.contributori) ? d.contributori : [];
       r.push(`${d.totale ?? 0} termini nuovi in coda:`);
       for (const c of chi.slice(0, 10)) r.push(`· ${c.quanti ?? '?'} da ${c.nome ?? '—'}`);
-      r.push(`Cura su ${site}/guardiani-curatela`);
+      r.push(`Cura su ${site}/glossario-console`);
       break;
     }
     case 'radar_digest': {

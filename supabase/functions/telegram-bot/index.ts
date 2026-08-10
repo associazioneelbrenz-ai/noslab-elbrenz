@@ -400,7 +400,7 @@ serve(async (req: Request) => {
       await sendMessage(token, chatId,
         `📖 <b>Guardiani — ${count} da validare</b>\n\n` + righe.join('\n') +
         ((count ?? 0) > 10 ? `\n\n…e altri ${(count ?? 0) - 10}.` : '') +
-        '\n\nValida su https://www.elbrenz.eu/guardiani-curatela');
+        '\n\nValida su https://elbrenz.eu/glossario-console');
       return new Response('', { status: 200 });
     }
 
