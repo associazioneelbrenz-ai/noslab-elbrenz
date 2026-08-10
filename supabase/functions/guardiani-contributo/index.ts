@@ -49,8 +49,32 @@ const TIPI = ['parola', 'frase', 'espressione'];
 // dove si dice) e una DEFINIZIONE VERA. Novanta lemmi su centoquarantasei
 // stanno sotto i quindici caratteri: sono traduzioni, non definizioni.
 // Tutto il resto resta facoltativo, e si puo' aggiungere dopo.
+//
+// [10/8/2026, poche ore dopo] LA REGOLA DEI QUINDICI CARATTERI ERA SBAGLIATA,
+// e l'ha scoperto Monica Valentinotti in mezz'ora: «Come faccio a scrivere una
+// riga per spiegare la parola "asá"?». Asá vuol dire «abbastanza». Non esiste
+// una definizione di quindici caratteri di «abbastanza» che non sia fuffa messa
+// li' per superare un controllo.
+//
+// Il conteggio dei caratteri andava bene per i sostantivi — il pipistrello, la
+// stua, il cadin — e non andava bene per NIENTE ALTRO: avverbi, preposizioni,
+// congiunzioni, esclamazioni. Le parole grammaticali si spiegano con una frase
+// in cui compaiono, non con una perifrasi.
+//
+// Quindi la richiesta non e' piu' «scrivi lungo», e' «fammi capire»: o una
+// definizione estesa, OPPURE un esempio d'uso. Monica l'esempio l'aveva gia'
+// scritto — «Non ghe n'as mai asá» — ed era la spiegazione migliore possibile.
+// Il rigore resta: una parola buttata li' da sola, senza definizione vera e
+// senza esempio, continua a non passare.
 const DEF_MIN = 15;
+const ESEMPIO_MIN = 5;
 const CATEGORIE = ['sostantivo', 'verbo', 'aggettivo', 'avverbio', 'modo di dire'];
+
+/** La definizione basta da sola, oppure e' l'esempio a fare il lavoro. */
+function spiegata(significato: string, esempio: string): boolean {
+  if (significato.trim().length >= DEF_MIN) return true;
+  return significato.trim().length >= 2 && esempio.trim().length >= ESEMPIO_MIN;
+}
 const VARIANTE_LABEL: Record<string, string> = {
   noneso: 'Noneso (Val di Non)', solander: 'Solander (Val di Sole)',
   rabies: 'Rabies (Val di Rabbi)', pegaes: 'Pegaes (Val di Pejo)',
@@ -294,9 +318,10 @@ Deno.serve(async (req: Request) => {
   if (termine.length < 1) return json({ error: 'Scrivi il termine o la frase.' }, 400, c);
   if (!VARIANTI.includes(variante)) return json({ error: 'Scegli una variante valida.' }, 400, c);
   if (!TIPI.includes(tipo)) return json({ error: 'Scegli il tipo (parola, frase o espressione).' }, 400, c);
-  if (significato.length < DEF_MIN) {
+  if (significato.length < 2) return json({ error: 'Scrivi che cosa vuol dire in italiano.' }, 400, c);
+  if (!spiegata(significato, esempio)) {
     return json({
-      error: 'Scrivi una riga che spieghi la cosa, non solo la traduzione: «il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello».',
+      error: 'Manca la spiegazione, e ci sono due modi per darla: una riga che spieghi la cosa («il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello»), oppure, per le parole che una perifrasi non spiega come «abbastanza», una frase d’esempio in cui la parola compare.',
     }, 400, c);
   }
   if (comune.length < 2) return json({ error: 'Dicci in che paese si dice: una parola senza il luogo perde metà del suo valore.' }, 400, c);

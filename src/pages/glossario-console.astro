@@ -422,9 +422,9 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     voc = { comune: [], parlata: [], categoria_gramm: [] };
     for (const v of data ?? []) if (voc[v.dominio]) voc[v.dominio].push(v);
     riempiSelect('fl-parlata', 'parlata', 'Tutte le parlate');
-    riempiSelect('sc-parlata', 'parlata', '— nessuna —');
-    riempiSelect('sc-comune', 'comune', '— nessuno —');
-    riempiSelect('sc-categoria_gramm', 'categoria_gramm', '— nessuna —');
+    riempiSelect('sc-parlata', 'parlata', 'nessuna');
+    riempiSelect('sc-comune', 'comune', 'nessuno');
+    riempiSelect('sc-categoria_gramm', 'categoria_gramm', 'nessuna');
     aggiornaValoriBlocco();
   }
 
@@ -905,7 +905,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
       + '<span class="text-[13px] text-[#1E2E26]/55">· ' + r.quanti + ' lemmi · ' + H(r.dominio === 'comune' ? 'paese' : r.dominio === 'parlata' ? 'parlata' : 'categoria') + '</span></p>'
       + '<p class="m-0 text-[13px] text-[#1E2E26]/70">'
       + (r.forse_e ? 'Scritto diversamente da <strong>' + H(r.forse_e) + '</strong>: sono la stessa cosa.'
-        : 'Non è nel vocabolario. Il più simile è <strong>' + H(r.il_piu_simile ?? '—') + '</strong>.')
+        : 'Non è nel vocabolario. Il più simile è <strong>' + H(r.il_piu_simile ?? 'ignoto') + '</strong>.')
       + '</p></div>').join('');
   }
 
@@ -992,7 +992,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     box.innerHTML = data.map((a) => '<div class="bg-white border border-[#E5DFCF] rounded-lg p-4" data-id="' + a.id + '">'
       + '<p class="m-0 mb-1 text-[16px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(a.termine_ladino || a.titolo) + '</p>'
       + '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/60">'
-      + [a.durata_secondi ? a.durata_secondi + 's' : null, a.mime_originale, 'portata da ' + H(a.portato_da_nome || '—'), quando(a.created_at)].filter(Boolean).join(' · ')
+      + [a.durata_secondi ? a.durata_secondi + 's' : null, a.mime_originale, 'portata da ' + H(a.portato_da_nome || 'ignoto'), quando(a.created_at)].filter(Boolean).join(' · ')
       + '</p>'
       + (a.voce_di_altri
         ? '<p class="m-0 mb-2 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33]') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '

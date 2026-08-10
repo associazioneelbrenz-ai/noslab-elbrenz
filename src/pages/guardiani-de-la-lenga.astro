@@ -172,15 +172,22 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
             </div>
           </div>
 
-          {/* LA DEFINIZIONE. Novanta lemmi su centoquarantasei stanno sotto i
-              quindici caratteri: sono traduzioni, non definizioni. L'esempio
-              accanto vale piu' di qualunque regola. */}
+          {/* LA DEFINIZIONE, E LA SUA ALTERNATIVA.
+              Chiedere sempre «una riga che spieghi» era sbagliato, e l'ha
+              scoperto Monica in mezz'ora: «asá» vuol dire «abbastanza», e di
+              «abbastanza» non esiste una perifrasi che non sia riempitivo.
+              Vale per tutti gli avverbi, le preposizioni, le esclamazioni.
+              Quindi si chiede di farsi capire, non di scrivere lungo: o la
+              definizione estesa, o una frase in cui la parola compare. */}
           <div>
             <label class="block text-sm mb-1 text-[#1E2E26]/80">Che cosa vuol dire, in italiano *</label>
             <textarea name="significato" required rows="2" maxlength="2000" class={input} placeholder="il pipistrello, che d’estate esce al tramonto dai fienili"></textarea>
             <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">
-              Una riga che spieghi la cosa, non solo la traduzione: «il pipistrello,
+              Se puoi, spiega la cosa invece di tradurla soltanto: «il pipistrello,
               che d’estate esce al tramonto dai fienili» dice molto più di «pipistrello».
+              Ma certe parole non si spiegano così: <em>asá</em> vuol dire
+              «abbastanza», e basta: in quel caso scrivi la traduzione qui e
+              mettici sotto una frase d’esempio, che spiega meglio di qualunque giro di parole.
             </p>
             <p id="gu-def-conta" class="text-[12px] m-0 mt-1"></p>
           </div>
@@ -495,15 +502,31 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
     // Non e' un capriccio sul numero di caratteri: e' il modo di far vedere,
     // nel momento in cui uno scrive «pipistrello», che manca qualcosa.
     const defEl = form.querySelector('[name=significato]');
+    const esEl = form.querySelector('[name=esempio]');
     const defConta = document.getElementById('gu-def-conta');
+    // La spia non conta caratteri: dice se la voce si capisce. Ci sono due modi
+    // per farla capire, e mostrarne uno solo era il difetto di stamattina.
+    function spiegata() {
+      const d = (defEl?.value || '').trim();
+      const e = (esEl?.value || '').trim();
+      return d.length >= 15 || (d.length >= 2 && e.length >= 5);
+    }
     function contaDef() {
       if (!defEl || !defConta) return;
-      const n = defEl.value.trim().length;
-      if (n === 0) { defConta.textContent = ''; return; }
-      if (n >= 15) { defConta.style.color = '#2d8659'; defConta.textContent = 'Così va bene.'; }
-      else { defConta.style.color = '#a33'; defConta.textContent = 'Ancora un po’: questa è la traduzione, non la spiegazione.'; }
+      const d = defEl.value.trim();
+      if (!d) { defConta.textContent = ''; return; }
+      if (spiegata()) {
+        defConta.style.color = '#2d8659';
+        defConta.textContent = d.length >= 15
+          ? 'Così va bene.'
+          : 'Va bene: è corta, ma l’esempio qui sotto la spiega.';
+      } else {
+        defConta.style.color = '#8a6215';
+        defConta.textContent = 'È una traduzione. Va benissimo se aggiungi una frase d’esempio qui sotto; altrimenti allunga un po’ la spiegazione.';
+      }
     }
     defEl?.addEventListener('input', contaDef);
+    esEl?.addEventListener('input', contaDef);
 
     // ── LA VOCE ───────────────────────────────────────────────────────────
     // MediaRecorder c'e' su iOS dal 14.3 ma con regole sue: il tipo lo sceglie
@@ -652,7 +675,8 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       if (!payload.termine) return mostra('Scrivi il termine.', false);
       if (!payload.variante || !payload.tipo) return mostra('Scegli parlata e tipo.', false);
       if (!payload.comune) return mostra('Dicci in che paese si dice: una parola senza il luogo perde metà del suo valore.', false);
-      if (payload.significato.length < 15) return mostra('Scrivi una riga che spieghi la cosa, non solo la traduzione: «il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello».', false);
+      if (payload.significato.length < 2) return mostra('Scrivi che cosa vuol dire in italiano.', false);
+      if (!spiegata()) return mostra('Manca la spiegazione, e ci sono due modi per darla: una riga che spieghi la cosa («il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello»), oppure, per le parole che un giro di parole non spiega come «abbastanza», una frase d’esempio in cui la parola compare.', false);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return mostra('Email non valida.', false);
       if (!payload.consenso_glossario || !payload.licenza_accettata) return mostra('Servono il consenso al glossario e l’accettazione della licenza.', false);
       invia.disabled = true; invia.textContent = 'Invio…';
