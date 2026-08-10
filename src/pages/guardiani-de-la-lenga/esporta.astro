@@ -7,10 +7,17 @@
  * un giorno il sistema non ci fosse piu'. Un archivio linguistico che vive in
  * un solo posto non e' un archivio.
  *
- * PRERENDERIZZATA. Questa pagina E' la copia: l'HTML esce dalla build con
- * dentro tutti i lemmi, quindi si salva, si stampa e si legge anche senza
- * database e senza rete. I due pulsanti di scarico costruiscono i file dal DOM,
- * non da una chiamata: se la rete non c'e', funzionano lo stesso.
+ * [10/8/2026] SSR, non piu' prerenderizzata. Una copia d'archivio che mostra
+ * centoquarantanove voci quando ce ne sono centocinquantaquattro non e' una
+ * copia: e' una fotografia dell'ultima ricostruzione, e chi la manda all'Union
+ * Ladin o la allega a una domanda di contributo non ha modo di accorgersene.
+ * L'HTML resta autosufficiente: una volta aperta, la pagina si salva, si stampa
+ * e si legge senza rete, e i due pulsanti di scarico costruiscono i file dal
+ * DOM e non da una chiamata. Cambia solo QUANDO viene composta: al momento in
+ * cui qualcuno la chiede, non all'ultimo deploy.
+ *
+ * La CDN fa da freno alle invocazioni: e' una pagina che si apre di rado e che
+ * per un'ora puo' benissimo arrivare dalla cache.
  *
  * Ordinata per parlata e, dentro ciascuna, alfabeticamente: e' l'ordine di un
  * dizionario, e chi lo riceve non deve dover riordinare niente.
@@ -18,7 +25,13 @@
 import Layout from '../../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
 
-export const prerender = true;
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
+Astro.response.headers.set(
+  'Netlify-CDN-Cache-Control',
+  'public, s-maxage=3600, stale-while-revalidate=86400',
+);
 
 type Voce = {
   id: string; slug: string | null; termine: string; tipo: string | null;

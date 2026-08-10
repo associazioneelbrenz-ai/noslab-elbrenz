@@ -6,11 +6,18 @@
  * dizionario piccolo, e un dizionario si cita. Senza un indirizzo per voce si
  * puo' solo dire «guarda nel glossario e cerca», che non e' una citazione.
  *
- * PRERENDERIZZATA, non SSR: stiamo tagliando le invocazioni, e cinquantasette
- * pagine generate a ogni richiesta sarebbero il modo piu' rapido per rimettere
- * il sito nella condizione del 6 agosto. Il prezzo e' che una parola nuova
- * compare alla ricostruzione successiva, ed e' un prezzo giusto per un
- * contenuto che cambia qualche volta al giorno.
+ * [10/8/2026] SSR, NON PIU' PRERENDERIZZATA. Il prezzo che era stato accettato
+ * («una parola nuova compare alla ricostruzione successiva») era giusto finche'
+ * la validazione era rara e passava dalle email. Con la console e' diventato il
+ * difetto peggiore possibile: il curatore valida cinque lemmi, l'elenco li
+ * mostra subito perche' quello e' gia' dinamico, e chi li apre trova 404. Non
+ * un contenuto vecchio: una pagina rotta, su una parola appena messa in vetrina.
+ *
+ * L'invocazione la frena la CDN, non il build. Le intestazioni qui sotto fanno
+ * si' che Netlify serva la stessa scheda dalla cache per dieci minuti e continui
+ * a servirla mentre la rigenera per un giorno intero: una parola letta mille
+ * volte costa quanto una letta una volta sola. E' il modo per avere insieme le
+ * due cose che questo file voleva e non poteva avere.
  *
  * LE VARIANTI sono il cuore. La stessa cosa detta in modo diverso a Male' e a
  * Fondo non e' un doppione: e' il dato. Quando due lemmi condividono il
@@ -40,38 +47,62 @@ type Legame = {
   verso_definizione: string | null;
 };
 
-export async function getStaticPaths() {
-  const url = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
-  const anon = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
-  if (!anon) return [];
-  const sb = createClient(url, anon, { auth: { persistSession: false } });
-  const { data } = await sb.from('glossario_pubblico').select('*');
-  const voci = (data as Voce[]) ?? [];
-  const { data: rel } = await sb.from('v_lemma_relazione_pubblica').select('*');
-  const legami = (rel as Legame[]) ?? [];
-  return voci.filter((v) => v.slug).map((v) => ({
-    params: { slug: v.slug },
-    props: {
-      voce: v,
-      // I collegamenti curati, divisi per che cosa dicono.
-      varianti: legami.filter((r) => r.da_id === v.id && r.tipo === 'variante'),
-      vediAnche: legami.filter((r) => r.da_id === v.id && r.tipo === 'vedi_anche'),
-      // Le sorelle di prima: stesso significato, trovate confrontando il testo.
-      // NON sono state tolte, ma adesso valgono solo come ripiego, quando su
-      // questa voce nessun curatore si e' ancora pronunciato. Il giorno che si
-      // pronuncia, la sua parola vince su quella dell'algoritmo — che e' il
-      // punto di tutto il lavoro del 10 agosto.
-      sorelle: voci.filter((a) =>
-        a.id !== v.id &&
-        (a.significato_it ?? '').trim().toLowerCase() === (v.significato_it ?? '').trim().toLowerCase() &&
-        (a.significato_it ?? '').trim() !== ''),
-    },
-  }));
+export const prerender = false;
+
+// La cache della CDN e' cio' che rende sostenibile l'SSR qui. `s-maxage` vale
+// per Netlify, `max-age` per il browser, e `stale-while-revalidate` fa servire
+// la copia vecchia mentre quella nuova si prepara: nessuno aspetta mai il
+// database. Dieci minuti sono il ritardo massimo fra una correzione in console
+// e cio' che legge il pubblico, ed e' un ritardo che nessuno nota.
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
+Astro.response.headers.set(
+  'Netlify-CDN-Cache-Control',
+  'public, s-maxage=600, stale-while-revalidate=86400',
+);
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
+const { slug } = Astro.params;
+
+let voce: Voce | null = null;
+let legami: Legame[] = [];
+let sorelle: Voce[] = [];
+try {
+  const sb = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data } = await sb.from('glossario_pubblico').select('*').eq('slug', slug).maybeSingle();
+  voce = (data as Voce) ?? null;
+
+  if (voce) {
+    // I collegamenti curati di QUESTA voce, non di tutte: una lettura mirata
+    // invece dell'intera tabella, che con il glossario a mille voci sarebbe la
+    // differenza fra una scheda e un'attesa.
+    const { data: rel } = await sb.from('v_lemma_relazione_pubblica').select('*').eq('da_id', voce.id);
+    legami = (rel as Legame[]) ?? [];
+
+    // Le sorelle: stesso significato, trovate confrontando il testo. NON sono
+    // state tolte, ma valgono solo come ripiego, quando su questa voce nessun
+    // curatore si e' ancora pronunciato. Il giorno che si pronuncia, la sua
+    // parola vince su quella dell'algoritmo, che e' il punto di tutto il lavoro
+    // del 10 agosto. Si cercano solo in quel caso: e' una lettura in meno su
+    // quasi tutte le schede.
+    const gia = legami.some((r) => r.tipo === 'variante');
+    if (!gia && (voce.significato_it ?? '').trim() !== '') {
+      const { data: sim } = await sb.from('glossario_pubblico')
+        .select('*').eq('significato_it', voce.significato_it).neq('id', voce.id).limit(8);
+      sorelle = (sim as Voce[]) ?? [];
+    }
+  }
+} catch (e) {
+  console.error('[guardiani/slug] lettura fallita:', e);
 }
 
-const { voce, sorelle, varianti, vediAnche } = Astro.props as {
-  voce: Voce; sorelle: Voce[]; varianti: Legame[]; vediAnche: Legame[];
-};
+// Una parola che non c'e' (mai esistita, oppure RITIRATA da un curatore) non
+// deve dare un vicolo cieco: si torna al glossario, dove la ricerca c'e'. Il
+// 302 e non il 301, perche' una voce ritirata puo' tornare.
+if (!voce) return Astro.redirect('/guardiani-de-la-lenga', 302);
+
+const varianti = legami.filter((r) => r.tipo === 'variante');
+const vediAnche = legami.filter((r) => r.tipo === 'vedi_anche');
 // Quando i collegamenti curati ci sono, l'accostamento automatico si fa da
 // parte: due elenchi che dicono quasi la stessa cosa confondono e basta.
 const mostraSorelle = varianti.length === 0 && sorelle.length > 0;
