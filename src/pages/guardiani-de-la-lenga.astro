@@ -561,6 +561,91 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       if (nota) nota.textContent = 'Il tuo browser non registra: puoi comunque caricare un file audio (un memo vocale va benissimo).';
     }
 
+    // ── LA CONVERSIONE, che non è un dettaglio tecnico ──────────────────────
+    //
+    // [10/8/2026 sera] Le prime cinque voci le ha registrate Monica da Android:
+    // Chrome produce WebM con codifica Opus. Apple non lo riproduce. Non è una
+    // mancanza del telefono di chi ascolta: perfino il framework audio di macOS
+    // si rifiuta di aprire quei file. Il curatore, da iPhone, vedeva «Errore»
+    // sopra una registrazione perfettamente integra, e da pubblicata l'avrebbe
+    // vista così metà del pubblico.
+    //
+    // Quindi si converte QUI, sul telefono di chi registra, prima di caricare.
+    // Ogni browser sa decodificare cio' che ha registrato lui: Chrome il suo
+    // WebM, Safari il suo mp4. Nessuno deve saper leggere il formato di un
+    // altro, ed è il motivo per cui questa strada funziona dove un convertitore
+    // sul server richiederebbe un'infrastruttura che non abbiamo.
+    //
+    // Si converte in WAV, non in mp3: è senza compressione, lo apre qualunque
+    // programma, e fra trent'anni si aprirà ancora. Per un archivio di voci che
+    // devono sopravvivere a chi le ha dette, è la scelta giusta anche a costo
+    // di file più grandi.
+    //
+    // Mono a 24 kHz: metà esatta dei 48 kHz con cui registrano i telefoni,
+    // quindi nessun artefatto di ricampionamento, dodici kilohertz di banda
+    // (molto più del telefono) e 48 KB al secondo, che tiene i novanta secondi
+    // massimi sotto il tetto dei sei megabyte.
+    //
+    // SE LA CONVERSIONE NON RIESCE SI CARICA L'ORIGINALE. Una voce registrata
+    // e persa per un errore di conversione sarebbe il danno peggiore fra i due.
+    const HZ = 24000;
+
+    function wavDaCampioni(campioni, hz) {
+      const n = campioni.length;
+      const buf = new ArrayBuffer(44 + n * 2);
+      const v = new DataView(buf);
+      const testo = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+      testo(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); testo(8, 'WAVE');
+      testo(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+      v.setUint16(22, 1, true); v.setUint32(24, hz, true);
+      v.setUint32(28, hz * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+      testo(36, 'data'); v.setUint32(40, n * 2, true);
+      for (let i = 0; i < n; i++) {
+        const c = Math.max(-1, Math.min(1, campioni[i]));
+        v.setInt16(44 + i * 2, c < 0 ? c * 0x8000 : c * 0x7fff, true);
+      }
+      return new Blob([buf], { type: 'audio/wav' });
+    }
+
+    async function inWav(blob) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      const ctx = new Ctx();
+      try {
+        const audio = await ctx.decodeAudioData(await blob.arrayBuffer());
+        // Le voci si mescolano in una sola: un archivio linguistico non ha
+        // bisogno della stereofonia, e la meta' dello spazio si': si somma e
+        // si divide, non si butta via un canale.
+        const canali = [];
+        for (let c = 0; c < audio.numberOfChannels; c++) canali.push(audio.getChannelData(c));
+        const mono = new Float32Array(audio.length);
+        for (let i = 0; i < audio.length; i++) {
+          let s = 0;
+          for (const c of canali) s += c[i];
+          mono[i] = s / canali.length;
+        }
+        // Ricampionamento lineare: scritto a mano perche' OfflineAudioContext
+        // su Safari ha avuto per anni limiti sulla frequenza, e qui la cosa
+        // che non deve fallire e' proprio Safari.
+        const rapporto = audio.sampleRate / hzUtile(audio.sampleRate);
+        const quanti = Math.floor(mono.length / rapporto);
+        const fuori = new Float32Array(quanti);
+        for (let i = 0; i < quanti; i++) {
+          const p = i * rapporto;
+          const a = Math.floor(p), b = Math.min(a + 1, mono.length - 1);
+          fuori[i] = mono[a] + (mono[b] - mono[a]) * (p - a);
+        }
+        return wavDaCampioni(fuori, hzUtile(audio.sampleRate));
+      } catch (_) {
+        return null;
+      } finally {
+        try { ctx.close(); } catch (_) { /* gia' chiuso */ }
+      }
+    }
+    // Non si ricampiona mai VERSO L'ALTO: se la registrazione e' gia' sotto i
+    // 24 kHz, inventare campioni non aggiunge niente e pesa il doppio.
+    function hzUtile(originale) { return Math.min(HZ, originale); }
+
     function mostraPronta(blob, nomeFile) {
       audioBlob = blob;
       audioNome = nomeFile;
@@ -587,7 +672,14 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
           durataReg = Math.max(1, Math.round((Date.now() - partito) / 1000));
           const tipo = registratore.mimeType || 'audio/webm';
           const est = tipo.indexOf('mp4') >= 0 ? 'm4a' : tipo.indexOf('ogg') >= 0 ? 'ogg' : 'webm';
-          mostraPronta(new Blob(pezzi, { type: tipo }), 'voce.' + est);
+          const grezzo = new Blob(pezzi, { type: tipo });
+          if (nota) nota.textContent = 'Preparo la registrazione…';
+          inWav(grezzo).then(function (wav) {
+            // Se la conversione non riesce si carica l'originale: una voce
+            // registrata e persa per un errore di formato sarebbe il danno
+            // peggiore fra i due.
+            mostraPronta(wav || grezzo, wav ? 'voce.wav' : 'voce.' + est);
+          });
         };
         registratore.start();
         partito = Date.now();
@@ -632,7 +724,13 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       // Di un file caricato non conosciamo la durata: si manda zero, che a
       // database diventa null. Meglio un dato assente di uno inventato.
       durataReg = 0;
-      mostraPronta(f, f.name || 'voce');
+      if (nota) nota.textContent = 'Preparo il file…';
+      inWav(f).then(function (wav) {
+        // Anche i file caricati passano dalla conversione: un ogg/opus mandato
+        // da un telefono Android sarebbe muto su iPhone esattamente come una
+        // registrazione. Se il browser non sa decodificarlo, si tiene com'e'.
+        mostraPronta(wav || f, wav ? 'voce.wav' : (f.name || 'voce'));
+      });
     });
 
     document.querySelectorAll('[name=au_chi]').forEach((r) => r.addEventListener('change', () => {

@@ -988,16 +988,18 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   }
 
   // ── LE VOCI (audio) ─────────────────────────────────────────────────────
+  let audioInAttesa = [];
   async function caricaAudio() {
     const box = $('au-lista');
     const { data, error } = await supabase.from('archivio_audio')
-      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, lemma_id, created_at, mime_originale')
+      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, lemma_id, created_at, mime_originale, formato_audio')
       .eq('stato', 'in_attesa').order('created_at').limit(80);
     if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere le registrazioni: ' + H(error.message) + '</p>'; return; }
     if (!data || !data.length) {
       box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessuna registrazione in attesa. Oggi l’archivio delle voci è a zero su centoquarantasei parole: è la voce più importante della pagina della qualità.</p>';
       return;
     }
+    audioInAttesa = data;
     box.innerHTML = data.map((a) => '<div class="bg-white border border-[#E5DFCF] rounded-lg p-4" data-id="' + a.id + '">'
       + '<p class="m-0 mb-1 text-[16px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(a.termine_ladino || a.titolo) + '</p>'
       + '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/60">'
@@ -1007,14 +1009,114 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
         ? '<p class="m-0 mb-2 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33]') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
           + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
         : '<p class="m-0 mb-2 text-[13px] text-[#1E2E26]/70">È la voce di chi ha caricato.</p>')
-      + '<audio controls preload="none" src="' + H(a.file_url) + '" class="w-full mb-3"></audio>'
+      + '<audio controls preload="none" src="' + H(a.file_url) + '" class="w-full mb-2"></audio>'
+      // [10/8 sera] Se il file e' WebM o Ogg, Apple non lo riproduce: su iPhone
+      // e su Safari il lettore dice «Errore» sopra una registrazione integra, e
+      // un curatore che non lo sa pensa che la voce sia rotta e la scarta. Le
+      // registrazioni nuove nascono gia' in WAV; queste sono le prime cinque,
+      // fatte prima della correzione. Si dice com'e', e si offre il rimedio.
+      + (/webm|ogg/i.test(a.formato_audio || '')
+        ? '<div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded p-3 mb-3">'
+          + '<p class="m-0 text-[13px] text-[#1E2E26]/85">Questa registrazione e\u0300 in <strong>' + H(a.formato_audio) + '</strong>, che <strong>Apple non riproduce</strong>: su iPhone e su Safari il lettore qui sopra dice «Errore» anche se il file e\u0300 perfetto. Ascoltala da Chrome, oppure convertila qui: la voce non si tocca, se ne crea una copia che sentono tutti.</p>'
+          + '<button type="button" class="au-conv mt-2 bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Convertila in un formato che sentono tutti</button>'
+          + '</div>'
+        : '')
       + '<div class="flex gap-2 flex-wrap items-center">'
       + '<button type="button" class="au-ok bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Pubblica sotto la parola</button>'
       + '<input class="au-motivo border border-[#E5DFCF] rounded px-3 py-2 text-sm flex-1 min-w-[8rem]" maxlength="300" placeholder="Motivo (se la scarti)" />'
       + '<button type="button" class="au-no bg-[#F5EEDD] text-[#a33] border border-[#d97a7a] px-4 py-2 rounded text-sm cursor-pointer">Scarta</button>'
       + '</div><p class="au-esito text-[13px] m-0 mt-2"></p></div>').join('');
     box.querySelectorAll('.au-ok').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'pubblicato')));
+    box.querySelectorAll('.au-conv').forEach((b) => b.addEventListener('click', () => convertiAudio(b)));
     box.querySelectorAll('.au-no').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'rifiutato')));
+  }
+
+  // ── LA CONVERSIONE DI RECUPERO ──────────────────────────────────────────
+  //
+  // Serve alle prime registrazioni, quelle arrivate prima che il modulo
+  // convertisse da solo: sono WebM/Opus e Apple non le riproduce. Si scarica
+  // il file, lo si decodifica QUI (questa pagina gira su Chrome, che il WebM
+  // lo sa leggere) e si ricarica come WAV passando dallo stesso ingresso che
+  // usa il pubblico.
+  //
+  // L'ORIGINALE NON SI TOCCA. Si crea una copia nuova in attesa: il curatore
+  // ascolta quella, la pubblica, e semmai scarta la vecchia. Cancellare la
+  // prima voce dell'archivio per un problema di formato sarebbe esattamente
+  // cio' che non si fa.
+  async function convertiAudio(btn) {
+    const card = btn.closest('[data-id]');
+    const msg = card.querySelector('.au-esito');
+    const id = card.getAttribute('data-id');
+    btn.disabled = true; btn.textContent = 'Converto…';
+    const dillo = (colore, testo) => { if (msg) { msg.style.color = colore; msg.textContent = testo; } };
+
+    const riga = (audioInAttesa || []).find((x) => x.id === id);
+    if (!riga) { btn.disabled = false; btn.textContent = 'Riprova'; dillo('#a33', 'Non trovo la registrazione: ricarica la pagina.'); return; }
+
+    try {
+      const risposta = await fetch(riga.file_url);
+      if (!risposta.ok) throw new Error('scaricamento ' + risposta.status);
+      const grezzo = await risposta.blob();
+
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) throw new Error('questo browser non sa decodificare l\u2019audio');
+      const ctx = new Ctx();
+      const audio = await ctx.decodeAudioData(await grezzo.arrayBuffer());
+      try { ctx.close(); } catch (_) { /* gia' chiuso */ }
+
+      const canali = [];
+      for (let c = 0; c < audio.numberOfChannels; c++) canali.push(audio.getChannelData(c));
+      const mono = new Float32Array(audio.length);
+      for (let i = 0; i < audio.length; i++) {
+        let somma = 0;
+        for (const c of canali) somma += c[i];
+        mono[i] = somma / canali.length;
+      }
+      const hz = Math.min(24000, audio.sampleRate);
+      const rapporto = audio.sampleRate / hz;
+      const quanti = Math.floor(mono.length / rapporto);
+      const fuori = new Float32Array(quanti);
+      for (let i = 0; i < quanti; i++) {
+        const p = i * rapporto;
+        const a = Math.floor(p), b = Math.min(a + 1, mono.length - 1);
+        fuori[i] = mono[a] + (mono[b] - mono[a]) * (p - a);
+      }
+      const n = fuori.length;
+      const buf = new ArrayBuffer(44 + n * 2);
+      const v = new DataView(buf);
+      const testo = (off, t) => { for (let i = 0; i < t.length; i++) v.setUint8(off + i, t.charCodeAt(i)); };
+      testo(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); testo(8, 'WAVE');
+      testo(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+      v.setUint16(22, 1, true); v.setUint32(24, hz, true);
+      v.setUint32(28, hz * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+      testo(36, 'data'); v.setUint32(40, n * 2, true);
+      for (let i = 0; i < n; i++) {
+        const c = Math.max(-1, Math.min(1, fuori[i]));
+        v.setInt16(44 + i * 2, c < 0 ? c * 0x8000 : c * 0x7fff, true);
+      }
+
+      const fd = new FormData();
+      fd.append('audio', new Blob([buf], { type: 'audio/wav' }), 'voce.wav');
+      fd.append('lemma_id', riga.lemma_id);
+      fd.append('voce_di_altri', riga.voce_di_altri ? 'true' : 'false');
+      fd.append('nome_parlante', riga.nome_parlante || '');
+      fd.append('consenso_parlante', riga.consenso_parlante ? 'true' : 'false');
+      fd.append('anonimo', riga.anonimo ? 'true' : 'false');
+      fd.append('portato_da_nome', riga.portato_da_nome || '');
+      fd.append('portato_da_email', riga.portato_da_email || '');
+      fd.append('durata', String(Math.round(audio.duration) || 0));
+      fd.append('mime', 'audio/wav');
+
+      const su = await fetch(import.meta.env.PUBLIC_SUPABASE_URL + '/functions/v1/glossario-audio', { method: 'POST', body: fd });
+      const esito = await su.json().catch(() => ({}));
+      if (!esito || !esito.ok) throw new Error(esito.dettaglio || esito.errore || 'caricamento non riuscito');
+
+      dillo('#2d8659', 'Convertita: la copia in WAV e\u0300 qui sotto in attesa. Ascoltala, pubblicala, e scarta questa.');
+      setTimeout(caricaAudio, 1200);
+    } catch (e) {
+      btn.disabled = false; btn.textContent = 'Riprova la conversione';
+      dillo('#a33', 'Non riuscita: ' + (e && e.message ? e.message : e) + '. La registrazione originale non e\u0300 stata toccata.');
+    }
   }
 
   async function decidiAudio(btn, esito) {
