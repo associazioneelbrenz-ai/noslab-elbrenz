@@ -58,3 +58,8 @@ supabase/.temp/
 *.bak-*
 *.bak2
 *.bak3
+
+# I backup NON stanno in public/: quella cartella viene pubblicata cosi' com'e',
+# e per mesi ha servito _headers.bak e _redirects.bak a chiunque indovinasse
+# l'indirizzo. Qui invece restano in locale.
+backup-pubblici/
