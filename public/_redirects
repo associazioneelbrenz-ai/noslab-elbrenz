@@ -474,3 +474,15 @@
 /wp-content/uploads/2014/08/dalr%C3%AC-225x300.jpg  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2014/08/dalri-225x300.jpg  301
 /wp-content/uploads/2015/02/Poesia-di-Febbraio-Simone-Dapr%C3%A0-1024x711.jpg  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/2015/02/Poesia-di-Febbraio-Simone-Dapra-1024x711.jpg  301
 /wp-content/uploads/*  https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/wp-media/uploads/:splat  301
+
+# ---- Pagine inglesi non ancora tradotte (10/8/2026) ----
+# Sei collegamenti nelle pagine /en puntavano a /en/tesseramento e
+# /en/rievocazioni, che non esistono: chi leggeva in inglese e cliccava
+# «Become a member», cioe' l'azione piu' importante del sito, trovava un 404.
+# Finche' le due pagine non esistono in inglese si manda all'italiana, che
+# funziona ed ha il selettore di lingua. 302 e non 301 perche' il giorno che
+# la traduzione arriva questi reindirizzamenti spariscono.
+/en/tesseramento  /tesseramento  302
+/en/tesseramento/  /tesseramento  302
+/en/rievocazioni  /rievocazioni  302
+/en/rievocazioni/  /rievocazioni  302

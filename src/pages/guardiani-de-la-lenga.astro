@@ -541,6 +541,14 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
     let audioNome = 'voce.webm';
     let tSpento = null;
     let partito = 0;
+    // [10/8, sera] LA DURATA SI FERMA QUANDO SI FERMA LA REGISTRAZIONE.
+    // Veniva calcolata al momento dell'INVIO, come tempo passato da quando si
+    // era premuto «Registra»: quindi conteneva anche i minuti spesi a finire il
+    // modulo. La prima voce di Monica risulta di tre minuti con un file da venti
+    // chilobyte, che sono una decina di secondi. Un archivio linguistico in cui
+    // la durata dichiarata non e' la durata vera e' un archivio che mente su un
+    // metadato, ed e' il tipo di errore che non si scopre piu'.
+    let durataReg = 0;
     const btnRec = document.getElementById('au-rec');
     const btnStop = document.getElementById('au-stop');
     const timer = document.getElementById('au-timer');
@@ -574,6 +582,9 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
         registratore.ondataavailable = (ev) => { if (ev.data && ev.data.size) pezzi.push(ev.data); };
         registratore.onstop = () => {
           flusso.getTracks().forEach((t) => t.stop());
+          // Qui, e non all'invio: da qui in poi il tempo che passa e' quello di
+          // chi compila il modulo, non quello della voce.
+          durataReg = Math.max(1, Math.round((Date.now() - partito) / 1000));
           const tipo = registratore.mimeType || 'audio/webm';
           const est = tipo.indexOf('mp4') >= 0 ? 'm4a' : tipo.indexOf('ogg') >= 0 ? 'ogg' : 'webm';
           mostraPronta(new Blob(pezzi, { type: tipo }), 'voce.' + est);
@@ -605,6 +616,7 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
 
     document.getElementById('au-rifai')?.addEventListener('click', () => {
       audioBlob = null;
+      durataReg = 0;
       pronta?.classList.add('hidden');
       if (timer) timer.textContent = '';
       if (nota) nota.textContent = '';
@@ -617,6 +629,9 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
         if (nota) nota.textContent = 'Il file è troppo grande: al massimo 6 MB. Per una parola bastano pochi secondi.';
         return;
       }
+      // Di un file caricato non conosciamo la durata: si manda zero, che a
+      // database diventa null. Meglio un dato assente di uno inventato.
+      durataReg = 0;
       mostraPronta(f, f.name || 'voce');
     });
 
@@ -641,7 +656,7 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       fd.append('anonimo', document.getElementById('au-anonimo')?.checked ? 'true' : 'false');
       fd.append('portato_da_nome', (form.querySelector('[name=nome]')?.value || '').trim());
       fd.append('portato_da_email', (form.querySelector('[name=email]')?.value || '').trim());
-      fd.append('durata', String(Math.round((Date.now() - partito) / 1000) || 0));
+      fd.append('durata', String(durataReg || 0));
       fd.append('mime', audioBlob.type || '');
       try {
         const r = await fetch(form.dataset.audio, { method: 'POST', body: fd });

@@ -295,3 +295,16 @@ verify_jwt = true
 # Trappola 12: senza questa dichiarazione un deploy la riporterebbe a
 # verify_jwt=true e ogni registrazione morirebbe con un 401 muto al gateway.
 verify_jwt = false
+
+# ---- Funzioni di prova rimaste dal collaudo di luglio ----
+# Non sono un buco: entrambe controllano INGEST_TOKEN e falliscono chiuse se il
+# secret non c'e'. Ma non erano DICHIARATE, e la Trappola 12 dice che cio' che
+# non e' dichiarato cambia da solo al primo deploy. Qui si scrive lo stato che
+# vogliamo: il gateway fa da prima porta davanti al token, e chi non ha un JWT
+# non le raggiunge nemmeno. Restano perche' servono a diagnosticare la ricerca
+# semantica di Andreas quando qualcosa non torna.
+[functions.andreas-test]
+verify_jwt = true
+
+[functions.test-search]
+verify_jwt = true
