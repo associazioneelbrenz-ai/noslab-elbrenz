@@ -93,7 +93,22 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 <script>
   import { createClient } from '@supabase/supabase-js';
 
-  const supabase = createClient(import.meta.env.PUBLIC_SUPABASE_URL, import.meta.env.PUBLIC_SUPABASE_ANON_KEY);
+  // [10/8/2026] La sessione del sito e' una sola: senza `storageKey` finiva
+  // sotto la chiave predefinita di Supabase invece che sotto `elbrenz-auth`,
+  // che usa tutto il resto del sito. Chi entrava da qui non risultava loggato
+  // altrove, e Andreas lo trattava da anonimo con le sue tre domande.
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        storageKey: 'elbrenz-auth',
+      },
+    },
+  );
   const $ = (id) => document.getElementById(id);
   const mostra = (id) => $(id)?.classList.remove('hidden');
   const nascondi = (id) => $(id)?.classList.add('hidden');

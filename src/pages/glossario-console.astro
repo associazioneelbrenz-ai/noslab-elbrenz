@@ -333,9 +333,25 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
 <script>
   import { createClient } from '@supabase/supabase-js';
 
+  // [10/8/2026] LA SESSIONE DEL SITO E' UNA SOLA.
+  // Questi pannelli creavano un client senza `storageKey`, quindi la sessione
+  // finiva sotto la chiave predefinita di Supabase invece che sotto
+  // `elbrenz-auth`, che e' quella che usa tutto il resto del sito (src/lib/
+  // supabase.ts). Conseguenze: chi entrava da qui non risultava loggato nelle
+  // altre pagine, e soprattutto ANDREAS non lo riconosceva, perche' il widget
+  // legge `elbrenz-auth`: un curatore autenticato si ritrovava le tre domande
+  // dell'anonimo. Stesse opzioni del client condiviso, una chiave sola.
   const supabase = createClient(
     import.meta.env.PUBLIC_SUPABASE_URL,
     import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
+        storageKey: 'elbrenz-auth',
+      },
+    },
   );
 
   const $ = (id) => document.getElementById(id);
