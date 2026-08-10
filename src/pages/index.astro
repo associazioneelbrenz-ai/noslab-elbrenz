@@ -9,6 +9,33 @@
 import Layout from '../layouts/Layout.astro';
 import FirmaIstituzionale from '../components/FirmaIstituzionale.astro';
 
+// [10/8/2026] LA HOME NON SI FISSA PIU' AL BUILD.
+//
+// Era generata una volta sola, e la conseguenza peggiore non erano i caroselli
+// vecchi: era la card della gita. Lo stato lo decide `config_app`, ma qui si
+// congelava alla ricostruzione, tanto che il commento qui sotto avvertiva
+// «per riaprire una gita non basta cambiare il DB, serve un deploy». Vale anche
+// al contrario, ed e' peggio: chiudendo la gita in configurazione, questa
+// pagina avrebbe continuato a invitare la gente a pagare centoventi euro
+// finche' qualcuno non ricostruiva il sito.
+//
+// Ora si compone quando qualcuno la chiede, e a frenare le invocazioni ci pensa
+// la CDN invece del build: cinque minuti di cache condivisa piu' un giorno di
+// stale-while-revalidate. Tutti chiedono lo stesso indirizzo, quindi e' la
+// pagina dove la cache rende di piu': mille visite costano quanto una.
+//
+// Si puo' mettere in cache CONDIVISA perche' qui dentro non c'e' niente di
+// personale: si leggono solo viste pubbliche e configurazione. Il giorno che
+// questa pagina dovesse mostrare qualcosa che dipende da chi guarda, questa
+// riga va tolta prima di quel giorno, non dopo.
+export const prerender = false;
+
+Astro.response.headers.set('Cache-Control', 'public, max-age=60');
+Astro.response.headers.set(
+  'Netlify-CDN-Cache-Control',
+  'public, s-maxage=300, stale-while-revalidate=86400',
+);
+
 // M2.6-bis: box "Sostieni El Brenz" — esiste in pagina SOLO col flag
 // go-live pagamenti attivo (build time, vedi src/lib/pagamenti.ts).
 import { PAGAMENTI_LIVE } from '../lib/pagamenti';
@@ -64,8 +91,9 @@ import IndicatoreScorri from '../components/IndicatoreScorri.astro';
 
 // [3/8/2026] Stato della gita: fonte unica config_app, la stessa che consulta
 // l'edge gita-crea-ordine. La home non deve invitare a pagare un viaggio che
-// non si fa. NB: questa pagina e' prerenderizzata, quindi il valore si fissa
-// al build: per riaprire una gita non basta cambiare il DB, serve un deploy.
+// non si fa. [10/8/2026] La pagina non e' piu' prerenderizzata: il valore si
+// legge a ogni composizione, quindi aprire o chiudere una gita e' un UPDATE e
+// non un deploy. Era il difetto piu' caro di tutta la home.
 // [4/8/2026, secondo giro] Tre esiti, non due, e la build NON si ferma piu'.
 // Fermarla era la difesa contro il congelamento di «annullata» in una pagina
 // generata una volta; ma bloccare l'intero deploy per un dato solo punisce
