@@ -23,7 +23,30 @@ import { firmaToken, TOKEN_TTL_MS } from '../_shared/admin.ts';
 import { notificaDirettivo } from '../_shared/notificaDirettivo.ts';
 
 const SITO = 'https://elbrenz.eu';
+// Il ripiego, non l'elenco: i destinatari veri stanno in configurazione
+// (`guardiani_digest_destinatari`), cosi' aggiungere un curatore non richiede
+// un deploy. Se quella riga sparisse, il riepilogo continuerebbe ad arrivare
+// qui invece di non arrivare a nessuno.
 const RECIPIENT = 'info@elbrenz.eu';
+
+/**
+ * Chi riceve il riepilogo. Si accetta solo cio' che sembra un indirizzo: una
+ * riga di configurazione scritta male non deve poter far fallire l'invio a
+ * tutti gli altri.
+ */
+async function destinatari(sb: ReturnType<typeof createClient>): Promise<string[]> {
+  try {
+    const { data } = await sb.from('config_app')
+      .select('valore').eq('chiave', 'guardiani_digest_destinatari').maybeSingle();
+    const grezzi = Array.isArray(data?.valore) ? data.valore as unknown[] : [];
+    const buoni = grezzi
+      .map((v) => String(v ?? '').trim().toLowerCase())
+      .filter((v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+    return buoni.length ? [...new Set(buoni)] : [RECIPIENT];
+  } catch {
+    return [RECIPIENT];
+  }
+}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -90,13 +113,17 @@ Deno.serve(async (req: Request) => {
   const rigaSintesi = contributori.map((c) => `${c.quanti} da ${c.nome}`).join(', ');
 
   if (!esegui) {
-    return json({ ok: true, giro_a_vuoto: true, totale, contributori, anteprima: rigaSintesi });
+    return json({
+      ok: true, giro_a_vuoto: true, totale, contributori, anteprima: rigaSintesi,
+      destinatari: await destinatari(supabase),
+    });
   }
 
   // --- Mail unica al curatore ---
   const sendSecret = Deno.env.get('SEND_EMAIL_SHARED_SECRET');
   const adminSecret = Deno.env.get('ADMIN_ACTION_SECRET');
   let mailOk = false;
+  let a_chi: string[] = [];
   if (sendSecret) {
     // [10/8/2026] I LINK VALIDA/RIFIUTA SONO SPENTI: SI PASSA TUTTI DALLA
     // CONSOLE. (Decisione di Cristian, il giorno stesso in cui i curatori sono
@@ -162,12 +189,16 @@ Deno.serve(async (req: Request) => {
         <p style="color:#666;font-size:13px;line-height:1.6;margin:10px 0 0;">Da qui non si valida più: si valida nella console, dove la decisione porta il tuo nome e dove nessuno può approvare le parole che ha portato lui.</p>`}
         <p style="color:#999;font-size:12px;margin:18px 0 0;">Questo riepilogo arriva solo quando c’è qualcosa di nuovo da dire.</p>
       </div></body></html>`;
+    // Una mail sola con piu' destinatari, non una mail a testa: `send-email`
+    // accetta un elenco, e due invii separati per lo stesso identico riepilogo
+    // sarebbero due volte lo stesso messaggio nel registro.
+    a_chi = await destinatari(supabase);
     try {
       const r = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Send-Email-Secret': sendSecret },
         body: JSON.stringify({
-          to: RECIPIENT,
+          to: a_chi,
           subject: `[GUARDIANI] ${totale} termini in coda da validare`,
           html,
           tags: [{ name: 'source', value: 'guardiani-digest' }],
@@ -180,5 +211,8 @@ Deno.serve(async (req: Request) => {
   // --- Messaggio unico al gruppo del direttivo ---
   await notificaDirettivo(supabase, 'guardiani_digest', { totale, contributori }).catch(() => {});
 
-  return json({ ok: true, totale, contributori, mail_inviata: mailOk });
+  // Si dice anche A CHI e' andata: un riepilogo che dichiara «inviata» senza
+  // dire a chi e' esattamente il tipo di risposta da cui questo progetto ha
+  // gia' imparato a sue spese.
+  return json({ ok: true, totale, contributori, mail_inviata: mailOk, destinatari: a_chi });
 });
