@@ -193,9 +193,21 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
                   <textarea id="sc-proverbi" rows="2" class={inputCls}></textarea></label>
               </div>
 
+              {/* ══ LA VOCE ATTACCATA A QUESTA PAROLA ══
+                  [13/8/2026] Dieci registrazioni erano ferme in attesa mentre
+                  tutti e dieci i loro lemmi erano gia' pubblicati. Non per
+                  distrazione dei curatori: la voce viveva in un'altra scheda, e
+                  chi valida una parola non ci passa mai. Due porte separate, e
+                  si entra sempre e solo dalla prima.
+                  Il glossario pubblicava la parola scritta e teneva nascosta
+                  quella detta, che e' il pezzo che vale di piu' perche' e'
+                  l'unico che non si puo' ricostruire dopo. */}
+              <div id="sc-voce" class="hidden mt-5 rounded-lg border-2 border-[#C8923E] bg-[#FDF9F0] p-4"></div>
+
               <div class="flex gap-2 flex-wrap mt-4 items-center">
                 <button type="button" id="sc-salva" class="bg-[#C8923E] text-[#1E2E26] px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Salva</button>
                 <button type="button" id="sc-pubblica" class="hidden bg-[#2d8659] text-white px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Pubblica</button>
+                <button type="button" id="sc-pubblica-tutto" class="hidden bg-[#1E2E26] text-[#F5EEDD] px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" disabled>Pubblica parola e voce</button>
                 <button type="button" id="sc-ritira-apri" class="hidden bg-[#F5EEDD] text-[#a33] border border-[#d97a7a] px-4 py-2 rounded text-sm cursor-pointer">Ritira dal glossario</button>
                 <a id="sc-apri" href="#" target="_blank" class="text-[13px] text-[#8a6215] underline">apri la scheda pubblica</a>
               </div>
@@ -593,6 +605,154 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     $('sc-esito').textContent = '';
     storico(id);
     relazioniDi(id);
+    voceDelLemma(id, l);
+  }
+
+  // ── LA VOCE DENTRO LA SCHEDA DEL LEMMA ──────────────────────────────────
+  //
+  // REGOLA DURA: non si pubblica una voce che non si e' ascoltata.
+  //
+  // Il bottone resta spento finche' la riproduzione non arriva in FONDO, e si
+  // accende sull'evento `ended`. Non sul play e non su un timer: un pixel che
+  // si muove dice dove sta la barra, non che qualcuno abbia sentito. Sono
+  // registrazioni di una persona che ha prestato la voce, e una firma su una
+  // cosa mai sentita non vale niente.
+  let voceAperta = null;
+  let voceAscoltata = false;
+
+  async function voceDelLemma(id, lemma) {
+    const box = $('sc-voce');
+    const tutto = $('sc-pubblica-tutto');
+    if (!box) return;
+    voceAperta = null; voceAscoltata = false;
+    box.classList.add('hidden'); box.innerHTML = '';
+    tutto?.classList.add('hidden');
+    if (tutto) tutto.disabled = true;
+
+    const { data, error } = await supabase.from('archivio_audio')
+      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, parlata, comune_parlante, nome_parlante, anonimo, voce_di_altri, consenso_parlante, formato_audio, created_at, ascoltato_il')
+      .eq('lemma_id', id).neq('stato', 'pubblicato').neq('stato', 'rifiutato')
+      .order('created_at').limit(1);
+
+    // Se non si riesce a leggere non si dice «non c'e' voce»: si tace sul
+    // fatto e si dice che non lo sappiamo.
+    if (error) {
+      box.classList.remove('hidden');
+      box.innerHTML = '<p class="m-0 text-[13px] text-[#a33]">Non riesco a controllare se questa parola ha una voce in attesa: ' + H(error.message) + '</p>';
+      return;
+    }
+    if (!data || !data.length) return;
+
+    const a = data[0];
+    voceAperta = a;
+
+    // IL DISACCORDO SI MOSTRA, NON SI NASCONDE. La registrazione puo' dire una
+    // parola e il lemma un'altra: puo' essere una variante giusta o un aggancio
+    // sbagliato, e lo decide chi ascolta. Nasconderlo vorrebbe dire pubblicare
+    // sotto «Bori» una voce che dice «Sghei» senza che nessuno se ne accorga.
+    const detto = (a.termine_ladino || a.titolo || '').trim();
+    const scritto = (lemma?.lemma || '').trim();
+    const diverso = detto && scritto && detto.toLowerCase() !== scritto.toLowerCase();
+
+    box.classList.remove('hidden');
+    box.innerHTML =
+      '<p class="m-0 mb-1 text-[11px] tracking-[0.16em] uppercase text-[#8a6215] font-semibold">Questa parola ha una voce in attesa</p>'
+      + (diverso
+        ? '<div class="my-2 rounded border-l-4 border-[#a33] bg-white px-3 py-2">'
+          + '<p class="m-0 text-[13px] text-[#a33] font-semibold">La registrazione dice «' + H(detto) + '», la parola è «' + H(scritto) + '».</p>'
+          + '<p class="m-0 mt-1 text-[12px] text-[#1E2E26]/75">Possono essere due modi di dire la stessa cosa, oppure un aggancio sbagliato. Ascolta e decidi tu: il codice non sceglie.</p>'
+          + '</div>'
+        : '<p class="m-0 mb-2 text-[15px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(detto || scritto) + '</p>')
+      + '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/65">'
+      + [a.durata_secondi ? a.durata_secondi + 's' : 'durata non registrata',
+         PARLATA[a.parlata] || a.parlata, a.comune_parlante, a.formato_audio, quando(a.created_at)]
+        .filter(Boolean).map(H).join(' · ') + '</p>'
+      + (a.voce_di_altri
+        ? '<p class="m-0 mb-2 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33] font-semibold') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
+          + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
+        : '<p class="m-0 mb-2 text-[13px] text-[#1E2E26]/70">È la voce di chi ha caricato' + (a.anonimo ? ', che resta anonima' : '') + '.</p>')
+      + '<audio id="sc-voce-player" controls preload="metadata" src="' + H(a.file_url) + '" class="w-full mb-2"></audio>'
+      + (/webm|ogg/i.test(a.formato_audio || '')
+        ? '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/75 bg-white border-l-4 border-[#C8923E] px-3 py-2">In <strong>' + H(a.formato_audio) + '</strong>: <strong>Apple non lo riproduce</strong>. Su iPhone e Safari il lettore dice «Errore» anche se il file è integro — ascoltala da Chrome, o convertila dalla scheda «Le voci».</p>'
+        : '')
+      + '<p id="sc-voce-avviso" class="m-0 mb-2 text-[12px] text-[#1E2E26]/60">Ascoltala fino in fondo: finché non è finita, i bottoni che la pubblicano restano spenti.</p>'
+      + '<div class="flex gap-2 flex-wrap items-center">'
+      + '<button type="button" id="sc-voce-ok" class="bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" disabled>Pubblica la voce</button>'
+      + '<input id="sc-voce-motivo" class="border border-[#E5DFCF] rounded px-3 py-2 text-sm flex-1 min-w-[8rem]" maxlength="300" placeholder="Motivo (se la scarti)" />'
+      + '<button type="button" id="sc-voce-no" class="bg-[#F5EEDD] text-[#a33] border border-[#d97a7a] px-4 py-2 rounded text-sm cursor-pointer">Scarta la voce</button>'
+      + '</div><p id="sc-voce-esito" class="text-[13px] m-0 mt-2"></p>';
+
+    // Il lemma non ancora pubblicato puo' uscire insieme alla sua voce, ma solo
+    // dopo l'ascolto: nessuna scorciatoia che pubblichi la voce in automatico.
+    if (lemma && lemma.stato !== 'pubblicato' && !miei.has(id)) tutto?.classList.remove('hidden');
+
+    const player = $('sc-voce-player');
+    player?.addEventListener('ended', () => segnaAscoltata());
+    $('sc-voce-ok')?.addEventListener('click', () => decidiVoce('pubblicato'));
+    $('sc-voce-no')?.addEventListener('click', () => decidiVoce('rifiutato'));
+  }
+
+  // L'ascolto si registra QUANDO AVVIENE, non quando si decide. Le colonne
+  // `ascoltato_da` e `ascoltato_il` esistono da sempre e venivano riempite al
+  // momento del clic su «pubblica»: dicevano quindi «qualcuno ha deciso», non
+  // «qualcuno ha sentito». Sono due fatti diversi e il secondo e' quello che
+  // serve fra cinque anni.
+  async function segnaAscoltata() {
+    if (!voceAperta || voceAscoltata) return;
+    voceAscoltata = true;
+    const ok = $('sc-voce-ok'); const tutto = $('sc-pubblica-tutto'); const avviso = $('sc-voce-avviso');
+    if (ok) ok.disabled = false;
+    if (tutto) tutto.disabled = false;
+    if (avviso) { avviso.style.color = '#2d8659'; avviso.textContent = 'Ascoltata fino in fondo: ora puoi pubblicarla.'; }
+    const sess = (await supabase.auth.getSession()).data.session;
+    const { error } = await supabase.from('archivio_audio')
+      .update({ ascoltato_da: sess?.user?.id ?? null, ascoltato_il: new Date().toISOString() })
+      .eq('id', voceAperta.id);
+    // Se la traccia dell'ascolto non si scrive, l'ascolto c'e' stato lo stesso:
+    // non si rispegne il bottone in faccia a chi ha appena sentito la voce.
+    if (error) console.error('[voce] ascolto non registrato:', error.message);
+  }
+
+  async function decidiVoce(esito) {
+    if (!voceAperta) return;
+    const msg = $('sc-voce-esito');
+    const motivo = ($('sc-voce-motivo')?.value || '').trim();
+    if (esito === 'rifiutato' && motivo.length < 3) {
+      msg.style.color = '#a33';
+      msg.textContent = 'Scrivi perché la scarti: una voce scartata senza motivo, fra due anni, è indistinguibile da una persa.';
+      return;
+    }
+    if (esito === 'pubblicato' && !voceAscoltata) return;
+    const sess = (await supabase.auth.getSession()).data.session;
+    const { data, error } = await supabase.from('archivio_audio')
+      .update({
+        stato: esito,
+        motivo_rifiuto: esito === 'rifiutato' ? motivo : null,
+        ascoltato_da: sess?.user?.id ?? null,
+        ascoltato_il: new Date().toISOString(),
+      }).eq('id', voceAperta.id).select('id, lemma_id');
+    if (error || !data || !data.length) {
+      msg.style.color = '#a33';
+      msg.textContent = error ? 'Non salvato: ' + error.message : 'Non salvato: nessuna riga è cambiata.';
+      return false;
+    }
+    if (esito === 'pubblicato' && data[0].lemma_id) {
+      const { error: e2 } = await supabase.from('dizionario_lemma')
+        .update({ audio_id: voceAperta.id }).eq('id', data[0].lemma_id).select('id');
+      if (e2) { msg.style.color = '#a33'; msg.textContent = 'Voce approvata ma non agganciata alla parola: ' + e2.message; return false; }
+    }
+    msg.style.color = '#2d8659';
+    msg.textContent = esito === 'pubblicato' ? 'Pubblicata sotto la parola.' : 'Scartata, e resta agli atti con il motivo.';
+    setTimeout(() => { caricaLemmi().then(() => apriScheda(apertoId)); caricaAudio(); caricaQualita(); }, 800);
+    return true;
+  }
+
+  // Un gesto solo, quando si puo': parola e voce insieme. Abilitato SOLO dopo
+  // l'ascolto — e' il bottone stesso a nascere spento.
+  async function pubblicaTutto() {
+    if (!voceAscoltata) return;
+    const fatto = await decidiVoce('pubblicato');
+    if (fatto !== false) await pubblicaUno();
   }
 
   function contaDef() {
@@ -991,8 +1151,12 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   let audioInAttesa = [];
   async function caricaAudio() {
     const box = $('au-lista');
+    // [13/8/2026] IL ROVESCIO DELLA MEDAGLIA: si porta dentro il lemma
+    // collegato e il suo stato. Chi arriva da qui deve vedere subito se la
+    // parola scritta e' gia' pubblica — sono state dieci voci ferme sotto
+    // dieci parole gia' pubblicate, e da questa schermata non si vedeva.
     const { data, error } = await supabase.from('archivio_audio')
-      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, lemma_id, created_at, mime_originale, formato_audio')
+      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, lemma_id, created_at, mime_originale, formato_audio, lemma:lemma_id(lemma, stato, slug)')
       .eq('stato', 'in_attesa').order('created_at').limit(80);
     if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere le registrazioni: ' + H(error.message) + '</p>'; return; }
     if (!data || !data.length) {
@@ -1005,6 +1169,17 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
       + '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/60">'
       + [a.durata_secondi ? a.durata_secondi + 's' : null, a.mime_originale, 'portata da ' + H(a.portato_da_nome || 'ignoto'), quando(a.created_at)].filter(Boolean).join(' · ')
       + '</p>'
+      // La parola a cui e' attaccata, e a che punto e'. Se il lemma e' gia'
+      // pubblicato, questa voce e' l'unico pezzo che manca: si dice.
+      + (a.lemma
+        ? '<p class="m-0 mb-2 text-[13px] ' + (a.lemma.stato === 'pubblicato' ? 'text-[#a33]' : 'text-[#1E2E26]/70') + '">'
+          + 'Parola collegata: <strong>' + H(a.lemma.lemma) + '</strong> · ' + H(a.lemma.stato)
+          + (a.lemma.stato === 'pubblicato' ? ' — la parola è già pubblica, manca solo la voce' : '')
+          + ((a.termine_ladino || a.titolo || '').trim().toLowerCase() !== (a.lemma.lemma || '').trim().toLowerCase()
+            ? '<br/><span class="text-[#a33] font-semibold">La registrazione dice «' + H(a.termine_ladino || a.titolo) + '», la parola è «' + H(a.lemma.lemma) + '»: ascolta e decidi.</span>'
+            : '')
+          + '</p>'
+        : '<p class="m-0 mb-2 text-[13px] text-[#a33]">Nessuna parola collegata: questa voce non comparirà da nessuna parte finché non la si aggancia.</p>')
       + (a.voce_di_altri
         ? '<p class="m-0 mb-2 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33]') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
           + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
@@ -1021,11 +1196,29 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
           + '<button type="button" class="au-conv mt-2 bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Convertila in un formato che sentono tutti</button>'
           + '</div>'
         : '')
+      + '<p class="au-avviso m-0 mb-2 text-[12px] text-[#1E2E26]/60">Ascoltala fino in fondo: finché non è finita, «Pubblica» resta spento.</p>'
       + '<div class="flex gap-2 flex-wrap items-center">'
-      + '<button type="button" class="au-ok bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Pubblica sotto la parola</button>'
+      + '<button type="button" class="au-ok bg-[#2d8659] text-white px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" disabled>Pubblica sotto la parola</button>'
       + '<input class="au-motivo border border-[#E5DFCF] rounded px-3 py-2 text-sm flex-1 min-w-[8rem]" maxlength="300" placeholder="Motivo (se la scarti)" />'
       + '<button type="button" class="au-no bg-[#F5EEDD] text-[#a33] border border-[#d97a7a] px-4 py-2 rounded text-sm cursor-pointer">Scarta</button>'
       + '</div><p class="au-esito text-[13px] m-0 mt-2"></p></div>').join('');
+    // Stesso vincolo della scheda del lemma: si accende sull'evento di FINE
+    // riproduzione, non sul play e non su un timer. Scartare invece si puo'
+    // sempre: rifiutare una voce non ascoltata e' prudente, pubblicarla no.
+    box.querySelectorAll('[data-id]').forEach((card) => {
+      const player = card.querySelector('audio');
+      const ok = card.querySelector('.au-ok');
+      const avviso = card.querySelector('.au-avviso');
+      player?.addEventListener('ended', async () => {
+        if (ok) ok.disabled = false;
+        if (avviso) { avviso.style.color = '#2d8659'; avviso.textContent = 'Ascoltata fino in fondo: ora puoi pubblicarla.'; }
+        const sess = (await supabase.auth.getSession()).data.session;
+        const { error } = await supabase.from('archivio_audio')
+          .update({ ascoltato_da: sess?.user?.id ?? null, ascoltato_il: new Date().toISOString() })
+          .eq('id', card.getAttribute('data-id'));
+        if (error) console.error('[voce] ascolto non registrato:', error.message);
+      });
+    });
     box.querySelectorAll('.au-ok').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'pubblicato')));
     box.querySelectorAll('.au-conv').forEach((b) => b.addEventListener('click', () => convertiAudio(b)));
     box.querySelectorAll('.au-no').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'rifiutato')));
@@ -1184,6 +1377,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
 
   $('sc-salva')?.addEventListener('click', salvaScheda);
   $('sc-pubblica')?.addEventListener('click', pubblicaUno);
+  $('sc-pubblica-tutto')?.addEventListener('click', pubblicaTutto);
   $('sc-definizione')?.addEventListener('input', contaDef);
   $('sc-ritira-apri')?.addEventListener('click', () => mostra('sc-ritira'));
   $('sc-ritira-no')?.addEventListener('click', () => nascondi('sc-ritira'));

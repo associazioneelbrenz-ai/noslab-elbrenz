@@ -549,6 +549,12 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
     // la durata dichiarata non e' la durata vera e' un archivio che mente su un
     // metadato, ed e' il tipo di errore che non si scopre piu'.
     let durataReg = 0;
+    // [13/8/2026] La durata di un file CARICATO. Prima si mandava zero, con la
+    // spiegazione «di un file caricato non conosciamo la durata»: era vera un
+    // passo prima, non qui. Il file passa da `inWav`, che lo DECODIFICA per
+    // convertirlo, e a quel punto la durata esatta ce l'abbiamo in mano.
+    // Delle dieci voci in attesa, l'unica senza durata e' l'unica caricata.
+    let durataDecodificata = 0;
     const btnRec = document.getElementById('au-rec');
     const btnStop = document.getElementById('au-stop');
     const timer = document.getElementById('au-timer');
@@ -613,6 +619,7 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       const ctx = new Ctx();
       try {
         const audio = await ctx.decodeAudioData(await blob.arrayBuffer());
+        durataDecodificata = Math.max(1, Math.round(audio.duration || 0));
         // Le voci si mescolano in una sola: un archivio linguistico non ha
         // bisogno della stereofonia, e la meta' dello spazio si': si somma e
         // si divide, non si butta via un canale.
@@ -721,14 +728,18 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
         if (nota) nota.textContent = 'Il file è troppo grande: al massimo 6 MB. Per una parola bastano pochi secondi.';
         return;
       }
-      // Di un file caricato non conosciamo la durata: si manda zero, che a
-      // database diventa null. Meglio un dato assente di uno inventato.
+      // La durata la scopre `inWav` decodificando: si azzera qui e si riprende
+      // dopo la conversione. Se il browser non sa decodificare il file resta
+      // zero, che a database diventa null — meglio un dato assente di uno
+      // inventato, che resta la regola.
       durataReg = 0;
+      durataDecodificata = 0;
       if (nota) nota.textContent = 'Preparo il file…';
       inWav(f).then(function (wav) {
         // Anche i file caricati passano dalla conversione: un ogg/opus mandato
         // da un telefono Android sarebbe muto su iPhone esattamente come una
         // registrazione. Se il browser non sa decodificarlo, si tiene com'e'.
+        if (durataDecodificata > 0) durataReg = durataDecodificata;
         mostraPronta(wav || f, wav ? 'voce.wav' : (f.name || 'voce'));
       });
     });
