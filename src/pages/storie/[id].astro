@@ -39,6 +39,31 @@ if (id && /^[0-9a-fA-F-]{36}$/.test(id)) {
 }
 if (!s) return Astro.redirect('/storie');
 
+/**
+ * [13/8/2026] IL TESTO DENTRO LE FOTOGRAFIE DELLE PAGINE.
+ *
+ * Nelle storie capita spesso di caricare la fotografia di una pagina di libro:
+ * il contenuto e' li' e nessuno puo' leggerlo se non aprendo l'immagine e
+ * mettendoci gli occhi. Per i motori di ricerca, per Andreas e per un lettore
+ * di schermo quella pagina non esiste.
+ *
+ * Il testo compare solo se un curatore l'ha riletto e confermato. La fotografia
+ * resta: la trascrizione la accompagna e non la sostituisce.
+ */
+const trascrizioni = new Map<string, string>();
+try {
+  const sb2 = createClient(SUPABASE_URL, SUPABASE_ANON, { auth: { persistSession: false } });
+  const { data: tr } = await sb2.from('ocr_trascrizione')
+    .select('immagine_url, testo')
+    .eq('oggetto_tipo', 'storia').eq('oggetto_id', s.id).eq('stato', 'confermata');
+  for (const r of (tr ?? []) as { immagine_url: string; testo: string | null }[]) {
+    if (r.testo) trascrizioni.set(r.immagine_url, r.testo);
+  }
+} catch (e) {
+  // La storia si legge lo stesso: senza trascrizioni, com'era prima.
+  console.error('[storia] trascrizioni non lette:', e);
+}
+
 const dataIt = new Date(s.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 const descr = s.contenuto.length > 155 ? s.contenuto.slice(0, 155).trim() + '…' : s.contenuto;
 const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
@@ -49,7 +74,18 @@ const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
       <p class="mb-6"><a href="/storie" class="text-[#8a6215] text-sm no-underline hover:underline" style="font-family: 'Inter', sans-serif;">← Storie dalle valli</a></p>
 
-      {s.copertina_url && <img src={imgRid(s.copertina_url, 1440)} srcset={srcSetCard(s.copertina_url, 720)} sizes="(min-width: 768px) 720px, 100vw" alt={s.titolo} width="1200" height="675" class="w-full h-auto rounded-md mb-6" loading="eager" decoding="async" />}
+      {s.copertina_url && (
+        <figure class="m-0 mb-6">
+          <img src={imgRid(s.copertina_url, 1440)} srcset={srcSetCard(s.copertina_url, 720)} sizes="(min-width: 768px) 720px, 100vw" alt={s.titolo} width="1200" height="675" class="w-full h-auto rounded-md" loading="eager" decoding="async" />
+          {trascrizioni.get(s.copertina_url) && (
+            <figcaption class="mt-3 rounded-md border border-[#C8923E]/25 bg-[#FDF9F0] px-4 py-3">
+              <p class="text-[11px] tracking-[0.16em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">Il testo di questa pagina</p>
+              <div class="text-[#1E2E26]/90 leading-relaxed whitespace-pre-wrap text-[15px]" style="font-family: 'Source Serif 4', Georgia, serif;">{trascrizioni.get(s.copertina_url)}</div>
+              <p class="text-[12px] text-[#1E2E26]/55 m-0 mt-3" style="font-family: 'Inter', sans-serif;">Trascrizione riletta e confermata da un curatore. Il documento resta la fotografia qui sopra.</p>
+            </figcaption>
+          )}
+        </figure>
+      )}
       <h1 class="text-2xl md:text-3xl leading-tight text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">{s.titolo}</h1>
       <p class="text-[12px] tracking-[0.06em] text-[#8a6215] m-0 mb-6" style="font-family: 'Inter', sans-serif;">di {s.autore_nome} · {dataIt}</p>
 
@@ -57,7 +93,18 @@ const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
 
       {galleria.length > 0 && (
         <div class="grid gap-4 mt-8">
-          {galleria.map((u, i) => <img src={imgRid(u, 1440)} srcset={srcSetCard(u, 720)} sizes="(min-width: 768px) 720px, 100vw" alt={`${s!.titolo} ${i + 1}`} loading="lazy" decoding="async" class="w-full h-auto rounded-md" />)}
+          {galleria.map((u, i) => (
+            <figure class="m-0">
+              <img src={imgRid(u, 1440)} srcset={srcSetCard(u, 720)} sizes="(min-width: 768px) 720px, 100vw" alt={`${s!.titolo} ${i + 1}`} loading="lazy" decoding="async" class="w-full h-auto rounded-md" />
+              {trascrizioni.get(u) && (
+                <figcaption class="mt-3 rounded-md border border-[#C8923E]/25 bg-[#FDF9F0] px-4 py-3">
+                  <p class="text-[11px] tracking-[0.16em] uppercase text-[#8a6215] m-0 mb-2" style="font-family: 'Inter', sans-serif;">Il testo di questa pagina</p>
+                  <div class="text-[#1E2E26]/90 leading-relaxed whitespace-pre-wrap text-[15px]" style="font-family: 'Source Serif 4', Georgia, serif;">{trascrizioni.get(u)}</div>
+                  <p class="text-[12px] text-[#1E2E26]/55 m-0 mt-3" style="font-family: 'Inter', sans-serif;">Trascrizione riletta e confermata da un curatore. Il documento resta la fotografia qui sopra.</p>
+                </figcaption>
+              )}
+            </figure>
+          ))}
         </div>
       )}
 

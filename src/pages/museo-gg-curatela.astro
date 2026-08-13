@@ -25,7 +25,18 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
   <main class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
       <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
-      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8" style="font-family: 'Playfair Display', serif; font-weight: 500;">Curatela · Museo della Grande Guerra</h1>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">Curatela · Museo della Grande Guerra</h1>
+
+      {/* [13/8/2026] LA PORTA PER LE TRASCRIZIONI.
+          La pagina /trascrizioni esisteva da settimane e non era collegata da
+          nessuna parte: zero trascrizioni fatte, e non perche' non servisse.
+          Una funzione che non si raggiunge non esiste, anche quando sotto e'
+          costruita bene — e' successo con il glossario e con i libri sociali. */}
+      <p class="m-0 mb-8">
+        <a href="/trascrizioni" class="text-[#8a6215] text-sm no-underline hover:underline">
+          Leggi il testo dentro una fotografia di pagina →
+        </a>
+      </p>
 
       <p id="mu-loading" class="text-[#1E2E26]/60">Carico…</p>
 
