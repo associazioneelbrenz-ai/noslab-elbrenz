@@ -19,7 +19,11 @@ export function imgRid(url: string | null | undefined, larghezza: number, qualit
   if (!url.includes(PUBBLICO)) return url;
   const u = url.replace(PUBBLICO, RENDER);
   const sep = u.includes('?') ? '&' : '?';
-  return `${u}${sep}width=${larghezza}&quality=${qualita}`;
+  // [15/8] Senza resize=contain, Supabase ritaglia invece di rimpicciolire:
+  // dando solo `width`, l'altezza di riferimento resta quella ORIGINALE e il
+  // default 'cover' ci scala dentro tagliando i lati. Gemella della stessa
+  // correzione in elbrenz-community/src/lib/immagini.ts.
+  return `${u}${sep}width=${larghezza}&quality=${qualita}&resize=contain`;
 }
 
 /** srcset a due densita' per le card: 1x e 2x. */

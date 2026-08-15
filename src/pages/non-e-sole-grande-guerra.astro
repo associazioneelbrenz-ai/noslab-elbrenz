@@ -491,7 +491,9 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
         const PUBBLICO = '/storage/v1/object/public/';
         if (!u || !u.includes(PUBBLICO)) return u;
         const v = u.replace(PUBBLICO, '/storage/v1/render/image/public/');
-        return `${v}${v.includes('?') ? '&' : '?'}width=${larghezza}&quality=75`;
+        // [15/8] resize=contain, altrimenti Supabase ritaglia i lati invece
+        // di rimpicciolire tutta la foto (vedi lib/immagini.ts).
+        return `${v}${v.includes('?') ? '&' : '?'}width=${larghezza}&quality=75&resize=contain`;
       };
 
       function apri(p: any) {
