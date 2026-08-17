@@ -1,0 +1,203 @@
+---
+/**
+ * /registro-curatela — chi ha scritto cosa su luoghi, storie e museo.
+ *
+ * PERCHE' ESISTE. Il 17/8 sei persone del direttivo hanno ricevuto il ruolo
+ * "curatore_contenuti": possono creare, modificare e pubblicare luoghi,
+ * storie e pezzi del museo senza passare da chi ha accesso al database. Fino
+ * a ieri nessuna di queste tre tabelle lasciava traccia di chi avesse
+ * cambiato cosa — solo le correzioni del glossario avevano un "prima/dopo".
+ *
+ * Un trigger (tg_registro_curatela, migrazione "curatore_contenuti_e_
+ * registro_modifiche") scrive una riga in registro_curatela a OGNI
+ * inserimento, modifica o cancellazione su queste tre tabelle, con la riga
+ * intera prima e dopo — chiunque abbia il permesso di scrivere, non solo i
+ * sei di oggi.
+ *
+ * CHI PUO' VEDERLO. Solo chi e' gia' admin (livello 50+): e' la sorveglianza
+ * su chi ha il ruolo piu' stretto, non deve poterla leggere chi e' sorvegliato
+ * (la policy RLS lo impedisce comunque anche a chi aggirasse questa pagina).
+ *
+ * Accesso con codice via email, poi ruolo >= 50.
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-3 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Registro · El Brenz" description="Area riservata: chi ha modificato luoghi, storie e museo." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-4xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Registro delle modifiche
+      </h1>
+      <p class="text-[#1E2E26]/75 m-0 mb-8 max-w-2xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Ogni scrittura su luoghi, storie e pezzi del museo, con chi l'ha fatta e la riga intera prima e dopo.
+      </p>
+
+      <p id="rc-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      <section id="rc-login-1" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti inviamo un codice di sei cifre.</p>
+        <input class={inputCls} type="email" id="rc-email" autocomplete="email" placeholder="nome@esempio.it" />
+        <button type="button" id="rc-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-semibold cursor-pointer border-0">Invia codice</button>
+        <p id="rc-err1" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      <section id="rc-login-2" class="hidden bg-white border border-[#E5DFCF] rounded-lg p-6 max-w-md">
+        <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Codice inviato a <strong id="rc-echo"></strong>.</p>
+        <input class={inputCls} type="text" id="rc-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+        <button type="button" id="rc-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold cursor-pointer border-0">Verifica e accedi</button>
+        <p id="rc-err2" class="text-sm text-[#a33] mt-3 m-0"></p>
+      </section>
+
+      <section id="rc-nego" class="hidden bg-white border-l-4 border-[#a33] rounded p-6">
+        <p class="m-0 text-[#1E2E26]">Questa pagina è riservata al direttivo.</p>
+      </section>
+
+      <section id="rc-pannello" class="hidden">
+        <div class="flex items-center justify-between gap-3 flex-wrap mb-6">
+          <p class="text-sm text-[#1E2E26]/70 m-0">Sei <strong id="rc-utente"></strong></p>
+          <div class="flex gap-2 flex-wrap">
+            <select id="rc-tabella" class={inputCls} style="width: 170px;">
+              <option value="">Tutte le tabelle</option>
+              <option value="luoghi_interesse">Luoghi</option>
+              <option value="storia">Storie</option>
+              <option value="museo_gg_pezzo">Museo</option>
+            </select>
+            <button type="button" id="rc-ricarica" class="text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Ricarica</button>
+          </div>
+        </div>
+
+        <div id="rc-lista" class="grid gap-3"></div>
+        <button type="button" id="rc-altre" class="hidden mt-6 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Carica altre 30</button>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const $ = (id: string) => document.getElementById(id);
+  const mostra = (id: string) => $(id)?.classList.remove('hidden');
+  const nascondi = (id: string) => $(id)?.classList.add('hidden');
+  const val = (id: string) => (($(id) as HTMLInputElement | HTMLSelectElement | null))?.value ?? '';
+  const H = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const TABELLE: Record<string, string> = { luoghi_interesse: 'Luoghi', storia: 'Storie', museo_gg_pezzo: 'Museo' };
+  const AZIONI: Record<string, string> = { insert: 'creato', update: 'modificato', delete: 'eliminato' };
+  // Campi identificativi per riga, per tabella: e' il "titolo" da mostrare
+  // nella card senza dover ricostruire l'intera scheda.
+  const CAMPO_NOME: Record<string, string> = { luoghi_interesse: 'nome', storia: 'titolo', museo_gg_pezzo: 'titolo' };
+
+  let cache: Map<string, { nome: string; cognome: string }> = new Map();
+  async function nomiUtenti(ids: string[]) {
+    const mancanti = [...new Set(ids)].filter((id) => id && !cache.has(id));
+    if (!mancanti.length) return;
+    const { data } = await supabase.from('utente').select('id, nome, cognome').in('id', mancanti);
+    for (const r of (data ?? []) as any[]) cache.set(r.id, { nome: r.nome, cognome: r.cognome });
+  }
+
+  // Confronto "prima/dopo": solo i campi che sono davvero cambiati, non
+  // l'intera riga — updated_at cambia sempre e non dice niente da solo.
+  function diff(prima: any, dopo: any): string {
+    if (!prima) return `<span class="text-[#2d8659]">creato</span>`;
+    if (!dopo) return `<span class="text-[#a33]">eliminato</span>`;
+    const chiavi = new Set([...Object.keys(prima), ...Object.keys(dopo)]);
+    const righe: string[] = [];
+    for (const k of chiavi) {
+      if (k === 'updated_at' || k === 'created_at') continue;
+      const a = JSON.stringify(prima[k]), b = JSON.stringify(dopo[k]);
+      if (a === b) continue;
+      righe.push(`<div><strong class="text-[#8a6215]">${H(k)}</strong><br/><span class="text-[#a33] line-through">${H(prima[k] ?? '—')}</span> → <span class="text-[#2d8659]">${H(dopo[k] ?? '—')}</span></div>`);
+    }
+    return righe.length ? righe.join('') : '<span class="text-[#1E2E26]/50">nessun campo di contenuto cambiato</span>';
+  }
+
+  let offset = 0;
+  const PAGINA = 30;
+
+  async function carica(append = false) {
+    const box = $('rc-lista');
+    if (!box) return;
+    if (!append) { offset = 0; box.innerHTML = '<p class="text-[#1E2E26]/60">Carico…</p>'; }
+
+    const tabella = val('rc-tabella');
+    let q = supabase.from('registro_curatela')
+      .select('id, tabella, record_id, azione, utente_id, dati_prima, dati_dopo, created_at')
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGINA - 1);
+    if (tabella) q = q.eq('tabella', tabella);
+
+    const { data, error } = await q;
+    if (error) { box.innerHTML = `<p class="text-[#a33]">Non riesco a leggere il registro: ${H(error.message)}</p>`; return; }
+    const righe = data ?? [];
+    if (!append) box.innerHTML = '';
+    if (!righe.length && !append) { box.innerHTML = '<p class="text-[#1E2E26]/60">Nessuna modifica registrata.</p>'; }
+
+    await nomiUtenti(righe.map((r: any) => r.utente_id));
+
+    for (const r of righe as any[]) {
+      const chi = r.utente_id ? cache.get(r.utente_id) : null;
+      const chiNome = chi ? `${chi.nome} ${chi.cognome}` : (r.utente_id ? r.utente_id.slice(0, 8) : 'sconosciuto');
+      const riga = r.dati_dopo ?? r.dati_prima ?? {};
+      const nomeRiga = riga[CAMPO_NOME[r.tabella]] ?? r.record_id;
+      const quando = new Date(r.created_at).toLocaleString('it-IT', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      const el = document.createElement('div');
+      el.className = 'bg-white border border-[#E5DFCF] rounded-md p-4';
+      el.innerHTML = `
+        <div class="flex items-center justify-between gap-3 flex-wrap mb-2">
+          <p class="m-0 text-sm text-[#1E2E26]">
+            <strong>${H(chiNome)}</strong> ha ${AZIONI[r.azione] ?? r.azione} <strong>${H(TABELLE[r.tabella] ?? r.tabella)}</strong> · «${H(nomeRiga)}»
+          </p>
+          <span class="text-xs text-[#1E2E26]/50 flex-none">${quando}</span>
+        </div>
+        <div class="text-[13px] grid gap-1.5 mt-2 pt-2 border-t border-[#E5DFCF]">${diff(r.dati_prima, r.dati_dopo)}</div>`;
+      box.appendChild(el);
+    }
+    offset += righe.length;
+    if (righe.length === PAGINA) mostra('rc-altre'); else nascondi('rc-altre');
+  }
+  $('rc-tabella')?.addEventListener('change', () => carica(false));
+  $('rc-ricarica')?.addEventListener('click', () => carica(false));
+  $('rc-altre')?.addEventListener('click', () => carica(true));
+
+  async function avvia() {
+    const { data: { session } } = await supabase.auth.getSession();
+    nascondi('rc-loading');
+    if (!session) { mostra('rc-login-1'); return; }
+    const { data: ruoli } = await supabase.from('utente_ruolo')
+      .select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', session.user.id);
+    const puo = (ruoli ?? []).map((r: any) => r.ruolo).filter(Boolean).some((r: any) => (r.livello ?? 0) >= 50);
+    if (!puo) { mostra('rc-nego'); return; }
+    if ($('rc-utente')) ($('rc-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email;
+    mostra('rc-pannello');
+    carica(false);
+  }
+
+  $('rc-send')?.addEventListener('click', async () => {
+    const email = (val('rc-email') || '').trim().toLowerCase();
+    const err = $('rc-err1');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { if (err) err.textContent = 'Email non valida.'; return; }
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    if (error || !data?.ok) { if (err) err.textContent = 'Impossibile inviare il codice.'; return; }
+    (window as any)._rcEmail = email;
+    if ($('rc-echo')) ($('rc-echo') as HTMLElement).textContent = email;
+    nascondi('rc-login-1'); mostra('rc-login-2');
+  });
+
+  $('rc-verify')?.addEventListener('click', async () => {
+    const codice = (val('rc-code') || '').trim();
+    const err = $('rc-err2');
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._rcEmail, codice } });
+    if (error || !data?.ok || !data?.session) { if (err) err.textContent = 'Codice non valido o scaduto.'; return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+
+  avvia();
+</script>
