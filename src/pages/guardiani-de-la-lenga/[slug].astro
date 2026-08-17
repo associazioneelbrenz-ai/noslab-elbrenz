@@ -26,6 +26,7 @@
  * sezione non compare: comparira' da sola il giorno che arriva.
  */
 import Layout from '../../layouts/Layout.astro';
+import Condividi from '../../components/Condividi.astro';
 import { createClient } from '@supabase/supabase-js';
 
 type Voce = {
@@ -121,6 +122,10 @@ const eDetto = voce.tipo && voce.tipo !== 'parola';
 // significato, che e' esattamente cio' che qualcuno sta cercando.
 const titoloSeo = voce.termine + (voce.significato_it ? ', ' + voce.significato_it.slice(0, 40) : ' · ladino anaunico');
 const descrizione = [voce.significato_it, parlataL].filter(Boolean).join(' · ').slice(0, 180);
+// [17/8/2026] Card disegnata per la voce (scripts/genera-og-glossario.mjs),
+// non piu' l'OG generica del glossario intero: prima chi condivideva una
+// parola mandava in giro il biglietto da visita di tutte le 57+.
+const ogVoce = `/og/glossario/${voce.slug}.jpg`;
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'DefinedTerm',
@@ -139,7 +144,7 @@ const jsonLd = {
 <Layout
   title={titoloSeo}
   description={descrizione}
-  ogImage="/og/og-default.jpg"
+  ogImage={ogVoce}
 >
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
@@ -159,9 +164,13 @@ const jsonLd = {
       </p>
 
       {voce.significato_it && (
-        <p class="text-xl text-[#1E2E26] leading-relaxed m-0 mb-6"
+        <p class="text-xl text-[#1E2E26] leading-relaxed m-0 mb-4"
            style="font-family: 'Source Serif 4', Georgia, serif;">{voce.significato_it}</p>
       )}
+
+      <div class="mb-6">
+        <Condividi titolo={voce.termine} testo={voce.significato_it ?? undefined} etichetta="Condividi" />
+      </div>
 
       {voce.esempio_uso && (
         <p class="text-lg text-[#1E2E26]/80 italic leading-relaxed border-l-2 border-[#C8923E]/50 pl-4 m-0 mb-6"

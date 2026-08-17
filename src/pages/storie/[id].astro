@@ -67,9 +67,16 @@ try {
 const dataIt = new Date(s.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
 const descr = s.contenuto.length > 155 ? s.contenuto.slice(0, 155).trim() + '…' : s.contenuto;
 const galleria = s.immagini_urls.filter((u) => u && u !== s!.copertina_url);
+
+// [17/8/2026] L'OG e' una card disegnata (scripts/genera-og-storie.mjs), non
+// piu' la foto di copertina: il socio non sempre ha una foto d'effetto, il
+// titolo invece c'e' sempre. Asset statico committato al prebuild, come
+// eventi e glossario: una storia promossa dopo l'ultimo deploy aspetta il
+// prossimo per avere la sua card, stesso ritardo gia' accettato altrove.
+const ogStoria = `/og/storie/${s.id}.jpg`;
 ---
 
-<Layout title={`${s.titolo} · Storie El Brenz`} description={descr} ogImage={imgRid(s.copertina_url ?? s.immagini_urls[0] ?? null, 1200) ?? '/og/og-default.jpg'}>
+<Layout title={`${s.titolo} · Storie El Brenz`} description={descr} ogImage={ogStoria}>
   <main class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
       <p class="mb-6"><a href="/storie" class="text-[#8a6215] text-sm no-underline hover:underline" style="font-family: 'Inter', sans-serif;">← Storie dalle valli</a></p>

@@ -7,15 +7,18 @@
  * Facebook pescavano l'OG generica della sezione) ne' indicizzabili: una
  * fotografia con la sua fonte e il suo racconto non aveva un indirizzo proprio.
  *
- * L'OG e' LA FOTOGRAFIA STESSA, non una card disegnata: un pezzo di museo e'
- * gia' un'immagine, e cosi' non c'e' nessuna PNG da rigenerare e ricommettere
- * dopo ogni pubblicazione (vedi il rito degli eventi, che qui non serve).
+ * [17/8/2026] L'OG ERA la fotografia stessa, di proposito: «un pezzo di museo
+ * e' gia' un'immagine». Superato dalla richiesta di allineare Storie, Museo e
+ * Glossario allo stesso trattamento — vedi scripts/genera-og-museo.mjs, che
+ * come gli eventi rigenera una card per pezzo a ogni build. La fotografia
+ * resta il contenuto della pagina, cambia solo l'anteprima social.
  *
  * SSR come la sezione: la vetrina cambia quando il curatore pubblica dal
  * pannello, non quando si fa il build. Il filtro stato='pubblicato' sta nella
  * query e nella policy: un pezzo in bozza o in attesa qui da' 404.
  */
 import Layout from '../../layouts/Layout.astro';
+import Condividi from '../../components/Condividi.astro';
 import { createClient } from '@supabase/supabase-js';
 
 export const prerender = false;
@@ -109,7 +112,7 @@ const cartellino: [string, string | null][] = [
   ['Donatore', pezzo.donatore],
 ];
 
-const copertina = pezzo.immagini_urls?.[0] ?? '/og/og-grande-guerra.jpg';
+const ogPezzo = `/og/museo/${pezzo.slug}.jpg`;
 const sommario = (pezzo.descrizione ?? pezzo.racconto ?? '')
   .replace(/\s+/g, ' ').trim().slice(0, 180);
 const descrizioneSeo = sommario
@@ -137,7 +140,7 @@ const jsonLd = {
 <Layout
   title={`${pezzo.titolo} · Museo della Grande Guerra · El Brenz`}
   description={descrizioneSeo}
-  ogImage={copertina}
+  ogImage={ogPezzo}
 >
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
@@ -204,6 +207,10 @@ const jsonLd = {
             <div><dt class="inline font-semibold text-[#8a6215]">{k}:</dt> <dd class="inline m-0">{v}</dd></div>
           ))}
         </dl>
+      </div>
+
+      <div class="mt-6">
+        <Condividi titolo={pezzo.titolo} testo={sommario || undefined} />
       </div>
 
       <p class="mt-8 text-sm text-[#1E2E26]/70 leading-relaxed" style="font-family: 'Inter', sans-serif;">
