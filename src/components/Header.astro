@@ -116,6 +116,10 @@ const navItems: NavItem[] = [
   {
     label: t('nav.archivio'),
     children: [
+      // AGGIUNTA 17/8/2026: la ricerca unica su glossario, storie, museo,
+      // articoli, luoghi ed eventi. In cima al gruppo: e' il modo piu' rapido
+      // di trovare qualcosa quando non si sa gia' in che sezione guardare.
+      { href: '/cerca', label: t('nav.cerca') },
       // AGGIUNTA 1/8/2026: l'indice generale. Prima /articoli dava 404 e i
       // 108 articoli erano raggiungibili solo con l'URL diretto.
       { href: '/articoli', label: t('nav.tuttiarticoli') },

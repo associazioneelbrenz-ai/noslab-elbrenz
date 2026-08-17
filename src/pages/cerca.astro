@@ -1,0 +1,100 @@
+---
+/**
+ * /cerca — un punto solo per cercare in tutto quello che l'archivio ha reso
+ * pubblico: glossario, storie, museo, articoli, luoghi, eventi e le
+ * trascrizioni OCR confermate (che portano a chi le ospita, non hanno una
+ * scheda propria).
+ *
+ * La ricerca vera vive nel database (funzione cerca_archivio, migrazione
+ * "ricerca_archivio", 17/8/2026): full-text con unaccent, cosi' "Male" trova
+ * anche "Malè". Qui c'e' solo la vetrina — STATICA, la query gira lato
+ * client via RPC, non serve SSR per una casella di ricerca.
+ */
+import Layout from '../layouts/Layout.astro';
+
+export const prerender = true;
+
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-3 text-[#1E2E26] rounded-md focus:outline-none focus:border-[#C8923E] text-lg';
+---
+
+<Layout title="Cerca · El Brenz" description="Cerca in tutto l'archivio: glossario, storie, museo, articoli, luoghi ed eventi delle Valli del Noce." ogImage="/og/og-default.jpg">
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-3xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Tutto l'archivio</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        Cerca
+      </h1>
+      <p class="text-[#1E2E26]/75 m-0 mb-6 max-w-2xl" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Una parola, un nome di paese, un termine ladino: cerca insieme nel glossario, nelle storie, nel museo, negli articoli, nei luoghi e negli eventi.
+      </p>
+
+      <input type="search" id="cr-q" class={inputCls} placeholder="Cerca…" autocomplete="off" />
+
+      <div id="cr-esito" class="mt-8"></div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const $ = (id: string) => document.getElementById(id);
+  const H = (s: unknown) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  const ETICHETTA: Record<string, string> = {
+    glossario: 'Glossario', storia: 'Storia', museo: 'Museo', articolo: 'Articolo',
+    luogo: 'Luogo', evento: 'Evento', trascrizione: 'Dentro una fotografia',
+  };
+  const COLORE: Record<string, string> = {
+    glossario: '#5b6ea8', storia: '#8a6215', museo: '#8a3a3a', articolo: '#2d8659',
+    luogo: '#6b8e23', evento: '#b0872f', trascrizione: '#C8923E',
+  };
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  async function cerca(query: string) {
+    const box = $('cr-esito');
+    if (!box) return;
+    const q = query.trim();
+    if (q.length < 2) { box.innerHTML = ''; return; }
+    box.innerHTML = '<p class="text-[#1E2E26]/50">Cerco…</p>';
+
+    const { data, error } = await supabase.rpc('cerca_archivio', { p_query: q, p_limite: 30 });
+    if (error) {
+      box.innerHTML = `<p class="text-[#a33]">Ricerca non riuscita: ${H(error.message)}</p>`;
+      return;
+    }
+    const righe = (data ?? []) as { tipo: string; titolo: string; estratto: string; url: string; rango: number }[];
+    if (!righe.length) {
+      box.innerHTML = `<p class="text-[#1E2E26]/60">Nessun risultato per «${H(q)}».</p>`;
+      return;
+    }
+    box.innerHTML = `<p class="text-sm text-[#1E2E26]/55 mb-4">${righe.length} risultat${righe.length === 1 ? 'o' : 'i'}</p>` +
+      '<div class="grid gap-3">' +
+      righe.map((r) => {
+        const colore = COLORE[r.tipo] ?? '#C8923E';
+        return `<a href="${H(r.url)}" class="block bg-white border border-[#E5DFCF] rounded-md p-4 no-underline hover:border-[#C8923E] transition-colors">
+          <span style="background:${colore}1f;color:${colore};border:1px solid ${colore}55;" class="inline-block text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full mb-2">${H(ETICHETTA[r.tipo] ?? r.tipo)}</span>
+          <p class="m-0 text-[#1E2E26] font-medium" style="font-family: 'Playfair Display', serif; font-size: 17px;">${H(r.titolo)}</p>
+          ${r.estratto ? `<p class="m-0 mt-1.5 text-sm text-[#1E2E26]/70 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">${H(r.estratto)}…</p>` : ''}
+        </a>`;
+      }).join('') +
+      '</div>';
+  }
+
+  $('cr-q')?.addEventListener('input', (e) => {
+    const v = (e.target as HTMLInputElement).value;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => cerca(v), 300);
+    const url = new URL(window.location.href);
+    if (v.trim()) url.searchParams.set('q', v); else url.searchParams.delete('q');
+    window.history.replaceState({}, '', url);
+  });
+
+  // Arrivo da un link condiviso (?q=…) o da un rilancio: parte subito.
+  const iniziale = new URLSearchParams(window.location.search).get('q');
+  if (iniziale) {
+    (($('cr-q') as HTMLInputElement)).value = iniziale;
+    cerca(iniziale);
+  }
+</script>

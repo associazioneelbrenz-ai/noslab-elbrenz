@@ -93,6 +93,7 @@ export const ui = {
     'nav.fioi': 'Fiöi dal Nos',
     'nav.guardiani': 'Guardiani de la lenga',
     // Nav — Archivio
+    'nav.cerca': 'Cerca',
     'nav.archiviostorico': 'Archivio storico',
     'nav.tuttiarticoli': 'Tutti gli articoli',
     'nav.archiviodigitale': 'Archivio digitale',
@@ -150,6 +151,7 @@ export const ui = {
     'nav.unaterra': 'Una terra, cinque lingue',
     'nav.fioi': 'Fiöi dal Nos',
     'nav.guardiani': 'Guardiani de la lenga',
+    'nav.cerca': 'Suchen',
     'nav.archiviostorico': 'Historisches Archiv',
     'nav.tuttiarticoli': 'Alle Beiträge',
     'nav.archiviodigitale': 'Digitales Archiv',
@@ -204,6 +206,7 @@ export const ui = {
     'nav.unaterra': 'Una terra, cinque lingue',
     'nav.fioi': 'Fiöi dal Nos',
     'nav.guardiani': 'Guardiani de la lenga',
+    'nav.cerca': 'Search',
     'nav.archiviostorico': 'Historical archive',
     'nav.tuttiarticoli': 'All articles',
     'nav.archiviodigitale': 'Digital archive',
