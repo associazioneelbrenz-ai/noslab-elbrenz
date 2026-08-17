@@ -18,7 +18,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 const { data: luoghiRaw } = await supabase
   .from('v_luoghi_pagina')
-  .select('slug, nome, categoria, valle, descrizione_breve')
+  .select('slug, nome, categoria, valle, descrizione_breve, nome_ladino')
   .order('nome');
 const luoghi = luoghiRaw ?? [];
 
@@ -83,7 +83,7 @@ const descrizione = `I ${luoghi.length} luoghi di interesse storico e culturale 
                   <Fragment set:html={sigilloCategoria(l.categoria, COLORI_LUOGHI[l.categoria] ?? '#C8923E', 20)} />
                 </span>
                 <span class="min-w-0">
-                  <strong class="text-[#1E2E26] block">{l.nome}</strong>
+                  <strong class="text-[#1E2E26] block">{l.nome}{l.nome_ladino && <em class="text-[#8a6215] font-normal"> · {l.nome_ladino}</em>}</strong>
                   <span class="text-xs text-[#1E2E26]/55" style="font-family: 'Inter', sans-serif;">{CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · {VALLI_LUOGHI[l.valle] ?? l.valle}</span>
                   {l.descrizione_breve && <span class="block text-sm text-[#1E2E26]/75 mt-1" style="font-family: 'Source Serif 4', Georgia, serif;">{l.descrizione_breve}</span>}
                 </span>

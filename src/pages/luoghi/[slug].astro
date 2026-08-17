@@ -30,11 +30,12 @@ type Luogo = {
   lat: number; lng: number; descrizione_breve: string | null;
   descrizione_estesa: string | null; meta_description: string | null;
   url_articolo: string | null; fonte_immagine: string | null;
+  nome_ladino: string | null; nome_tedesco: string | null;
 };
 
 const { data: luogo } = await supabase
   .from('v_luoghi_pagina')
-  .select('id, slug, nome, categoria, valle, lat, lng, descrizione_breve, descrizione_estesa, meta_description, url_articolo, fonte_immagine')
+  .select('id, slug, nome, categoria, valle, lat, lng, descrizione_breve, descrizione_estesa, meta_description, url_articolo, fonte_immagine, nome_ladino, nome_tedesco')
   .eq('slug', slug)
   .maybeSingle<Luogo>();
 
@@ -63,6 +64,8 @@ const schemaPlace = {
   '@context': 'https://schema.org',
   '@type': 'Place',
   name: luogo.nome,
+  ...([luogo.nome_ladino, luogo.nome_tedesco].filter(Boolean).length
+    ? { alternateName: [luogo.nome_ladino, luogo.nome_tedesco].filter(Boolean) } : {}),
   description: descrizione,
   geo: { '@type': 'GeoCoordinates', latitude: luogo.lat, longitude: luogo.lng },
   address: { '@type': 'PostalAddress', addressRegion: valleLabel, addressCountry: 'IT' },
@@ -91,6 +94,11 @@ const schemaPlace = {
         </span>
         <div>
           <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 leading-tight" style="font-family: 'Playfair Display', serif; font-weight: 500;">{luogo.nome}</h1>
+          {(luogo.nome_ladino || luogo.nome_tedesco) && (
+            <p class="text-base text-[#8a6215] italic m-0 mt-1" style="font-family: 'Playfair Display', serif;">
+              {[luogo.nome_ladino && `${luogo.nome_ladino} (ladino)`, luogo.nome_tedesco && `${luogo.nome_tedesco} (tedesco)`].filter(Boolean).join(' · ')}
+            </p>
+          )}
           <p class="text-sm text-[#1E2E26]/60 m-0 mt-2" style="font-family: 'Inter', sans-serif;">{categoriaLabel} · {valleLabel}</p>
         </div>
       </div>
