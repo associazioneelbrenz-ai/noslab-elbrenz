@@ -87,6 +87,16 @@ Deno.serve(async (req) => {
   const oggetto_id = String(c.oggetto_id ?? '');
   const immagine_url = String(c.immagine_url ?? '');
   if (!['storia', 'museo_pezzo', 'archivio'].includes(oggetto_tipo)) return J({ errore: 'oggetto_non_valido' }, 400, origin);
+  // [17/8] Le storie personali non sono il Museo: la richiesta la puo' fare
+  // chiunque abbia scritto un racconto, non solo un curatore che rivede
+  // materiale d'archivio. Ogni trascrizione paga token Anthropic, e non deve
+  // poterla avviare chiunque abbia raggiunto il livello collaboratore (25) —
+  // qui serve il livello admin (50), che oggi e' solo Cristian Bresadola.
+  // museo_pezzo/archivio restano ai curatori, come da regola originale.
+  if (oggetto_tipo === 'storia') {
+    const { data: puoStoria } = await sb.rpc('has_ruolo_min', { p_utente_id: udata.user.id, p_livello_min: 50 });
+    if (puoStoria !== true) return J({ errore: 'riservato_a_chi_decide_i_costi' }, 403, origin);
+  }
   if (!/^[0-9a-f-]{36}$/i.test(oggetto_id)) return J({ errore: 'identificativo_non_valido' }, 400, origin);
   // Solo immagini nostre: un indirizzo altrui trasformerebbe questa funzione in
   // un lettore di pagine per chiunque, a spese dell'Associazione.
