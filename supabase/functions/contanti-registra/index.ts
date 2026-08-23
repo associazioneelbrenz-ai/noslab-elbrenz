@@ -133,75 +133,94 @@ Deno.serve(async (req: Request) => {
 
   const anno = new Date(incassatoIl).getFullYear();
 
-  // 4) Domanda: aggiorna quella esistente o creala (iscrizione di persona).
-  //
-  // [6/8/2026] QUI L'EMAIL FACEVA DA CHIAVE, E SU DUE CASE NON REGGE.
-  // Prima si prendeva `.ilike(email).limit(1)`, senza ordine e senza filtro di
-  // stato. Due situazioni reali la rompono:
-  //   - la casella condivisa (Diego Magnoni e Nadia Pangrazzi stanno sullo
-  //     stesso indirizzo, come Monica Valentinotti e Maria Luisa Battistini):
-  //     l'incasso di una poteva finire sulla posizione dell'altra;
-  //   - il doppione chiuso (il caso di Clarissa e Franca): il versamento poteva
-  //     attaccarsi alla domanda annullata.
-  // Su un movimento di cassa attribuire alla persona sbagliata e' peggio che
-  // fermarsi, perche' produce due errori insieme: manca a una e avanza all'altra.
-  //
-  // Ora: si guardano tutte le domande di quell'indirizzo, si scartano le chiuse,
-  // e se restano piu' persone si sceglie per NOME. Se il nome non decide, non si
-  // tira a indovinare: si chiede di precisare.
-  const { data: candidate } = await admin
-    .from("domande_tesseramento")
-    .select("id, nome, numero_socio, stato, stato_socio")
-    .ilike("email", email);
-
-  const vive = (candidate ?? []).filter((r: any) =>
-    r.stato !== "annullata" && r.stato !== "respinta" && (r.stato_socio ?? "attivo") !== "cessato");
-
-  const norm = (s: string) => (s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
-  let esistente: { id: string } | null = null;
-  if (vive.length === 1) {
-    esistente = { id: (vive[0] as any).id };
-  } else if (vive.length > 1) {
-    const perNome = vive.filter((r: any) => norm(r.nome) === norm(nome));
-    if (perNome.length === 1) {
-      esistente = { id: (perNome[0] as any).id };
-    } else {
-      return J({
-        error: "persona_ambigua",
-        detail: `Su ${email} risultano piu' associati (${vive.map((r: any) => `${r.nome}${r.numero_socio ? ` n.${r.numero_socio}` : ""}`).join("; ")}). Il nome scritto non basta a distinguerli: correggilo perche' coincida con quello a registro.`,
-      }, 409);
-    }
-  }
+  // 4) Domanda: quella scelta esplicitamente da chi incassa (ricerca socio nel
+  // modulo — brief 23/8/2026, bug B: chi compila cerca il socio gia' approvato
+  // invece di riscriverlo a mano), oppure — se non arriva un id — quella
+  // trovata o creata dall'euristica email/nome qui sotto (l'inserimento
+  // manuale resta, invariato, per chi consegna i contanti prima di essere in
+  // anagrafica).
+  const domandaIdEsplicita = /^[0-9a-f-]{36}$/i.test(String(b?.domanda_id ?? "")) ? String(b.domanda_id) : null;
 
   let domandaId: string;
-  if (esistente) {
-    domandaId = (esistente as any).id;
+  if (domandaIdEsplicita) {
+    // Chi manda un id a caso non deve poter agganciare un pagamento a una
+    // domanda che non esiste: si verifica prima di fidarsene.
+    const { data: domScelta } = await admin
+      .from("domande_tesseramento").select("id").eq("id", domandaIdEsplicita).maybeSingle();
+    if (!domScelta) return J({ error: "domanda_non_trovata" }, 404);
+    domandaId = domandaIdEsplicita;
     await admin.from("domande_tesseramento").update({
       consenso_privacy: true, informativa_versione: VERSIONE_INFORMATIVA, consenso_modalita: modalita,
       metodo_scelto: "contanti", // brief 21/7: traccia il metodo sulla domanda
     }).eq("id", domandaId);
   } else {
-    const { data: creata, error: eDom } = await admin.from("domande_tesseramento").insert({
-      nome, email, anno,
-      data_nascita: b?.data_nascita || null,
-      comune_nascita: b?.comune_nascita || null,
-      sesso: b?.sesso || null,
-      stato: "in_attesa",
-      consenso_privacy: true,
-      informativa_versione: VERSIONE_INFORMATIVA,
-      consenso_modalita: modalita,
-      metodo_scelto: "contanti", // brief 21/7: traccia il metodo sulla domanda
-      // [3/8/2026] Era una stringa nuda, "contanti_di_persona", nella stessa
-      // colonna in cui tutto il resto scrive un oggetto. Due forme diverse
-      // nello stesso campo rendono impossibile qualunque conteggio.
-      // Le chiavi sono source/medium/campaign come ovunque: un secondo
-      // vocabolario nella stessa colonna sarebbe stato lo stesso problema
-      // travestito da soluzione. Il canale e' quello che e': quota versata in
-      // mano, allo sportello o a un incontro.
-      sorgente_utm: { source: "contanti_di_persona", medium: "di_persona", campaign: "" },
-    }).select("id").single();
-    if (eDom || !creata) return J({ error: "domanda_fallita", detail: eDom?.message }, 500);
-    domandaId = (creata as any).id;
+    // [6/8/2026] QUI L'EMAIL FACEVA DA CHIAVE, E SU DUE CASE NON REGGE.
+    // Prima si prendeva `.ilike(email).limit(1)`, senza ordine e senza filtro di
+    // stato. Due situazioni reali la rompono:
+    //   - la casella condivisa (Diego Magnoni e Nadia Pangrazzi stanno sullo
+    //     stesso indirizzo, come Monica Valentinotti e Maria Luisa Battistini):
+    //     l'incasso di una poteva finire sulla posizione dell'altra;
+    //   - il doppione chiuso (il caso di Clarissa e Franca): il versamento poteva
+    //     attaccarsi alla domanda annullata.
+    // Su un movimento di cassa attribuire alla persona sbagliata e' peggio che
+    // fermarsi, perche' produce due errori insieme: manca a una e avanza all'altra.
+    //
+    // Ora: si guardano tutte le domande di quell'indirizzo, si scartano le chiuse,
+    // e se restano piu' persone si sceglie per NOME. Se il nome non decide, non si
+    // tira a indovinare: si chiede di precisare.
+    const { data: candidate } = await admin
+      .from("domande_tesseramento")
+      .select("id, nome, numero_socio, stato, stato_socio")
+      .ilike("email", email);
+
+    const vive = (candidate ?? []).filter((r: any) =>
+      r.stato !== "annullata" && r.stato !== "respinta" && (r.stato_socio ?? "attivo") !== "cessato");
+
+    const norm = (s: string) => (s ?? "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim();
+    let esistente: { id: string } | null = null;
+    if (vive.length === 1) {
+      esistente = { id: (vive[0] as any).id };
+    } else if (vive.length > 1) {
+      const perNome = vive.filter((r: any) => norm(r.nome) === norm(nome));
+      if (perNome.length === 1) {
+        esistente = { id: (perNome[0] as any).id };
+      } else {
+        return J({
+          error: "persona_ambigua",
+          detail: `Su ${email} risultano piu' associati (${vive.map((r: any) => `${r.nome}${r.numero_socio ? ` n.${r.numero_socio}` : ""}`).join("; ")}). Il nome scritto non basta a distinguerli: correggilo perche' coincida con quello a registro.`,
+        }, 409);
+      }
+    }
+
+    if (esistente) {
+      domandaId = (esistente as any).id;
+      await admin.from("domande_tesseramento").update({
+        consenso_privacy: true, informativa_versione: VERSIONE_INFORMATIVA, consenso_modalita: modalita,
+        metodo_scelto: "contanti", // brief 21/7: traccia il metodo sulla domanda
+      }).eq("id", domandaId);
+    } else {
+      const { data: creata, error: eDom } = await admin.from("domande_tesseramento").insert({
+        nome, email, anno,
+        data_nascita: b?.data_nascita || null,
+        comune_nascita: b?.comune_nascita || null,
+        sesso: b?.sesso || null,
+        stato: "in_attesa",
+        consenso_privacy: true,
+        informativa_versione: VERSIONE_INFORMATIVA,
+        consenso_modalita: modalita,
+        metodo_scelto: "contanti", // brief 21/7: traccia il metodo sulla domanda
+        // [3/8/2026] Era una stringa nuda, "contanti_di_persona", nella stessa
+        // colonna in cui tutto il resto scrive un oggetto. Due forme diverse
+        // nello stesso campo rendono impossibile qualunque conteggio.
+        // Le chiavi sono source/medium/campaign come ovunque: un secondo
+        // vocabolario nella stessa colonna sarebbe stato lo stesso problema
+        // travestito da soluzione. Il canale e' quello che e': quota versata in
+        // mano, allo sportello o a un incontro.
+        sorgente_utm: { source: "contanti_di_persona", medium: "di_persona", campaign: "" },
+      }).select("id").single();
+      if (eDom || !creata) return J({ error: "domanda_fallita", detail: eDom?.message }, 500);
+      domandaId = (creata as any).id;
+    }
   }
 
   // 5) Nome dell'incassante: copia leggibile anche se il profilo cambiera'.

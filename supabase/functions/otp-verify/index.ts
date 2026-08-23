@@ -95,11 +95,32 @@ Deno.serve(async (req: Request) => {
   // socio approvato (domanda_tesseramento stato 'approvata'), assegna il ruolo
   // socio, sia al signup sia ai login successivi. Non rimuove 'ospite'. Il
   // ruolo editor/admin resta assegnazione manuale del segretario.
+  //
+  // [23/8/2026, brief C.3.1] STESSA QUERY, DUE USI IN PIU'.
+  //
+  // Il caso reale: Michele Bortolameolli, domanda approvata alle 16:43, primo
+  // accesso alle 17:35. L'account nasce con la sola email (sezione 2 sopra):
+  // nome e cognome restano vuoti, e `domande_tesseramento.account_id` resta
+  // NULL per sempre, perche' prima nessuno lo valorizzava. Il socio vede la
+  // propria email al posto del proprio nome, e chi incassa in contanti non
+  // trova un socio gia' a registro da collegare al pagamento.
+  //
+  // Qui si collega la domanda all'account SOLO quando e' sicuro: una sola
+  // domanda approvata su quell'indirizzo, ancora senza account. Se ce ne sono
+  // due o piu' (casella condivisa: almeno due coppie di soci la usano) non si
+  // collega NIENTE — un collegamento sbagliato metterebbe la tessera di una
+  // persona sul profilo di un'altra, che e' peggio di un profilo senza nome —
+  // e si segnala al direttivo perche' lo faccia a mano. Nome e cognome si
+  // copiano su `utente` solo se sono vuoti: non si sovrascrive un dato che
+  // qualcuno ha gia' messo.
   try {
-    const { data: socio } = await supabase
+    const { data: approvate } = await supabase
       .from("domande_tesseramento")
-      .select("id").ilike("email", email).eq("stato", "approvata").limit(1).maybeSingle();
-    if (socio && userId) {
+      .select("id, nome, cognome, account_id")
+      .ilike("email", email).eq("stato", "approvata");
+    const elenco = (approvate ?? []) as { id: string; nome: string | null; cognome: string | null; account_id: string | null }[];
+
+    if (elenco.length > 0 && userId) {
       const { data: ruoloSocio } = await supabase.from("ruolo").select("id").eq("nome", "socio").single();
       if (ruoloSocio) {
         await supabase.from("utente_ruolo").upsert(
@@ -108,8 +129,32 @@ Deno.serve(async (req: Request) => {
         );
       }
     }
+
+    const nonCollegate = elenco.filter((r) => !r.account_id);
+    if (nonCollegate.length === 1 && userId) {
+      const dom = nonCollegate[0];
+      await supabase.from("domande_tesseramento").update({ account_id: userId }).eq("id", dom.id);
+
+      const { data: utenteAttuale } = await supabase
+        .from("utente").select("nome, cognome").eq("id", userId).maybeSingle();
+      const patch: Record<string, string> = {};
+      if (!String(utenteAttuale?.nome ?? "").trim() && dom.nome) patch.nome = dom.nome;
+      if (!String(utenteAttuale?.cognome ?? "").trim() && dom.cognome) patch.cognome = dom.cognome;
+      if (Object.keys(patch).length) {
+        await supabase.from("utente").update(patch).eq("id", userId);
+      }
+    } else if (nonCollegate.length >= 2) {
+      console.error(`[otp-verify] ${email}: ${nonCollegate.length} domande approvate senza account collegato, casella condivisa — nessun collegamento automatico`);
+      try {
+        await supabase.rpc("invia_comunicazione_direttivo", {
+          p_titolo: "Domanda di tesseramento da collegare a mano",
+          p_corpo: `${email} corrisponde a ${nonCollegate.length} domande approvate senza account: probabile casella condivisa. Nessun collegamento automatico: va fatto a mano dal segretario.`,
+          p_url: "/app/amministrazione",
+        });
+      } catch (_e) { /* la segnalazione non deve bloccare l'accesso */ }
+    }
   } catch (e) {
-    console.error("[otp-verify] provisioning socio fallito:", e);
+    console.error("[otp-verify] provisioning socio / collegamento domanda fallito:", e);
   }
 
   // 3. Genera session Supabase via magiclink admin + verify chain
