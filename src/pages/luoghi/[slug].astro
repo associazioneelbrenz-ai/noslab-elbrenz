@@ -31,15 +31,41 @@ type Luogo = {
   descrizione_estesa: string | null; meta_description: string | null;
   url_articolo: string | null; fonte_immagine: string | null;
   nome_ladino: string | null; nome_tedesco: string | null;
+  parlata: string | null; nome_ladino_varianti: string[] | null;
+  pronuncia_ipa: string | null; audio_url: string | null;
+  etimologia: string | null; etimologia_strato: string | null; etimologia_certezza: string | null;
+  toponimo_validato: boolean; toponimo_in_verifica: boolean;
 };
 
 const { data: luogo } = await supabase
   .from('v_luoghi_pagina')
-  .select('id, slug, nome, categoria, valle, lat, lng, descrizione_breve, descrizione_estesa, meta_description, url_articolo, fonte_immagine, nome_ladino, nome_tedesco')
+  .select(`id, slug, nome, categoria, valle, lat, lng, descrizione_breve, descrizione_estesa,
+    meta_description, url_articolo, fonte_immagine, nome_ladino, nome_tedesco,
+    parlata, nome_ladino_varianti, pronuncia_ipa, audio_url,
+    etimologia, etimologia_strato, etimologia_certezza, toponimo_validato, toponimo_in_verifica`)
   .eq('slug', slug)
   .maybeSingle<Luogo>();
 
 if (!luogo) return Astro.redirect('/luoghi', 302);
+
+// Attestazioni storiche (§6.3 brief 23/8): dalla piu' antica. RLS pubblica
+// gia' filtra sui soli luoghi pubblicati (luogo_e_pubblico), qui non serve
+// ripetere il filtro.
+const { data: attestazioniRaw } = await supabase
+  .from('toponimo_attestazione')
+  .select('id, forma, anno_da, anno_a, fonte, collocazione_archivistica, url_fonte, immagine_url, note')
+  .eq('luogo_id', luogo.id)
+  .order('anno_da', { ascending: true, nullsFirst: false });
+const attestazioni = attestazioniRaw ?? [];
+
+const PARLATE_LABEL: Record<string, string> = { noneso: 'noneso', solander: 'solandro', rabies: 'rabiés', pegaes: 'pejo (pegaés)' };
+const STRATO_LABEL: Record<string, string> = {
+  prelatino_retico: 'prelatino / retico', latino: 'latino', germanico: 'germanico',
+  romanzo_alpino: 'romanzo alpino', incerto: 'incerto',
+};
+const CERTEZZA_LABEL: Record<string, string> = {
+  documentata: 'documentata', probabile: 'probabile', ipotesi: 'ipotesi', incerta: 'incerta',
+};
 
 // Luoghi vicini: stessa valle, esclusi se stesso. Fanno navigare invece di uscire.
 const { data: viciniRaw } = await supabase
@@ -94,14 +120,35 @@ const schemaPlace = {
         </span>
         <div>
           <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 leading-tight" style="font-family: 'Playfair Display', serif; font-weight: 500;">{luogo.nome}</h1>
-          {(luogo.nome_ladino || luogo.nome_tedesco) && (
-            <p class="text-base text-[#8a6215] italic m-0 mt-1" style="font-family: 'Playfair Display', serif;">
-              {[luogo.nome_ladino && `${luogo.nome_ladino} (ladino)`, luogo.nome_tedesco && `${luogo.nome_tedesco} (tedesco)`].filter(Boolean).join(' · ')}
+          {/* §6.5 brief 23/8: mai una bandierina, mai un elenco di traduzioni —
+              e' il nome che questo posto ha sempre avuto, non una funzione di
+              traduzione. Il nome ladino compare solo se convalidato (il gate
+              e' gia' nella vista v_luoghi_pagina): se e' scritto ma non ancora
+              convalidato, lo si dice senza mostrarlo come accertato. */}
+          {luogo.nome_ladino && (
+            <p class="text-lg text-[#8a6215] italic m-0 mt-1 flex items-center gap-2 flex-wrap" style="font-family: 'Playfair Display', serif;">
+              <span>{luogo.nome_ladino}</span>
+              {luogo.parlata && <span class="text-xs not-italic uppercase tracking-wider text-[#1E2E26]/50" style="font-family: 'Inter', sans-serif;">ladino anaunico, {PARLATE_LABEL[luogo.parlata] ?? luogo.parlata}</span>}
+              {luogo.audio_url && (
+                <button id="btn-pronuncia" type="button" data-src={luogo.audio_url} class="not-italic inline-flex items-center gap-1 text-xs text-[#1E2E26] bg-[#F5EEDD] border border-[#C8923E]/50 rounded-full px-2.5 py-1 cursor-pointer" style="font-family: 'Inter', sans-serif;" aria-label="Ascolta la pronuncia">
+                  ▶ ascolta
+                </button>
+              )}
             </p>
+          )}
+          {luogo.nome_ladino_varianti && luogo.nome_ladino_varianti.length > 0 && (
+            <p class="text-[13px] text-[#1E2E26]/55 italic m-0 mt-0.5" style="font-family: 'Source Serif 4', Georgia, serif;">anche detto: {luogo.nome_ladino_varianti.join(', ')}</p>
+          )}
+          {luogo.toponimo_in_verifica && (
+            <p class="text-[12px] text-[#8a6215] m-0 mt-1" style="font-family: 'Inter', sans-serif;">Il nome ladino di questo luogo è in corso di verifica.</p>
+          )}
+          {luogo.nome_tedesco && (
+            <p class="text-base text-[#1E2E26]/70 italic m-0 mt-1" style="font-family: 'Playfair Display', serif;">{luogo.nome_tedesco} <span class="text-xs not-italic uppercase tracking-wider text-[#1E2E26]/45" style="font-family: 'Inter', sans-serif;">nome tedesco storico</span></p>
           )}
           <p class="text-sm text-[#1E2E26]/60 m-0 mt-2" style="font-family: 'Inter', sans-serif;">{categoriaLabel} · {valleLabel}</p>
         </div>
       </div>
+      {luogo.audio_url && <audio id="audio-pronuncia" preload="none" src={luogo.audio_url}></audio>}
 
       {luogo.descrizione_breve && (
         <p class="text-lg leading-relaxed text-[#1E2E26] m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">{luogo.descrizione_breve}</p>
@@ -109,6 +156,47 @@ const schemaPlace = {
       {luogo.descrizione_estesa && (
         <div class="text-[#1E2E26]/85 leading-relaxed mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
           {luogo.descrizione_estesa.split('\n').filter(Boolean).map((p: string) => <p class="m-0 mb-4">{p}</p>)}
+        </div>
+      )}
+
+      {/* Etimologia: il grado di certezza sempre accanto, mai taciuto (§6.2
+          brief 23/8). Un'ipotesi etichettata "ipotesi" e' un dato onesto anche
+          prima che qualcuno la validi — non serve la stessa convalida del
+          nome ladino, perche' porta gia' con se' la propria onesta'. */}
+      {luogo.etimologia && (
+        <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 mb-6">
+          <p class="text-[11px] tracking-[0.18em] uppercase text-[#8a6215] font-medium m-0 mb-2" style="font-family: 'Inter', sans-serif;">
+            Etimologia
+            {luogo.etimologia_certezza && (
+              <span class="ml-2 normal-case tracking-normal text-[#1E2E26]/60">· {CERTEZZA_LABEL[luogo.etimologia_certezza] ?? luogo.etimologia_certezza}{luogo.etimologia_strato ? ` · ${STRATO_LABEL[luogo.etimologia_strato] ?? luogo.etimologia_strato}` : ''}</span>
+            )}
+          </p>
+          <p class="text-[#1E2E26]/85 leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">{luogo.etimologia}</p>
+        </div>
+      )}
+
+      {/* Attestazioni storiche (§6.3): dalla piu' antica, forma cosi' com'e'
+          scritta nella fonte. E' la storia del nome in una schermata. */}
+      {attestazioni.length > 0 && (
+        <div class="mb-6">
+          <p class="text-[11px] tracking-[0.18em] uppercase text-[#8a6215] font-medium m-0 mb-3" style="font-family: 'Inter', sans-serif;">Attestazioni storiche del nome</p>
+          <ul class="list-none p-0 m-0 grid gap-2.5">
+            {attestazioni.map((a: any) => {
+              const anno = a.anno_da ? (a.anno_a && a.anno_a !== a.anno_da ? `${a.anno_da}–${a.anno_a}` : String(a.anno_da)) : null;
+              return (
+                <li class="bg-white border border-[#E5DFCF] rounded-md px-4 py-3">
+                  <p class="m-0 text-[#1E2E26]" style="font-family: 'Source Serif 4', Georgia, serif;">
+                    «{a.forma}»{anno && <span class="text-[#8a6215]"> · {anno}</span>}
+                  </p>
+                  <p class="m-0 text-[12.5px] text-[#1E2E26]/55 mt-1" style="font-family: 'Inter', sans-serif;">
+                    {a.fonte}{a.collocazione_archivistica ? ` · ${a.collocazione_archivistica}` : ''}
+                    {a.url_fonte && <> · <a href={a.url_fonte} target="_blank" rel="noopener noreferrer" class="text-[#8a6215] underline">collegamento</a></>}
+                  </p>
+                  {a.note && <p class="m-0 text-[13px] text-[#1E2E26]/75 mt-1.5" style="font-family: 'Source Serif 4', Georgia, serif;">{a.note}</p>}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 
@@ -169,6 +257,12 @@ const schemaPlace = {
 
 <script>
   // Coordinate copiabili + mappa a caricamento differito (Leaflet self-hosted).
+  // Pronuncia: un <audio> nascosto, un bottone che lo avvia. Nessun autoplay.
+  document.getElementById('btn-pronuncia')?.addEventListener('click', () => {
+    const audio = document.getElementById('audio-pronuncia') as HTMLAudioElement | null;
+    audio?.play().catch(() => {});
+  });
+
   const btnCopia = document.getElementById('copia-coord');
   btnCopia?.addEventListener('click', async () => {
     const testo = document.getElementById('coord')?.textContent ?? '';
