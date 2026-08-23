@@ -1,8 +1,8 @@
 ---
 /**
- * /luoghi-curatela — il direttivo censisce i luoghi di interesse storico e
- * culturale delle Valli del Noce: posizione sulla mappa e nome in italiano,
- * ladino anaunico e tedesco.
+ * /luoghi-curatela — il direttivo e chi cura i contenuti censiscono i luoghi
+ * di interesse storico e culturale delle Valli del Noce: posizione (via
+ * indirizzo geocodificato o mappa cliccabile) e toponomastica in tre lingue.
  *
  * PERCHE' ESISTE. luoghi_interesse ha RLS attivo dal principio, ma senza una
  * sola policy: i 57 luoghi pubblicati oggi ci sono finiti a mano, via SQL.
@@ -10,17 +10,41 @@
  * al database. Questa pagina e la policy che l'accompagna (migrazione
  * "luoghi_interesse_toponimi_e_curatela", 17/8) chiudono quel cerchio.
  *
- * IL TOPONIMO NON E' UNO SOLO. `nome` (italiano) resta l'unico obbligatorio,
- * per non rompere i 57 luoghi gia' pubblicati che non hanno altro. Ladino e
- * tedesco sono facoltativi: si scrivono quando si conoscono, non si inventano
- * per riempire un campo.
+ * [23/8/2026, BRIEF georeferenziazione] Estesa in tre modi, per decisione del
+ * segretario:
  *
- * NUOVO LUOGO NASCE IN BOZZA. Non e' visibile sul sito finche' chi lo censisce
- * non lo pubblica con un gesto separato — stessa regola di ogni altra
- * curatela di questo sito: mai un contenuto in pagina senza che una persona
- * l'abbia deciso.
+ *   1. CHI PUO' COSA E' DIVISO IN DUE. Chiunque abbia il permesso di scrivere
+ *      (>=50 o ruolo curatore_contenuti — RLS "luoghi_admin_all") PROPONE in
+ *      bozza. PUBBLICA solo il direttivo (>=50): il bottone Pubblica non
+ *      compare a chi sta sotto, e non e' un ornamento — sotto c'e' anche un
+ *      trigger a database (trg_luoghi_solo_direttivo_pubblica) che rifiuta il
+ *      passaggio a 'pubblicato' con un errore leggibile se qualcuno forzasse
+ *      la chiamata. Il frontend non finge che quel trigger non esista: non
+ *      offre il bottone, punto.
  *
- * Accesso con codice via email, poi ruolo >= 50 (direttivo).
+ *   2. L'INDIRIZZO SOSTITUISCE LE COORDINATE A MANO come via normale. Digiti
+ *      un indirizzo, "Trova sulla mappa" chiama l'edge function
+ *      geocodifica-luogo (mai Nominatim dal browser: la loro policy vieta
+ *      l'uso non identificato e limita a una richiesta al secondo — fatta dal
+ *      client, ogni socio userebbe la propria rete e rischierebbe di far
+ *      bloccare il servizio). Il segnaposto resta trascinabile: chi lo sposta
+ *      passa `geo_stato` da 'auto' a 'manuale'. Se l'indirizzo non si trova,
+ *      `geo_stato='non_trovato'`, nessun segnaposto appare, e la scheda si
+ *      salva comunque in bozza (con un punto di appoggio al centro della
+ *      valle, MAI mostrato come posizione vera: il bottone Pubblica resta
+ *      spento finche' qualcuno non posiziona davvero il luogo).
+ *
+ *   3. LA TOPONOMASTICA E' UN BLOCCO A SE', NON UN CAMPO IN MEZZO AGLI ALTRI.
+ *      Parlata, varianti, pronuncia (con eventuale audio), etimologia con
+ *      grado di certezza, attestazioni storiche (una riga per fonte, forma
+ *      COSI' COM'E' SCRITTA li', mai normalizzata). La forma ladina la valida
+ *      chi ha il ruolo curatore_linguistico (o il direttivo): e' una firma
+ *      diversa da quella di pubblicazione, e resta possibile pubblicare un
+ *      luogo con la toponomastica ancora da validare — la scheda pubblica in
+ *      quel caso non mostra il nome ladino (il gate vive nella vista
+ *      v_luoghi_pagina, non qui).
+ *
+ * Accesso con codice via email, poi ruolo >= 50 OPPURE curatore_contenuti.
  */
 import Layout from '../layouts/Layout.astro';
 
@@ -33,7 +57,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
 <Layout title="Luoghi · El Brenz" description="Area riservata: censimento dei luoghi di interesse storico e culturale delle Valli del Noce." ogImage="/og/og-default.jpg" noindex={true}>
   <main class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-4xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
-      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo e curatela</p>
       <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
         Luoghi delle Valli
       </h1>
@@ -58,7 +82,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
       </section>
 
       <section id="lg-nego" class="hidden bg-white border-l-4 border-[#a33] rounded p-6">
-        <p class="m-0 text-[#1E2E26]">Questa pagina è riservata al direttivo.</p>
+        <p class="m-0 text-[#1E2E26]">Questa pagina è riservata a chi può curare i luoghi (direttivo o ruolo dedicato).</p>
       </section>
 
       <section id="lg-pannello" class="hidden">
@@ -82,17 +106,6 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
             <div>
               <label class={labelCls} for="lg-nome">Nome (italiano) *</label>
               <input id="lg-nome" type="text" class={inputCls} maxlength="120" />
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-4">
-              <div>
-                <label class={labelCls} for="lg-nome-ladino">Nome in ladino anaunico</label>
-                <input id="lg-nome-ladino" type="text" class={inputCls} maxlength="120" lang="lld-anau" />
-              </div>
-              <div>
-                <label class={labelCls} for="lg-nome-tedesco">Nome in tedesco</label>
-                <input id="lg-nome-tedesco" type="text" class={inputCls} maxlength="120" lang="de" />
-              </div>
             </div>
 
             <div class="grid md:grid-cols-3 gap-4">
@@ -130,14 +143,21 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
               </div>
             </div>
 
-            <div>
+            {/* ── Posizione: indirizzo -> geocodifica -> mappa trascinabile ── */}
+            <div class="border-t border-[#E5DFCF] pt-4">
               <p class={labelCls}>Posizione *</p>
-              <p class="text-[13px] text-[#1E2E26]/65 m-0 mb-2">Clicca sulla mappa per posizionare il luogo, o trascina il segnaposto.</p>
+              <div class="flex gap-2 mb-2">
+                <input id="lg-indirizzo" type="text" class={inputCls} placeholder="Via, civico, comune…" />
+                <button type="button" id="lg-trova" class="bg-[#1E2E26] text-[#F5EEDD] font-semibold px-4 py-2.5 rounded cursor-pointer border-0 whitespace-nowrap hover:bg-[#25382E]">Trova sulla mappa</button>
+              </div>
+              <p id="lg-geo-esito" class="text-[13px] m-0 mb-2"></p>
+              <p class="text-[13px] text-[#1E2E26]/65 m-0 mb-2">Non hai un indirizzo (malga, sentiero)? Posiziona direttamente sulla mappa o scrivi le coordinate.</p>
               <div id="lg-mappa" class="h-[280px] rounded-md border border-[#C8923E]/50 bg-[#F5EEDD]"></div>
               <div class="grid grid-cols-2 gap-3 mt-2">
                 <input id="lg-lat" type="number" step="0.000001" placeholder="latitudine" class={inputCls} />
                 <input id="lg-lng" type="number" step="0.000001" placeholder="longitudine" class={inputCls} />
               </div>
+              <p class="text-[11px] uppercase tracking-wider text-[#1E2E26]/45 m-0 mt-1.5">Stato posizione: <span id="lg-geo-stato-badge">—</span></p>
             </div>
 
             <label class="flex items-center gap-2 text-sm text-[#1E2E26]/80">
@@ -145,12 +165,105 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
               In anteprima (evidenziato sulla mappa e nell'elenco)
             </label>
 
+            {/* ── Toponomastica: blocco a se', sotto i dati geografici ── */}
+            <div class="border-t-2 border-[#C8923E]/50 pt-4 mt-2">
+              <h3 class="text-base text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">Toponomastica</h3>
+
+              <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class={labelCls} for="lg-nome-ladino">Nome in ladino anaunico</label>
+                  <input id="lg-nome-ladino" type="text" class={inputCls} maxlength="120" lang="lld-anau" />
+                </div>
+                <div>
+                  <label class={labelCls} for="lg-parlata">Parlata</label>
+                  <select id="lg-parlata" class={inputCls}></select>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label class={labelCls}>Varianti (nomi diversi da paese a paese)</label>
+                <div id="lg-varianti-lista" class="grid gap-1.5 mb-2"></div>
+                <div class="flex gap-2">
+                  <input id="lg-variante-nuova" type="text" class={inputCls} placeholder="Aggiungi una variante…" />
+                  <button type="button" id="lg-variante-aggiungi" class="bg-[#F5EEDD] text-[#1E2E26] px-4 py-2 rounded border border-[#C8923E]/50 cursor-pointer whitespace-nowrap">+ Aggiungi</button>
+                </div>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class={labelCls} for="lg-ipa">Pronuncia (IPA)</label>
+                  <input id="lg-ipa" type="text" class={inputCls} placeholder="es. [ˈnɔːne]" />
+                </div>
+                <div>
+                  <label class={labelCls} for="lg-audio">Registrazione della pronuncia</label>
+                  <select id="lg-audio" class={inputCls}></select>
+                </div>
+              </div>
+
+              <div class="mb-4">
+                <label class={labelCls} for="lg-nome-tedesco">Nome tedesco storico</label>
+                <input id="lg-nome-tedesco" type="text" class={inputCls} maxlength="120" lang="de" />
+              </div>
+
+              <div class="mb-2">
+                <label class={labelCls} for="lg-etimologia">Etimologia</label>
+                <textarea id="lg-etimologia" rows="3" class={inputCls} placeholder="La spiegazione, in parole."></textarea>
+              </div>
+              <div class="grid md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class={labelCls} for="lg-etim-strato">Strato</label>
+                  <select id="lg-etim-strato" class={inputCls}></select>
+                </div>
+                <div>
+                  <label class={labelCls} for="lg-etim-certezza">Grado di certezza</label>
+                  <select id="lg-etim-certezza" class={inputCls}></select>
+                </div>
+              </div>
+              <p class="text-[12px] text-[#1E2E26]/55 m-0 mb-4 leading-relaxed">Il grado di certezza non è un vezzo: la maggior parte delle etimologie prelatine sono ipotesi, e vanno dette per quello che sono. "prelatino retico" va usato con la mano più leggera di tutte.</p>
+
+              <div class="mb-4">
+                <label class={labelCls} for="lg-topon-note">Note (dubbi, discussioni aperte)</label>
+                <textarea id="lg-topon-note" rows="2" class={inputCls}></textarea>
+              </div>
+
+              {/* Validazione: firma diversa da quella di pubblicazione */}
+              <div id="lg-validazione-wrap" class="hidden bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-3.5 mb-4">
+                <p id="lg-validazione-stato" class="text-[13px] m-0 mb-2 text-[#1E2E26]"></p>
+                <button type="button" id="lg-valida" class="bg-[#2d8659] text-white text-sm font-semibold px-4 py-2 rounded cursor-pointer border-0">Convalida la forma ladina</button>
+                <button type="button" id="lg-invalida" class="hidden bg-[#F5EEDD] text-[#1E2E26] text-sm px-4 py-2 rounded cursor-pointer border border-[#C8923E]/50 ml-2">Togli convalida</button>
+              </div>
+            </div>
+
+            {/* ── Attestazioni storiche: solo su un luogo gia' salvato ── */}
+            <div id="lg-attestazioni-wrap" class="hidden border-t-2 border-[#C8923E]/50 pt-4 mt-2">
+              <h3 class="text-base text-[#1E2E26] m-0 mb-1" style="font-family: 'Playfair Display', serif; font-weight: 500;">Attestazioni storiche</h3>
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mb-3">La forma va trascritta com'è scritta nella fonte, non normalizzata: quella distanza è il dato che si sta raccogliendo.</p>
+              <div id="lg-attest-lista" class="grid gap-2 mb-3"></div>
+              <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-3.5 grid gap-2.5">
+                <div class="grid md:grid-cols-[2fr_1fr_1fr] gap-2.5">
+                  <input id="lg-attest-forma" type="text" class={inputCls} placeholder="Forma attestata *" />
+                  <input id="lg-attest-anno-da" type="number" class={inputCls} placeholder="Anno (da)" />
+                  <input id="lg-attest-anno-a" type="number" class={inputCls} placeholder="Anno (a), se intervallo" />
+                </div>
+                <input id="lg-attest-fonte" type="text" class={inputCls} placeholder="Fonte *" />
+                <div class="grid md:grid-cols-2 gap-2.5">
+                  <input id="lg-attest-colloc" type="text" class={inputCls} placeholder="Collocazione archivistica" />
+                  <input id="lg-attest-url" type="url" class={inputCls} placeholder="Collegamento alla fonte" />
+                </div>
+                <input id="lg-attest-immagine" type="url" class={inputCls} placeholder="Collegamento a un'immagine" />
+                <input id="lg-attest-note" type="text" class={inputCls} placeholder="Note" />
+                <button type="button" id="lg-attest-aggiungi" class="bg-[#1E2E26] text-[#F5EEDD] font-semibold px-4 py-2.5 rounded cursor-pointer border-0 justify-self-start">+ Aggiungi attestazione</button>
+                <p id="lg-attest-esito" class="text-[13px] m-0"></p>
+              </div>
+            </div>
+
             <div class="flex items-center gap-3 flex-wrap pt-2 border-t border-[#E5DFCF]">
               <button type="button" id="lg-salva" class="bg-[#1E2E26] text-[#F5EEDD] font-semibold px-6 py-3 rounded cursor-pointer border-0 hover:bg-[#25382E]">Salva</button>
               <button type="button" id="lg-pubblica" class="hidden bg-[#2d8659] text-white font-semibold px-5 py-3 rounded cursor-pointer border-0">Pubblica</button>
               <button type="button" id="lg-nascondi" class="hidden bg-[#F5EEDD] text-[#1E2E26] px-5 py-3 rounded cursor-pointer border border-[#C8923E]/50">Riporta in bozza</button>
               <span id="lg-stato-badge" class="text-[12px] uppercase tracking-wider text-[#1E2E26]/50"></span>
             </div>
+            <p id="lg-pubblica-nota" class="text-[12px] text-[#a33] m-0"></p>
             <p id="lg-esito" class="text-[13px] m-0"></p>
           </div>
         </div>
@@ -166,12 +279,36 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
   const $ = (id: string) => document.getElementById(id);
   const mostra = (id: string) => $(id)?.classList.remove('hidden');
   const nascondi = (id: string) => $(id)?.classList.add('hidden');
-  const val = (id: string) => ($( id) as HTMLInputElement | HTMLTextAreaElement | null)?.value ?? '';
-  const setVal = (id: string, v: string) => { const el = $(id) as HTMLInputElement | HTMLTextAreaElement | null; if (el) el.value = v; };
+  const val = (id: string) => ($( id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null)?.value ?? '';
+  const setVal = (id: string, v: string) => { const el = $(id) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null; if (el) el.value = v; };
 
   const BBOX_VALLI: [[number, number], [number, number]] = [[46.17, 10.48], [46.48, 11.18]];
 
-  // Le due select si riempiono dagli stessi elenchi che usano le pagine
+  // Centro approssimativo di ciascuna valle: punto d'appoggio quando la
+  // geocodifica non trova niente (geo_stato='non_trovato'). MAI mostrato come
+  // posizione vera — serve solo perche' lat/lng non possono restare vuote a
+  // database, e il bottone Pubblica resta comunque spento finche' geo_stato
+  // non torna 'auto' o 'manuale'.
+  const VALLE_CENTRO: Record<string, [number, number]> = {
+    val_di_non: [46.36, 11.02], val_di_sole: [46.34, 10.62],
+    val_di_rabbi: [46.45, 10.83], val_di_pejo: [46.36, 10.55], fuori_valle: [46.30, 10.90],
+  };
+  // Parlata di default per valle: si propone, non si impone — resta sempre
+  // modificabile (un toponimo puo' essere tramandato in una parlata diversa
+  // da quella "ufficiale" della valle).
+  const VALLE_PARLATA: Record<string, string> = {
+    val_di_non: 'noneso', val_di_sole: 'solander', val_di_rabbi: 'rabies', val_di_pejo: 'pegaes',
+  };
+  const PARLATE: Record<string, string> = { '': '—', noneso: 'Noneso', solander: 'Solandro', rabies: 'Rabiés', pegaes: 'Pejo (pegaés)' };
+  const ETIM_STRATI: Record<string, string> = {
+    '': '—', prelatino_retico: 'Prelatino / retico', latino: 'Latino', germanico: 'Germanico',
+    romanzo_alpino: 'Romanzo alpino', incerto: 'Incerto',
+  };
+  const ETIM_CERTEZZE: Record<string, string> = {
+    '': '—', documentata: 'Documentata', probabile: 'Probabile', ipotesi: 'Ipotesi', incerta: 'Incerta',
+  };
+
+  // Le tre select condivise si riempiono dagli stessi elenchi delle pagine
   // pubbliche (lib/luoghi.ts): un'unica fonte di verita' per i valori ammessi.
   function riempiSelect(id: string, mappa: Record<string, string>) {
     const el = $(id) as HTMLSelectElement | null;
@@ -180,6 +317,15 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
   }
   riempiSelect('lg-categoria', CATEGORIE_LUOGHI);
   riempiSelect('lg-valle', VALLI_LUOGHI);
+  riempiSelect('lg-parlata', PARLATE);
+  riempiSelect('lg-etim-strato', ETIM_STRATI);
+  riempiSelect('lg-etim-certezza', ETIM_CERTEZZE);
+
+  let parlataToccata = false;
+  $('lg-parlata')?.addEventListener('change', () => { parlataToccata = true; });
+  $('lg-valle')?.addEventListener('change', () => {
+    if (!parlataToccata) setVal('lg-parlata', VALLE_PARLATA[val('lg-valle')] ?? '');
+  });
 
   const slugify = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
@@ -190,10 +336,46 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     if (!slugToccato) setVal('lg-slug', slugify(val('lg-nome')));
   });
 
+  // ── Varianti: elenco di forme aggiungibili una alla volta ───────────────
+  let varianti: string[] = [];
+  function disegnaVarianti() {
+    const box = $('lg-varianti-lista');
+    if (!box) return;
+    if (!varianti.length) { box.innerHTML = '<p class="text-[13px] text-[#1E2E26]/50 m-0">Nessuna variante ancora.</p>'; return; }
+    box.innerHTML = varianti.map((v, i) => `
+      <div class="flex items-center gap-2 bg-white border border-[#E5DFCF] rounded px-3 py-1.5">
+        <span class="text-sm text-[#1E2E26] flex-1">${v}</span>
+        <button type="button" data-i="${i}" class="lg-variante-togli bg-transparent border-0 text-[#a33] cursor-pointer text-lg leading-none" aria-label="Togli">×</button>
+      </div>`).join('');
+    box.querySelectorAll('.lg-variante-togli').forEach((b) => b.addEventListener('click', () => {
+      varianti.splice(Number((b as HTMLElement).dataset.i), 1); disegnaVarianti();
+    }));
+  }
+  $('lg-variante-aggiungi')?.addEventListener('click', () => {
+    const v = val('lg-variante-nuova').trim();
+    if (!v) return;
+    varianti.push(v); setVal('lg-variante-nuova', ''); disegnaVarianti();
+  });
+
+  // ── Audio: elenco delle registrazioni di toponimi gia' pubblicate. La
+  // registrazione in se' si fa altrove (flusso glossario-audio): qui si
+  // collega solo una pronuncia gia' esistente e vagliata. ───────────────────
+  async function riempiAudio(selezionatoId: string | null) {
+    const { data } = await supabase.from('archivio_audio')
+      .select('id, titolo, termine_ladino').eq('categoria_audio', 'toponimo').eq('stato', 'pubblicato').order('titolo');
+    const el = $('lg-audio') as HTMLSelectElement | null;
+    if (!el) return;
+    const opzioni = ['<option value="">— nessuna registrazione collegata —</option>']
+      .concat((data ?? []).map((a: any) => `<option value="${a.id}">${a.titolo}${a.termine_ladino ? ` · ${a.termine_ladino}` : ''}</option>`));
+    el.innerHTML = opzioni.join('');
+    el.value = selezionatoId ?? '';
+  }
+
   // ── Mappa: segnaposto trascinabile, clic per riposizionare ──────────────
   let L: any = null;
   let mappaPicker: any = null;
   let marker: any = null;
+  let geoStato: 'auto' | 'manuale' | 'non_trovato' | null = null;
 
   function goccia(colore: string) {
     return `<svg viewBox="0 0 32 44" width="32" height="44" xmlns="http://www.w3.org/2000/svg"><path d="M16 1C8 1 1.5 7.5 1.5 15.5 1.5 26 16 43 16 43s14.5-17 14.5-27.5C30.5 7.5 24 1 16 1z" fill="${colore}" stroke="#F5EEDD" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="#F5EEDD"/></svg>`;
@@ -218,16 +400,32 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     return COLORI_LUOGHI[val('lg-categoria')] ?? '#C8923E';
   }
 
-  function posiziona(lat: number, lng: number) {
+  const ETICHETTE_GEO: Record<string, string> = { auto: 'trovata dall’indirizzo', manuale: 'inserita a mano', non_trovato: 'non trovata — da correggere' };
+  function aggiornaGeoBadge() {
+    const el = $('lg-geo-stato-badge');
+    if (el) el.textContent = geoStato ? (ETICHETTE_GEO[geoStato] ?? geoStato) : '—';
+  }
+  function impostaGeoStato(nuovo: 'auto' | 'manuale' | 'non_trovato') {
+    geoStato = nuovo;
+    aggiornaGeoBadge();
+    aggiornaGatePubblica();
+  }
+
+  function posiziona(lat: number, lng: number, motivo: 'auto' | 'manuale') {
     setVal('lg-lat', String(lat));
     setVal('lg-lng', String(lng));
+    impostaGeoStato(motivo);
     if (!mappaPicker) return;
     if (marker) { marker.setLatLng([lat, lng]); return; }
     marker = L.marker([lat, lng], {
       draggable: true,
       icon: L.divIcon({ html: goccia(coloreAttuale()), className: '', iconSize: [32, 44], iconAnchor: [16, 43] }),
     }).addTo(mappaPicker);
-    marker.on('dragend', () => { const p = marker.getLatLng(); setVal('lg-lat', String(p.lat)); setVal('lg-lng', String(p.lng)); });
+    marker.on('dragend', () => {
+      const p = marker.getLatLng();
+      setVal('lg-lat', String(p.lat)); setVal('lg-lng', String(p.lng));
+      impostaGeoStato('manuale'); // chi lo sposta lo ha corretto lui: non e' piu' "auto".
+    });
   }
 
   async function apriMappa(lat: number | null, lng: number | null) {
@@ -240,31 +438,84 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     if (lat != null && lng != null) mappaPicker.setView([lat, lng], 14);
     else mappaPicker.fitBounds(BBOX_VALLI);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(mappaPicker);
-    mappaPicker.on('click', (e: any) => posiziona(e.latlng.lat, e.latlng.lng));
-    if (lat != null && lng != null) posiziona(lat, lng);
-    // Ridisegna il segnaposto se la categoria cambia mentre la mappa e' aperta.
+    mappaPicker.on('click', (e: any) => posiziona(e.latlng.lat, e.latlng.lng, 'manuale'));
+    if (lat != null && lng != null && geoStato !== 'non_trovato') posiziona(lat, lng, geoStato === 'auto' ? 'auto' : 'manuale');
     setTimeout(() => mappaPicker.invalidateSize(), 50);
   }
   $('lg-categoria')?.addEventListener('change', () => {
     if (marker) marker.setIcon(L.divIcon({ html: goccia(coloreAttuale()), className: '', iconSize: [32, 44], iconAnchor: [16, 43] }));
   });
-  // Digitare le coordinate a mano sposta il segnaposto.
   function daInputACampo() {
     const lat = parseFloat(val('lg-lat')), lng = parseFloat(val('lg-lng'));
     if (Number.isFinite(lat) && Number.isFinite(lng) && mappaPicker) {
-      if (marker) marker.setLatLng([lat, lng]);
-      else posiziona(lat, lng);
+      if (marker) marker.setLatLng([lat, lng]); else posiziona(lat, lng, 'manuale');
+      impostaGeoStato('manuale');
       mappaPicker.panTo([lat, lng]);
     }
   }
   $('lg-lat')?.addEventListener('change', daInputACampo);
   $('lg-lng')?.addEventListener('change', daInputACampo);
 
+  // ── Geocodifica: edge function, mai Nominatim dal browser ───────────────
+  $('lg-trova')?.addEventListener('click', async () => {
+    const indirizzo = val('lg-indirizzo').trim();
+    const esito = $('lg-geo-esito');
+    if (!indirizzo) { if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Scrivi un indirizzo prima di cercare.'; } return; }
+    const btn = $('lg-trova') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'Cerco…';
+    if (esito) { esito.removeAttribute('style'); esito.textContent = ''; }
+    const { data, error } = await supabase.functions.invoke('geocodifica-luogo', { body: { indirizzo } });
+    btn.disabled = false; btn.textContent = 'Trova sulla mappa';
+    if (error || !(data as any)?.ok) {
+      if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Ricerca non riuscita. Riprova o posiziona a mano.'; }
+      return;
+    }
+    const d = data as any;
+    if (d.esito === 'trovato') {
+      posiziona(d.lat, d.lng, 'auto');
+      if (mappaPicker) mappaPicker.setView([d.lat, d.lng], 15);
+      if (esito) { esito.setAttribute('style', 'color:#2d8659'); esito.textContent = `Trovato: ${d.display_name}. Trascina il segnaposto se non è preciso.`; }
+    } else {
+      // Nessun segnaposto: appoggio silenzioso al centro valle, mai mostrato.
+      const centro = VALLE_CENTRO[val('lg-valle')] ?? VALLE_CENTRO.fuori_valle;
+      setVal('lg-lat', String(centro[0])); setVal('lg-lng', String(centro[1]));
+      if (marker) { mappaPicker.removeLayer(marker); marker = null; }
+      impostaGeoStato('non_trovato');
+      if (mappaPicker) mappaPicker.fitBounds(BBOX_VALLI);
+      if (esito) {
+        esito.setAttribute('style', 'color:#a33');
+        esito.textContent = 'Indirizzo non trovato. Puoi salvare comunque in bozza: posiziona a mano sulla mappa (o correggi l’indirizzo) prima di pubblicare.';
+      }
+    }
+  });
+
+  // ── Gate di pubblicazione: livello, non nome di ruolo; e mai se la
+  // posizione non e' vera. ─────────────────────────────────────────────────
+  let livelloUtente = 0;
+  let ruoliUtente: string[] = [];
+  const puoPubblicare = () => livelloUtente >= 50;
+  const puoValidareToponimo = () => livelloUtente >= 50 || ruoliUtente.includes('curatore_linguistico');
+  function aggiornaGatePubblica() {
+    const nota = $('lg-pubblica-nota');
+    if (!nota) return;
+    if (geoStato === 'non_trovato') {
+      nota.textContent = 'La posizione non è confermata: correggila sulla mappa prima di poter pubblicare.';
+    } else {
+      nota.textContent = '';
+    }
+  }
+
   // ── Elenco e form ─────────────────────────────────────────────────────
   let luoghi: any[] = [];
 
   function badge(testo: string, colore: string) {
     return `<span style="background:${colore}1f;color:${colore};border:1px solid ${colore}55;" class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full">${testo}</span>`;
+  }
+
+  function nomeProponente(l: any): string {
+    const c = l.creatore;
+    if (!c) return '';
+    return [c.nome, c.cognome].filter(Boolean).join(' ').trim() || c.email || '';
   }
 
   function disegnaLista() {
@@ -274,35 +525,50 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     const filtrati = luoghi.filter((l) => !q || l.nome.toLowerCase().includes(q) || (l.nome_ladino ?? '').toLowerCase().includes(q));
     if ($('lg-conta')) ($('lg-conta') as HTMLElement).textContent = `${luoghi.length} luoghi`;
     if (!filtrati.length) { box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm">Nessun luogo trovato.</p>'; return; }
-    box.innerHTML = filtrati.map((l) => `
+    box.innerHTML = filtrati.map((l) => {
+      const proponente = nomeProponente(l);
+      return `
       <button type="button" data-id="${l.id}" class="lg-riga text-left bg-white border border-[#E5DFCF] rounded-md px-4 py-3 hover:border-[#C8923E] cursor-pointer flex items-center justify-between gap-3 flex-wrap">
         <span>
           <strong class="text-[#1E2E26]">${l.nome}</strong>${l.nome_ladino ? ` <em class="text-[#8a6215]">· ${l.nome_ladino}</em>` : ''}
-          <span class="block text-xs text-[#1E2E26]/55 mt-0.5">${CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · ${VALLI_LUOGHI[l.valle] ?? l.valle}</span>
+          <span class="block text-xs text-[#1E2E26]/55 mt-0.5">${CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · ${VALLI_LUOGHI[l.valle] ?? l.valle}${proponente && l.stato === 'bozza' ? ` · proposto da ${proponente}` : ''}</span>
         </span>
-        <span class="flex gap-1.5 flex-none">
+        <span class="flex gap-1.5 flex-none flex-wrap justify-end">
           ${l.stato === 'pubblicato' ? badge('pubblicato', '#2d8659') : badge('bozza', '#8a6215')}
+          ${l.geo_stato === 'non_trovato' ? badge('posizione da correggere', '#a33') : ''}
+          ${l.nome_ladino && !l.toponimo_validato_il ? badge('ladino da convalidare', '#b0872f') : ''}
           ${l.in_anteprima ? badge('anteprima', '#b0872f') : ''}
         </span>
-      </button>`).join('');
+      </button>`;
+    }).join('');
     box.querySelectorAll('.lg-riga').forEach((b) => b.addEventListener('click', () => apriModifica((b as HTMLElement).dataset.id!)));
   }
   $('lg-cerca')?.addEventListener('input', disegnaLista);
 
   async function ricarica() {
-    const { data, error } = await supabase.from('luoghi_interesse').select('*').order('nome');
+    // creatore:creato_da(...) — embed su foreign key: legge il nome di chi ha
+    // proposto senza una query a parte per ogni riga.
+    const { data, error } = await supabase.from('luoghi_interesse')
+      .select('*, creatore:creato_da(nome, cognome, email)').order('nome');
     if (error) { const box = $('lg-lista'); if (box) box.innerHTML = `<p class="text-[#a33]">Non riesco a leggere i luoghi: ${error.message}</p>`; return; }
     luoghi = data ?? [];
     disegnaLista();
   }
 
   function svuotaForm() {
-    ['lg-nome', 'lg-nome-ladino', 'lg-nome-tedesco', 'lg-slug', 'lg-desc-breve', 'lg-desc-estesa', 'lg-url', 'lg-fonte', 'lg-lat', 'lg-lng']
+    ['lg-nome', 'lg-nome-ladino', 'lg-nome-tedesco', 'lg-slug', 'lg-desc-breve', 'lg-desc-estesa', 'lg-url', 'lg-fonte',
+     'lg-lat', 'lg-lng', 'lg-indirizzo', 'lg-ipa', 'lg-etimologia', 'lg-topon-note']
       .forEach((id) => setVal(id, ''));
+    setVal('lg-parlata', ''); setVal('lg-etim-strato', ''); setVal('lg-etim-certezza', '');
     (($('lg-anteprima') as HTMLInputElement)).checked = false;
-    slugToccato = false;
+    slugToccato = false; parlataToccata = false; geoStato = null; varianti = [];
+    disegnaVarianti(); aggiornaGeoBadge();
+    if ($('lg-geo-esito')) { ($('lg-geo-esito') as HTMLElement).removeAttribute('style'); ($('lg-geo-esito') as HTMLElement).textContent = ''; }
     ($('lg-form-wrap') as HTMLElement).dataset.id = '';
     if ($('lg-esito')) ($('lg-esito') as HTMLElement).textContent = '';
+    riempiAudio(null);
+    nascondi('lg-attestazioni-wrap');
+    nascondi('lg-validazione-wrap');
   }
 
   function apriNuovo() {
@@ -312,6 +578,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     if ($('lg-stato-badge')) ($('lg-stato-badge') as HTMLElement).textContent = '';
     mostra('lg-form-wrap');
     apriMappa(null, null);
+    if (puoValidareToponimo()) mostra('lg-validazione-wrap');
     $('lg-nome')?.focus();
   }
 
@@ -321,17 +588,47 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     svuotaForm();
     ($('lg-form-wrap') as HTMLElement).dataset.id = id;
     if ($('lg-form-titolo')) ($('lg-form-titolo') as HTMLElement).textContent = l.nome;
-    setVal('lg-nome', l.nome); setVal('lg-nome-ladino', l.nome_ladino ?? ''); setVal('lg-nome-tedesco', l.nome_tedesco ?? '');
+    setVal('lg-nome', l.nome);
+    setVal('lg-nome-ladino', l.nome_ladino ?? ''); setVal('lg-nome-tedesco', l.nome_tedesco ?? '');
     ($('lg-categoria') as HTMLSelectElement).value = l.categoria;
     ($('lg-valle') as HTMLSelectElement).value = l.valle;
     setVal('lg-slug', l.slug ?? ''); slugToccato = true;
     setVal('lg-desc-breve', l.descrizione_breve ?? ''); setVal('lg-desc-estesa', l.descrizione_estesa ?? '');
     setVal('lg-url', l.url_articolo ?? ''); setVal('lg-fonte', l.fonte_immagine ?? '');
+    setVal('lg-indirizzo', l.indirizzo ?? '');
+    setVal('lg-parlata', l.parlata ?? ''); parlataToccata = true;
+    varianti = Array.isArray(l.nome_ladino_varianti) ? [...l.nome_ladino_varianti] : []; disegnaVarianti();
+    setVal('lg-ipa', l.pronuncia_ipa ?? '');
+    riempiAudio(l.audio_id ?? null);
+    setVal('lg-etimologia', l.etimologia ?? '');
+    setVal('lg-etim-strato', l.etimologia_strato ?? ''); setVal('lg-etim-certezza', l.etimologia_certezza ?? '');
+    setVal('lg-topon-note', l.toponimo_note ?? '');
     (($('lg-anteprima') as HTMLInputElement)).checked = !!l.in_anteprima;
+    geoStato = l.geo_stato ?? null; aggiornaGeoBadge(); aggiornaGatePubblica();
     if ($('lg-stato-badge')) ($('lg-stato-badge') as HTMLElement).textContent = l.stato === 'pubblicato' ? 'Pubblicato' : 'In bozza';
-    if (l.stato === 'pubblicato') { mostra('lg-nascondi'); nascondi('lg-pubblica'); } else { mostra('lg-pubblica'); nascondi('lg-nascondi'); }
+    if (l.stato === 'pubblicato') { mostra('lg-nascondi'); nascondi('lg-pubblica'); }
+    else { if (puoPubblicare()) mostra('lg-pubblica'); nascondi('lg-nascondi'); }
     mostra('lg-form-wrap');
     apriMappa(l.lat, l.lng);
+    if (puoValidareToponimo()) { mostra('lg-validazione-wrap'); aggiornaValidazioneUI(l); }
+    mostra('lg-attestazioni-wrap');
+    caricaAttestazioni(id);
+  }
+
+  function aggiornaValidazioneUI(l: any) {
+    const stato = $('lg-validazione-stato');
+    const validaBtn = $('lg-valida') as HTMLButtonElement | null;
+    const invalidaBtn = $('lg-invalida') as HTMLButtonElement | null;
+    if (l.toponimo_validato_il) {
+      if (stato) stato.textContent = `Forma ladina convalidata il ${new Date(l.toponimo_validato_il).toLocaleDateString('it-IT')}.`;
+      validaBtn?.classList.add('hidden'); invalidaBtn?.classList.remove('hidden');
+    } else if (l.nome_ladino) {
+      if (stato) stato.textContent = 'Forma ladina scritta ma non ancora convalidata: la scheda pubblica non la mostra finché non lo è.';
+      validaBtn?.classList.remove('hidden'); invalidaBtn?.classList.add('hidden');
+    } else {
+      if (stato) stato.textContent = 'Nessun nome ladino scritto ancora.';
+      validaBtn?.classList.add('hidden'); invalidaBtn?.classList.add('hidden');
+    }
   }
 
   $('lg-nuovo')?.addEventListener('click', apriNuovo);
@@ -345,11 +642,13 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     const lng = parseFloat(val('lg-lng'));
     const esito = $('lg-esito');
     if (!nome || !categoria || !valle || !Number.isFinite(lat) || !Number.isFinite(lng)) {
-      if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Servono nome, categoria, valle e un punto sulla mappa.'; }
+      if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Servono nome, categoria, valle e un punto sulla mappa (anche approssimativo).'; }
       return;
     }
     const riga: Record<string, unknown> = {
       nome, categoria, valle, lat, lng,
+      indirizzo: val('lg-indirizzo').trim() || null,
+      geo_stato: geoStato,
       nome_ladino: val('lg-nome-ladino').trim() || null,
       nome_tedesco: val('lg-nome-tedesco').trim() || null,
       slug: val('lg-slug').trim() || slugify(nome),
@@ -358,18 +657,40 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
       url_articolo: val('lg-url').trim() || null,
       fonte_immagine: val('lg-fonte').trim() || null,
       in_anteprima: (($('lg-anteprima') as HTMLInputElement)).checked,
+      parlata: val('lg-parlata') || null,
+      nome_ladino_varianti: varianti.length ? varianti : null,
+      pronuncia_ipa: val('lg-ipa').trim() || null,
+      audio_id: val('lg-audio') || null,
+      etimologia: val('lg-etimologia').trim() || null,
+      etimologia_strato: val('lg-etim-strato') || null,
+      etimologia_certezza: val('lg-etim-certezza') || null,
+      toponimo_note: val('lg-topon-note').trim() || null,
     };
     const id = ($('lg-form-wrap') as HTMLElement).dataset.id;
     const btn = $('lg-salva') as HTMLButtonElement;
     btn.disabled = true;
-    const { error } = id
-      ? await supabase.from('luoghi_interesse').update(riga).eq('id', id)
-      : await supabase.from('luoghi_interesse').insert({ ...riga, stato: 'bozza' });
+    let error: any = null;
+    let nuovoId: string | null = null;
+    if (id) {
+      ({ error } = await supabase.from('luoghi_interesse').update(riga).eq('id', id));
+    } else {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess?.session?.user.id;
+      const { data: creata, error: eIns } = await supabase.from('luoghi_interesse')
+        .insert({ ...riga, stato: 'bozza', creato_da: uid, proposto_il: new Date().toISOString() })
+        .select('id').single();
+      error = eIns; nuovoId = creata?.id ?? null;
+    }
     btn.disabled = false;
-    if (error) { if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Non salvato: ' + error.message; } return; }
+    if (error) {
+      // 23505 = slug gia' preso da un altro luogo: si dice, non si tira a indovinare un suffisso al posto dell'utente.
+      const msg = (error as any)?.code === '23505' ? 'Questo indirizzo (slug) è già usato da un altro luogo: cambialo.' : ('Non salvato: ' + error.message);
+      if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = msg; }
+      return;
+    }
     if (esito) { esito.setAttribute('style', 'color:#2d8659'); esito.textContent = 'Salvato.'; }
     await ricarica();
-    if (!id) nascondi('lg-form-wrap'); // un luogo nuovo si ritrova nell'elenco, in bozza
+    if (!id && nuovoId) { apriModifica(nuovoId); } // resta nel form: puo' aggiungere subito attestazioni
   }
   $('lg-salva')?.addEventListener('click', salva);
 
@@ -378,12 +699,92 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     if (!id) return;
     const { error } = await supabase.from('luoghi_interesse').update({ stato: nuovo }).eq('id', id);
     const esito = $('lg-esito');
-    if (error) { if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Non riuscito: ' + error.message; } return; }
+    if (error) {
+      // Il trigger a database rifiuta chi e' sotto il direttivo: se il bottone
+      // non doveva esserci ed e' comparso lo stesso (bug), qui si dice perche'.
+      if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Non riuscito: ' + error.message; }
+      return;
+    }
     nascondi('lg-form-wrap');
     await ricarica();
   }
   $('lg-pubblica')?.addEventListener('click', () => cambiaStato('pubblicato'));
   $('lg-nascondi')?.addEventListener('click', () => cambiaStato('bozza'));
+
+  // ── Validazione del toponimo: firma separata dalla pubblicazione ────────
+  async function impostaValidazione(validare: boolean) {
+    const id = ($('lg-form-wrap') as HTMLElement).dataset.id;
+    if (!id) return;
+    const { data: sess } = await supabase.auth.getSession();
+    const uid = sess?.session?.user.id;
+    const patch = validare
+      ? { toponimo_validato_da: uid, toponimo_validato_il: new Date().toISOString() }
+      : { toponimo_validato_da: null, toponimo_validato_il: null };
+    const { error } = await supabase.from('luoghi_interesse').update(patch).eq('id', id);
+    if (error) { const s = $('lg-validazione-stato'); if (s) { s.setAttribute('style', 'color:#a33'); s.textContent = 'Non riuscito: ' + error.message; } return; }
+    const l = luoghi.find((x) => x.id === id);
+    if (l) { l.toponimo_validato_il = patch.toponimo_validato_il; l.toponimo_validato_da = patch.toponimo_validato_da; aggiornaValidazioneUI(l); }
+    await ricarica();
+  }
+  $('lg-valida')?.addEventListener('click', () => impostaValidazione(true));
+  $('lg-invalida')?.addEventListener('click', () => impostaValidazione(false));
+
+  // ── Attestazioni storiche: una riga per fonte, forma cosi' com'e' scritta ──
+  async function caricaAttestazioni(luogoId: string) {
+    const box = $('lg-attest-lista');
+    if (!box) return;
+    box.innerHTML = '<p class="text-[13px] text-[#1E2E26]/50 m-0">Carico…</p>';
+    const { data, error } = await supabase.from('toponimo_attestazione')
+      .select('*').eq('luogo_id', luogoId).order('anno_da', { ascending: true, nullsFirst: false });
+    if (error) { box.innerHTML = `<p class="text-[13px] text-[#a33] m-0">Non riesco a leggere le attestazioni: ${error.message}</p>`; return; }
+    const righe = data ?? [];
+    if (!righe.length) { box.innerHTML = '<p class="text-[13px] text-[#1E2E26]/50 m-0">Nessuna attestazione ancora.</p>'; return; }
+    box.innerHTML = righe.map((a: any) => {
+      const anno = a.anno_da ? (a.anno_a && a.anno_a !== a.anno_da ? `${a.anno_da}–${a.anno_a}` : String(a.anno_da)) : '';
+      return `
+      <div class="bg-white border border-[#E5DFCF] rounded px-3.5 py-2.5 flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="m-0 text-[#1E2E26]"><strong>«${a.forma}»</strong>${anno ? ` · ${anno}` : ''}</p>
+          <p class="m-0 text-[12.5px] text-[#1E2E26]/60 mt-0.5">${a.fonte}${a.collocazione_archivistica ? ` · ${a.collocazione_archivistica}` : ''}</p>
+          ${a.note ? `<p class="m-0 text-[12.5px] text-[#1E2E26]/70 mt-1">${a.note}</p>` : ''}
+          ${a.url_fonte ? `<a href="${a.url_fonte}" target="_blank" rel="noopener noreferrer" class="text-[12.5px] text-[#8a6215] underline">Collegamento →</a>` : ''}
+        </div>
+        <button type="button" data-id="${a.id}" class="lg-attest-elimina bg-transparent border-0 text-[#a33] cursor-pointer text-lg leading-none flex-none" aria-label="Elimina">×</button>
+      </div>`;
+    }).join('');
+    box.querySelectorAll('.lg-attest-elimina').forEach((b) => b.addEventListener('click', async () => {
+      const attId = (b as HTMLElement).dataset.id!;
+      if (!window.confirm('Eliminare questa attestazione?')) return;
+      const { error: eDel } = await supabase.from('toponimo_attestazione').delete().eq('id', attId);
+      if (eDel) { window.alert('Non riuscito: ' + eDel.message); return; }
+      await caricaAttestazioni(luogoId);
+    }));
+  }
+
+  $('lg-attest-aggiungi')?.addEventListener('click', async () => {
+    const luogoId = ($('lg-form-wrap') as HTMLElement).dataset.id;
+    const esito = $('lg-attest-esito');
+    const forma = val('lg-attest-forma').trim();
+    const fonte = val('lg-attest-fonte').trim();
+    if (!luogoId) return;
+    if (!forma || !fonte) { if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Servono almeno la forma e la fonte.'; } return; }
+    const annoDa = val('lg-attest-anno-da').trim(); const annoA = val('lg-attest-anno-a').trim();
+    const { data: sess } = await supabase.auth.getSession();
+    const { error } = await supabase.from('toponimo_attestazione').insert({
+      luogo_id: luogoId, forma, fonte,
+      anno_da: annoDa ? Number(annoDa) : null, anno_a: annoA ? Number(annoA) : null,
+      collocazione_archivistica: val('lg-attest-colloc').trim() || null,
+      url_fonte: val('lg-attest-url').trim() || null,
+      immagine_url: val('lg-attest-immagine').trim() || null,
+      note: val('lg-attest-note').trim() || null,
+      inserito_da: sess?.session?.user.id ?? null,
+    });
+    if (error) { if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = 'Non salvata: ' + error.message; } return; }
+    ['lg-attest-forma', 'lg-attest-anno-da', 'lg-attest-anno-a', 'lg-attest-fonte', 'lg-attest-colloc', 'lg-attest-url', 'lg-attest-immagine', 'lg-attest-note']
+      .forEach((id) => setVal(id, ''));
+    if (esito) { esito.setAttribute('style', 'color:#2d8659'); esito.textContent = 'Attestazione aggiunta.'; }
+    await caricaAttestazioni(luogoId);
+  });
 
   // ── Accesso: stessa identita' condivisa di tutto il dominio ─────────────
   async function avvia() {
@@ -392,8 +793,14 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     if (!session) { mostra('lg-login-1'); return; }
     const { data: ruoli } = await supabase.from('utente_ruolo')
       .select('ruolo:ruolo_id ( nome, livello )').eq('utente_id', session.user.id);
-    const puo = (ruoli ?? []).map((r: any) => r.ruolo).filter(Boolean).some((r: any) => (r.livello ?? 0) >= 50);
-    if (!puo) { mostra('lg-nego'); return; }
+    const elenco = (ruoli ?? []).map((r: any) => r.ruolo).filter(Boolean);
+    livelloUtente = Math.max(0, ...elenco.map((r: any) => r.livello ?? 0));
+    ruoliUtente = elenco.map((r: any) => r.nome).filter(Boolean);
+    // BRIEF 23/8/2026, decisione del segretario: chiunque abbia il permesso
+    // (>=50 o curatore_contenuti) propone in bozza — stessa regola della
+    // policy RLS "luoghi_admin_all", non un'altra inventata qui.
+    const puoProporre = livelloUtente >= 50 || ruoliUtente.includes('curatore_contenuti');
+    if (!puoProporre) { mostra('lg-nego'); return; }
     if ($('lg-utente')) ($('lg-utente') as HTMLElement).textContent = session.user.user_metadata?.nome || session.user.email;
     mostra('lg-pannello');
     ricarica();

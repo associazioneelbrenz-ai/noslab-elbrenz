@@ -93,6 +93,13 @@ verify_jwt = false
 [functions.museo-notifica]
 verify_jwt = true
 
+# geocodifica-luogo (23/8/2026): proxy verso Nominatim per il modulo di
+# proposta luoghi (PWA + /luoghi-curatela). Chiamata col JWT di chi propone,
+# gate e rate-limit (1 richiesta/sec, coda a database) dentro la funzione ->
+# verify_jwt=true, dichiarato per esplicito come le altre.
+[functions.geocodifica-luogo]
+verify_jwt = true
+
 # museo-donazioni-media (21/7): operazioni Storage sul ramo donazioni per il
 # pannello curatore (signed URL + copia file), via service role. Chiamata col
 # JWT del curatore -> verify_jwt=true + verifica ruolo lato server.
