@@ -335,7 +335,27 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
             infinitamente più di nessuna registrazione. Si scarta solo ciò che è
             inutilizzabile o problematico, non ciò che è brutto.
           </p>
-          <div id="au-lista" class="grid gap-3"></div>
+          {/* BRIEF 24/8/2026 §1: 58 voci ferme, 121 secondi in tutto, e nessun
+              posto dove ascoltarle in fila. La sessione le suona una dopo
+              l'altra: si apre, parte, e chi cura tiene solo un dito sullo
+              schermo. Ascoltare una scheda per volta (qui sotto, invariato)
+              resta per chi vuole rivedere un caso preciso. */}
+          <div class="flex items-center gap-3 flex-wrap mb-5">
+            <button type="button" id="au-avvia-sessione" class="bg-[#1E2E26] text-[#F5EEDD] font-semibold px-5 py-3 rounded cursor-pointer border-0 hover:bg-[#25382E]">▶ Ascolta in sequenza</button>
+            <span id="au-sessione-riassunto" class="text-sm text-[#1E2E26]/70"></span>
+          </div>
+
+          <div id="au-sessione" class="hidden mb-8">
+            <div class="bg-[#1E2E26] text-[#F5EEDD] rounded-t-lg px-5 py-3.5 flex items-center justify-between gap-3 flex-wrap">
+              <p id="au-ses-conta" class="m-0 text-[15px] font-semibold" style="font-family: 'Inter', sans-serif;"></p>
+              <button type="button" id="au-ses-chiudi" class="text-[#F5EEDD]/70 text-sm underline bg-transparent border-0 cursor-pointer">Chiudi la sessione</button>
+            </div>
+            <div id="au-ses-card" class="bg-white border-2 border-t-0 border-[#C8923E]/60 rounded-b-lg p-5 md:p-6"></div>
+          </div>
+
+          <div id="au-lista-wrap">
+            <div id="au-lista" class="grid gap-3"></div>
+          </div>
         </div>
       </section>
     </div>
@@ -1156,14 +1176,17 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     // parola scritta e' gia' pubblica — sono state dieci voci ferme sotto
     // dieci parole gia' pubblicate, e da questa schermata non si vedeva.
     const { data, error } = await supabase.from('archivio_audio')
-      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, lemma_id, created_at, mime_originale, formato_audio, lemma:lemma_id(lemma, stato, slug)')
+      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, parlata, comune_parlante, lemma_id, created_at, mime_originale, formato_audio, lemma:lemma_id(lemma, definizione, stato, slug)')
       .eq('stato', 'in_attesa').order('created_at').limit(80);
     if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere le registrazioni: ' + H(error.message) + '</p>'; return; }
     if (!data || !data.length) {
       box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessuna registrazione in attesa. Oggi l’archivio delle voci è a zero su centoquarantasei parole: è la voce più importante della pagina della qualità.</p>';
+      audioInAttesa = [];
+      riassuntoCoda();
       return;
     }
     audioInAttesa = data;
+    riassuntoCoda();
     box.innerHTML = data.map((a) => '<div class="bg-white border border-[#E5DFCF] rounded-lg p-4" data-id="' + a.id + '">'
       + '<p class="m-0 mb-1 text-[16px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(a.termine_ladino || a.titolo) + '</p>'
       + '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/60">'
@@ -1320,28 +1343,213 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     const sess = (await supabase.auth.getSession()).data.session;
     btn.disabled = true;
 
+    // [24/8/2026] `.eq('stato', 'in_attesa')` in piu': se un altro curatore ha
+    // gia' deciso questa voce nel frattempo (due persone in sessione insieme),
+    // l'update non tocca nessuna riga invece di sovrascrivere una decisione
+    // gia' presa. E' la stessa riga di codice che impedisce a due persone di
+    // decidere due volte sulla stessa voce, senza bisogno di una colonna di
+    // "presa in carico" che oggi non esiste.
     const { data, error } = await supabase.from('archivio_audio')
       .update({
         stato: esito, motivo_rifiuto: esito === 'rifiutato' ? (motivo || null) : null,
         ascoltato_da: sess?.user?.id ?? null, ascoltato_il: new Date().toISOString(),
-      }).eq('id', id).select('id, lemma_id');
+      }).eq('id', id).eq('stato', 'in_attesa').select('id, lemma_id');
     if (error || !data || !data.length) {
       btn.disabled = false;
       msg.style.color = '#a33';
-      msg.textContent = error ? 'Non salvato: ' + error.message : 'Non salvato: nessuna riga è cambiata.';
-      return;
+      msg.textContent = error ? 'Non salvato: ' + error.message : 'Già decisa da un altro curatore nel frattempo: nessuna modifica.';
+      return false;
     }
     // La voce si attacca alla parola SOLO quando e' stata ascoltata e
     // approvata: finche' e' in attesa il lemma non la conosce nemmeno.
     if (esito === 'pubblicato' && data[0].lemma_id) {
       const { error: e2 } = await supabase.from('dizionario_lemma')
         .update({ audio_id: id }).eq('id', data[0].lemma_id).select('id');
-      if (e2) { msg.style.color = '#a33'; msg.textContent = 'Registrazione approvata ma non agganciata alla parola: ' + e2.message; return; }
+      if (e2) { msg.style.color = '#a33'; msg.textContent = 'Registrazione approvata ma non agganciata alla parola: ' + e2.message; return false; }
     }
     msg.style.color = '#2d8659';
     msg.textContent = esito === 'pubblicato' ? 'Pubblicata sotto la parola.' : 'Scartata, e resta agli atti con il motivo.';
     setTimeout(() => { caricaAudio(); caricaLemmi(); caricaQualita(); }, 800);
+    return true;
   }
+
+  // ── SESSIONE DI ASCOLTO (brief 24/8/2026, §1) ────────────────────────────
+  //
+  // 58 voci ferme volevano dire: una scheda alla volta, ognuna da cercare e
+  // riaprire. Nessuno lo fa cinquantotto volte. Qui si suonano in fila, una
+  // sola alla volta: parte da sola, e chi cura tiene solo un dito sullo
+  // schermo. L'ascolto scheda-per-scheda qui sopra resta, per chi vuole
+  // rivedere un caso preciso senza attraversare tutta la coda.
+  //
+  // La coda vive in memoria (copia di `audioInAttesa`, gia' caricata): non si
+  // richiama il server a ogni avanzamento. Un ricontrollo puntuale prima di
+  // ogni carta evita di far ascoltare a qualcuno una voce che un altro
+  // curatore ha appena deciso — non e' una prenotazione (non esiste una
+  // colonna per quello, e questo brief non prevede una migration per
+  // crearla), ma basta a non far decidere la stessa voce due volte: la
+  // decisione vera e propria e' comunque protetta dalla stessa guardia
+  // `.eq('stato','in_attesa')` dentro decidiAudio, sopra.
+  const SESSIONE_CHIAVE = 'eb-glossario-sessione-ultimo-creato';
+  let sessioneCoda = [];
+  let sessioneAscoltata = false;
+
+  function secondiConti(voci) {
+    const note = voci.filter((v) => Number.isFinite(v.durata_secondi));
+    const somma = note.reduce((s, v) => s + v.durata_secondi, 0);
+    return { somma, tuttiNoti: note.length === voci.length };
+  }
+
+  // "Restano 58 voci, 2 minuti" fa iniziare il lavoro. "58 voci in attesa" lo
+  // fa rimandare. La cifra sta sempre sotto gli occhi, sopra la lista.
+  function riassuntoCoda() {
+    const el = $('au-sessione-riassunto');
+    if (!el) return;
+    if (!audioInAttesa.length) { el.textContent = ''; return; }
+    const { somma, tuttiNoti } = secondiConti(audioInAttesa);
+    el.textContent = audioInAttesa.length + ' voci in attesa · ' + (tuttiNoti ? '' : 'almeno ') + Math.round(somma) + ' secondi di ascolto in tutto.';
+  }
+
+  function apriSessione() {
+    if (!audioInAttesa.length) return;
+    // Riprende da dove si era arrivati: salta tutto cio' che e' gia' stato
+    // DECISO in una sessione precedente (il marcatore avanza solo li', mai
+    // su un semplice salto — vedi avanzaSessione). Se non trova niente di
+    // piu' recente e' un giro completo, non un errore: si riparte dall'inizio.
+    const ultimo = localStorage.getItem(SESSIONE_CHIAVE);
+    let partenza = ultimo ? audioInAttesa.findIndex((v) => v.created_at > ultimo) : 0;
+    if (partenza < 0) partenza = 0;
+    sessioneCoda = audioInAttesa.slice(partenza).concat(audioInAttesa.slice(0, partenza));
+    nascondi('au-lista-wrap');
+    mostra('au-sessione');
+    apriCartaSessione();
+  }
+
+  function chiudiSessione() {
+    nascondi('au-sessione');
+    mostra('au-lista-wrap');
+    sessioneCoda = [];
+    caricaAudio();
+  }
+
+  async function apriCartaSessione() {
+    const conta = $('au-ses-conta');
+    const box = $('au-ses-card');
+    if (!sessioneCoda.length) {
+      if (conta) conta.textContent = 'Coda esaurita';
+      if (box) box.innerHTML = '<div class="text-center py-10"><p class="m-0 text-[#1E2E26] text-lg" style="font-family: Playfair Display, serif;">Tutte le voci in attesa sono state ascoltate. Buon lavoro.</p></div>';
+      localStorage.removeItem(SESSIONE_CHIAVE);
+      riassuntoCoda();
+      return;
+    }
+    const a = sessioneCoda[0];
+
+    // Ricontrollo puntuale, non un lock: se un altro curatore ha appena
+    // deciso questa voce, la si toglie senza nemmeno mostrarla.
+    const { data: fresco } = await supabase.from('archivio_audio').select('stato').eq('id', a.id).maybeSingle();
+    if (!fresco || fresco.stato !== 'in_attesa') {
+      sessioneCoda.shift();
+      localStorage.setItem(SESSIONE_CHIAVE, a.created_at);
+      audioInAttesa = audioInAttesa.filter((v) => v.id !== a.id);
+      return apriCartaSessione();
+    }
+
+    sessioneAscoltata = false;
+    const { somma, tuttiNoti } = secondiConti(sessioneCoda);
+    if (conta) conta.textContent = 'Restano ' + sessioneCoda.length + ' voci · ' + (tuttiNoti ? '' : 'almeno ') + Math.round(somma) + ' secondi';
+
+    const detto = (a.termine_ladino || a.titolo || '').trim();
+    const scritto = (a.lemma && a.lemma.lemma) || '';
+    const diverso = detto && scritto && detto.toLowerCase() !== scritto.trim().toLowerCase();
+
+    box.innerHTML = '<div data-id="' + a.id + '">'
+      + (a.lemma
+        ? '<p class="m-0 mb-1 text-[11px] tracking-[0.16em] uppercase text-[#8a6215] font-semibold">Lemma collegato</p>'
+          + '<p class="m-0 mb-1 text-[19px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(a.lemma.lemma)
+          + (a.lemma.stato !== 'pubblicato' ? ' <span class="text-[11px] uppercase tracking-wider text-[#a33] align-middle">' + H(a.lemma.stato) + '</span>' : '') + '</p>'
+          + (a.lemma.definizione ? '<p class="m-0 mb-3 text-[14px] text-[#1E2E26]/75">' + H(a.lemma.definizione) + '</p>' : '<p class="m-0 mb-3 text-[13px] text-[#1E2E26]/45">Nessuna definizione ancora.</p>')
+        : '<p class="m-0 mb-3 text-[13px] text-[#a33] font-semibold">Nessuna parola collegata: questa voce non comparirà da nessuna parte finché non la si aggancia.</p>')
+      + (diverso
+        ? '<div class="mb-3 rounded border-l-4 border-[#a33] bg-[#FDF9F0] px-3 py-2">'
+          + '<p class="m-0 text-[13px] text-[#a33] font-semibold">La registrazione dice «' + H(detto) + '», la parola è «' + H(scritto) + '».</p>'
+          + '<p class="m-0 mt-1 text-[12px] text-[#1E2E26]/75">Possono essere due modi di dire la stessa cosa, oppure un aggancio sbagliato. Ascolta e decidi tu: il codice non sceglie.</p>'
+          + '</div>' : '')
+      + '<p class="m-0 mb-3 text-[13px] text-[#1E2E26]/65">'
+      + [PARLATA[a.parlata] || a.parlata, a.comune_parlante, 'termine dichiarato «' + H(detto || '—') + '»',
+         'portata da ' + H(a.portato_da_nome || 'ignoto'), a.durata_secondi ? a.durata_secondi + 's' : 'durata non registrata', quando(a.created_at)]
+        .filter(Boolean).join(' · ') + '</p>'
+      + (a.voce_di_altri
+        ? '<p class="m-0 mb-3 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33] font-semibold') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
+          + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
+        : '<p class="m-0 mb-3 text-[13px] text-[#1E2E26]/70">È la voce di chi ha caricato' + (a.anonimo ? ', che resta anonima' : '') + '.</p>')
+      + '<audio id="au-ses-player" controls autoplay preload="auto" src="' + H(a.file_url) + '" class="w-full mb-2"></audio>'
+      + (/webm|ogg/i.test(a.formato_audio || '')
+        ? '<div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded p-3 mb-3">'
+          + '<p class="m-0 text-[13px] text-[#1E2E26]/85">In <strong>' + H(a.formato_audio) + '</strong>: <strong>Apple non lo riproduce</strong>. Ascoltala da Chrome, oppure convertila qui — risolve anche la durata mancante.</p>'
+          + '<button type="button" class="au-conv mt-2 bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer">Convertila in un formato che sentono tutti</button>'
+          + '</div>' : '')
+      + '<p id="au-ses-avviso" class="m-0 mb-3 text-[12px] text-[#1E2E26]/60">Ascoltala fino in fondo: finché non è finita, «Pubblica» resta spento. Rifiutare e saltare non lo richiedono.</p>'
+      + '<div class="flex gap-2 flex-wrap items-center">'
+      + '<button type="button" id="au-ses-ok" class="au-ok bg-[#2d8659] text-white px-5 py-3 rounded text-sm font-semibold border-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed" disabled>Pubblica</button>'
+      + '<button type="button" id="au-ses-no" class="au-no bg-[#F5EEDD] text-[#a33] border border-[#d97a7a] px-5 py-3 rounded text-sm cursor-pointer">Rifiuta</button>'
+      + '<input id="au-ses-motivo" class="au-motivo border border-[#E5DFCF] rounded px-3 py-2 text-sm flex-1 min-w-[8rem]" maxlength="300" placeholder="Motivo (se rifiuti)" />'
+      + '<button type="button" id="au-ses-salta" class="bg-transparent text-[#1E2E26]/60 underline border-0 cursor-pointer px-2 py-3 text-sm">Salta →</button>'
+      + '</div><p class="au-esito text-[13px] m-0 mt-2"></p></div>';
+
+    const player = $('au-ses-player');
+    player?.addEventListener('ended', async () => {
+      sessioneAscoltata = true;
+      const ok = $('au-ses-ok'); const avviso = $('au-ses-avviso');
+      if (ok) ok.disabled = false;
+      if (avviso) { avviso.style.color = '#2d8659'; avviso.textContent = 'Ascoltata fino in fondo: ora puoi pubblicarla.'; }
+      const sess = (await supabase.auth.getSession()).data.session;
+      const { error } = await supabase.from('archivio_audio')
+        .update({ ascoltato_da: sess?.user?.id ?? null, ascoltato_il: new Date().toISOString() })
+        .eq('id', a.id);
+      if (error) console.error('[sessione] ascolto non registrato:', error.message);
+    });
+    // Se il file non si carica, la voce non sparisce e non si pubblica: si
+    // segnala e si va avanti — un errore di rete non deve costare una voce.
+    player?.addEventListener('error', () => {
+      const esito = box.querySelector('.au-esito');
+      if (esito) { esito.style.color = '#a33'; esito.textContent = 'Questo file non si carica: la voce resta in attesa, non è stata scartata. Segnalalo e passa alla prossima.'; }
+    });
+    $('au-ses-ok')?.addEventListener('click', async () => {
+      if (!sessioneAscoltata) return;
+      if (await decidiAudio($('au-ses-ok'), 'pubblicato')) avanzaSessione(true);
+    });
+    $('au-ses-no')?.addEventListener('click', async () => {
+      const motivo = ($('au-ses-motivo')?.value || '').trim();
+      if (motivo.length < 3) {
+        const esito = box.querySelector('.au-esito');
+        if (esito) { esito.style.color = '#a33'; esito.textContent = 'Scrivi perché la scarti: una voce scartata senza motivo, fra due anni, è indistinguibile da una persa.'; }
+        return;
+      }
+      if (await decidiAudio($('au-ses-no'), 'rifiutato')) avanzaSessione(true);
+    });
+    $('au-ses-salta')?.addEventListener('click', () => avanzaSessione(false));
+    box.querySelectorAll('.au-conv').forEach((b) => b.addEventListener('click', () => convertiAudio(b)));
+  }
+
+  // `deciso=true`: la voce e' fatta (pubblicata, rifiutata, o gia' presa da
+  // un altro) — il marcatore di ripresa avanza, non si rivede piu'.
+  // `deciso=false`: e' un salto — torna in fondo a QUESTA coda (si ripresenta
+  // dopo le altre, nello stesso giro), il marcatore NON avanza: chiudendo e
+  // riaprendo la sessione la si ritrova, non sparisce nel nulla.
+  function avanzaSessione(deciso) {
+    if (!sessioneCoda.length) return;
+    const corrente = sessioneCoda.shift();
+    if (deciso) {
+      localStorage.setItem(SESSIONE_CHIAVE, corrente.created_at);
+      audioInAttesa = audioInAttesa.filter((v) => v.id !== corrente.id);
+    } else {
+      sessioneCoda.push(corrente);
+    }
+    riassuntoCoda();
+    apriCartaSessione();
+  }
+
+  $('au-avvia-sessione')?.addEventListener('click', apriSessione);
+  $('au-ses-chiudi')?.addEventListener('click', chiudiSessione);
 
   // ── TAB ─────────────────────────────────────────────────────────────────
   function apriTab(nome) {
