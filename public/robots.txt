@@ -22,6 +22,10 @@ Disallow: /guardiani-curatela
 Disallow: /convenzioni-curatela
 Disallow: /custodi-curatela
 Disallow: /museo-gg-curatela
+Disallow: /luoghi-curatela
+Disallow: /glossario-console
+Disallow: /trascrizioni
+Disallow: /redazione
 Disallow: /radar-eventi
 Disallow: /accedi
 Disallow: /app/

@@ -332,3 +332,12 @@ verify_jwt = true
 
 [functions.test-search]
 verify_jwt = true
+
+# assemblea-convoca e libro-sociale-file (audit 24/8/2026): deployate ma mai
+# dichiarate qui. Oggi verify_jwt=true dal vivo; senza questa riga un
+# redeploy in blocco le riporterebbe al default, non a quello che hanno ora.
+[functions.assemblea-convoca]
+verify_jwt = true
+
+[functions.libro-sociale-file]
+verify_jwt = true
