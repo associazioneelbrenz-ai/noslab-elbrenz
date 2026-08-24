@@ -29,6 +29,11 @@ const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 const statoGitaOra = await statoGita();
 const gitaAnnullata = statoGitaOra === 'annullata';
 const gitaAperta = statoGitaOra === 'aperta';
+// [24/8/2026] Conclusa != annullata: niente invito (gitaAperta e' gia' false),
+// ma nemmeno il badge rosso "Annullata", che sarebbe falso — l'evento si e'
+// svolto. In pratica `nostri` (filtrato per data) toglie gia' la card da
+// questa lista da sola; questo resta comunque coerente col resto del sito.
+const gitaConclusaOra = statoGitaOra === 'conclusa';
 
 type Nostro = {
   id: string; titolo: string; descrizione: string | null; tipo: string | null;
@@ -153,6 +158,11 @@ const postiLiberi = posti ? Math.max(0, posti.posti_totali - posti.posti_occupat
                       {gitaAnnullata && (
                         <span class="inline-block bg-[#8a3a3a] text-[#F5EEDD] px-5 py-3 rounded font-semibold text-sm">
                           Annullata
+                        </span>
+                      )}
+                      {gitaConclusaOra && (
+                        <span class="inline-block bg-[#1E2E26]/10 text-[#1E2E26]/70 px-5 py-3 rounded font-semibold text-sm">
+                          Conclusa
                         </span>
                       )}
                       {gitaAperta && (

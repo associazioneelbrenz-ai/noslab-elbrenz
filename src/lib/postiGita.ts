@@ -73,7 +73,21 @@ export async function getStatoGita(
 }
 
 /**
- * Lo stato della gita in TRE esiti, non due.
+ * La gita e' del 22 agosto 2026: passata quella data non c'e' piu' niente da
+ * prenotare, qualunque cosa dica `config_app`. Costante locale apposta, non
+ * una lettura di rete: cosi' questo confronto regge ANCHE quando il database
+ * non risponde, che e' l'unico caso in cui il resto di questo file non
+ * potrebbe garantire niente da solo — il calendario non si scorda mai di
+ * chiudere, una persona sì (brief 24/8/2026: il modulo era ancora aperto due
+ * giorni dopo l'evento, perche' nessuno aveva spento `config_app` a mano).
+ */
+const FINE_GITA = new Date('2026-08-22T23:59:59+02:00').getTime();
+function gitaConclusa(): boolean {
+  return Date.now() > FINE_GITA;
+}
+
+/**
+ * Lo stato della gita in QUATTRO esiti, non tre.
  *
  * [4/8/2026, secondo giro] Il fail-closed di `getStatoGita` risponde
  * «annullata» quando non riesce a leggere, e per nascondere un invito a pagare
@@ -82,15 +96,20 @@ export async function getStatoGita(
  * rete diventa cosi' un annuncio falso, e la gente smette di iscriversi a un
  * viaggio che si fa.
  *
- * La regola e' che un dato che non si riesce a leggere non deve mai produrre
- * un'affermazione. Quindi qui gli esiti sono tre e le pagine li trattano tutti
- * e tre: si tace, non si mente.
+ * [24/8/2026] La stessa regola vale per la data. Un evento che si e' gia'
+ * svolto non e' «annullato» — e' successo, e dirlo annullato sarebbe falso
+ * quanto l'opposto. E' un quarto stato, 'conclusa': nasconde l'invito a
+ * iscriversi esattamente come 'annullata', ma non mostra il badge rosso
+ * "Annullata", perche' non lo e' stata. Controllata qui, in un punto solo, e
+ * non nelle singole pagine: home, /eventi, la pagina della gita e il modulo
+ * di iscrizione la ereditano tutte insieme, non possono piu' disallinearsi.
  *
  *   'aperta'         -> si invita a iscriversi
  *   'annullata'      -> si dice che e' annullata, ed e' vero
- *   'non_verificabile' -> ne' l'uno ne' l'altro: si mostra il resto e basta
+ *   'conclusa'       -> la data e' passata: niente invito, niente badge rosso
+ *   'non_verificabile' -> nessuna delle precedenti e' verificata: si tace
  */
-export type StatoGita = 'aperta' | 'annullata' | 'non_verificabile';
+export type StatoGita = 'aperta' | 'annullata' | 'conclusa' | 'non_verificabile';
 
 export async function statoGita(
   slug = 'gita_giochi_medievali_2026_stato',
@@ -104,9 +123,14 @@ export async function statoGita(
       'La pagina non dira ne aperta ne annullata. Controlla le variabili PUBLIC_SUPABASE_* ' +
       'e che la chiave sia in config_app_chiavi_pubbliche().',
     );
-    return 'non_verificabile';
+    // Anche senza database, il calendario resta leggibile: se la data e' gia'
+    // passata lo si puo' dire lo stesso, senza aver bisogno di config_app.
+    return gitaConclusa() ? 'conclusa' : 'non_verificabile';
   }
-  return r.annullata ? 'annullata' : 'aperta';
+  // Annullata esplicitamente (decisione del segretario) resta annullata anche
+  // dopo la data: e' un fatto diverso da "si e' svolta ed e' finita".
+  if (r.annullata) return 'annullata';
+  return gitaConclusa() ? 'conclusa' : 'aperta';
 }
 
 /**

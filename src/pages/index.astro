@@ -104,6 +104,10 @@ import IndicatoreScorri from '../components/IndicatoreScorri.astro';
 const statoGitaOra = await statoGita();
 const gitaAnnullata = statoGitaOra === 'annullata';
 const gitaAperta = statoGitaOra === 'aperta';
+// [24/8/2026] Conclusa != annullata: la data e' passata, l'evento si e'
+// svolto. Niente invito a iscriversi (gitaAperta e' gia' false), ma nemmeno
+// il badge rosso "Annullata", che sarebbe falso.
+const gitaConclusaOra = statoGitaOra === 'conclusa';
 
 // MODIFICA 2/8/2026 — anche la home legge dalla vista, come /articoli,
 // /articoli/<slug> e /archivio-storico. Prima passava dal ponte
@@ -764,11 +768,13 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
                     {e.data.descrizioneBreve}
                   </p>
                 )}
-                {isGita && statoGitaOra === 'non_verificabile' ? (
-                  /* [4/8/2026] Stato non leggibile: la card resta, con il suo
-                     titolo e il collegamento, ma senza contatore, senza badge
-                     e senza invito a pagare. Nessuna delle due affermazioni e'
-                     verificata, quindi non se ne fa nessuna. */
+                {isGita && (statoGitaOra === 'non_verificabile' || gitaConclusaOra) ? (
+                  /* [4/8/2026, esteso 24/8] Stato non leggibile, o evento gia'
+                     concluso: la card resta, con il suo titolo e il
+                     collegamento, ma senza contatore, senza badge e senza
+                     invito a pagare. Per "conclusa" in piu' non si mente
+                     dicendola annullata: si tace e basta, come per il dato
+                     non verificabile. */
                   <div class="mt-auto pt-4 flex flex-wrap items-center gap-x-4 gap-y-2" style="font-family: 'Inter', sans-serif;">
                     <a href={e.data.link} class="text-sm text-[#8a6215] no-underline hover:underline">Tutti i dettagli</a>
                   </div>

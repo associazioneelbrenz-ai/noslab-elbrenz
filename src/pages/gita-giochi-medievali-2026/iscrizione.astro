@@ -57,6 +57,10 @@ const ISCRIZIONI_CUTOFF_ISO = '2026-08-14T23:59:59+02:00';
 const stato = await statoGita();
 const gitaAnnullata = stato === 'annullata';
 const gitaAperta = stato === 'aperta';
+// [24/8/2026] Conclusa != annullata: il modulo resta chiuso in entrambi i
+// casi (gitaAperta e' gia' false), ma cio' che si scrive e' diverso — la gita
+// si e' svolta, non e' stata cancellata.
+const gitaConclusa = stato === 'conclusa';
 // NOTA [4/8]: qui la guardia sul bonus c'era gia' (PREORDER_ATTIVO, sopra), ed
 // e' corretta. Mancava invece sulla landing, che il 4 agosto prometteva ancora
 // il bonus scaduto il 31 luglio. La soglia pero' e' scritta in DUE posti, qui
@@ -125,6 +129,17 @@ const input = "w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E
             non è stato raggiunto il numero minimo di partecipanti richiesto per il
             pullman. Chi aveva versato l'anticipo lo ha ricevuto indietro per intero.
             Ci riproviamo in un periodo che permetta a più persone di esserci.
+          </p>
+          <p class="mt-4 mb-0 text-sm text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">
+            Per qualunque cosa: <a href="mailto:info@elbrenz.eu" class="text-[#8a6215] underline">info@elbrenz.eu</a>
+          </p>
+        </div>
+      )}
+      {gitaConclusa && (
+        <div class="bg-white border-l-4 border-[#1E2E26] rounded p-6 md:p-8" role="status">
+          <h2 class="text-xl text-[#1E2E26] font-medium m-0 mb-3" style="font-family: 'Playfair Display', serif;">Gita conclusa</h2>
+          <p class="m-0 text-[#1E2E26]/85 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+            La gita del 22 agosto ai Giochi Medievali del Südtirol si è svolta: le iscrizioni sono chiuse.
           </p>
           <p class="mt-4 mb-0 text-sm text-[#1E2E26]/70" style="font-family: 'Inter', sans-serif;">
             Per qualunque cosa: <a href="mailto:info@elbrenz.eu" class="text-[#8a6215] underline">info@elbrenz.eu</a>

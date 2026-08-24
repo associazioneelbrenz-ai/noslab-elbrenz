@@ -32,6 +32,12 @@ const posti = await getPostiGita();
 const stato = await statoGita();
 const gitaAnnullata = stato === 'annullata';
 const gitaAperta = stato === 'aperta';
+// [24/8/2026] Conclusa != annullata: la gita si e' svolta, non e' stata
+// cancellata. Chi arriva qui da un link vecchio (popup, condivisione, motore
+// di ricerca) trova la spiegazione giusta, non un modulo di iscrizione ancora
+// aperto per un viaggio gia' fatto — ed e' esattamente il difetto segnalato
+// il 24/8: `config_app` diceva ancora "aperta" due giorni dopo l'evento.
+const gitaConclusa = stato === 'conclusa';
 // Le date NON si scrivono a mano: quella che era cablata qui diceva 14 agosto
 // mentre la chiusura vera e' il 15, e nessuno se n'era accorto.
 const chiusura = await chiusuraIscrizioniGita();
@@ -49,6 +55,8 @@ const totaliNoti = posti?.totali ?? null;
 
 const ogDescription = gitaAnnullata
   ? 'La gita del 22 agosto ai Giochi Medievali del Südtirol e\' stata annullata: non e\' stato raggiunto il numero minimo di partecipanti.'
+  : gitaConclusa
+  ? 'La gita del 22 agosto ai Giochi Medievali del Südtirol si e\' svolta: le iscrizioni sono chiuse.'
   : descrizioneGita(posti);
 Astro.response.headers.set('Cache-Control', 'public, max-age=300');
 
@@ -88,6 +96,17 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
       </div>
     </aside>
   )}
+  {gitaConclusa && (
+    /* Neutro, non rosso: non e' un annullamento, e' successo davvero. */
+    <aside class="bg-[#1E2E26] text-[#F5EEDD]" role="status" aria-live="polite">
+      <div class="max-w-3xl mx-auto px-6 py-6 md:py-7">
+        <p class="text-base md:text-lg leading-relaxed m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+          <strong style="font-family: 'Inter', sans-serif;">Gita conclusa.</strong>
+          La gita del 22 agosto ai Giochi Medievali del Südtirol si è svolta: le iscrizioni sono chiuse.
+        </p>
+      </div>
+    </aside>
+  )}
 
   {/* ===================== HERO ===================== */}
   <section class="relative bg-[#1E2E26] text-[#F5EEDD] overflow-hidden">
@@ -104,6 +123,9 @@ const CTA = 'inline-block bg-[#C8923E] text-[#1E2E26] px-8 py-4 text-base font-s
       </p>
       {gitaAnnullata && (
         <p class="text-base text-[#F5EEDD]/70 m-0" style="font-family: 'Inter', sans-serif;">Edizione 2026 annullata</p>
+      )}
+      {gitaConclusa && (
+        <p class="text-base text-[#F5EEDD]/70 m-0" style="font-family: 'Inter', sans-serif;">Edizione 2026 conclusa</p>
       )}
       {gitaAperta && (
         <>
