@@ -566,7 +566,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     if (!box) return;
     box.innerHTML = foto.map((url, i) => `
       <div style="position:relative;width:78px;height:78px;">
-        <img src="${url}" style="width:78px;height:78px;object-fit:cover;border-radius:8px;border:${i === 0 ? '2px solid #C8923E' : '1px solid rgba(200,146,62,.4)'};" />
+        <img src="${url}" alt="${i === 0 ? 'Foto di copertina' : `Foto ${i + 1}`}" style="width:78px;height:78px;object-fit:cover;border-radius:8px;border:${i === 0 ? '2px solid #C8923E' : '1px solid rgba(200,146,62,.4)'};" />
         ${i === 0 ? '<span style="position:absolute;bottom:2px;left:2px;font-size:9px;background:rgba(30,46,38,.75);color:#F5EEDD;padding:1px 5px;border-radius:4px;">copertina</span>' : ''}
         <button type="button" class="lg-foto-via" data-i="${i}" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#a33;color:#fff;border:0;cursor:pointer;line-height:1;">×</button>
         ${i > 0 ? `<button type="button" class="lg-foto-su" data-i="${i}" style="position:absolute;bottom:-6px;left:-6px;width:20px;height:20px;border-radius:50%;background:#1E2E26;color:#fff;border:0;cursor:pointer;font-size:11px;line-height:1;">↑</button>` : ''}

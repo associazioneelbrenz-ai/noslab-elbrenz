@@ -320,6 +320,13 @@ verify_jwt = true
 # verify_jwt=true e ogni registrazione morirebbe con un 401 muto al gateway.
 verify_jwt = false
 
+# glossario-audio-revisione (25/8/2026, audit SIC-06): l'unico modo per un
+# curatore di ascoltare una voce non ancora pubblicata (indirizzo firmato,
+# breve scadenza, bucket privato) e di pubblicarla (sposta il file nel
+# bucket pubblico solo in quel momento). Sessione del chiamante -> verify_jwt=true.
+[functions.glossario-audio-revisione]
+verify_jwt = true
+
 # ---- Funzioni di prova rimaste dal collaudo di luglio ----
 # Non sono un buco: entrambe controllano INGEST_TOKEN e falliscono chiuse se il
 # secret non c'e'. Ma non erano DICHIARATE, e la Trappola 12 dice che cio' che

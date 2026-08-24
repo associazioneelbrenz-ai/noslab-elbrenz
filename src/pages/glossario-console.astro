@@ -388,6 +388,20 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   // stesso file prima o poi si scambiano di posto.
   const quando = (t) => (t ? new Date(t).toLocaleString('it-IT', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
 
+  // AUDIT 25/8/2026 (SIC-06). Le registrazioni non pubblicate vivono in un
+  // bucket privato: qui non si legge mai a.file_url per riprodurle, si chiede
+  // un indirizzo firmato a scadenza breve a chi ha il ruolo di curatore.
+  // Le già pubblicate restano pubbliche e la funzione le lascia passare così.
+  async function firmaAudio(id) {
+    const { data, error } = await supabase.functions.invoke('glossario-audio-revisione', { body: { azione: 'firma', id } });
+    if (error || !data?.ok) {
+      let dettaglio = error?.message ?? data?.error ?? 'indirizzo non disponibile';
+      try { const corpo = await error?.context?.json?.(); if (corpo?.error) dettaglio = corpo.dettaglio || corpo.error; } catch { /* noop */ }
+      return { url: null, errore: dettaglio };
+    }
+    return { url: data.url, errore: null };
+  }
+
   const PARLATA = {
     noneso: 'Noneso', solander: 'Solander', rabies: 'Rabies', pegaes: 'Pegaes',
   };
@@ -666,6 +680,13 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     const a = data[0];
     voceAperta = a;
 
+    const firma = await firmaAudio(a.id);
+    if (!firma.url) {
+      box.classList.remove('hidden');
+      box.innerHTML = '<p class="m-0 text-[13px] text-[#a33]">Non riesco a preparare l’ascolto: ' + H(firma.errore) + '</p>';
+      return;
+    }
+
     // IL DISACCORDO SI MOSTRA, NON SI NASCONDE. La registrazione puo' dire una
     // parola e il lemma un'altra: puo' essere una variante giusta o un aggancio
     // sbagliato, e lo decide chi ascolta. Nasconderlo vorrebbe dire pubblicare
@@ -691,7 +712,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
         ? '<p class="m-0 mb-2 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33] font-semibold') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
           + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
         : '<p class="m-0 mb-2 text-[13px] text-[#1E2E26]/70">È la voce di chi ha caricato' + (a.anonimo ? ', che resta anonima' : '') + '.</p>')
-      + '<audio id="sc-voce-player" controls preload="metadata" src="' + H(a.file_url) + '" class="w-full mb-2"></audio>'
+      + '<audio id="sc-voce-player" controls preload="metadata" src="' + H(firma.url) + '" class="w-full mb-2"></audio>'
       + (/webm|ogg/i.test(a.formato_audio || '')
         ? '<p class="m-0 mb-2 text-[12px] text-[#1E2E26]/75 bg-white border-l-4 border-[#C8923E] px-3 py-2">In <strong>' + H(a.formato_audio) + '</strong>: <strong>Apple non lo riproduce</strong>. Su iPhone e Safari il lettore dice «Errore» anche se il file è integro — ascoltala da Chrome, o convertila dalla scheda «Le voci».</p>'
         : '')
@@ -743,23 +764,21 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
       return;
     }
     if (esito === 'pubblicato' && !voceAscoltata) return;
-    const sess = (await supabase.auth.getSession()).data.session;
-    const { data, error } = await supabase.from('archivio_audio')
-      .update({
-        stato: esito,
-        motivo_rifiuto: esito === 'rifiutato' ? motivo : null,
-        ascoltato_da: sess?.user?.id ?? null,
-        ascoltato_il: new Date().toISOString(),
-      }).eq('id', voceAperta.id).select('id, lemma_id');
-    if (error || !data || !data.length) {
+    // AUDIT 25/8/2026 (SIC-06): la decisione passa dalla funzione, non da un
+    // update diretto — è lei che sposta il file nel bucket pubblico solo ora,
+    // mai prima, e aggancia il lemma nello stesso passaggio.
+    const { data, error } = await supabase.functions.invoke('glossario-audio-revisione', {
+      body: { azione: 'decidi', id: voceAperta.id, esito, motivo: esito === 'rifiutato' ? motivo : undefined },
+    });
+    if (error || !data?.ok) {
+      let dettaglio = error?.message ?? data?.error ?? 'errore sconosciuto';
+      try { const corpo = await error?.context?.json?.(); if (corpo?.dettaglio) dettaglio = corpo.dettaglio; } catch { /* noop */ }
       msg.style.color = '#a33';
-      msg.textContent = error ? 'Non salvato: ' + error.message : 'Non salvato: nessuna riga è cambiata.';
+      msg.textContent = 'Non salvato: ' + dettaglio;
       return false;
     }
-    if (esito === 'pubblicato' && data[0].lemma_id) {
-      const { error: e2 } = await supabase.from('dizionario_lemma')
-        .update({ audio_id: voceAperta.id }).eq('id', data[0].lemma_id).select('id');
-      if (e2) { msg.style.color = '#a33'; msg.textContent = 'Voce approvata ma non agganciata alla parola: ' + e2.message; return false; }
+    if (esito === 'pubblicato' && data.erroreAggancio) {
+      msg.style.color = '#a33'; msg.textContent = 'Voce approvata ma non agganciata alla parola: ' + data.erroreAggancio; return false;
     }
     msg.style.color = '#2d8659';
     msg.textContent = esito === 'pubblicato' ? 'Pubblicata sotto la parola.' : 'Scartata, e resta agli atti con il motivo.';
@@ -1207,7 +1226,12 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
         ? '<p class="m-0 mb-2 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33]') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
           + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
         : '<p class="m-0 mb-2 text-[13px] text-[#1E2E26]/70">È la voce di chi ha caricato.</p>')
-      + '<audio controls preload="none" src="' + H(a.file_url) + '" class="w-full mb-2"></audio>'
+      // AUDIT 25/8/2026 (SIC-06): niente src diretto (il file e' privato finche'
+      // non pubblicato). Si firma un indirizzo a scadenza breve solo quando il
+      // curatore preme "Carica l'audio" — ottanta voci non si firmano tutte
+      // insieme a ogni apertura della pagina.
+      + '<button type="button" class="au-carica bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 rounded text-sm font-semibold border-0 cursor-pointer mb-2">▶ Carica e ascolta</button>'
+      + '<audio class="au-player hidden w-full mb-2" controls preload="none"></audio>'
       // [10/8 sera] Se il file e' WebM o Ogg, Apple non lo riproduce: su iPhone
       // e su Safari il lettore dice «Errore» sopra una registrazione integra, e
       // un curatore che non lo sa pensa che la voce sia rotta e la scarta. Le
@@ -1245,6 +1269,19 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     box.querySelectorAll('.au-ok').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'pubblicato')));
     box.querySelectorAll('.au-conv').forEach((b) => b.addEventListener('click', () => convertiAudio(b)));
     box.querySelectorAll('.au-no').forEach((b) => b.addEventListener('click', () => decidiAudio(b, 'rifiutato')));
+    // AUDIT 25/8/2026 (SIC-06): l'indirizzo si firma solo al clic, per non
+    // chiedere ottanta firme a ogni apertura della pagina.
+    box.querySelectorAll('.au-carica').forEach((btn) => btn.addEventListener('click', async () => {
+      const card = btn.closest('[data-id]');
+      const player = card.querySelector('.au-player');
+      btn.disabled = true; btn.textContent = 'Carico…';
+      const firma = await firmaAudio(card.getAttribute('data-id'));
+      if (!firma.url) { btn.disabled = false; btn.textContent = 'Riprova'; return; }
+      player.src = firma.url;
+      player.classList.remove('hidden');
+      btn.classList.add('hidden');
+      player.play().catch(() => {});
+    }));
   }
 
   // ── LA CONVERSIONE DI RECUPERO ──────────────────────────────────────────
@@ -1270,7 +1307,11 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     if (!riga) { btn.disabled = false; btn.textContent = 'Riprova'; dillo('#a33', 'Non trovo la registrazione: ricarica la pagina.'); return; }
 
     try {
-      const risposta = await fetch(riga.file_url);
+      // AUDIT 25/8/2026 (SIC-06): riga.file_url punta al bucket privato finché
+      // non pubblicata, quindi non si scarica più direttamente.
+      const firma = await firmaAudio(id);
+      if (!firma.url) throw new Error(firma.errore || 'indirizzo non disponibile');
+      const risposta = await fetch(firma.url);
       if (!risposta.ok) throw new Error('scaricamento ' + risposta.status);
       const grezzo = await risposta.blob();
 
@@ -1340,32 +1381,24 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     const msg = card.querySelector('.au-esito');
     const motivo = (card.querySelector('.au-motivo')?.value || '').trim();
     const id = card.getAttribute('data-id');
-    const sess = (await supabase.auth.getSession()).data.session;
     btn.disabled = true;
 
-    // [24/8/2026] `.eq('stato', 'in_attesa')` in piu': se un altro curatore ha
-    // gia' deciso questa voce nel frattempo (due persone in sessione insieme),
-    // l'update non tocca nessuna riga invece di sovrascrivere una decisione
-    // gia' presa. E' la stessa riga di codice che impedisce a due persone di
-    // decidere due volte sulla stessa voce, senza bisogno di una colonna di
-    // "presa in carico" che oggi non esiste.
-    const { data, error } = await supabase.from('archivio_audio')
-      .update({
-        stato: esito, motivo_rifiuto: esito === 'rifiutato' ? (motivo || null) : null,
-        ascoltato_da: sess?.user?.id ?? null, ascoltato_il: new Date().toISOString(),
-      }).eq('id', id).eq('stato', 'in_attesa').select('id, lemma_id');
-    if (error || !data || !data.length) {
+    // AUDIT 25/8/2026 (SIC-06): la decisione passa dalla funzione, che tiene
+    // lo stesso vincolo di prima (già decisa da un altro? niente modifica) e
+    // in più sposta il file nel bucket pubblico solo ora, mai prima.
+    const { data, error } = await supabase.functions.invoke('glossario-audio-revisione', {
+      body: { azione: 'decidi', id, esito, motivo: esito === 'rifiutato' ? (motivo || undefined) : undefined },
+    });
+    if (error || !data?.ok) {
+      let dettaglio = error?.message ?? data?.error ?? 'errore sconosciuto';
+      try { const corpo = await error?.context?.json?.(); if (corpo?.dettaglio) dettaglio = corpo.dettaglio; } catch { /* noop */ }
       btn.disabled = false;
       msg.style.color = '#a33';
-      msg.textContent = error ? 'Non salvato: ' + error.message : 'Già decisa da un altro curatore nel frattempo: nessuna modifica.';
+      msg.textContent = 'Non salvato: ' + dettaglio;
       return false;
     }
-    // La voce si attacca alla parola SOLO quando e' stata ascoltata e
-    // approvata: finche' e' in attesa il lemma non la conosce nemmeno.
-    if (esito === 'pubblicato' && data[0].lemma_id) {
-      const { error: e2 } = await supabase.from('dizionario_lemma')
-        .update({ audio_id: id }).eq('id', data[0].lemma_id).select('id');
-      if (e2) { msg.style.color = '#a33'; msg.textContent = 'Registrazione approvata ma non agganciata alla parola: ' + e2.message; return false; }
+    if (esito === 'pubblicato' && data.erroreAggancio) {
+      msg.style.color = '#a33'; msg.textContent = 'Registrazione approvata ma non agganciata alla parola: ' + data.erroreAggancio; return false;
     }
     msg.style.color = '#2d8659';
     msg.textContent = esito === 'pubblicato' ? 'Pubblicata sotto la parola.' : 'Scartata, e resta agli atti con il motivo.';
@@ -1454,6 +1487,13 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     }
 
     sessioneAscoltata = false;
+
+    const firma = await firmaAudio(a.id);
+    if (!firma.url) {
+      if (box) box.innerHTML = '<p class="m-0 text-[13px] text-[#a33]">Non riesco a preparare l’ascolto: ' + H(firma.errore) + '</p>';
+      return;
+    }
+
     const { somma, tuttiNoti } = secondiConti(sessioneCoda);
     if (conta) conta.textContent = 'Restano ' + sessioneCoda.length + ' voci · ' + (tuttiNoti ? '' : 'almeno ') + Math.round(somma) + ' secondi';
 
@@ -1481,7 +1521,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
         ? '<p class="m-0 mb-3 text-[13px] ' + (a.consenso_parlante ? 'text-[#2d8659]' : 'text-[#a33] font-semibold') + '">Parla <strong>' + H(a.nome_parlante || 'una persona non indicata') + '</strong> · '
           + (a.consenso_parlante ? 'consenso dichiarato' : 'CONSENSO NON DICHIARATO: non pubblicare') + '</p>'
         : '<p class="m-0 mb-3 text-[13px] text-[#1E2E26]/70">È la voce di chi ha caricato' + (a.anonimo ? ', che resta anonima' : '') + '.</p>')
-      + '<audio id="au-ses-player" controls autoplay preload="auto" src="' + H(a.file_url) + '" class="w-full mb-2"></audio>'
+      + '<audio id="au-ses-player" controls autoplay preload="auto" src="' + H(firma.url) + '" class="w-full mb-2"></audio>'
       + (/webm|ogg/i.test(a.formato_audio || '')
         ? '<div class="bg-[#FDF9F0] border-l-4 border-[#C8923E] rounded p-3 mb-3">'
           + '<p class="m-0 text-[13px] text-[#1E2E26]/85">In <strong>' + H(a.formato_audio) + '</strong>: <strong>Apple non lo riproduce</strong>. Ascoltala da Chrome, oppure convertila qui — risolve anche la durata mancante.</p>'

@@ -26,6 +26,12 @@
 // audio si ascolta prima di pubblicarlo, come si legge una definizione. Il
 // lemma NON viene agganciato qui: lo aggancia il curatore dalla console dopo
 // aver ascoltato.
+//
+// AUDIT 25/8/2026 (SIC-06). Il file nasce nel bucket PRIVATO
+// glossario-audio-attesa, non in quello pubblico: prima che un curatore
+// ascolti e decida, nessuno con il solo indirizzo può sentirlo. Alla
+// pubblicazione, glossario-audio-revisione lo sposta nel bucket pubblico —
+// mai prima. Le 58 registrazioni già in attesa migrate separatamente.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -35,7 +41,7 @@ const ALLOWED_ORIGINS = [
   'http://localhost:4321', 'http://localhost:5173', 'http://localhost:3000',
 ];
 
-const BUCKET = 'glossario-audio';
+const BUCKET = 'glossario-audio-attesa'; // audit SIC-06 (25/8/2026): privato finché non pubblicata
 // Sei megabyte: un termine sono tre secondi, una frase venti. Chi arriva a sei
 // mega non sta registrando una parola.
 const MAX_BYTES = 6 * 1024 * 1024;
