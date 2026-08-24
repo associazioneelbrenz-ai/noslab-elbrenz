@@ -37,6 +37,12 @@ const CARTELLE: Record<string, { bucket: string; liv: number; privato: boolean }
   "museo-gg":  { bucket: "assets-pubblici", liv: 10, privato: false },
   community:   { bucket: "assets-pubblici", liv: 10, privato: false },
   donazioni:   { bucket: "donazioni",       liv: 10, privato: true },
+  // luoghi (24/8/2026, brief item 4): fotografie dei luoghi di interesse.
+  // liv:10 come le altre cartelle pubbliche — chi puo' davvero attaccare la
+  // foto a un luogo (>=50 o curatore_contenuti) e' gia' filtrato dalla RLS
+  // su luoghi_interesse; un file caricato qui e mai agganciato e' innocuo
+  // quanto una storia scritta e mai pubblicata.
+  luoghi:      { bucket: "assets-pubblici", liv: 10, privato: false },
 };
 const EXT_OK = new Set(["jpg", "jpeg", "png", "webp", "gif", "heic", "heif", "pdf"]);
 

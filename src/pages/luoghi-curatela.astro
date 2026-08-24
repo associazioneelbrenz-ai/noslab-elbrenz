@@ -160,6 +160,22 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
               <p class="text-[11px] uppercase tracking-wider text-[#1E2E26]/45 m-0 mt-1.5">Stato posizione: <span id="lg-geo-stato-badge">—</span></p>
             </div>
 
+            {/* BRIEF 24/8/2026 §4: fotografie. Ridimensionate e ripulite dei
+                metadati prima di salire (canvas: un ricodifica non porta con
+                se' l'EXIF). Se la foto ha coordinate e il luogo non ne ha
+                ancora, si propongono come posizione, dichiarando da dove
+                arrivano. */}
+            <div>
+              <p class={labelCls}>Fotografie</p>
+              <div id="lg-foto-lista" class="flex gap-2 flex-wrap mb-2"></div>
+              <label class="inline-block bg-[#F5EEDD] text-[#1E2E26] px-4 py-2.5 rounded border border-[#C8923E]/50 cursor-pointer text-sm">
+                <span id="lg-foto-etichetta">📷 Aggiungi una foto</span>
+                <input id="lg-foto-input" type="file" accept="image/*" class="hidden" />
+              </label>
+              <p id="lg-foto-esito" class="text-[12.5px] m-0 mt-1.5"></p>
+              <p class="text-[12px] text-[#1E2E26]/55 m-0 mt-1">Ridimensionate e ripulite dei dati del telefono prima di caricarle. HEIC dell'iPhone: converti in JPEG prima (il Mac lo fa da "Condividi" senza altro software).</p>
+            </div>
+
             <label class="flex items-center gap-2 text-sm text-[#1E2E26]/80">
               <input id="lg-anteprima" type="checkbox" />
               In anteprima (evidenziato sulla mappa e nell'elenco)
@@ -456,6 +472,149 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
   $('lg-lat')?.addEventListener('change', daInputACampo);
   $('lg-lng')?.addEventListener('change', daInputACampo);
 
+  // ── Fotografie (brief 24/8/2026 §4) ──────────────────────────────────────
+  //
+  // Tre passi, in quest'ordine: 1) si legge l'EXIF dal file ORIGINALE (l'unico
+  // momento in cui la posizione, se c'e', e' ancora leggibile); 2) si
+  // ridisegna su un canvas e si ricodifica JPEG — un canvas non porta con se'
+  // l'EXIF dell'originale, e' cosi' che i metadati spariscono, come effetto
+  // collaterale onesto del ridimensionamento, non un passo a parte; 3) si
+  // carica via l'edge carica-media (cartella 'luoghi'), stesso percorso gia'
+  // in uso per storie/museo/community. Niente HEIC qui (nessuna libreria di
+  // conversione in questo repository): si dice chiaramente, non si finge.
+  let foto: string[] = [];
+
+  async function estraiGpsExif(file: File) {
+    try {
+      if (!/jpe?g/i.test(file.type) && !/\.jpe?g$/i.test(file.name)) return null;
+      const buf = await file.slice(0, 128 * 1024).arrayBuffer();
+      const view = new DataView(buf);
+      if (view.getUint16(0) !== 0xffd8) return null;
+      let offset = 2;
+      while (offset < view.byteLength - 4) {
+        if (view.getUint16(offset) !== 0xffe1) {
+          if (view.getUint8(offset) !== 0xff) break;
+          offset += 2 + view.getUint16(offset + 2);
+          continue;
+        }
+        const exifStart = offset + 4;
+        if (view.getUint32(exifStart) !== 0x45786966) return null;
+        const tiffStart = exifStart + 6;
+        const little = view.getUint16(tiffStart) === 0x4949;
+        const get16 = (o: number) => view.getUint16(o, little);
+        const get32 = (o: number) => view.getUint32(o, little);
+        const ifd0Offset = tiffStart + get32(tiffStart + 4);
+        const numEntries = get16(ifd0Offset);
+        let gpsIfdOffset = -1;
+        for (let i = 0; i < numEntries; i++) {
+          const entryOffset = ifd0Offset + 2 + i * 12;
+          if (get16(entryOffset) === 0x8825) { gpsIfdOffset = tiffStart + get32(entryOffset + 8); break; }
+        }
+        if (gpsIfdOffset < 0) return null;
+        const readRational3 = (valueOffset: number): number[] => {
+          const arr: number[] = [];
+          for (let k = 0; k < 3; k++) {
+            const num = get32(valueOffset + k * 8), den = get32(valueOffset + k * 8 + 4);
+            arr.push(den ? num / den : 0);
+          }
+          return arr;
+        };
+        const gpsEntries = get16(gpsIfdOffset);
+        let latRef = '', lngRef = '';
+        let lat: number[] | null = null, lng: number[] | null = null;
+        for (let i = 0; i < gpsEntries; i++) {
+          const entryOffset = gpsIfdOffset + 2 + i * 12;
+          const tag = get16(entryOffset), valueOffset = entryOffset + 8;
+          if (tag === 1) latRef = String.fromCharCode(view.getUint8(valueOffset));
+          else if (tag === 2) lat = readRational3(tiffStart + get32(valueOffset));
+          else if (tag === 3) lngRef = String.fromCharCode(view.getUint8(valueOffset));
+          else if (tag === 4) lng = readRational3(tiffStart + get32(valueOffset));
+        }
+        if (!lat || !lng) return null;
+        const inGradi = (dms: number[], ref: string) => { const d = dms[0] + dms[1] / 60 + dms[2] / 3600; return ref === 'S' || ref === 'W' ? -d : d; };
+        return { lat: inGradi(lat, latRef), lng: inGradi(lng, lngRef) };
+      }
+      return null;
+    } catch (e) { console.error('[luoghi] lettura EXIF fallita (non bloccante):', e); return null; }
+  }
+
+  function decodificaImg(file: File): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Formato non supportato dal browser: converti in JPEG o PNG prima di caricare.')); };
+      img.src = url;
+    });
+  }
+
+  async function ridimensionaFoto(file: File): Promise<Blob> {
+    const img = await decodificaImg(file);
+    const scala = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+    const outW = Math.round(img.naturalWidth * scala), outH = Math.round(img.naturalHeight * scala);
+    const canvas = document.createElement('canvas');
+    canvas.width = outW; canvas.height = outH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas non disponibile.');
+    ctx.drawImage(img, 0, 0, outW, outH);
+    return new Promise((resolve, reject) =>
+      canvas.toBlob((b) => b ? resolve(b) : reject(new Error('Conversione immagine non riuscita.')), 'image/jpeg', 0.85));
+  }
+
+  function disegnaFoto() {
+    const box = $('lg-foto-lista');
+    if (!box) return;
+    box.innerHTML = foto.map((url, i) => `
+      <div style="position:relative;width:78px;height:78px;">
+        <img src="${url}" style="width:78px;height:78px;object-fit:cover;border-radius:8px;border:${i === 0 ? '2px solid #C8923E' : '1px solid rgba(200,146,62,.4)'};" />
+        ${i === 0 ? '<span style="position:absolute;bottom:2px;left:2px;font-size:9px;background:rgba(30,46,38,.75);color:#F5EEDD;padding:1px 5px;border-radius:4px;">copertina</span>' : ''}
+        <button type="button" class="lg-foto-via" data-i="${i}" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#a33;color:#fff;border:0;cursor:pointer;line-height:1;">×</button>
+        ${i > 0 ? `<button type="button" class="lg-foto-su" data-i="${i}" style="position:absolute;bottom:-6px;left:-6px;width:20px;height:20px;border-radius:50%;background:#1E2E26;color:#fff;border:0;cursor:pointer;font-size:11px;line-height:1;">↑</button>` : ''}
+      </div>`).join('');
+    box.querySelectorAll('.lg-foto-via').forEach((b) => b.addEventListener('click', () => {
+      foto.splice(Number((b as HTMLElement).dataset.i), 1); disegnaFoto();
+    }));
+    box.querySelectorAll('.lg-foto-su').forEach((b) => b.addEventListener('click', () => {
+      const i = Number((b as HTMLElement).dataset.i);
+      [foto[i - 1], foto[i]] = [foto[i], foto[i - 1]]; disegnaFoto();
+    }));
+  }
+
+  $('lg-foto-input')?.addEventListener('change', async (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    const etichetta = $('lg-foto-etichetta'); const esito = $('lg-foto-esito');
+    if (esito) { esito.removeAttribute('style'); esito.textContent = ''; }
+    if (etichetta) etichetta.textContent = 'Carico…';
+    try {
+      // Posizione dalla foto SOLO se il luogo non ne ha ancora una vera: una
+      // foto scattata altrove non deve spostare un punto gia' trovato.
+      if (!geoStato) {
+        const gps = await estraiGpsExif(file);
+        if (gps) {
+          posiziona(gps.lat, gps.lng, 'manuale');
+          if (mappaPicker) mappaPicker.setView([gps.lat, gps.lng], 15);
+          if (esito) { esito.setAttribute('style', 'color:#2d8659'); esito.textContent = 'Trovata la posizione nella foto: trascina il segnaposto se non è precisa.'; }
+        }
+      }
+      const blob = await ridimensionaFoto(file);
+      const { data, error } = await supabase.functions.invoke('carica-media', {
+        body: blob, headers: { 'Content-Type': 'image/jpeg', 'x-cartella': 'luoghi', 'x-ext': 'jpg' },
+      });
+      if (error) throw new Error(error.message || 'Caricamento non riuscito');
+      const url = (data as any)?.url;
+      if (!url) throw new Error('Caricamento non riuscito: risposta senza indirizzo');
+      foto.push(url);
+      disegnaFoto();
+    } catch (err: any) {
+      if (esito) { esito.setAttribute('style', 'color:#a33'); esito.textContent = err?.message || 'Caricamento non riuscito.'; }
+    } finally {
+      if (etichetta) etichetta.textContent = '📷 Aggiungi una foto';
+    }
+  });
+
   // ── Geocodifica: edge function, mai Nominatim dal browser ───────────────
   $('lg-trova')?.addEventListener('click', async () => {
     const indirizzo = val('lg-indirizzo').trim();
@@ -561,8 +720,9 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
       .forEach((id) => setVal(id, ''));
     setVal('lg-parlata', ''); setVal('lg-etim-strato', ''); setVal('lg-etim-certezza', '');
     (($('lg-anteprima') as HTMLInputElement)).checked = false;
-    slugToccato = false; parlataToccata = false; geoStato = null; varianti = [];
-    disegnaVarianti(); aggiornaGeoBadge();
+    slugToccato = false; parlataToccata = false; geoStato = null; varianti = []; foto = [];
+    disegnaVarianti(); aggiornaGeoBadge(); disegnaFoto();
+    if ($('lg-foto-esito')) { ($('lg-foto-esito') as HTMLElement).removeAttribute('style'); ($('lg-foto-esito') as HTMLElement).textContent = ''; }
     if ($('lg-geo-esito')) { ($('lg-geo-esito') as HTMLElement).removeAttribute('style'); ($('lg-geo-esito') as HTMLElement).textContent = ''; }
     ($('lg-form-wrap') as HTMLElement).dataset.id = '';
     if ($('lg-esito')) ($('lg-esito') as HTMLElement).textContent = '';
@@ -598,6 +758,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
     setVal('lg-indirizzo', l.indirizzo ?? '');
     setVal('lg-parlata', l.parlata ?? ''); parlataToccata = true;
     varianti = Array.isArray(l.nome_ladino_varianti) ? [...l.nome_ladino_varianti] : []; disegnaVarianti();
+    foto = Array.isArray(l.immagini_urls) ? [...l.immagini_urls] : []; disegnaFoto();
     setVal('lg-ipa', l.pronuncia_ipa ?? '');
     riempiAudio(l.audio_id ?? null);
     setVal('lg-etimologia', l.etimologia ?? '');
@@ -657,6 +818,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
       url_articolo: val('lg-url').trim() || null,
       fonte_immagine: val('lg-fonte').trim() || null,
       in_anteprima: (($('lg-anteprima') as HTMLInputElement)).checked,
+      immagini_urls: foto.length ? foto : null,
       parlata: val('lg-parlata') || null,
       nome_ladino_varianti: varianti.length ? varianti : null,
       pronuncia_ipa: val('lg-ipa').trim() || null,

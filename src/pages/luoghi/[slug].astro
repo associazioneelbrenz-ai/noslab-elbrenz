@@ -35,6 +35,7 @@ type Luogo = {
   pronuncia_ipa: string | null; audio_url: string | null;
   etimologia: string | null; etimologia_strato: string | null; etimologia_certezza: string | null;
   toponimo_validato: boolean; toponimo_in_verifica: boolean;
+  immagini_urls: string[] | null;
 };
 
 const { data: luogo } = await supabase
@@ -42,7 +43,8 @@ const { data: luogo } = await supabase
   .select(`id, slug, nome, categoria, valle, lat, lng, descrizione_breve, descrizione_estesa,
     meta_description, url_articolo, fonte_immagine, nome_ladino, nome_tedesco,
     parlata, nome_ladino_varianti, pronuncia_ipa, audio_url,
-    etimologia, etimologia_strato, etimologia_certezza, toponimo_validato, toponimo_in_verifica`)
+    etimologia, etimologia_strato, etimologia_certezza, toponimo_validato, toponimo_in_verifica,
+    immagini_urls`)
   .eq('slug', slug)
   .maybeSingle<Luogo>();
 
@@ -149,6 +151,20 @@ const schemaPlace = {
         </div>
       </div>
       {luogo.audio_url && <audio id="audio-pronuncia" preload="none" src={luogo.audio_url}></audio>}
+
+      {/* Fotografie (brief 24/8/2026 §4): gia' ridimensionate e ripulite dei
+          metadati al caricamento, si mostrano cosi' come sono. */}
+      {luogo.immagini_urls && luogo.immagini_urls.length > 0 && (
+        <div class="mb-6">
+          <div class={`grid gap-2 ${luogo.immagini_urls.length === 1 ? '' : 'grid-cols-2 md:grid-cols-3'}`}>
+            {luogo.immagini_urls.map((url: string, i: number) => (
+              <img src={url} alt={`${luogo!.nome}, fotografia ${i + 1}`} loading="lazy" decoding="async"
+                class="w-full h-full object-cover rounded-md border border-[#E5DFCF]" style={luogo!.immagini_urls!.length === 1 ? 'max-height:420px;' : 'aspect-ratio:4/3;'} />
+            ))}
+          </div>
+          {luogo.fonte_immagine && <p class="text-[11px] text-[#1E2E26]/45 m-0 mt-1.5">{luogo.fonte_immagine}</p>}
+        </div>
+      )}
 
       {luogo.descrizione_breve && (
         <p class="text-lg leading-relaxed text-[#1E2E26] m-0 mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">{luogo.descrizione_breve}</p>
