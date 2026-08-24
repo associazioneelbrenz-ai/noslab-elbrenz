@@ -100,6 +100,23 @@ verify_jwt = true
 [functions.geocodifica-luogo]
 verify_jwt = true
 
+# lezione-firma-video (24/8/2026): indirizzo Bunny firmato per una lezione,
+# autorizzazione via RLS "lezione_select" con la sessione del chiamante ->
+# verify_jwt=true, dichiarato per esplicito come le altre.
+[functions.lezione-firma-video]
+verify_jwt = true
+
+# corso-video-libreria (24/8/2026): elenco dei video della libreria Bunny per
+# la redazione (>=25), chiave BUNNY_API_KEY mai al client -> verify_jwt=true.
+[functions.corso-video-libreria]
+verify_jwt = true
+
+# corso-vetrina-pubblica (24/8/2026): assaggio pubblico del corso sul sito
+# (titoli e durate, mai video) per chi non e' ancora socio -> nessuna
+# sessione, verify_jwt=false dichiarato per esplicito come le altre.
+[functions.corso-vetrina-pubblica]
+verify_jwt = false
+
 # museo-donazioni-media (21/7): operazioni Storage sul ramo donazioni per il
 # pannello curatore (signed URL + copia file), via service role. Chiamata col
 # JWT del curatore -> verify_jwt=true + verifica ruolo lato server.

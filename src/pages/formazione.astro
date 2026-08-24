@@ -1,0 +1,108 @@
+---
+/**
+ * /formazione — vetrina pubblica del corso interno (video Bunny, brief
+ * 24/8/2026 "il corso"). Diversa da /Corsi-vetrina-ponte verso NosLab Learn
+ * (quella e' un'altra cosa, con un'altra tabella): qui si assaggia un corso
+ * che vive DENTRO la Community, con titoli e durate — mai un video, mai un
+ * link diretto a un file: quello si vede solo da soci, dentro l'app.
+ *
+ * SSR: legge dall'edge function corso-vetrina-pubblica (chiave di servizio
+ * lato server, mai nel browser) — niente lettura diretta di `corso`/`lezione`
+ * da qui: quelle tabelle hanno livello_accesso='socio' e l'anonimo non le
+ * vedrebbe comunque via RLS. L'edge decide cosa e' davvero pubblico.
+ */
+
+import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
+
+export const prerender = false;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+
+type Lezione = { titolo: string; durata_min: number | null };
+type Modulo = { titolo: string; lezioni: Lezione[] };
+type Corso = {
+  id: string; titolo: string; slug: string; sottotitolo: string | null;
+  descrizione: string | null; immagine_copertina_url: string | null;
+  totale_lezioni: number; totale_minuti: number; moduli: Modulo[];
+};
+
+let corsi: Corso[] = [];
+let letturaRiuscita = false;
+try {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/corso-vetrina-pubblica`);
+  const dati = await res.json().catch(() => ({}));
+  if (res.ok && dati?.ok) {
+    corsi = (dati.corsi as Corso[]) ?? [];
+    letturaRiuscita = true;
+  } else {
+    console.error('[formazione] lettura vetrina rifiutata:', res.status, dati?.error);
+  }
+} catch (e) {
+  console.error('[formazione] lettura vetrina fallita:', e);
+}
+---
+
+<PaginaIstituzionale
+  occhiello="Formazione"
+  titolo="Impara con El Brenz"
+  intro="Corsi video pensati per chi vuole conoscere le Valli del Noce da vicino — storia, lingua, luoghi. Si vedono dentro la Community."
+  metaDescription="I corsi video di El Brenz: storia, lingua e luoghi delle Valli del Noce, da vedere dentro la Community dei soci."
+>
+  {corsi.length === 0 ? (
+    letturaRiuscita && (
+      <div class="text-center py-10">
+        <p class="text-[#1E2E26]/75 text-lg mb-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Il primo corso è in preparazione. Torna presto a trovarci.
+        </p>
+      </div>
+    )
+  ) : (
+    <div class="space-y-14">
+      {corsi.map((c) => (
+        <article>
+          {c.immagine_copertina_url && (
+            <div class="mb-6 -mx-6 md:mx-0 md:rounded-lg overflow-hidden aspect-video">
+              <img src={c.immagine_copertina_url} alt="" class="w-full h-full object-cover" loading="lazy" />
+            </div>
+          )}
+          <h2 class="text-2xl md:text-3xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">{c.titolo}</h2>
+          {c.sottotitolo && (
+            <p class="text-[#8a6215] text-base italic mt-0 mb-3" style="font-family: 'Source Serif 4', Georgia, serif;">{c.sottotitolo}</p>
+          )}
+          {c.descrizione && (
+            <p class="text-[#1E2E26]/75 text-base leading-relaxed mb-4" style="font-family: 'Source Serif 4', Georgia, serif;">{c.descrizione}</p>
+          )}
+          <p class="text-[11px] tracking-[0.14em] uppercase text-[#1E2E26]/45 mb-6" style="font-family: 'Inter', sans-serif;">
+            {c.totale_lezioni} lezioni{c.totale_minuti > 0 && <> · circa {c.totale_minuti} minuti</>}
+          </p>
+
+          {c.moduli.filter((m) => m.lezioni.length > 0).length > 0 && (
+            <div class="space-y-6 mb-8">
+              {c.moduli.filter((m) => m.lezioni.length > 0).map((m) => (
+                <div>
+                  <h3 class="text-sm tracking-[0.1em] uppercase text-[#1E2E26]/60 m-0 mb-2" style="font-family: 'Inter', sans-serif;">{m.titolo}</h3>
+                  <ul class="list-none p-0 m-0 space-y-1.5">
+                    {m.lezioni.map((l) => (
+                      <li class="flex items-baseline gap-2 text-[#1E2E26]/85" style="font-family: 'Source Serif 4', Georgia, serif;">
+                        <span>{l.titolo}</span>
+                        {l.durata_min != null && <span class="text-[#1E2E26]/40 text-sm whitespace-nowrap">{l.durata_min} min</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <a
+            href="https://community.elbrenz.eu"
+            class="inline-flex items-center gap-2 bg-[#C8923E] text-[#1E2E26] px-8 py-3 rounded-full text-[15px] font-bold no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]"
+            style="font-family: 'Inter', sans-serif;"
+          >
+            Entra nella Community per vederlo <span aria-hidden="true">→</span>
+          </a>
+        </article>
+      ))}
+    </div>
+  )}
+</PaginaIstituzionale>
