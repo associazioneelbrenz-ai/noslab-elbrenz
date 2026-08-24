@@ -288,6 +288,19 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
           <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" name="licenza_accettata" required class="mt-1 accent-[#C8923E]" /><span>Cedo il contributo con licenza <strong>CC BY 4.0</strong>: l’Associazione potrà usarlo (glossario, Lunari, Os dal Nos, assistente Andreas) citando la fonte. *</span></label>
           <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" name="consenso_firma" class="mt-1 accent-[#C8923E]" /><span>Voglio comparire con il mio nome tra chi ha contribuito (altrimenti resto anonimo nel glossario).</span></label>
           <label class="flex items-start gap-2 text-sm text-[#1E2E26]/80"><input type="checkbox" name="consenso_marketing" class="mt-1 accent-[#C8923E]" /><span>Tenetemi aggiornato sul glossario e sui progetti della lingua (riceverai una email per confermare l’iscrizione).</span></label>
+          {/* BRIEF 24/8/2026 §2: sei doppioni pubblicati, tre nati ieri. Non si
+              impedisce l'invio — becár (macellaio/pungere) è un doppio
+              legittimo — si chiede conferma esplicita, con la definizione già
+              scritta sotto gli occhi di chi propone. */}
+          <div id="guardiani-doppio" class="hidden rounded-lg border-2 border-[#C8923E] bg-[#FDF9F0] px-4 py-3.5 text-sm text-[#1E2E26]" role="alert">
+            <p class="m-0 font-semibold">Questa parola esiste già.</p>
+            <p id="guardiani-doppio-testo" class="m-0 mt-1"></p>
+            <p class="m-0 mt-2 text-[13px] text-[#1E2E26]/70">Se la tua è la stessa cosa, non serve mandarla di nuovo. Se invece è un'altra parola che si scrive uguale (succede: <em>becár</em> è sia «macellaio» sia «pungere»), confermalo e la mandiamo comunque.</p>
+            <div class="flex gap-3 mt-3">
+              <button type="button" id="guardiani-doppio-si" class="bg-[#1E2E26] text-[#F5EEDD] px-4 py-2 rounded text-sm font-medium border-0 cursor-pointer">È un'altra cosa, mandala</button>
+              <button type="button" id="guardiani-doppio-no" class="bg-transparent text-[#1E2E26]/70 underline border-0 cursor-pointer text-sm">Annulla, non serve</button>
+            </div>
+          </div>
           <div id="guardiani-feedback" class="hidden rounded px-4 py-3 text-sm"></div>
           <div><button id="guardiani-invia" type="submit" class="bg-[#C8923E] text-[#1E2E26] px-7 py-3 text-sm font-medium tracking-wider uppercase rounded cursor-pointer border-0 hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">Invia il contributo</button></div>
         </form>
@@ -415,12 +428,34 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
 </Layout>
 
 <script>
+  import { supabase } from '../lib/supabase';
+
   const form = document.getElementById('guardiani-form') as HTMLFormElement | null;
   if (form) {
     const endpoint = form.dataset.endpoint!;
     const aperto = Date.now();
     const feedback = document.getElementById('guardiani-feedback')!;
     const invia = document.getElementById('guardiani-invia') as HTMLButtonElement;
+
+    // BRIEF 24/8/2026 §2: sei doppioni pubblicati, tre nati il giorno prima
+    // — chi propone non ha modo di sapere che la parola c'e' gia'. Si
+    // controlla PRIMA di mandare, sulla stessa forma nella stessa parlata,
+    // in `glossario_pubblico` (l'unica vista che chi non e' curatore puo'
+    // leggere). Non si impedisce l'invio (becár e' sia "macellaio" sia
+    // "pungere", un doppio legittimo): si chiede conferma esplicita.
+    const doppioBox = document.getElementById('guardiani-doppio') as HTMLDivElement;
+    const doppioTesto = document.getElementById('guardiani-doppio-testo')!;
+    let doppioConfermatoChiave = '';
+    const normaGuardiani = (t: string) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+    document.getElementById('guardiani-doppio-si')?.addEventListener('click', () => {
+      doppioConfermatoChiave = doppioBox.dataset.chiave || '';
+      doppioBox.classList.add('hidden');
+      form.requestSubmit();
+    });
+    document.getElementById('guardiani-doppio-no')?.addEventListener('click', () => {
+      doppioBox.classList.add('hidden');
+    });
     function mostra(msg: string, ok: boolean) {
       feedback.classList.remove('hidden');
       feedback.style.background = ok ? '#eaf3ee' : '#fbecec';
@@ -803,6 +838,32 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
       if (!spiegata()) return mostra('Manca la spiegazione, e ci sono due modi per darla: una riga che spieghi la cosa («il pipistrello, che d’estate esce al tramonto dai fienili» invece di «pipistrello»), oppure, per le parole che un giro di parole non spiega come «abbastanza», una frase d’esempio in cui la parola compare.', false);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return mostra('Email non valida.', false);
       if (!payload.consenso_glossario || !payload.licenza_accettata) return mostra('Servono il consenso al glossario e l’accettazione della licenza.', false);
+
+      // Il controllo doppioni: salta se questa esatta forma+parlata e' gia'
+      // stata confermata un attimo fa (il bottone "È un'altra cosa" richiama
+      // il submit da capo, e qui non deve ripresentare lo stesso avviso).
+      const chiaveDoppio = normaGuardiani(payload.termine) + '|' + payload.variante;
+      if (chiaveDoppio !== doppioConfermatoChiave) {
+        const { data: doppi, error: eDop } = await supabase.from('glossario_pubblico')
+          .select('termine, significato_it').eq('variante', payload.variante);
+        // Se il controllo non riesce non si blocca il contributo per un
+        // guaio di rete che non c'entra: si manda com'era prima di oggi.
+        if (!eDop) {
+          const trovato = (doppi ?? []).find((d: any) => normaGuardiani(d.termine) === normaGuardiani(payload.termine));
+          if (trovato) {
+            doppioTesto.textContent = `«${(trovato as any).termine}» è già nel glossario: ${(trovato as any).significato_it}`;
+            doppioBox.dataset.chiave = chiaveDoppio;
+            doppioBox.classList.remove('hidden');
+            doppioBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return;
+          }
+        }
+      }
+
+      await procedi(payload);
+    });
+
+    async function procedi(payload: Record<string, unknown>) {
       invia.disabled = true; invia.textContent = 'Invio…';
       try {
         const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -818,18 +879,20 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
           // [8/8] Il momento in cui la persona ha appena dato qualcosa e' l'unico
           // in cui un invito non suona come una richiesta. Il popup arriva qui e
           // in nessun altro punto della pagina.
-          apriPopupPunti(payload.email, d.punti);
-          form.reset();
+          apriPopupPunti(payload.email as string, d.punti);
+          form!.reset();
           audioBlob = null;
           pronta?.classList.add('hidden');
           if (timer) timer.textContent = '';
           if (defConta) defConta.textContent = '';
           comuneAltro?.classList.add('hidden');
+          doppioBox.classList.add('hidden');
+          doppioConfermatoChiave = '';
         }
         else mostra(d.error || 'Si è verificato un errore: riprova o scrivi a info@elbrenz.eu.', false);
       } catch { mostra('Errore di rete: riprova.', false); }
       finally { invia.disabled = false; invia.textContent = 'Invia il contributo'; }
-    });
+    }
   }
   // glossario vivo: ricerca + filtro parlata (client-side)
   const cerca = document.getElementById('gloss-cerca') as HTMLInputElement | null;
