@@ -1,0 +1,159 @@
+---
+// Archivio dei nomi — pagina del fondo (brief 25/8/2026). Adattata da
+// archivio-dei-nomi.html: il ricercatore prima del documento, il racconto
+// verbatim. noindex: il fondo è in bozza, in attesa del consenso di Mariotti.
+import Layout from '../../../layouts/Layout.astro';
+import { leggiFondo, leggiPersone, conNome, meseIt } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const fondo = await leggiFondo('cimitero-militare-male');
+  if (!fondo) return [];
+  return [{ params: { fondo: fondo.slug } }];
+}
+
+const fondo = await leggiFondo(Astro.params.fondo as string);
+if (!fondo) return Astro.redirect('/archivio-dei-nomi');
+const tutte = await leggiPersone(fondo.slug);
+const persone = tutte.filter(conNome).sort((a, b) => (a.nome_completo ?? '').localeCompare(b.nome_completo ?? ''));
+
+const nNomi = persone.length;
+const nVuote = tutte.length - persone.length;
+const nOtt = tutte.filter((p) => (p.data_morte_testo ?? '').match(/\.10\.1918$/)).length;
+const province = new Set(tutte.map((p) => p.regione_nascita).filter(Boolean));
+const nReg = province.size;
+const nPow = tutte.filter((p) => p.prigioniero_guerra).length;
+
+export const prerender = true;
+---
+
+<Layout title={fondo.titolo} description={fondo.sottotitolo ?? fondo.descrizione ?? ''} noindex={true}>
+  <header class="bg-[#1E2E26] text-[#F5EEDD] py-16">
+    <div class="max-w-3xl mx-auto px-6">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#C8923E] font-medium m-0 mb-5" style="font-family: 'Inter', sans-serif;">Associazione El Brenz · Valli del Noce</p>
+      <h1 class="text-4xl md:text-5xl leading-[1.08] tracking-tight m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+        L'archivio <em class="text-[#C8923E]" style="font-style: italic;">dei nomi</em>
+      </h1>
+      <p class="text-lg text-[#F5EEDD]/85 max-w-xl mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+        Chi è passato di qui e non è più tornato a casa. Registri, elenchi e sepolture dell'impero nelle nostre valli, un documento alla volta.
+      </p>
+
+      <div class="border-l-2 border-[#C8923E] pl-5 mb-8">
+        <p class="text-[11px] tracking-[0.14em] uppercase text-[#F5EEDD]/50 m-0 mb-1" style="font-family: 'Inter', sans-serif;">La ricerca è di</p>
+        <p class="text-xl m-0 mb-2" style="font-family: 'Playfair Display', serif;">{fondo.ricercatore}</p>
+        {fondo.ricercatore_note && <p class="text-sm text-[#F5EEDD]/75 max-w-lg m-0" style="font-family: 'Source Serif 4', Georgia, serif;">{fondo.ricercatore_note}</p>}
+        {fondo.segnatura && <p class="text-[12px] font-mono text-[#F5EEDD]/45 mt-3 mb-0">{fondo.segnatura}</p>}
+      </div>
+
+      <p class="text-sm text-[#F5EEDD]/60" style="font-family: 'Inter', sans-serif;">{nNomi} nomi su {fondo.posti_censiti ?? '—'} posti censiti</p>
+    </div>
+  </header>
+
+  <div class="bg-[#F8F1E4] border-b border-[#E5DFCF] py-8">
+    <div class="max-w-3xl mx-auto px-6 grid grid-cols-2 sm:grid-cols-5 gap-6 text-center">
+      <div><b class="block text-2xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{nNomi}</b><span class="text-[11px] uppercase tracking-wide text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">nomi restituiti</span></div>
+      <div><b class="block text-2xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{nVuote}</b><span class="text-[11px] uppercase tracking-wide text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">tombe anonime</span></div>
+      <div><b class="block text-2xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{nOtt}</b><span class="text-[11px] uppercase tracking-wide text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">morti in ottobre 1918</span></div>
+      <div><b class="block text-2xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{nReg}</b><span class="text-[11px] uppercase tracking-wide text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">terre di provenienza</span></div>
+      <div><b class="block text-2xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif;">{nPow}</b><span class="text-[11px] uppercase tracking-wide text-[#1E2E26]/60" style="font-family: 'Inter', sans-serif;">prigionieri di guerra</span></div>
+    </div>
+  </div>
+
+  <section class="bg-[#F8F1E4] py-14">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="text-2xl text-[#1E2E26] mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">Cerca un nome</h2>
+      <input id="an-cerca" type="text" placeholder="Cognome, reparto, paese di nascita…"
+        class="w-full border border-[#E5DFCF] rounded-lg px-4 py-3 text-base mb-6"
+        style="font-family: 'Source Serif 4', Georgia, serif;" />
+      <ul id="an-elenco" class="list-none p-0 m-0 grid sm:grid-cols-2 gap-2">
+        {persone.map((p) => (
+          <li data-cerca={[p.nome_completo, p.reparto, p.luogo_nascita, p.regione_nascita].filter(Boolean).join(' ').toLowerCase()}>
+            <a href={`/archivio-dei-nomi/${fondo.slug}/${p.slug}`} class="block bg-white border border-[#E5DFCF] rounded px-4 py-2.5 no-underline hover:border-[#C8923E] transition-colors">
+              <span class="block text-[#1E2E26] text-[15px]" style="font-family: 'Playfair Display', serif;">{p.nome_completo}</span>
+              <span class="block text-[12px] text-[#1E2E26]/55" style="font-family: 'Inter', sans-serif;">{[p.reparto, p.luogo_nascita].filter(Boolean).join(' · ')}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      <p id="an-vuoto" class="hidden text-sm text-[#1E2E26]/60 mt-4">Nessun nome corrisponde alla ricerca.</p>
+    </div>
+  </section>
+
+  <section class="bg-[#FDF9F0] border-t border-[#E5DFCF] py-16">
+    <div class="max-w-2xl mx-auto px-6" style="font-family: 'Source Serif 4', Georgia, serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-3" style="font-family: 'Inter', sans-serif;">Il racconto</p>
+      <h2 class="text-2xl text-[#1E2E26] mb-6 max-w-[20ch]" style="font-family: 'Playfair Display', serif; font-weight: 500;">Erano di casa, e venivano da mille chilometri</h2>
+
+      <p class="text-[17px] leading-[1.72] text-[#1E2E26]/90 mb-4">Il 17 ottobre 1918 muore a Malè un uomo che si chiama Ivan Kasimir Trimakus. È nato trentun anni prima a Kuwono, nell'impero russo, ed è arrivato in Val di Sole come prigioniero di guerra. Nello stesso mese, in questo stesso paese, muoiono altri quarantotto uomini. Un impiegato militare li scrive uno sotto l'altro in un registro, con la calligrafia ordinata di chi tiene i conti anche della morte: numero della tomba, grado, reparto, giorno del decesso, luogo di nascita.</p>
+
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-6">È l'ultima colonna quella che spiazza. Perché non dice Malè, non dice Trento, non dice Tirolo. Dice Cilli, dice Lemberg, dice Iglau, dice Sarajevo.</p>
+
+      <h3 class="text-xl font-normal mt-10 mb-3" style="font-family: 'Playfair Display', serif;">Un paese molto più grande di quanto ce lo immaginiamo</h3>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-4">Fino al 1920 le nostre valli non erano una periferia settentrionale dell'Italia. Erano una valle interna di un paese che andava dal lago di Garda ai Carpazi, e che comprendeva quelli che oggi chiamiamo Austria, Ungheria, Repubblica Ceca, Slovacchia, Slovenia, Croazia, Bosnia, e ampie porzioni di Polonia, Ucraina e Romania.</p>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-4">Chi nasceva a Malè, a Cles o a Pejo nasceva cittadino di quel paese. Aveva la stessa moneta di un tipografo di Praga, lo stesso passaporto di un contadino della Galizia, lo stesso imperatore di un pescatore dalmata. Quando partiva per il servizio militare poteva finire in un reggimento con ragazzi che non parlavano una parola della sua lingua, e la cosa era del tutto normale.</p>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-6 bg-[#F8F1E4] border-l-4 border-[#C8923E] pl-4 py-2">Questo cambia il senso delle centodiciotto righe del registro. Quegli uomini non erano stranieri morti nelle nostre valli. <b>Erano concittadini morti a casa propria</b>, in una parte del loro paese che non avevano mai visto prima.</p>
+
+      <h3 class="text-xl font-normal mt-10 mb-3" style="font-family: 'Playfair Display', serif;">Il conto delle distanze</h3>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-4">Se da Malè si tira una linea verso ciascuno dei luoghi di nascita scritti nel registro, viene fuori la mappa di quel paese scomparso. Sono distanze che ancora oggi mettono soggezione.</p>
+      <ul class="list-none p-0 m-0 mb-6">
+        {[
+          ['1150 km', "Czernowitz, in Bucovina. Oggi Chernivtsi, in Ucraina."],
+          ['1050 km', "Lemberg, capitale della Galizia. Oggi Leopoli, in Ucraina."],
+          ['780 km', "Cracovia, oggi in Polonia."],
+          ['650 km', "Sarajevo, in Bosnia."],
+          ['630 km', "Budapest, in Ungheria."],
+          ['490 km', "Praga, in Boemia."],
+          ['350 km', "Graz, in Stiria: da sola, ventuno uomini su centodiciotto."],
+        ].map(([km, luogo]) => (
+          <li class="grid grid-cols-[6.5rem_1fr] gap-4 items-baseline py-2 border-b border-[#1E2E26]/10">
+            <b class="font-mono text-[15px] text-[#8a6215] text-right">{km}</b>
+            <span class="text-[15px] text-[#1E2E26]/85">{luogo}</span>
+          </li>
+        ))}
+      </ul>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-6">Undici di loro erano nati in Galizia, la provincia più orientale e più povera dell'impero, che oggi è divisa fra la Polonia sudorientale e l'Ucraina occidentale. Uno veniva dalla Bucovina, che oggi sta fra Ucraina e Romania. Erano ragazzi partiti da villaggi di terra battuta a milleduecento chilometri da qui, e sono arrivati fin sotto queste montagne per non ripartire più.</p>
+
+      <h3 class="text-xl font-normal mt-10 mb-3" style="font-family: 'Playfair Display', serif;">Poi arrivò ottobre</h3>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-4">Nel 1914 muore un uomo solo. Tre nel 1915, cinque nel 1916. Poi il 1918, e i morti diventano centoquattro. <b>Quarantanove nel solo mese di ottobre</b>, le ultime settimane prima della fine.</p>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-6">Malè era retrovia del fronte del Tonale e ospitava ospedali militari: qui arrivavano i feriti e i malati dalla linea. In quelle stesse settimane l'influenza spagnola stava uccidendo più soldati delle granate, in tutti gli eserciti d'Europa. Il registro non riporta le cause di morte, quindi il collegamento resta un'ipotesi da verificare sui documenti sanitari e non lo scriveremo come fatto finché non lo avremo accertato. Ma quel novembre, mentre l'impero finiva, in una valle del Trentino si scavavano quarantanove fosse in trenta giorni.</p>
+
+      <h3 class="text-xl font-normal mt-10 mb-3" style="font-family: 'Playfair Display', serif;">Perché li chiamiamo nostri</h3>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-4">Non c'è niente da rivendicare e niente da rimpiangere. Gli imperi finiscono, i confini si spostano, e la storia non si giudica col metro di adesso.</p>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85 mb-4">C'è però una cosa che possiamo fare, ed è molto semplice: <b>tenere i nomi</b>. Perché per centosette anni quei centodiciotto uomini sono stati un elenco chiuso in un cartone, a mille chilometri dalla terra in cui sono sepolti, e nessuno dei loro discendenti ha potuto sapere dove fossero finiti.</p>
+      <p class="text-base leading-[1.72] text-[#1E2E26]/85">Oggi qualcuno in Stiria, in Ungheria o in Galizia può digitare un cognome e trovare una risposta. E centodiciotto tombe aspettano ancora che qualcun altro faccia lo stesso.</p>
+    </div>
+  </section>
+
+  <section class="bg-[#F8F1E4] border-t border-[#E5DFCF] py-14">
+    <div class="max-w-2xl mx-auto px-6">
+      <h2 class="text-2xl text-[#1E2E26] mb-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">Da dove venivano</h2>
+      <div class="flex flex-wrap gap-2">
+        {[...province].sort().map((r) => (
+          <span class="text-[12px] tracking-[0.06em] uppercase border border-[#C8923E]/40 text-[#8a6215] px-3 py-1 rounded-full" style="font-family: 'Inter', sans-serif;">{r}</span>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-[#FDF9F0] border-t border-[#E5DFCF] py-14">
+    <div class="max-w-2xl mx-auto px-6">
+      <h2 class="text-2xl text-[#1E2E26] mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">I fondi che verranno</h2>
+      <p class="text-base text-[#1E2E26]/75" style="font-family: 'Source Serif 4', Georgia, serif;">Il cimitero militare di Malè è il primo fondo dell'Archivio dei nomi. Altri registri, come quello del fronte del Tonale, potranno aggiungersi in futuro: la struttura è pensata per accoglierli senza bisogno di rifare le pagine già pubblicate.</p>
+    </div>
+  </section>
+
+  <script is:inline>
+    const input = document.getElementById('an-cerca');
+    const voci = Array.from(document.querySelectorAll('#an-elenco li'));
+    const vuoto = document.getElementById('an-vuoto');
+    input?.addEventListener('input', () => {
+      const q = input.value.trim().toLowerCase();
+      let visibili = 0;
+      voci.forEach((li) => {
+        const ok = !q || (li.getAttribute('data-cerca') || '').includes(q);
+        li.style.display = ok ? '' : 'none';
+        if (ok) visibili++;
+      });
+      if (vuoto) vuoto.classList.toggle('hidden', visibili > 0);
+    });
+  </script>
+</Layout>
