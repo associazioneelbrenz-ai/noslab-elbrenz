@@ -44,7 +44,8 @@ export const prerender = true;
         {fondo.segnatura && <p class="text-[12px] font-mono text-[#F5EEDD]/45 mt-3 mb-0">{fondo.segnatura}</p>}
       </div>
 
-      <p class="text-sm text-[#F5EEDD]/60" style="font-family: 'Inter', sans-serif;">{nNomi} nomi su {fondo.posti_censiti ?? '—'} posti censiti</p>
+      <p class="text-sm text-[#F5EEDD]/60 mb-6" style="font-family: 'Inter', sans-serif;">{nNomi} nomi su {fondo.posti_censiti ?? '—'} posti censiti</p>
+      <a href={`/archivio-dei-nomi/${fondo.slug}/mappa`} class="inline-block bg-[#C8923E] text-[#1E2E26] px-5 py-3 rounded-lg font-semibold text-sm no-underline hover:bg-[#D9A94E]" style="font-family: 'Inter', sans-serif;">Vedi la planimetria →</a>
     </div>
   </header>
 
