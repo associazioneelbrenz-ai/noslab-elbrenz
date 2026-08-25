@@ -1,0 +1,84 @@
+---
+// Cimiteri di guerra — pagina di un evento (brief 26/8/2026, §2.4). Modello
+// per gli eventi che arriveranno: cos'era, quando, chi vi è collegato e il
+// campo fonti reso leggibile, col grado di certezza sempre in chiaro.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/archivio-dei-nomi.css';
+import { leggiEventi, leggiEvento, leggiTutte, dataLeggibile, meseIt, type Evento } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const eventi = await leggiEventi();
+  return eventi.map((e) => ({ params: { evento: e.slug } }));
+}
+
+const evento = await leggiEvento(Astro.params.evento as string) as Evento | null;
+if (!evento) return Astro.redirect('/cimiteri-di-guerra');
+
+const tutte = await leggiTutte();
+const caduti = tutte.filter((p) => p.evento_slug === evento.slug)
+  .sort((a, b) => (a.data_morte ?? '').localeCompare(b.data_morte ?? ''));
+
+function dataEstesa(iso: string | null): string {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  return `${parseInt(d, 10)} ${meseIt(parseInt(m, 10))} ${y}`;
+}
+
+export const prerender = true;
+---
+
+<Layout
+  title={evento.nome}
+  description={evento.descrizione?.slice(0, 155) ?? evento.nome}
+>
+  <header class="apertura">
+    <div class="dentro">
+      <p class="etichetta">Cimiteri di guerra · evento</p>
+      <h1>{evento.nome}{evento.nome_originale && <><br /><em>{evento.nome_originale}</em></>}</h1>
+      <p class="strillo">
+        {evento.luogo}
+        {evento.data_da && `, ${dataEstesa(evento.data_da)}`}
+        {evento.data_a && evento.data_a !== evento.data_da && ` – ${dataEstesa(evento.data_a)}`}
+      </p>
+    </div>
+  </header>
+
+  <section class="racconto">
+    <div class="dentro">
+      {evento.descrizione && <p class="capolettera">{evento.descrizione}</p>}
+
+      {caduti.length > 0 && (
+        <>
+          <h3>Gli uomini collegati</h3>
+          <ul class="caduti-evento">
+            {caduti.map((p) => (
+              <li>
+                <b>{p.data_morte_testo || ''}</b>
+                <span>
+                  <a href={`/cimiteri-di-guerra/${p.fondo_slug_breve}/${p.slug}`}>{p.nome_completo}</a>
+                  {[p.reparto, p.luogo_nascita].filter(Boolean).length > 0 && `, ${[p.reparto, p.luogo_nascita].filter(Boolean).join(', ')}`}
+                  {' — '}
+                  <span class="certezza-inline">{p.evento_certezza === 'certo' ? 'certo' : 'probabile'}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {evento.fonti && (
+        <>
+          <h3>Come è stato ricostruito</h3>
+          <p class="rilievo">{evento.fonti}</p>
+        </>
+      )}
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .certezza-inline {
+    font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--oro-scuro); border: 1px solid var(--oro-scuro); padding: .05rem .4rem;
+  }
+</style>

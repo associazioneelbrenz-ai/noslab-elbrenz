@@ -1,0 +1,211 @@
+---
+// Cimiteri di guerra — pagina del fondo (brief 26/8/2026, "va in produzione").
+// Ordine non negoziabile: apertura -> muro delle tacche/numeri -> racconto
+// per intero -> ricerca -> provenienze -> fondi futuri -> chiusa. CSS e
+// classi sono quelli veri di archivio-dei-nomi.css, non tradotti nello stile
+// del sito (BRIEF_CODE_rimettere_il_disegno). Ogni numero viene dal
+// database: se un domani arriva un secondo fondo, questa pagina non cambia.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/archivio-dei-nomi.css';
+import { leggiFondo, leggiPersone, conNome, slugifica, SOGLIA_MINIMA_GRUPPO, type Fondo, type Persona } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const { leggiFondi } = await import('../../../lib/memoria');
+  const fondi = await leggiFondi();
+  return fondi.map((fondo) => ({ params: { fondo: fondo.slug_breve } }));
+}
+
+const fondo = await leggiFondo(Astro.params.fondo as string);
+if (!fondo) return Astro.redirect('/cimiteri-di-guerra');
+const tutte = await leggiPersone(fondo.slug);
+const persone = tutte.filter(conNome).sort((a, b) => (a.nome_completo ?? '').localeCompare(b.nome_completo ?? ''));
+
+// nomi restituiti/tombe anonime vengono dalla vista (fondo.nomi_noti,
+// fondo.senza_nome), non ricalcolati qui: sono i numeri gia' verificati sul
+// fondo, comprese le righe con tomba nota ma nome non leggibile.
+const nNomi = fondo.nomi_noti;
+const nVuote = fondo.senza_nome;
+const rgOttobre = new RegExp(`\\.10\\.${fondo.anno_a ?? ''}$`);
+const nOtt = tutte.filter((p) => rgOttobre.test(p.data_morte_testo ?? '')).length;
+const regioni = new Map<string, number>();
+for (const p of tutte) {
+  if (p.regione_nascita) regioni.set(p.regione_nascita, (regioni.get(p.regione_nascita) ?? 0) + 1);
+}
+const provenienze = [...regioni.entries()].sort((a, b) => b[1] - a[1]);
+const maxProv = provenienze[0]?.[1] ?? 1;
+const nReg = provenienze.length;
+const nPow = tutte.filter((p) => p.prigioniero_guerra).length;
+
+const titoloParts = (() => {
+  const suffix = ` di ${fondo.comune}`;
+  if (fondo.titolo.endsWith(suffix)) {
+    return { prima: fondo.titolo.slice(0, -suffix.length), seconda: `di ${fondo.comune}` };
+  }
+  return { prima: fondo.titolo, seconda: '' };
+})();
+
+const strillo = fondo.sottotitolo ?? fondo.descrizione ?? '';
+
+const datiRicerca = persone.map((p) => ({
+  n: p.nome_completo, g: p.grado, r: p.reparto, l: p.luogo_nascita, reg: p.regione_nascita,
+  m: p.data_morte_testo, pow: p.prigioniero_guerra, s: p.settore, num: p.numero, slug: p.slug,
+}));
+
+export const prerender = true;
+---
+
+<Layout
+  title={fondo.titolo}
+  description={fondo.sottotitolo ?? fondo.descrizione ?? ''}
+>
+  <header class="apertura">
+    <div class="dentro">
+      <p class="etichetta">Associazione El Brenz · Valli del Noce</p>
+      <h1>{titoloParts.prima}{titoloParts.seconda && (<><br /><em>{titoloParts.seconda}</em></>)}</h1>
+      {strillo && <p class="strillo">{strillo}</p>}
+
+      {fondo.ricercatore && (
+        <div class="ricerca-di">
+          <span class="etichetta">La ricerca è di</span>
+          <p class="autore">{fondo.ricercatore}</p>
+          {fondo.ricercatore_note && <p class="autore-nota">{fondo.ricercatore_note}</p>}
+          {fondo.segnatura && <span class="segnatura-alta">{fondo.segnatura}</span>}
+        </div>
+      )}
+
+      <div class="muro" id="muro" data-tombe={fondo.posti_censiti ?? 0} data-nomi={fondo.nomi_noti}></div>
+      <div class="conta"><b id="contaNomi">0</b>nomi su {fondo.posti_censiti ?? fondo.nomi_noti} posti censiti</div>
+    </div>
+  </header>
+
+  <div class="registro-numeri">
+    <div class="dentro">
+      <div class="cella acceso"><b>{nNomi}</b><span>nomi restituiti</span></div>
+      <div class="cella"><b>{nVuote}</b><span>tombe anonime</span></div>
+      <div class="cella acceso"><b>{nOtt}</b><span>morti in ottobre {fondo.anno_a ?? ''}</span></div>
+      <div class="cella"><b>{nReg}</b><span>terre di provenienza</span></div>
+      <div class="cella"><b>{nPow}</b><span>prigionieri di guerra</span></div>
+    </div>
+  </div>
+
+  {fondo.racconto_html && (
+    <section class="racconto">
+      <div class="dentro" set:html={fondo.racconto_html} />
+    </section>
+  )}
+
+  <section class="dentro">
+    <h2>Cerca un nome</h2>
+    <p class="guida">Un cognome, un reggimento, un paese di nascita. Se cerchi un antenato austro-ungarico disperso sul fronte italiano, potrebbe essere qui.</p>
+    <div class="schedario">
+      <input id="an-cerca" type="search" placeholder="Karaczow, Stiria, 26.SchRgt, Kanonier…" aria-label="Cerca nell'archivio dei nomi" />
+      <div class="risultati" id="an-risultati" role="status"></div>
+    </div>
+  </section>
+
+  {provenienze.length > 0 && (
+    <section class="dentro">
+      <h2>Da dove venivano</h2>
+      <p class="guida">Sotto il campanile di {fondo.comune} non riposano trentini. Riposa un impero, contato per terra di nascita.</p>
+      <div class="provenienze">
+        {provenienze.map(([regione, n]) => (
+          <div class="prov">
+            <span class="n">{n}</span>
+            {n >= SOGLIA_MINIMA_GRUPPO ? (
+              <a class="dove" href={`/cimiteri-di-guerra/provenienza/${slugifica(regione)}`} style="color:inherit">{regione}</a>
+            ) : (
+              <span class="dove">{regione}</span>
+            )}
+            <span class="barra"><i style={`width:${Math.round((n / maxProv) * 100)}%`}></i></span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <section class="dentro">
+    <h2>I fondi che verranno</h2>
+    <p class="guida">L'archivio è nato per crescere. Ogni riquadro è una ricerca da fare, non una promessa già mantenuta: comparirà come fondo aperto quando ci sarà un documento vero dietro.</p>
+    <div class="futuri">
+      <div class="futuro"><span class="stato">Da cercare</span><h4>Il fronte del Tonale</h4>
+        <p>Alta Val di Sole. Le sepolture dei reparti che tenevano la linea e gli ospedali di retrovia.</p></div>
+      <div class="futuro"><span class="stato">Da cercare</span><h4>Val di Pejo e Val di Rabbi</h4>
+        <p>I settori alti, dove la guerra si combatteva sopra i tremila metri.</p></div>
+      <div class="futuro"><span class="stato">Da cercare</span><h4>Val di Non</h4>
+        <p>Retrovie, ospedali, e i profughi partiti da qui verso i campi dell'interno.</p></div>
+      <div class="futuro"><span class="stato">Da cercare</span><h4>Chi partì e non tornò</h4>
+        <p>Gli uomini delle nostre valli morti altrove, in Galizia e sui Carpazi, con l'esercito imperiale.</p></div>
+    </div>
+  </section>
+
+  <div class="chiusa">
+    <div class="dentro">
+      <h2>{fondo.senza_nome} {fondo.senza_nome === 1 ? 'tomba non ha' : 'tombe non hanno'} ancora un nome</h2>
+      <p>
+        {fondo.senza_nome === fondo.nomi_noti && 'È esattamente metà. '}
+        Se hai fotografie, memorie di famiglia, lettere o documenti che possano riempire una di quelle
+        caselle, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>. Ogni casella che si
+        accende è un uomo che smette di essere un numero.
+      </p>
+      <p class="motto">Raìs fonde no le 'nglacia.</p>
+    </div>
+  </div>
+
+  <script type="application/json" id="an-dati" set:html={JSON.stringify({ fondoSlugBreve: fondo.slug_breve, persone: datiRicerca })} />
+
+  <script is:inline>
+    document.querySelectorAll('.muro').forEach((muro) => {
+      const totTombe = parseInt(muro.dataset.tombe || '0', 10);
+      const totNomi = parseInt(muro.dataset.nomi || '0', 10);
+      const contaEl = document.getElementById('contaNomi');
+      const frag = document.createDocumentFragment();
+      for (let i = 0; i < totTombe; i++) {
+        const t = document.createElement('span');
+        t.className = 'tacca';
+        frag.appendChild(t);
+      }
+      muro.appendChild(frag);
+      const tacche = [...muro.children];
+      if (!totNomi || !totTombe) return;
+      const passo = totTombe / totNomi;
+      const accese = [];
+      for (let i = 0; i < totNomi; i++) accese.push(Math.floor(i * passo));
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (reduced) {
+        accese.forEach((i) => { if (tacche[i]) tacche[i].classList.add('viva'); });
+        if (contaEl) contaEl.textContent = String(totNomi);
+        return;
+      }
+      let acceso = 0;
+      const vivo = () => {
+        if (acceso >= accese.length) return;
+        const t = tacche[accese[acceso]];
+        if (t) t.classList.add('viva');
+        acceso++;
+        if (contaEl) contaEl.textContent = String(acceso);
+        if (acceso < accese.length) requestAnimationFrame(vivo);
+      };
+      setTimeout(vivo, 300);
+    });
+
+    const datiEl = document.getElementById('an-dati');
+    const dati = datiEl ? JSON.parse(datiEl.textContent || '{}') : { fondoSlugBreve: '', persone: [] };
+    const input = document.getElementById('an-cerca');
+    const ris = document.getElementById('an-risultati');
+    input?.addEventListener('input', () => {
+      const t = input.value.trim().toLowerCase();
+      if (!ris) return;
+      if (t.length < 2) { ris.innerHTML = ''; return; }
+      const lista = dati.persone.filter((p) =>
+        [p.n, p.g, p.r, p.l, p.reg, p.m].filter(Boolean).join(' ').toLowerCase().includes(t));
+      if (!lista.length) { ris.innerHTML = '<p class="niente">Nessun nome corrisponde.</p>'; return; }
+      ris.innerHTML = lista.slice(0, 60).map((p) =>
+        `<a class="voce" style="text-decoration:none;color:inherit" href="/cimiteri-di-guerra/${dati.fondoSlugBreve}/${p.slug}">` +
+        `<span class="n">${p.s === 'civile' ? 'civ · ' : 'mil · '}${p.num ?? ''}</span>` +
+        `<span><span class="nome">${p.n}${p.pow ? '<span class="marchio">prigioniero</span>' : ''}</span>` +
+        `<span class="meta">${[p.g, p.r, p.l].filter(Boolean).join(' · ')}</span></span>` +
+        `<span class="quando">${p.m || ''}</span></a>`
+      ).join('') + (lista.length > 60 ? `<p class="niente">e altri ${lista.length - 60}.</p>` : '');
+    });
+  </script>
+</Layout>

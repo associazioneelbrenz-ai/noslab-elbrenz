@@ -1,0 +1,114 @@
+---
+// Cimiteri di guerra — pagina di un reparto (brief 26/8/2026, §2.2). Una per
+// ogni reparto con almeno SOGLIA_MINIMA_GRUPPO uomini: sotto la soglia niente
+// pagina, sarebbe vuota. Vive sopra /cimiteri-di-guerra (non dentro un
+// fondo) perché un reparto può comparire in più registri. Il nome del
+// reparto resta quello del registro, non normalizzato (brief §7).
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/archivio-dei-nomi.css';
+import { leggiReparti, leggiReparto, dataLeggibile, eReggimentoTirolese, type GruppoReparto } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const gruppi = await leggiReparti();
+  return gruppi.map((g) => ({ params: { reparto: g.slug } }));
+}
+
+const gruppo = await leggiReparto(Astro.params.reparto as string) as GruppoReparto | null;
+if (!gruppo) return Astro.redirect('/cimiteri-di-guerra');
+
+const persone = [...gruppo.persone].sort((a, b) => (a.data_morte ?? '').localeCompare(b.data_morte ?? ''));
+const terre = new Map<string, number>();
+for (const p of persone) if (p.regione_nascita) terre.set(p.regione_nascita, (terre.get(p.regione_nascita) ?? 0) + 1);
+const terreOrdinate = [...terre.entries()].sort((a, b) => b[1] - a[1]);
+const dateMorte = persone.map((p) => p.data_morte).filter(Boolean) as string[];
+const primaData = dateMorte.length ? dateMorte.reduce((a, b) => (a < b ? a : b)) : null;
+const ultimaData = dateMorte.length ? dateMorte.reduce((a, b) => (a > b ? a : b)) : null;
+const comuni = [...new Set(persone.map((p) => p.comune))];
+
+const tirolese = eReggimentoTirolese(gruppo.reparto);
+
+export const prerender = true;
+---
+
+<Layout
+  title={`Reparto ${gruppo.reparto}`}
+  description={`${persone.length} uomini del reparto ${gruppo.reparto} sepolti nei Cimiteri di guerra delle Valli del Noce.`}
+>
+  <header class="apertura">
+    <div class="dentro">
+      <p class="etichetta">Cimiteri di guerra · reparto</p>
+      <h1>{gruppo.reparto}</h1>
+      <p class="strillo">
+        {persone.length} uomini sepolti a {comuni.join(', ')}
+        {primaData && ultimaData && primaData !== ultimaData && ` fra il ${dataLeggibile(primaData.split('-').reverse().join('.'))} e il ${dataLeggibile(ultimaData.split('-').reverse().join('.'))}`}.
+      </p>
+    </div>
+  </header>
+
+  {tirolese && (
+    <section class="racconto">
+      <div class="dentro">
+        <h4>Kaiserjäger e Kaiserschützen: i reparti dei nostri</h4>
+
+        <p>Qui la faccenda diventa personale, e vale la pena spiegarla per bene.</p>
+
+        <p>Un ragazzo delle Valli del Noce che veniva chiamato alle armi tirava a sorte, e i nostri
+        bisnonni chiamavano quel sorteggio <i>nar en la cava</i>. Se usciva l'esercito comune finiva
+        quasi sempre nei <b>Tiroler Kaiserjäger</b>, i cacciatori imperiali, quattro reggimenti con sede
+        a Trento e Innsbruck, Bolzano e Bressanone, Rovereto, Bregenz e Riva del Garda. Se usciva la
+        Landwehr finiva nei <b>Landesschützen</b>, i fucilieri del Paese, reclutati soltanto in Tirolo,
+        di lingua tedesca e di lingua italiana. Nel gennaio del 1917 l'imperatore Carlo li nominò
+        <b>Kaiserschützen</b>, a Calliano, davanti al fronte trentino, come riconoscimento per come si
+        erano battuti.</p>
+
+        <p>Nel registro di Malè ce ne sono dieci: sei Kaiserschützen e quattro Kaiserjäger.</p>
+
+        <p>E i tre uomini del 2° reggimento Kaiserjäger sono <b>gli unici tirolesi di tutto l'elenco</b>.
+        Fra loro Josef Höllbling di Nauders, il più anziano dei centodiciotto.</p>
+
+        <p class="rilievo">Nessun trentino, però. Non uno. E non è un caso: quando nel 1916 Kaiserjäger e
+        Kaiserschützen furono riportati sul fronte italiano, <b>gli italofoni ne vennero tolti</b> e
+        riuniti nei battaglioni del sud-ovest, mandati a combattere sul fronte orientale. Non li si
+        voleva davanti al Regno d'Italia.</p>
+
+        <p>È il rovesciamento di tutta questa storia. Nel cimitero militare del loro paese, i nostri
+        bisnonni non ci sono, perché li avevano mandati a milleduecento chilometri da casa. E al loro
+        posto, sotto il campanile di Malè, riposano i ragazzi che erano partiti da quei milleduecento
+        chilometri.</p>
+      </div>
+    </section>
+  )}
+
+  <section class="dentro">
+    <h2>Gli uomini del reparto</h2>
+    <div class="schedario">
+      <div class="risultati" style="max-height:none">
+        {persone.map((p) => (
+          <a class="voce" style="text-decoration:none;color:inherit" href={`/cimiteri-di-guerra/${p.fondo_slug_breve}/${p.slug}`}>
+            <span class="n">{p.settore === 'civile' ? 'civ · ' : 'mil · '}{p.numero ?? ''}</span>
+            <span>
+              <span class="nome">{p.nome_completo}{p.prigioniero_guerra && <span class="marchio">prigioniero</span>}</span>
+              <span class="meta">{[p.grado, p.luogo_nascita].filter(Boolean).join(' · ')}</span>
+            </span>
+            <span class="quando">{p.data_morte_testo || ''}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {terreOrdinate.length > 0 && (
+    <section class="dentro">
+      <h2>Da dove venivano</h2>
+      <div class="provenienze">
+        {terreOrdinate.map(([regione, n]) => (
+          <div class="prov">
+            <span class="n">{n}</span>
+            <span class="dove">{regione}</span>
+            <span class="barra"><i style={`width:${Math.round((n / terreOrdinate[0][1]) * 100)}%`}></i></span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+</Layout>

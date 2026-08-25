@@ -1,0 +1,141 @@
+---
+// Cimiteri di guerra — scheda di una persona (brief 26/8/2026). Non aveva un
+// modello: carta chiara, titolo serif, dati in registro con etichette in
+// monospazio maiuscolo, filetto d'oro sui blocchi che contano — stesso
+// linguaggio della sezione, stesse variabili di archivio-dei-nomi.css. Una
+// pagina per uomo: chi cerca un cognome deve trovare un nome nel titolo, non
+// una tabella.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/archivio-dei-nomi.css';
+import { leggiFondi, leggiPersone, leggiFondo, conNome, dataLeggibile, titoloPersona, slugifica, leggiReparto, leggiProvenienza, type Fondo, type Persona } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const fondi = await leggiFondi();
+  const pagine = [];
+  for (const fondo of fondi) {
+    const persone = await leggiPersone(fondo.slug);
+    for (const p of persone) {
+      if (p.slug && conNome(p)) {
+        pagine.push({ params: { fondo: fondo.slug_breve, persona: p.slug }, props: { fondo, persona: p } });
+      }
+    }
+  }
+  return pagine;
+}
+
+interface Props { fondo: Fondo; persona: Persona }
+const { fondo, persona } = Astro.props as Props;
+
+const morte = dataLeggibile(persona.data_morte_testo);
+const titolo = titoloPersona(persona);
+const nascita = [persona.anno_nascita, persona.luogo_nascita].filter(Boolean).join(', ');
+const descrizione = `${persona.nome_completo}` + (nascita ? `, nato nel ${persona.anno_nascita ?? ''}${persona.luogo_nascita ? ' a ' + persona.luogo_nascita : ''}` : '') + `. Sepolto nel ${fondo.titolo.toLowerCase()}.`;
+
+// Reparto e provenienza hanno una pagina propria solo sopra la soglia dei
+// tre uomini: sotto, restano testo semplice invece di un collegamento rotto.
+const gruppoReparto = persona.reparto ? await leggiReparto(slugifica(persona.reparto)) : null;
+const gruppoProvenienza = persona.regione_nascita ? await leggiProvenienza(slugifica(persona.regione_nascita)) : null;
+const ancoraTomba = persona.settore && persona.numero != null ? `#t-${persona.settore}-${persona.numero}` : '';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: persona.nome_completo,
+  deathDate: persona.data_morte ?? undefined,
+  birthYear: persona.anno_nascita ?? undefined,
+  birthPlace: persona.luogo_nascita ?? undefined,
+};
+
+export const prerender = true;
+---
+
+<Layout title={titolo} description={descrizione}>
+  <style>
+    .scheda-testata { max-width: 720px; }
+    .scheda-testata .indietro {
+      font-family: var(--mono); font-size: .68rem; letter-spacing: .08em; text-transform: uppercase;
+      color: rgba(245,239,224,.55); text-decoration: none;
+    }
+    .scheda-testata .indietro:hover { color: var(--oro-chiaro); }
+    .scheda-testata h1 { margin-top: 1.1rem; }
+    .scheda-corpo { max-width: 640px; margin: 0 auto; padding: 3rem 1.5rem 1rem; }
+    .registro-persona { border-top: 2px solid var(--verde); border-bottom: 2px solid var(--verde); margin-bottom: 2rem; }
+    .campo { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding: .85rem 0; border-bottom: 1px solid rgba(34,48,31,.12); align-items: baseline; }
+    .campo:last-child { border-bottom: 0; }
+    .campo dt { font-family: var(--mono); font-size: .63rem; letter-spacing: .14em; text-transform: uppercase; color: var(--oro-scuro); margin: 0; }
+    .campo dd { font-family: var(--serif); font-size: 1.08rem; margin: 0; color: var(--verde); }
+    .fonte { font-family: var(--mono); font-size: .68rem; color: var(--verde-tenue); letter-spacing: .04em; max-width: 640px; margin: 0 auto 2.5rem; padding: 0 1.5rem; }
+    .campo dd a { color: var(--oro-scuro); }
+    .blocco-evento { border-left: 3px solid var(--oro); background: var(--crema-scura); padding: 1.1rem 1.3rem; margin: 0 0 2rem; max-width: 640px; }
+    .blocco-evento .etichetta { color: var(--oro-scuro); display: block; margin-bottom: .5rem; }
+    .blocco-evento h2 { font-size: 1.3rem; margin: 0 0 .4rem; }
+    .blocco-evento p { margin: 0 0 .6rem; font-size: .92rem; color: var(--verde); }
+    .certezza { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--oro-scuro); color: var(--oro-scuro); padding: .15rem .5rem; display: inline-block; }
+  </style>
+
+  <header class="apertura">
+    <div class="dentro scheda-testata">
+      <a class="indietro" href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>&larr; {fondo.titolo}</a>
+      <p class="etichetta" style="margin-top:1rem">
+        {persona.settore === 'militare' ? 'Cimitero militare' : 'Cimitero civile'} &middot; {persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? '—'}`}
+      </p>
+      <h1>{persona.nome_completo}</h1>
+      {(persona.grado || persona.reparto) && (
+        <p class="strillo" style="margin-bottom:2.5rem">{[persona.grado, persona.reparto].filter(Boolean).join(' · ')}</p>
+      )}
+    </div>
+  </header>
+
+  <div class="scheda-corpo">
+    {persona.evento_slug && persona.evento_nome && (
+      <div class="blocco-evento">
+        <span class="etichetta">Legato a un evento</span>
+        <h2>{persona.evento_nome}</h2>
+        <p>
+          <span class="certezza">{persona.evento_certezza === 'certo' ? 'certo' : 'probabile'}</span>
+          {persona.evento_certezza !== 'certo' && ' — il collegamento è un\'inferenza, non una menzione esplicita nel registro.'}
+        </p>
+        <a class="bottone" href={`/cimiteri-di-guerra/${persona.evento_slug}`}>Leggi dell'evento</a>
+      </div>
+    )}
+
+    <dl class="registro-persona">
+      {morte && (
+        <div class="campo"><dt>Morto</dt><dd>il {morte}, a {fondo.comune}</dd></div>
+      )}
+      {nascita && (
+        <div class="campo"><dt>Nato</dt><dd>{[persona.anno_nascita, persona.luogo_nascita].filter(Boolean).join(', a ')}</dd></div>
+      )}
+      {persona.regione_nascita && (
+        <div class="campo">
+          <dt>Provenienza</dt>
+          <dd>{gruppoProvenienza ? <a href={`/cimiteri-di-guerra/provenienza/${gruppoProvenienza.slug}`}>{persona.regione_nascita}</a> : persona.regione_nascita}</dd>
+        </div>
+      )}
+      {persona.reparto && (
+        <div class="campo">
+          <dt>Reparto</dt>
+          <dd>{gruppoReparto ? <a href={`/cimiteri-di-guerra/reparto/${gruppoReparto.slug}`}>{persona.reparto}</a> : persona.reparto}</dd>
+        </div>
+      )}
+      {persona.prigioniero_guerra && (
+        <div class="campo"><dt>Condizione</dt><dd>Prigioniero di guerra</dd></div>
+      )}
+      <div class="campo">
+        <dt>Sepoltura</dt>
+        <dd>{persona.ignoto ? 'Tomba senza nome' : `Tomba ${persona.numero ?? '—'}`}, {persona.settore === 'militare' ? 'cimitero militare' : 'cimitero civile'}</dd>
+      </div>
+    </dl>
+
+    <div class="azioni">
+      <a class="bottone" href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>Tutte le persone del fondo</a>
+      <a class="bottone vuoto" href={`/cimiteri-di-guerra/${fondo.slug_breve}/mappa${ancoraTomba}`}>Vedi sulla planimetria</a>
+    </div>
+  </div>
+
+  <p class="fonte">
+    Fonte: {fondo.archivio}{fondo.segnatura ? `, ${fondo.segnatura}` : ''}. Ricerca di {fondo.ricercatore}.
+  </p>
+
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+</Layout>

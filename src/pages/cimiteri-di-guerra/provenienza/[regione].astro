@@ -1,0 +1,61 @@
+---
+// Cimiteri di guerra — pagina di una provenienza (brief 26/8/2026, §2.3).
+// Una per ogni terra di nascita con almeno SOGLIA_MINIMA_GRUPPO uomini: è la
+// porta d'ingresso per chi cerca dall'estero. Vive sopra /cimiteri-di-guerra
+// perché una regione può comparire in più registri.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/archivio-dei-nomi.css';
+import { leggiProvenienze, leggiProvenienza, type GruppoProvenienza } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const gruppi = await leggiProvenienze();
+  return gruppi.map((g) => ({ params: { regione: g.slug } }));
+}
+
+const gruppo = await leggiProvenienza(Astro.params.regione as string) as GruppoProvenienza | null;
+if (!gruppo) return Astro.redirect('/cimiteri-di-guerra');
+
+const persone = [...gruppo.persone].sort((a, b) => (a.nome_completo ?? '').localeCompare(b.nome_completo ?? ''));
+const comuni = [...new Set(persone.map((p) => p.comune))];
+const anni = persone.map((p) => p.anno_nascita).filter(Boolean) as number[];
+const anniMorte = persone.map((p) => (p.data_morte ?? '').slice(0, 4)).filter(Boolean);
+const primoAnno = anniMorte.length ? anniMorte.reduce((a, b) => (a < b ? a : b)) : null;
+const ultimoAnno = anniMorte.length ? anniMorte.reduce((a, b) => (a > b ? a : b)) : null;
+
+export const prerender = true;
+---
+
+<Layout
+  title={`Soldati nati in ${gruppo.regione} sepolti a ${comuni.join(', ')}`}
+  description={`${persone.length} uomini nati in ${gruppo.regione}, morti al servizio dell'esercito austro-ungarico e sepolti a ${comuni.join(', ')}${primoAnno && ultimoAnno ? `, ${primoAnno}-${ultimoAnno}` : ''}.`}
+>
+  <header class="apertura">
+    <div class="dentro">
+      <p class="etichetta">Cimiteri di guerra · provenienza</p>
+      <h1>{gruppo.regione}</h1>
+      <p class="strillo">
+        {persone.length} uomini nati in {gruppo.regione}, sepolti a {comuni.join(', ')}
+        {primoAnno && ultimoAnno && `, ${primoAnno}${primoAnno !== ultimoAnno ? `–${ultimoAnno}` : ''}`}.
+      </p>
+    </div>
+  </header>
+
+  <section class="dentro">
+    <h2>I nomi</h2>
+    <p class="guida">Chi cerca un antenato nato in {gruppo.regione} e disperso sul fronte italiano può trovarlo qui.</p>
+    <div class="schedario">
+      <div class="risultati" style="max-height:none">
+        {persone.map((p) => (
+          <a class="voce" style="text-decoration:none;color:inherit" href={`/cimiteri-di-guerra/${p.fondo_slug_breve}/${p.slug}`}>
+            <span class="n">{p.settore === 'civile' ? 'civ · ' : 'mil · '}{p.numero ?? ''}</span>
+            <span>
+              <span class="nome">{p.nome_completo}{p.prigioniero_guerra && <span class="marchio">prigioniero</span>}</span>
+              <span class="meta">{[p.grado, p.reparto, p.luogo_nascita].filter(Boolean).join(' · ')}</span>
+            </span>
+            <span class="quando">{p.data_morte_testo || ''}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</Layout>

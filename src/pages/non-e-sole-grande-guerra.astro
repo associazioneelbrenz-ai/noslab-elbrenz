@@ -161,6 +161,20 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
           </div>
         )}
 
+        {/* Rimando ai Cimiteri di guerra (26/8/2026): 118 nomi restituiti dal
+            registro del cimitero militare di Malè, sezione a sé con un
+            disegno suo. Qui e' solo la porta d'ingresso. */}
+        <a href="/cimiteri-di-guerra" class="block no-underline group mb-12 border border-[#C8923E]/35 bg-[#1E2E26] rounded-lg p-6 md:p-8 hover:border-[#C8923E] transition-colors">
+          <span class="block text-[11px] tracking-[0.2em] uppercase text-[#D9A94E] font-semibold mb-3" style="font-family: 'Inter', sans-serif;">I cimiteri di guerra</span>
+          <span class="block text-xl md:text-2xl leading-tight text-[#F5EEDD] mb-3 group-hover:underline decoration-1 underline-offset-4" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+            Un registro rimasto chiuso a Vienna per centosette anni, ora leggibile un nome alla volta
+          </span>
+          <span class="block text-[#F5EEDD]/80 leading-relaxed" style="font-family: 'Source Serif 4', Georgia, serif;">
+            Il cimitero militare austro-ungarico di Malè, trascritto dal dott. Tommaso Mariotti:
+            planimetria navigabile, ricerca per nome e la scheda di ogni uomo sepolto.
+          </span>
+        </a>
+
         {/*
           LA FACCIA DEL MUSEO. Mancava, e con due soli pezzi era la cosa piu'
           importante: una pagina che si desse arie da museo ricco farebbe una

@@ -1,0 +1,250 @@
+---
+// Cimiteri di guerra — planimetria navigabile (brief 26/8/2026, rimettere il
+// disegno §4). Foglio di stile estratto verbatim da i-nomi-di-male.html, non
+// riscritto: solo le variabili gia' dichiarate in archivio-dei-nomi.css sono
+// state lasciate cadere (stessi valori, un solo posto). La griglia viene da
+// memoria_fondo.planimetria_geo, non incollata nel file. Il blu resta solo
+// dentro il foglio: e' la cianografia, non l'Associazione. Ogni riquadro con
+// un nome e' un link vero alla scheda della persona (non solo una scheda
+// interna come nello strumento originale): niente Leaflet, nessuna libreria
+// esterna.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/archivio-dei-nomi.css';
+import { leggiFondo, leggiPersone, type Fondo, type Persona } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const { leggiFondi } = await import('../../../lib/memoria');
+  const fondi = await leggiFondi();
+  return fondi.map((fondo) => ({ params: { fondo: fondo.slug_breve } }));
+}
+
+const fondo = await leggiFondo(Astro.params.fondo as string);
+if (!fondo) return Astro.redirect('/cimiteri-di-guerra');
+const persone = await leggiPersone(fondo.slug);
+
+const geo = fondo.planimetria_geo ?? { righe: [], civpos: {} };
+
+const perNumero = new Map<string, Persona>();
+for (const p of persone) {
+  if (p.settore && p.numero != null) perNumero.set(`${p.settore}:${p.numero}`, p);
+}
+function trova(settore: string, numero: number): Persona | undefined {
+  return perNumero.get(`${settore}:${numero}`);
+}
+function haNome(p: Persona | undefined): boolean {
+  return !!p?.nome_completo && p.nome_completo !== 'sconosciuto';
+}
+
+const rgOttobre = new RegExp(`\\.10\\.${fondo.anno_a ?? ''}$`);
+const nOtt = persone.filter((p) => rgOttobre.test(p.data_morte_testo ?? '')).length;
+const nPow = persone.filter((p) => p.prigioniero_guerra).length;
+
+const provenienze = new Map<string, number>();
+for (const p of persone) {
+  if (p.regione_nascita) provenienze.set(p.regione_nascita, (provenienze.get(p.regione_nascita) ?? 0) + 1);
+}
+const provenienzeTesto = [...provenienze.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
+  .map(([r, n]) => `${r} ${n}`).join(' · ');
+
+export const prerender = true;
+---
+
+<Layout title={`Planimetria · ${fondo.titolo}`} description={`Planimetria navigabile del ${fondo.titolo.toLowerCase()}.`}>
+  <style is:global>
+    /* Estratto verbatim da i-nomi-di-male.html (brief "rimettere il
+       disegno", 26/8/2026). Le variabili duplicano quelle gia' presenti in
+       archivio-dei-nomi.css con nomi diversi: lasciate cosi' com'erano nel
+       foglio originale, per fedelta' al documento sorgente. */
+    :root{
+      --verde:#22301F; --verde-fondo:#18220F;
+      --crema:#F5EFE0; --crema-tenue:rgba(245,239,224,.62);
+      --oro:#C9962F; --oro-chiaro:#E3B75C; --oro-scuro:#8F6A1C;
+      --blu:#123A5E; --linea:#BFD8EC; --linea-tenue:rgba(191,216,236,.32);
+      --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+      --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      --mono:"SF Mono",Menlo,Consolas,monospace;
+    }
+    .involucro{max-width:1180px;margin:0 auto;padding:2.5rem 1.25rem 5rem;overflow:hidden}
+
+    .involucro > header{background:var(--verde-fondo);color:var(--crema);margin:-2.5rem -1.25rem 2.25rem;padding:2.5rem 1.25rem 2rem;border-bottom:5px solid var(--oro)}
+    .occhiello{font-family:var(--mono);font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;
+               color:var(--oro);margin:0 0 .9rem}
+    .involucro h1{font-family:var(--serif);font-weight:400;font-size:clamp(2.1rem,6vw,3.6rem);line-height:1.05;
+       margin:0 0 .5rem;letter-spacing:-.01em}
+    .sottotitolo{font-family:var(--serif);font-style:italic;font-size:clamp(1rem,2.5vw,1.25rem);
+                 color:var(--crema-tenue);margin:0 0 1.5rem;max-width:46ch}
+    .conteggio{display:flex;flex-wrap:wrap;gap:1.75rem;font-family:var(--mono);font-size:.78rem;
+               letter-spacing:.04em;color:var(--crema-tenue)}
+    .conteggio b{display:block;font-family:var(--serif);font-size:1.9rem;color:var(--crema);
+                 font-weight:400;letter-spacing:0;line-height:1.1}
+    .conteggio .acceso b{color:var(--oro-chiaro)}
+
+    .cerca{margin:2.25rem 0 1rem;position:relative}
+    .cerca input{width:100%;padding:.95rem 1.1rem;background:#FDFAF3;
+      border:1px solid rgba(34,48,31,.25);border-radius:0;color:var(--verde);
+      font-family:var(--sans);font-size:1rem}
+    .cerca input::placeholder{color:rgba(34,48,31,.4);font-style:italic}
+    .cerca input:focus{outline:2px solid var(--oro);outline-offset:1px;background:#fff}
+    .esiti{font-family:var(--mono);font-size:.72rem;color:rgba(34,48,31,.6);margin:.6rem 0 0;min-height:1.2em}
+
+    .foglio{background:var(--blu);border:1px solid rgba(34,48,31,.25);padding:1.75rem 1.25rem 2rem;
+            margin:1.5rem 0;position:relative;overflow-x:auto}
+    .foglio::before{content:"";position:absolute;inset:.5rem;border:1px solid var(--linea-tenue);
+                    pointer-events:none}
+    .titolo-foglio{font-family:var(--serif);font-style:italic;font-size:1.4rem;text-align:center;
+                   color:var(--linea);margin:.25rem 0 1.5rem;letter-spacing:.02em}
+    .scala{font-family:var(--serif);font-style:italic;text-align:center;color:var(--linea-tenue);
+           font-size:.85rem;margin-top:1.25rem}
+
+    .pianta{min-width:660px;display:flex;flex-direction:column;gap:6px;align-items:center}
+    .fila{display:flex;gap:5px;align-items:center}
+    .corridoio{width:26px}
+    .tomba{width:22px;height:30px;border:1px solid var(--linea);background:transparent;padding:0;
+      cursor:pointer;position:relative;font-family:var(--mono);font-size:.5rem;color:var(--linea-tenue);
+      display:flex;align-items:center;justify-content:center;transition:transform .12s,background .12s;
+      text-decoration:none}
+    .tomba.nota{background:var(--oro);border-color:var(--oro-chiaro);color:#0B2138;font-weight:700}
+    .tomba.pow{background:var(--oro-chiaro);border-color:#fff}
+    .tomba:hover,.tomba:focus{transform:scale(1.35);z-index:5;outline:none;
+      box-shadow:0 0 0 2px var(--crema)}
+    .tomba.spenta{opacity:.18}
+    .tomba.scelta{transform:scale(1.35);box-shadow:0 0 0 2px var(--crema);z-index:4}
+
+    .civile{min-width:340px;height:340px;position:relative;margin:0 auto}
+    .civile .tomba{position:absolute}
+
+    .legenda{display:flex;flex-wrap:wrap;gap:1.25rem;font-family:var(--mono);font-size:.68rem;
+             color:rgba(34,48,31,.62);margin-top:1.25rem;letter-spacing:.03em}
+    .campione{display:inline-block;width:13px;height:17px;border:1px solid rgba(34,48,31,.45);
+              vertical-align:-3px;margin-right:.45rem}
+    .campione.nota{background:var(--oro);border-color:var(--oro-chiaro)}
+    .campione.pow{background:var(--oro-chiaro);border-color:#fff}
+
+    .coda{margin-top:3.5rem;border-top:2px solid var(--verde);padding-top:1.75rem;
+          font-size:.88rem;color:rgba(34,48,31,.68);max-width:68ch}
+    .coda h2{font-family:var(--serif);font-weight:400;font-size:1.3rem;color:var(--verde);
+             margin:0 0 .75rem}
+    .coda p{margin:0 0 .85rem}
+    .coda strong{color:var(--verde);font-weight:600}
+    .segnatura{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;color:var(--oro-scuro)}
+    .avvertenza{border-left:2px solid var(--oro);padding-left:1rem;margin:1.5rem 0}
+    @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  </style>
+
+  <div class="involucro">
+    <header>
+      <p class="occhiello">Associazione El Brenz · Valli del Noce</p>
+      <h1>I nomi di {fondo.comune}</h1>
+      <p class="sottotitolo">
+        {fondo.tipo === 'cimitero_militare' ? 'Il cimitero militare austro-ungarico' : fondo.titolo}
+        {fondo.anno_da && fondo.anno_a ? `, ${fondo.anno_da}–${fondo.anno_a}` : ''}.
+        {fondo.posti_censiti ?? fondo.nomi_noti} tombe, di cui {fondo.nomi_noti} hanno ancora un nome.
+      </p>
+      <div class="conteggio">
+        <div class="acceso"><b>{fondo.nomi_noti}</b>nomi restituiti</div>
+        <div><b>{fondo.senza_nome}</b>tombe senza nome</div>
+        <div class="acceso"><b>{nOtt}</b>morti nel solo ottobre {fondo.anno_a ?? ''}</div>
+        <div><b>{nPow}</b>prigionieri di guerra</div>
+      </div>
+    </header>
+
+    <div class="cerca">
+      <input id="mappa-cerca" type="search" placeholder="Cerca un cognome, un reparto, un luogo di nascita" aria-label="Cerca fra i caduti" />
+      <p class="esiti" id="mappa-esiti" role="status"></p>
+    </div>
+
+    <section class="foglio">
+      <p class="titolo-foglio">Cimitero Militare di {fondo.comune}</p>
+      <div class="pianta">
+        {geo.righe.map((fila) => (
+          <div class="fila">
+            {fila.map((n, i) => {
+              const p = trova('militare', n);
+              const nome = haNome(p);
+              const cerca = p ? [p.nome_completo, p.reparto, p.luogo_nascita, p.regione_nascita].filter(Boolean).join(' ').toLowerCase() : '';
+              return (
+                <>
+                  {i === 12 && <span class="corridoio" />}
+                  {nome && p?.slug ? (
+                    <a id={`t-militare-${n}`} href={`/cimiteri-di-guerra/${fondo.slug_breve}/${p.slug}`} class={`tomba nota${p.prigioniero_guerra ? ' pow' : ''}`}
+                      data-cerca={cerca} title={p.nome_completo ?? ''} aria-label={`Tomba ${n}: ${p.nome_completo}`}>{n}</a>
+                  ) : (
+                    <span id={`t-militare-${n}`} class="tomba" aria-label={`Tomba ${n}: senza nome`}>{n}</span>
+                  )}
+                </>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <p class="scala">Scala 1:100</p>
+    </section>
+
+    <section class="foglio">
+      <p class="titolo-foglio">Cimitero Civile di {fondo.comune} &middot; Tombe militari</p>
+      <div class="civile">
+        {Object.entries(geo.civpos).map(([n, xy]) => {
+          const p = trova('civile', Number(n));
+          const nome = haNome(p);
+          const cerca = p ? [p.nome_completo, p.reparto, p.luogo_nascita, p.regione_nascita].filter(Boolean).join(' ').toLowerCase() : '';
+          return nome && p?.slug ? (
+            <a id={`t-civile-${n}`} href={`/cimiteri-di-guerra/${fondo.slug_breve}/${p.slug}`} class={`tomba nota${p.prigioniero_guerra ? ' pow' : ''}`}
+              style={`left:${xy[0]}%;top:${xy[1]}%`} data-cerca={cerca} title={p.nome_completo ?? ''} aria-label={`Tomba ${n}: ${p.nome_completo}`}>{n}</a>
+          ) : (
+            <span id={`t-civile-${n}`} class="tomba" style={`left:${xy[0]}%;top:${xy[1]}%`} aria-label={`Tomba ${n}: senza nome`}>{n}</span>
+          );
+        })}
+      </div>
+    </section>
+
+    <div class="legenda">
+      <span><i class="campione nota"></i>tomba con un nome</span>
+      <span><i class="campione pow"></i>prigioniero di guerra</span>
+      <span><i class="campione"></i>tomba senza nome nel registro</span>
+    </div>
+
+    <div class="coda">
+      <h2>Da dove viene questo elenco</h2>
+      {fondo.ricercatore_note ? (
+        <p>{fondo.ricercatore_note}</p>
+      ) : fondo.ricercatore && (
+        <p>Il registro è stato ritrovato e messo a disposizione dell'Associazione El Brenz da <strong>{fondo.ricercatore}</strong>.</p>
+      )}
+      {fondo.segnatura && <p class="segnatura">{fondo.segnatura}</p>}
+      {geo.nota && (
+        <div class="avvertenza">
+          <p><strong>La disposizione delle tombe è una ricostruzione.</strong> {geo.nota}</p>
+        </div>
+      )}
+      {provenienzeTesto && (
+        <p>Le provenienze dicono il resto: {provenienzeTesto}. Sotto il campanile di {fondo.comune} non riposano trentini, ma un impero intero.</p>
+      )}
+    </div>
+  </div>
+
+  <script is:inline>
+    const input = document.getElementById('mappa-cerca');
+    const esiti = document.getElementById('mappa-esiti');
+    const tombe = Array.from(document.querySelectorAll('.tomba'));
+    input?.addEventListener('input', () => {
+      const t = input.value.trim().toLowerCase();
+      if (!t) { tombe.forEach((b) => b.classList.remove('spenta')); if (esiti) esiti.textContent = ''; return; }
+      let trovati = 0;
+      tombe.forEach((b) => {
+        const cerca = b.getAttribute('data-cerca');
+        const ok = !!cerca && cerca.includes(t);
+        b.classList.toggle('spenta', !ok);
+        if (ok) trovati++;
+      });
+      if (esiti) esiti.textContent = trovati === 0 ? 'Nessun nome corrisponde.' : trovati + (trovati === 1 ? ' tomba trovata.' : ' tombe trovate.');
+    });
+
+    if (location.hash.startsWith('#t-')) {
+      const scelta = document.querySelector(location.hash);
+      if (scelta) {
+        scelta.classList.add('scelta');
+        scelta.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      }
+    }
+  </script>
+</Layout>

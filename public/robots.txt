@@ -41,8 +41,4 @@ Disallow: /guardiani/conferma
 Disallow: /newsletter/conferma
 Disallow: /newsletter/disiscrizione
 
-# Archivio dei nomi (25/8/2026): in bozza, in attesa del consenso del
-# ricercatore. L'indirizzo lo conosce solo chi lo riceve.
-Disallow: /archivio-dei-nomi
-
 Sitemap: https://elbrenz.eu/sitemap-index.xml

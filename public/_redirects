@@ -486,3 +486,10 @@
 /en/tesseramento/  /tesseramento  302
 /en/rievocazioni  /rievocazioni  302
 /en/rievocazioni/  /rievocazioni  302
+
+# ---- Cimiteri di guerra: la sezione si chiamava Archivio dei nomi (26/8/2026) ----
+# Rinominata dopo il consenso del ricercatore. Redirect permanenti da ogni
+# vecchio indirizzo, comprese le 115 schede di persona (splat).
+/archivio-dei-nomi  /cimiteri-di-guerra  301
+/archivio-dei-nomi/cimitero-militare-male  /cimiteri-di-guerra/male  301
+/archivio-dei-nomi/cimitero-militare-male/*  /cimiteri-di-guerra/male/:splat  301
