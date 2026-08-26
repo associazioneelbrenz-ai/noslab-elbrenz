@@ -115,8 +115,13 @@ function cercaCella(c: Cella): string {
 
 const geoCivile = { civpos: geo.civpos ?? {} };
 
+// Dentro il blocco scuro resta solo la didascalia della carta in senso
+// stretto — scala, archivio, segnatura (corretto 26/8/2026 dopo un difetto
+// di contrasto: il resto del contesto storico, compreso il nome di chi ha
+// ritrovato il registro, sta gia' nel paragrafo sotto la legenda, sul fondo
+// chiaro — non va ripetuto qui).
 const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).length > 0
-  ? `Planimetria del cimitero militare di ${fondo.comune}, scala 1:100, dal registro dell'${fondo.archivio}${fondo.segnatura ? `, segnatura ${fondo.segnatura}` : ''}.${fondo.ricercatore ? ` Ritrovata e fotografata dal dott. ${fondo.ricercatore}.` : ''} L'immagine è stata corretta in prospettiva per compensare la curvatura della pagina fotografata.`
+  ? `Planimetria del cimitero militare di ${fondo.comune}, scala 1:100, dal registro dell'${fondo.archivio}${fondo.segnatura ? `, segnatura ${fondo.segnatura}` : ''}.`
   : null;
 ---
 
@@ -267,7 +272,10 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
 </div>
 
 <style>
-  .blocco-planimetria { --linea: #BFD8EC; --linea-tenue: rgba(191, 216, 236, .32); }
+  /* --linea-tenue e --crema-tenue: contrasto verificato >4.5:1 sul fondo
+     scuro --blu-carta (#123A5E). Non riabbassare l'alfa senza riverificare:
+     il valore precedente (.32) dava un contrasto reale di ~2.1:1. */
+  .blocco-planimetria { --linea: #BFD8EC; --linea-tenue: rgba(191, 216, 236, .75); --crema-tenue: rgba(245, 239, 224, .75); }
 
   .cerca { margin: 0 0 1.5rem; position: relative; }
   .cerca input {
@@ -279,11 +287,14 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
   .cerca input:focus { outline: 2px solid var(--oro); outline-offset: 1px; background: #fff; }
   .esiti { font-family: var(--mono); font-size: .72rem; color: rgba(34, 48, 31, .6); margin: .6rem 0 0; min-height: 1.2em; }
 
-  .foglio-vero { background: var(--blu-carta, #123A5E); border: 1px solid rgba(34, 48, 31, .25); padding: 1.25rem 1.25rem 1.5rem; margin: 1.5rem 0; position: relative; }
+  /* Regola: ogni contenitore che sovrascrive il proprio background sovrascrive
+     anche il proprio color, cosi' il testo dentro non dipende da dove il
+     blocco viene messo nella pagina (fondo 26/8/2026, difetto di contrasto). */
+  .foglio-vero { background: var(--blu-carta, #123A5E); color: var(--crema); border: 1px solid rgba(34, 48, 31, .25); padding: 1.25rem 1.25rem 1.5rem; margin: 1.5rem 0; position: relative; }
   .titolo-foglio { font-family: var(--serif); font-style: italic; font-size: 1.4rem; text-align: center; color: var(--linea); margin: .25rem 0 1.5rem; letter-spacing: .02em; }
   .scala { font-family: var(--serif); font-style: italic; text-align: center; color: var(--linea-tenue); font-size: .85rem; margin-top: 1.25rem; }
 
-  .finestra-pianta { position: relative; overflow: hidden; touch-action: none; background: #000; border: 1px solid rgba(34, 48, 31, .2); cursor: grab; user-select: none; }
+  .finestra-pianta { position: relative; overflow: hidden; touch-action: none; background: #000; color: var(--crema); border: 1px solid rgba(34, 48, 31, .2); cursor: grab; user-select: none; }
   .finestra-pianta.trascina { cursor: grabbing; }
   .pianta-vera { position: relative; width: 100%; transform-origin: 0 0; will-change: transform; }
   .pianta-immagine { display: block; width: 100%; height: auto; pointer-events: none; -webkit-user-drag: none; }
@@ -316,7 +327,7 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
 
   .selettore-tombe {
     display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
-    margin-top: 6px; background: var(--verde-fondo); border: 1px solid var(--oro); z-index: 30; min-width: 220px;
+    margin-top: 6px; background: var(--verde-fondo); color: var(--crema); border: 1px solid var(--oro); z-index: 30; min-width: 220px;
   }
   .cella-doppia.aperta .selettore-tombe { display: block; }
   .cella-doppia.aperta .riquadro { outline: 2px solid var(--oro-chiaro); outline-offset: 1px; z-index: 31; }
@@ -328,10 +339,10 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
   .selettore-tombe a:hover, .selettore-tombe a:focus-visible { background: rgba(201,150,47,.22); color: var(--oro-chiaro); }
   .selettore-tombe .num { display: block; font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; color: var(--oro-chiaro); margin-bottom: .1rem; }
 
-  .avviso-zoom { font-family: var(--mono); font-size: .66rem; letter-spacing: .03em; color: rgba(34,48,31,.5); margin: .7rem 0 0; text-align: center; }
-  .didascalia-vera { font-family: var(--sans); font-size: .8rem; color: rgba(34,48,31,.65); margin: .9rem 0 0; line-height: 1.55; max-width: 72ch; }
+  .avviso-zoom { font-family: var(--mono); font-size: .66rem; letter-spacing: .03em; color: var(--crema-tenue); margin: .7rem 0 0; text-align: center; }
+  .didascalia-vera { font-family: var(--sans); font-size: .8rem; color: var(--crema-tenue); margin: .9rem 0 0; line-height: 1.55; max-width: 72ch; }
 
-  .foglio-civile { background: var(--blu-carta, #123A5E); }
+  .foglio-civile { background: var(--blu-carta, #123A5E); color: var(--crema); }
   .civile { min-width: 260px; max-width: 500px; height: 340px; position: relative; margin: 0 auto; }
   .civile .tomba {
     position: absolute; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--linea);
