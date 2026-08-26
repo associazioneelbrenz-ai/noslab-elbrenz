@@ -180,3 +180,15 @@ export function titoloPersona(p: Persona): string {
   if (morte) parti.push(`morto a ${p.comune} il ${morte}`);
   return parti.join(', ');
 }
+
+// "Cimitero militare di Malè" -> "cimitero militare di Malè": per usare il
+// titolo in mezzo a una frase senza abbassare anche il nome del comune
+// (un .toLowerCase() secco scriveva "malè", minuscolo e senza motivo).
+// Il comune resta quello vero, non un caso speciale scritto a mano.
+export function titoloInFrase(fondo: Fondo): string {
+  const suffisso = ` di ${fondo.comune}`;
+  if (fondo.titolo.endsWith(suffisso)) {
+    return fondo.titolo.slice(0, -suffisso.length).toLowerCase() + suffisso;
+  }
+  return fondo.titolo.toLowerCase();
+}

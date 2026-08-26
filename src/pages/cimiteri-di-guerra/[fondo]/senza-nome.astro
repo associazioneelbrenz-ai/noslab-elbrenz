@@ -8,7 +8,7 @@ import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
 import { schemaBreadcrumb } from '../../../lib/schema';
 import RiconosciPersona from '../../../components/RiconosciPersona.astro';
-import { leggiFondo, leggiPersone, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
+import { leggiFondo, leggiPersone, ogImageFondo, titoloInFrase, type Fondo, type Persona } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const { leggiFondi } = await import('../../../lib/memoria');
@@ -40,14 +40,14 @@ const briciole = [
   { nome: 'Le tombe senza nome', url: `/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome` },
 ];
 
-const riferimentoScheda = `Le tombe senza nome, ${fondo.titolo} — https://elbrenz.eu/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome`;
+const riferimentoScheda = `Le tombe senza nome, ${fondo.titolo}, https://elbrenz.eu/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome`;
 
 export const prerender = true;
 ---
 
 <Layout
   title={`Le tombe senza nome · ${fondo.titolo}`}
-  description={`${fondo.senza_nome} tombe del ${fondo.titolo.toLowerCase()} non hanno ancora un nome nel registro.`}
+  description={`${fondo.senza_nome} tombe del ${titoloInFrase(fondo)} non hanno ancora un nome nel registro.`}
   ogImage={ogImageFondo(fondo)}
 >
   <div class="sezione-cimiteri">
@@ -59,7 +59,7 @@ export const prerender = true;
       <p class="etichetta">Cimiteri di guerra · {fondo.comune}</p>
       <h1>Le tombe<br /><em>senza nome</em></h1>
       <p class="strillo">
-        {fondo.senza_nome} tombe su {fondo.posti_censiti ?? fondo.nomi_noti} non hanno ancora un nome nel registro del {fondo.titolo.toLowerCase()}.
+        {fondo.senza_nome} tombe su {fondo.posti_censiti ?? fondo.nomi_noti} non hanno ancora un nome nel registro del {titoloInFrase(fondo)}.
       </p>
     </div>
   </header>
@@ -67,10 +67,10 @@ export const prerender = true;
   <section class="dentro">
     <h2>Perché sono vuote</h2>
     <p class="guida">
-      Il registro di {fondo.ricercatore ?? 'chi lo ha trascritto'} riporta {fondo.nomi_noti} righe con un nome. Le altre
-      caselle esistono nella pianta del cimitero — hanno un numero di tomba — ma nel documento non c'è
-      scritto chi vi riposa: o la riga non è mai stata compilata, o il nome non si legge più. Non lo
-      sappiamo con certezza, e non lo scriviamo come se lo sapessimo.
+      Il registro ritrovato a Vienna dal dott. Tommaso Mariotti riporta 118 righe con un nome. Le altre caselle
+      esistono nella pianta del cimitero, hanno un numero di tomba, ma nel documento non c'è scritto chi vi
+      riposa: o la riga non è mai stata compilata, o il nome non si legge più. Non lo sappiamo con certezza,
+      e non lo scriviamo come se lo sapessimo.
     </p>
 
     {senzaNomeMilitari.length > 0 && (

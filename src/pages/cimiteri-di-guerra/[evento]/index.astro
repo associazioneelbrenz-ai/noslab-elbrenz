@@ -69,7 +69,7 @@ export const prerender = true;
                 <span>
                   <a href={`/cimiteri-di-guerra/${p.fondo_slug_breve}/${p.slug}`}>{p.nome_completo}</a>
                   {[p.reparto, p.luogo_nascita].filter(Boolean).length > 0 && `, ${[p.reparto, p.luogo_nascita].filter(Boolean).join(', ')}`}
-                  {' — '}
+                  {' · '}
                   <span class="certezza-inline">{p.evento_certezza === 'certo' ? 'certo' : 'probabile'}</span>
                 </span>
               </li>

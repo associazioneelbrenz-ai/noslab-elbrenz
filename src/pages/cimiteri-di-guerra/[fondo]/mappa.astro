@@ -11,7 +11,7 @@
 // (flag esplicito nel resoconto, non un dimenticanza).
 import Layout from '../../../layouts/Layout.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
-import { leggiFondo, leggiPersone, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
+import { leggiFondo, leggiPersone, ogImageFondo, titoloInFrase, type Fondo, type Persona } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const { leggiFondi } = await import('../../../lib/memoria');
@@ -79,7 +79,7 @@ const provenienzeTesto = [...provenienze.entries()].sort((a, b) => b[1] - a[1]).
   .map(([r, n]) => `${r} ${n}`).join(' · ');
 
 const didascaliaPlanimetria = fondo.planimetria_url && riquadri && Object.keys(riquadri).length > 0
-  ? `Planimetria del ${(fondo.tipo === 'cimitero_militare' ? 'cimitero militare' : fondo.titolo.toLowerCase())} di ${fondo.comune}, scala 1:100, dal registro dell'${fondo.archivio}${fondo.segnatura ? `, segnatura ${fondo.segnatura}` : ''}.${fondo.ricercatore ? ` Ritrovata e fotografata dal dott. ${fondo.ricercatore}.` : ''} L'immagine è stata corretta in prospettiva per compensare la curvatura della pagina fotografata.`
+  ? `Planimetria del ${(fondo.tipo === 'cimitero_militare' ? 'cimitero militare' : titoloInFrase(fondo))} di ${fondo.comune}, scala 1:100, dal registro dell'${fondo.archivio}${fondo.segnatura ? `, segnatura ${fondo.segnatura}` : ''}.${fondo.ricercatore ? ` Ritrovata e fotografata dal dott. ${fondo.ricercatore}.` : ''} L'immagine è stata corretta in prospettiva per compensare la curvatura della pagina fotografata.`
   : null;
 
 const briciole = [
@@ -92,7 +92,7 @@ const briciole = [
 export const prerender = true;
 ---
 
-<Layout title={`Planimetria · ${fondo.titolo}`} description={`Planimetria navigabile del ${fondo.titolo.toLowerCase()}.`} ogImage={ogImageFondo(fondo)}>
+<Layout title={`Planimetria · ${fondo.titolo}`} description={`Planimetria navigabile del ${titoloInFrase(fondo)}.`} ogImage={ogImageFondo(fondo)}>
   <style is:global>
     /* Estratto verbatim da i-nomi-di-male.html (brief "rimettere il
        disegno", 26/8/2026). Le variabili duplicano quelle gia' presenti in

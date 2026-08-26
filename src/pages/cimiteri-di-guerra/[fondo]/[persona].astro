@@ -11,7 +11,7 @@ import Condividi from '../../../components/Condividi.astro';
 import RiconosciPersona from '../../../components/RiconosciPersona.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
 import {
-  leggiFondi, leggiPersone, leggiFondo, conNome, dataLeggibile, titoloPersona, slugifica,
+  leggiFondi, leggiPersone, leggiFondo, conNome, dataLeggibile, titoloPersona, titoloInFrase, slugifica,
   leggiReparto, leggiProvenienza, ogImageFondo, type Fondo, type Persona,
 } from '../../../lib/memoria';
 
@@ -35,7 +35,7 @@ const { fondo, persona } = Astro.props as Props;
 const morte = dataLeggibile(persona.data_morte_testo);
 const titolo = titoloPersona(persona);
 const nascita = [persona.anno_nascita, persona.luogo_nascita].filter(Boolean).join(', ');
-const descrizione = `${persona.nome_completo}` + (nascita ? `, nato nel ${persona.anno_nascita ?? ''}${persona.luogo_nascita ? ' a ' + persona.luogo_nascita : ''}` : '') + `. Sepolto nel ${fondo.titolo.toLowerCase()}.`;
+const descrizione = `${persona.nome_completo}` + (nascita ? `, nato nel ${persona.anno_nascita ?? ''}${persona.luogo_nascita ? ' a ' + persona.luogo_nascita : ''}` : '') + `. Sepolto nel ${titoloInFrase(fondo)}.`;
 
 // Reparto e provenienza hanno una pagina propria solo sopra la soglia dei
 // tre uomini: sotto, restano testo semplice invece di un collegamento rotto.
@@ -43,7 +43,7 @@ const gruppoReparto = persona.reparto ? await leggiReparto(slugifica(persona.rep
 const gruppoProvenienza = persona.regione_nascita ? await leggiProvenienza(slugifica(persona.regione_nascita)) : null;
 const ancoraTomba = persona.settore && persona.numero != null ? `#t-${persona.settore}-${persona.numero}` : '';
 
-const riferimentoScheda = `${persona.nome_completo}, ${persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? '—'}`}, ${fondo.titolo} — https://elbrenz.eu/cimiteri-di-guerra/${fondo.slug_breve}/${persona.slug}`;
+const riferimentoScheda = `${persona.nome_completo}, ${persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? 'n.d.'}`}, ${fondo.titolo}, https://elbrenz.eu/cimiteri-di-guerra/${fondo.slug_breve}/${persona.slug}`;
 
 const briciole = [
   { nome: 'Archivio', url: '/archivio' },
@@ -95,7 +95,7 @@ export const prerender = true;
         <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <a href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>{fondo.comune}</a> › <span aria-current="page">{persona.nome_completo}</span>
       </nav>
       <p class="etichetta">
-        {persona.settore === 'militare' ? 'Cimitero militare' : 'Cimitero civile'} &middot; {persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? '—'}`}
+        {persona.settore === 'militare' ? 'Cimitero militare' : 'Cimitero civile'} &middot; {persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? 'n.d.'}`}
       </p>
       <h1>{persona.nome_completo}</h1>
       {(persona.grado || persona.reparto) && (
@@ -111,7 +111,7 @@ export const prerender = true;
         <h2>{persona.evento_nome}</h2>
         <p>
           <span class="certezza">{persona.evento_certezza === 'certo' ? 'certo' : 'probabile'}</span>
-          {persona.evento_certezza !== 'certo' && ' — il collegamento è un\'inferenza, non una menzione esplicita nel registro.'}
+          {persona.evento_certezza !== 'certo' && ' Il collegamento è un\'inferenza, non una menzione esplicita nel registro.'}
         </p>
         <a class="bottone" href={`/cimiteri-di-guerra/${persona.evento_slug}`}>Leggi dell'evento</a>
       </div>
@@ -144,7 +144,7 @@ export const prerender = true;
       )}
       <div class="campo">
         <dt>Sepoltura</dt>
-        <dd>{persona.ignoto ? 'Tomba senza nome' : `Tomba ${persona.numero ?? '—'}`}, {persona.settore === 'militare' ? 'cimitero militare' : 'cimitero civile'}</dd>
+        <dd>{persona.ignoto ? 'Tomba senza nome' : `Tomba ${persona.numero ?? 'n.d.'}`}, {persona.settore === 'militare' ? 'cimitero militare' : 'cimitero civile'}</dd>
       </div>
     </dl>
 
