@@ -1,13 +1,19 @@
 ---
-// Cimiteri di guerra — pagina del fondo (brief 26/8/2026, "va in produzione").
-// Ordine non negoziabile: apertura -> muro delle tacche/numeri -> racconto
-// per intero -> ricerca -> provenienze -> fondi futuri -> chiusa. CSS e
-// classi sono quelli veri di cimiteri-di-guerra.css, non tradotti nello stile
-// del sito (BRIEF_CODE_rimettere_il_disegno). Ogni numero viene dal
-// database: se un domani arriva un secondo fondo, questa pagina non cambia.
+// Cimiteri di guerra — pagina del fondo (brief 26/8/2026, "va in produzione";
+// ordine rivisto da "Navigazione della sezione", 26/8/2026 §6). Ordine non
+// negoziabile: apertura -> muro delle tacche/numeri -> ricerca -> planimetria
+// -> racconto per intero -> provenienze -> fondi futuri -> chiusa. La
+// planimetria e' salita sopra il racconto (prima stava sotto la ricerca,
+// dopo il racconto); il racconto non e' cambiato di una virgola, solo di
+// posizione. CSS e classi sono quelli veri di cimiteri-di-guerra.css, non
+// tradotti nello stile del sito (BRIEF_CODE_rimettere_il_disegno). Ogni
+// numero viene dal database: se un domani arriva un secondo fondo, questa
+// pagina non cambia.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
 import { schemaBreadcrumb } from '../../../lib/schema';
+import BarraSezione from '../../../components/memoria/BarraSezione.astro';
+import Planimetria from '../../../components/memoria/Planimetria.astro';
 import { leggiFondo, leggiPersone, conNome, slugifica, SOGLIA_MINIMA_GRUPPO, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
@@ -67,6 +73,7 @@ export const prerender = true;
   ogImage={ogImageFondo(fondo)}
 >
   <div class="sezione-cimiteri">
+  <BarraSezione fondo={fondo} />
   <header class="apertura">
     <div class="dentro">
       <nav class="briciole" aria-label="Percorso">
@@ -100,13 +107,7 @@ export const prerender = true;
     </div>
   </div>
 
-  {fondo.racconto_html && (
-    <section class="racconto">
-      <div class="dentro" set:html={fondo.racconto_html} />
-    </section>
-  )}
-
-  <section class="dentro">
+  <section class="dentro" id="cerca-un-nome">
     <h2>Cerca un nome</h2>
     <p class="guida">Un cognome, un reggimento, un paese di nascita. Se cerchi un antenato austro-ungarico disperso sul fronte italiano, potrebbe essere qui.</p>
     <div class="schedario">
@@ -114,6 +115,17 @@ export const prerender = true;
       <div class="risultati" id="an-risultati" role="status"></div>
     </div>
   </section>
+
+  <section class="dentro">
+    <h2>La planimetria</h2>
+    <Planimetria fondo={fondo} persone={tutte} />
+  </section>
+
+  {fondo.racconto_html && (
+    <section class="racconto">
+      <div class="dentro" set:html={fondo.racconto_html} />
+    </section>
+  )}
 
   {provenienze.length > 0 && (
     <section class="dentro">

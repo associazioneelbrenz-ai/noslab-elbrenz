@@ -4,6 +4,7 @@
 // senza toccare questo file.
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/cimiteri-di-guerra.css';
+import BarraSezione from '../../components/memoria/BarraSezione.astro';
 import { schemaBreadcrumb } from '../../lib/schema';
 import { leggiFondi, OG_CIMITERI_ORIZZONTALE } from '../../lib/memoria';
 import { VALLI_LUOGHI } from '../../lib/luoghi';
@@ -22,6 +23,7 @@ export const prerender = true;
   ogImage={OG_CIMITERI_ORIZZONTALE}
 >
   <div class="sezione-cimiteri">
+    <BarraSezione />
     <header class="apertura">
       <div class="dentro">
         <nav class="briciole" aria-label="Percorso">

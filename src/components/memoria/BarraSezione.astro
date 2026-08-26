@@ -1,0 +1,109 @@
+---
+// Cimiteri di guerra — barra di navigazione di sezione (brief "Navigazione
+// della sezione Cimiteri di guerra", 26/8/2026, §5). Compare identica su
+// tutte le pagine della sezione: sette voci, quella della pagina corrente
+// evidenziata e non cliccabile. "Reparti" e "Provenienze" puntano a due
+// indici nuovi (non esistevano prima, c'erano solo le pagine di dettaglio);
+// tutto il resto punta a rotte gia' vive, non a percorsi immaginati qui.
+import { leggiFondi, leggiEventi, type Fondo } from '../../lib/memoria';
+
+interface Props { fondo?: Fondo }
+const { fondo: fondoProp } = Astro.props as Props;
+
+const fondi = await leggiFondi();
+const fondo = fondoProp ?? fondi[0];
+const eventi = await leggiEventi();
+const evento = eventi[0];
+
+const path = Astro.url.pathname.replace(/\/+$/, '') || '/';
+
+type Voce = { label: string; href: string; attiva: (p: string) => boolean };
+
+const voci: Voce[] = fondo ? [
+  {
+    label: fondo.titolo,
+    href: `/cimiteri-di-guerra/${fondo.slug_breve}`,
+    attiva: (p) => p === `/cimiteri-di-guerra/${fondo.slug_breve}`,
+  },
+  {
+    label: 'Planimetria',
+    href: `/cimiteri-di-guerra/${fondo.slug_breve}/mappa`,
+    attiva: (p) => p.endsWith('/mappa'),
+  },
+  {
+    // Non esiste una pagina propria "Tutti i nomi": l'elenco e la ricerca
+    // vivono sulla pagina del fondo, sezione #cerca-un-nome. Il rimando e'
+    // a quella sezione, non a una rotta inventata per l'occasione.
+    label: 'Tutti i nomi',
+    href: `/cimiteri-di-guerra/${fondo.slug_breve}#cerca-un-nome`,
+    attiva: () => false,
+  },
+  {
+    label: 'Reparti',
+    href: '/cimiteri-di-guerra/reparto',
+    attiva: (p) => p.startsWith('/cimiteri-di-guerra/reparto'),
+  },
+  {
+    label: 'Provenienze',
+    href: '/cimiteri-di-guerra/provenienza',
+    attiva: (p) => p.startsWith('/cimiteri-di-guerra/provenienza'),
+  },
+  {
+    label: 'Tombe senza nome',
+    href: `/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome`,
+    attiva: (p) => p.endsWith('/senza-nome'),
+  },
+  ...(evento ? [{
+    label: evento.nome,
+    href: `/cimiteri-di-guerra/${evento.slug}`,
+    attiva: (p: string) => p === `/cimiteri-di-guerra/${evento.slug}`,
+  }] : []),
+] : [];
+---
+
+{voci.length > 0 && (
+  <nav class="barra-sezione" aria-label="Naviga nella sezione Cimiteri di guerra">
+    <div class="corsia">
+      {voci.map((v) => v.attiva(path) ? (
+        <span class="voce attiva" aria-current="page">{v.label}</span>
+      ) : (
+        <a class="voce" href={v.href}>{v.label}</a>
+      ))}
+    </div>
+  </nav>
+)}
+
+<style>
+  .barra-sezione {
+    background: var(--verde-fondo);
+    border-bottom: 1px solid rgba(201, 150, 47, .35);
+  }
+  .corsia {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 0 1.25rem;
+  }
+  .voce {
+    flex: 0 0 auto;
+    font-family: var(--mono);
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(245, 239, 224, .68);
+    text-decoration: none;
+    white-space: nowrap;
+    padding: .85rem .9rem;
+    border-bottom: 2px solid transparent;
+  }
+  .voce:hover { color: var(--crema); }
+  .voce.attiva {
+    color: var(--oro-chiaro);
+    border-bottom-color: var(--oro);
+    cursor: default;
+  }
+</style>

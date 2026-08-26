@@ -7,6 +7,7 @@
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
 import { schemaBreadcrumb } from '../../../lib/schema';
+import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import RiconosciPersona from '../../../components/RiconosciPersona.astro';
 import { leggiFondo, leggiPersone, ogImageFondo, titoloInFrase, type Fondo, type Persona } from '../../../lib/memoria';
 
@@ -51,6 +52,7 @@ export const prerender = true;
   ogImage={ogImageFondo(fondo)}
 >
   <div class="sezione-cimiteri">
+  <BarraSezione fondo={fondo} />
   <header class="apertura">
     <div class="dentro">
       <nav class="briciole" aria-label="Percorso">

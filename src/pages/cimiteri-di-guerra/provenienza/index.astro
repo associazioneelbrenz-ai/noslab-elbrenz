@@ -1,0 +1,63 @@
+---
+// Cimiteri di guerra — indice delle provenienze (brief "Navigazione della
+// sezione", 26/8/2026 §5). Stesso ragionamento di reparto/index.astro: la
+// barra di sezione ha bisogno di una voce "Provenienze" che porti da
+// qualche parte. Stesso elenco di leggiProvenienze(), nessun nuovo dato.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/cimiteri-di-guerra.css';
+import BarraSezione from '../../../components/memoria/BarraSezione.astro';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import { leggiProvenienze, OG_CIMITERI_ORIZZONTALE } from '../../../lib/memoria';
+
+const gruppi = await leggiProvenienze();
+const maxUomini = gruppi[0]?.persone.length ?? 1;
+
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: 'Provenienze', url: '/cimiteri-di-guerra/provenienza' },
+];
+
+export const prerender = true;
+---
+
+<Layout
+  title="Provenienze · Cimiteri di guerra"
+  description="Le terre di nascita con almeno tre uomini sepolti nei Cimiteri di guerra delle Valli del Noce."
+  ogImage={OG_CIMITERI_ORIZZONTALE}
+>
+  <div class="sezione-cimiteri">
+  <BarraSezione />
+  <header class="apertura">
+    <div class="dentro">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <span aria-current="page">Provenienze</span>
+      </nav>
+      <p class="etichetta">Cimiteri di guerra · provenienze</p>
+      <h1>Da dove venivano</h1>
+      <p class="strillo">
+        {gruppi.length} terre di nascita contano almeno tre uomini nel registro: sotto il campanile di
+        Malè non riposano trentini, ma un impero intero.
+      </p>
+    </div>
+  </header>
+
+  <section class="dentro">
+    {gruppi.length === 0 ? (
+      <p class="niente">Nessuna provenienza sopra soglia al momento.</p>
+    ) : (
+      <div class="provenienze">
+        {gruppi.map((g) => (
+          <div class="prov">
+            <span class="n">{g.persone.length}</span>
+            <a class="dove" href={`/cimiteri-di-guerra/provenienza/${g.slug}`} style="color:inherit">{g.regione}</a>
+            <span class="barra"><i style={`width:${Math.round((g.persone.length / maxUomini) * 100)}%`}></i></span>
+          </div>
+        ))}
+      </div>
+    )}
+  </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+</Layout>

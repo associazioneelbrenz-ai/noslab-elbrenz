@@ -4,6 +4,7 @@
 // campo fonti reso leggibile, col grado di certezza sempre in chiaro.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
+import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
 import { leggiEventi, leggiEvento, leggiTutte, dataLeggibile, meseIt, OG_CIMITERI_ORIZZONTALE, type Evento } from '../../../lib/memoria';
 
@@ -40,6 +41,7 @@ export const prerender = true;
   ogImage={OG_CIMITERI_ORIZZONTALE}
 >
   <div class="sezione-cimiteri">
+  <BarraSezione />
   <header class="apertura">
     <div class="dentro">
       <nav class="briciole" aria-label="Percorso">

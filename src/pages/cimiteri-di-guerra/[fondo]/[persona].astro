@@ -9,6 +9,7 @@ import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
 import Condividi from '../../../components/Condividi.astro';
 import RiconosciPersona from '../../../components/RiconosciPersona.astro';
+import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
 import {
   leggiFondi, leggiPersone, leggiFondo, conNome, dataLeggibile, titoloPersona, titoloInFrase, slugifica,
@@ -42,6 +43,18 @@ const descrizione = `${persona.nome_completo}` + (nascita ? `, nato nel ${person
 const gruppoReparto = persona.reparto ? await leggiReparto(slugifica(persona.reparto)) : null;
 const gruppoProvenienza = persona.regione_nascita ? await leggiProvenienza(slugifica(persona.regione_nascita)) : null;
 const ancoraTomba = persona.settore && persona.numero != null ? `#t-${persona.settore}-${persona.numero}` : '';
+
+// Precedente/successivo dentro lo stesso settore (brief "Navigazione della
+// sezione", 26/8/2026 §8): stesso ordine delle tombe, saltando i numeri
+// senza scheda. Chi e' primo o ultimo vede la direzione mancante disattivata,
+// non nascosta.
+const tuttiPersonaggi = await leggiPersone(fondo.slug);
+const ordinatiPerSettore = tuttiPersonaggi
+  .filter((p) => p.settore === persona.settore && conNome(p) && p.numero != null)
+  .sort((a, b) => (a.numero as number) - (b.numero as number));
+const indicePersona = ordinatiPerSettore.findIndex((p) => p.id === persona.id);
+const precedente = indicePersona > 0 ? ordinatiPerSettore[indicePersona - 1] : null;
+const successiva = indicePersona >= 0 && indicePersona < ordinatiPerSettore.length - 1 ? ordinatiPerSettore[indicePersona + 1] : null;
 
 const riferimentoScheda = `${persona.nome_completo}, ${persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? 'n.d.'}`}, ${fondo.titolo}, https://elbrenz.eu/cimiteri-di-guerra/${fondo.slug_breve}/${persona.slug}`;
 
@@ -86,9 +99,17 @@ export const prerender = true;
     .blocco-evento h2 { font-size: 1.3rem; margin: 0 0 .4rem; }
     .blocco-evento p { margin: 0 0 .6rem; font-size: .92rem; color: var(--verde); }
     .certezza { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--oro-scuro); color: var(--oro-scuro); padding: .15rem .5rem; display: inline-block; }
+    .scorri-settore { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(34,48,31,.15); }
+    .scorri-settore a, .scorri-settore span { font-family: var(--mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--oro-scuro); text-decoration: none; max-width: 46%; }
+    .scorri-settore a span, .scorri-settore span span { display: block; font-family: var(--serif); font-size: .95rem; text-transform: none; letter-spacing: 0; color: var(--verde); margin-top: .25rem; }
+    .scorri-settore a:hover { color: var(--oro); }
+    .scorri-settore .succ { text-align: right; }
+    .scorri-settore .disabilitato { color: rgba(34,48,31,.35); }
+    .scorri-settore .disabilitato span { color: rgba(34,48,31,.3); }
   </style>
 
   <div class="sezione-cimiteri">
+  <BarraSezione fondo={fondo} />
   <header class="apertura">
     <div class="dentro scheda-testata">
       <nav class="briciole" aria-label="Percorso">
@@ -155,6 +176,19 @@ export const prerender = true;
     </div>
 
     <RiconosciPersona nome={persona.nome_completo ?? ''} scheda={riferimentoScheda} />
+
+    <nav class="scorri-settore" aria-label={`Altre tombe del ${persona.settore === 'militare' ? 'cimitero militare' : 'cimitero civile'}`}>
+      {precedente ? (
+        <a class="prec" href={`/cimiteri-di-guerra/${fondo.slug_breve}/${precedente.slug}`}>← Tomba {precedente.numero}<span>{precedente.nome_completo}</span></a>
+      ) : (
+        <span class="prec disabilitato" aria-disabled="true">← Nessuna tomba precedente</span>
+      )}
+      {successiva ? (
+        <a class="succ" href={`/cimiteri-di-guerra/${fondo.slug_breve}/${successiva.slug}`}>Tomba {successiva.numero} →<span>{successiva.nome_completo}</span></a>
+      ) : (
+        <span class="succ disabilitato" aria-disabled="true">Nessuna tomba successiva →</span>
+      )}
+    </nav>
   </div>
 
   <p class="fonte">

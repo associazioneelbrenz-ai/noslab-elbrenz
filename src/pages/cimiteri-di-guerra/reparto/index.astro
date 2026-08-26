@@ -1,0 +1,64 @@
+---
+// Cimiteri di guerra — indice dei reparti (brief "Navigazione della sezione",
+// 26/8/2026 §5). Non esisteva prima: la barra di sezione ha bisogno di una
+// voce "Reparti" che porti da qualche parte, e le uniche pagine che c'erano
+// erano quelle di dettaglio, una per reparto. Stesso elenco di leggiReparti(),
+// nessun nuovo dato.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/cimiteri-di-guerra.css';
+import BarraSezione from '../../../components/memoria/BarraSezione.astro';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import { leggiReparti, OG_CIMITERI_ORIZZONTALE } from '../../../lib/memoria';
+
+const gruppi = await leggiReparti();
+const maxUomini = gruppi[0]?.persone.length ?? 1;
+
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: 'Reparti', url: '/cimiteri-di-guerra/reparto' },
+];
+
+export const prerender = true;
+---
+
+<Layout
+  title="Reparti · Cimiteri di guerra"
+  description="I reparti dell'esercito austro-ungarico con almeno tre uomini sepolti nei Cimiteri di guerra delle Valli del Noce."
+  ogImage={OG_CIMITERI_ORIZZONTALE}
+>
+  <div class="sezione-cimiteri">
+  <BarraSezione />
+  <header class="apertura">
+    <div class="dentro">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <span aria-current="page">Reparti</span>
+      </nav>
+      <p class="etichetta">Cimiteri di guerra · reparti</p>
+      <h1>I reparti</h1>
+      <p class="strillo">
+        {gruppi.length} reparti dell'esercito austro-ungarico contano almeno tre uomini nel registro: gli
+        altri restano un nome scritto sulla scheda della singola persona, senza una pagina propria.
+      </p>
+    </div>
+  </header>
+
+  <section class="dentro">
+    {gruppi.length === 0 ? (
+      <p class="niente">Nessun reparto sopra soglia al momento.</p>
+    ) : (
+      <div class="provenienze">
+        {gruppi.map((g) => (
+          <div class="prov">
+            <span class="n">{g.persone.length}</span>
+            <a class="dove" href={`/cimiteri-di-guerra/reparto/${g.slug}`} style="color:inherit">{g.reparto}</a>
+            <span class="barra"><i style={`width:${Math.round((g.persone.length / maxUomini) * 100)}%`}></i></span>
+          </div>
+        ))}
+      </div>
+    )}
+  </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+</Layout>
