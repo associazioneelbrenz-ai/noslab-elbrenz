@@ -7,27 +7,42 @@
 // sotto viene isolata dal compilatore alle sole classi generate da questo
 // componente, quindi non serve prefissarla a mano con .sezione-cimiteri.
 //
-// Quattro stati per riquadro (brief "fondo 1941", 26/8/2026 §5, che
-// sostituisce i tre stati del brief precedente — le 33 scansioni del
-// fascicolo del 1941 mostrano che i riquadri 1-84 portano un tratto
-// obliquo disegnato a mano, dall'85 in poi no: non e' un registro con
-// pagine mancanti, sono tombe barrate sulla pianta):
+// Stato del riquadro (brief "fondo 1941", 26/8/2026 §5; corretto da
+// Cristian il 26/8/2026 dopo una nuova lettura della pianta originale).
+// "Barrato" e "integro" non si leggono piu' da un intervallo di numeri: la
+// regola <90-o->201 e' dimostrata sbagliata, perche' sulla pianta risultano
+// barrate anche le tombe 133, 137, 186 e 195 — dentro il blocco 90-201, e
+// con una scheda propria (tre ignote, una con nome: Alois Truka). Da qui in
+// avanti "barrato" si legge SOLO da un elenco esplicito, mai da una fascia.
+// Elenco provvisorio (in attesa della trascrizione completa e definitiva):
+//   barrato: 1-11, 13-37, 39, 41-84, 125, 133, 137, 186, 195, 199, 200, 202-217
+//   integro, nessun nome: 12, 38, 40, 85-89, 91-96
+// Un numero puo' avere sia una scheda sia il segno barrato insieme (133,
+// 137, 186, 195): sono due fatti diversi — l'identita' della persona e il
+// segno tracciato sulla carta — e restano entrambi visibili, non si sceglie
+// l'uno a scapito dell'altro.
+//
+// Stati per l'interattivita' (mutua esclusiva):
 //  - "noto": una persona con nome vero e' collegata -> oro pieno, cliccabile.
 //  - "ignoto": una persona e' collegata ma il registro la dice "sconosciuto"
-//    (tombe 133, 186, 195) -> oro in tono piu' tenue, cliccabile: ha una
-//    scheda propria, dice solo che il nome non c'e'.
-//  - "barrato": nessuna persona, numero <90 o >201 -> tratto obliquo
-//    ridisegnato, non cliccabile.
-//  - "integro": nessuna persona, ma il riquadro non porta il tratto — gli
-//    otto numeri 12,38,40,85,86,87,88,89 lo dice il brief esplicitamente;
-//    i restanti buchi dentro 90-201 (91-96, 125, 199, 200: nessuna riga nel
-//    registro a quel numero) non sono elencati uno per uno nel brief, ma
-//    stanno nella stessa fascia 85-201 senza traccia di tratto — li tratto
-//    allo stesso modo, e lo dico nel report invece di deciderlo in silenzio.
+//    -> oro in tono piu' tenue, cliccabile: ha una scheda propria.
+//  - "barrato": nessuna persona, numero nell'elenco barrato -> tratto
+//    obliquo ridisegnato, non cliccabile.
+//  - "integro": nessuna persona, numero nell'elenco integro -> bordo
+//    tratteggiato, non cliccabile.
+// Piu' un flag indipendente, barratoAnche: true quando un riquadro "noto" o
+// "ignoto" e' anche nell'elenco barrato — il tratto si disegna sopra,
+// restando cliccabile.
 // Un riquadro puo' portare due numeri (180-181, 182-183): se entrambi hanno
 // una scheda, il clic apre un selettore con le due, nessuna davanti
-// all'altra (§8 del brief precedente).
+// all'altra (§8 del brief "Navigazione della sezione").
 import { titoloInFrase, type Fondo, type Persona } from '../../lib/memoria';
+
+function intervallo(a: number, b: number): number[] {
+  const r: number[] = [];
+  for (let i = a; i <= b; i++) r.push(i);
+  return r;
+}
 
 interface Props { fondo: Fondo; persone: Persona[] }
 const { fondo, persone } = Astro.props as Props;
@@ -54,17 +69,20 @@ function haScheda(p: Persona | undefined): boolean {
   return !!p && (haNome(p) || p.ignoto);
 }
 
-const SOGLIA_BASSA = 90;
-const SOGLIA_ALTA = 201;
-// Numeri esplicitamente citati dal brief come "riquadro integro, nessun
-// nome": non portano il tratto obliquo pur essendo sotto la tomba 90.
-const INTEGRO_ESPLICITI = new Set([12, 38, 40, 85, 86, 87, 88, 89]);
+// Elenco esplicito e provvisorio (messaggio di Cristian, 26/8/2026): niente
+// piu' regole a fasce. La trascrizione completa e definitiva arrivera'
+// separatamente e sostituira' questi due elenchi.
+const BARRATO_ESPLICITI = new Set([
+  ...intervallo(1, 11), ...intervallo(13, 37), 39, ...intervallo(41, 84),
+  125, 133, 137, 186, 195, 199, 200, ...intervallo(202, 217),
+]);
+const INTEGRO_ESPLICITI = new Set([12, 38, 40, ...intervallo(85, 89), ...intervallo(91, 96)]);
 
 type Stato = 'noto' | 'ignoto' | 'barrato' | 'integro';
 type Cella = {
   chiave: string; box: Riquadro; numeri: number[];
   principale: Persona | undefined; secondaria: Persona | undefined;
-  stato: Stato; doppia: boolean;
+  stato: Stato; barratoAnche: boolean; doppia: boolean;
 };
 const celleMilitari: Cella[] = Object.entries(riquadri).map(([chiave, box]) => {
   const numeri = box.etichetta.includes('-') ? box.etichetta.split('-').map(Number) : [Number(chiave)];
@@ -72,11 +90,13 @@ const celleMilitari: Cella[] = Object.entries(riquadri).map(([chiave, box]) => {
   const secondaria = numeri[1] != null ? trova('militare', numeri[1]) : undefined;
   const conNome = haNome(principale) || haNome(secondaria);
   const conIgnoto = !conNome && (principale?.ignoto || secondaria?.ignoto);
-  const fuoriRegistro = numeri.some((n) => n < SOGLIA_BASSA || n > SOGLIA_ALTA);
-  const integro = numeri.some((n) => INTEGRO_ESPLICITI.has(n)) || (!fuoriRegistro);
-  const stato: Stato = conNome ? 'noto' : conIgnoto ? 'ignoto' : integro ? 'integro' : 'barrato';
+  const haPersona = conNome || conIgnoto;
+  const barrato = numeri.some((n) => BARRATO_ESPLICITI.has(n));
+  const integro = !haPersona && !barrato && numeri.some((n) => INTEGRO_ESPLICITI.has(n));
+  const stato: Stato = conNome ? 'noto' : conIgnoto ? 'ignoto' : barrato ? 'barrato' : 'integro';
+  const barratoAnche = haPersona && barrato;
   const doppia = numeri.length > 1 && haScheda(principale) && haScheda(secondaria);
-  return { chiave, box, numeri, principale, secondaria, stato, doppia };
+  return { chiave, box, numeri, principale, secondaria, stato, barratoAnche, doppia };
 });
 
 function nomiCella(c: Cella): string[] {
@@ -116,13 +136,14 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
             const nomi = nomiCella(c);
             const href = hrefCella(c);
             const cliccabile = c.stato === 'noto' || c.stato === 'ignoto';
-            const label = c.stato === 'noto'
+            const suffissoBarrato = c.barratoAnche ? ' Il riquadro porta anche il tratto obliquo sulla pianta del 1941.' : '';
+            const label = (c.stato === 'noto'
               ? (c.doppia ? `Tomba ${c.box.etichetta}: due sepolture, ${nomi.join(' e ')}` : `Tomba ${c.box.etichetta}, ${nomi.join(' e ')}`)
               : c.stato === 'ignoto'
               ? `Tomba ${c.box.etichetta}, nome ignoto già nel registro`
               : c.stato === 'barrato'
               ? `Tomba ${c.box.etichetta}, riquadro barrato sulla pianta del 1941`
-              : `Tomba ${c.box.etichetta}, riquadro integro senza nome`;
+              : `Tomba ${c.box.etichetta}, riquadro integro senza nome`) + suffissoBarrato;
             const stile = `left:${c.box.x}%;top:${c.box.y}%;width:${c.box.w}%;height:${c.box.h}%`;
             const etichettaVisibile = cliccabile
               ? nomi.join(' · ')
@@ -135,7 +156,7 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
                 <div class="cella-doppia" style={stile} id={`cella-${c.chiave}`}>
                   <button
                     type="button"
-                    class="riquadro con-nome doppia cercabile"
+                    class={`riquadro con-nome doppia cercabile${c.barratoAnche ? ' barrato-anche' : ''}`}
                     data-numeri={c.numeri.join(' ')}
                     data-cerca={cercaCella(c)}
                     aria-haspopup="true"
@@ -160,7 +181,7 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
             if (cliccabile && href) {
               return (
                 <a
-                  class={`riquadro con-nome cercabile${c.stato === 'ignoto' ? ' stato-ignoto' : ''}`}
+                  class={`riquadro con-nome cercabile${c.stato === 'ignoto' ? ' stato-ignoto' : ''}${c.barratoAnche ? ' barrato-anche' : ''}`}
                   style={stile}
                   href={href}
                   data-numeri={c.numeri.join(' ')}
@@ -233,9 +254,15 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
     per uno: il prospetto dichiara centodue sepolture nel cimitero militare e quindici in quello civile.
   </p>
   <p class="nota-registro">
-    Otto tombe restano aperte. Sulla pianta i riquadri 12, 38, 40, 85, 86, 87, 88 e 89 non portano
-    nessun segno, ma negli elenchi non compare nessun nome. Se sai qualcosa di una di queste sepolture,
-    scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>.
+    Quattordici tombe restano aperte. Sulla pianta i riquadri 12, 38, 40, 85, 86, 87, 88, 89, 91, 92,
+    93, 94, 95 e 96 non portano nessun segno, ma negli elenchi non compare nessun nome. Se sai qualcosa
+    di una di queste sepolture, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>.
+  </p>
+  <p class="nota-registro">
+    Quattro schede portano il tratto obliquo anche se hanno già un nome o sono già segnate ignote nel
+    registro (133, 137, 186 e 195): i due fatti convivono, non si escludono. Quale elenco sia barrato
+    non si legge più da un intervallo di numeri ma da una trascrizione voce per voce, ancora
+    provvisoria: la versione completa e definitiva arriverà separatamente.
   </p>
 </div>
 
@@ -269,6 +296,9 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
   /* barrato: il tratto obliquo disegnato sulla pianta del 1941, ridisegnato in CSS */
   .riquadro.stato-barrato { background: linear-gradient(135deg, transparent calc(50% - 1.5px), rgba(245, 239, 224, .6) 50%, transparent calc(50% + 1.5px)); border: 1px solid rgba(245, 239, 224, .18); }
   .riquadro.stato-integro { border: 1.5px dashed rgba(245, 239, 224, .5); }
+  /* barrato-anche: il riquadro ha una scheda (noto o ignoto) E porta il
+     tratto obliquo — restano entrambi visibili, resta cliccabile. */
+  .riquadro.barrato-anche { background: linear-gradient(135deg, transparent calc(50% - 1.5px), rgba(245, 239, 224, .6) 50%, transparent calc(50% + 1.5px)); }
   .riquadro.stato-barrato, .riquadro.stato-integro { cursor: default; }
   .riquadro:hover, .riquadro:focus-visible { outline: 2px solid var(--oro-chiaro); outline-offset: 1px; background: rgba(201,150,47,.22); z-index: 6; }
   .riquadro.stato-integro:hover, .riquadro.stato-integro:focus-visible { background: rgba(245,239,224,.12); outline-color: rgba(245,239,224,.5); }
