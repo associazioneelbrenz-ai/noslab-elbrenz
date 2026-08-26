@@ -335,6 +335,19 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
             infinitamente più di nessuna registrazione. Si scarta solo ciò che è
             inutilizzabile o problematico, non ciò che è brutto.
           </p>
+
+          {/* POST MORTEM 26/8/2026 §5: la prova che deve impedire che si
+              ripeta. Non automatica a ogni apertura (68 richieste HTTP a
+              ogni visita sarebbe uno spreco): a comando, con scritto in
+              cima quante e quali righe hanno un indirizzo che non
+              risponde davvero — il controllo che contava, e che nessuno
+              aveva mai fatto in quindici giorni. */}
+          <div class="flex items-center gap-3 flex-wrap mb-4">
+            <button type="button" id="au-verifica-btn" class="bg-white border border-[#C8923E]/50 text-[#1E2E26] px-4 py-2 rounded text-sm cursor-pointer hover:border-[#C8923E]">Verifica gli indirizzi</button>
+            <span id="au-verifica-esito" class="text-sm text-[#1E2E26]/70"></span>
+          </div>
+          <div id="au-verifica-banner" class="hidden mb-5 rounded border-l-4 p-4"></div>
+
           {/* BRIEF 24/8/2026 §1: 58 voci ferme, 121 secondi in tutto, e nessun
               posto dove ascoltarle in fila. La sessione le suona una dopo
               l'altra: si apre, parte, e chi cura tiene solo un dito sullo
@@ -388,9 +401,11 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   // stesso file prima o poi si scambiano di posto.
   const quando = (t) => (t ? new Date(t).toLocaleString('it-IT', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
 
-  // AUDIT 25/8/2026 (SIC-06). Le registrazioni non pubblicate vivono in un
-  // bucket privato: qui non si legge mai a.file_url per riprodurle, si chiede
-  // un indirizzo firmato a scadenza breve a chi ha il ruolo di curatore.
+  // AUDIT 25/8/2026 (SIC-06), corretto 26/8/2026 (post mortem file_url). Le
+  // registrazioni non pubblicate vivono in un bucket privato: qui non si
+  // legge mai file_url (colonna storica, nessun percorso di lettura la
+  // tocca più), si chiede un indirizzo firmato a scadenza breve a chi ha
+  // il ruolo di curatore. bucket/file_path sono l'unica fonte di verità.
   // Le già pubblicate restano pubbliche e la funzione le lascia passare così.
   async function firmaAudio(id) {
     const { data, error } = await supabase.functions.invoke('glossario-audio-revisione', { body: { azione: 'firma', id } });
@@ -664,7 +679,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     if (tutto) tutto.disabled = true;
 
     const { data, error } = await supabase.from('archivio_audio')
-      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, parlata, comune_parlante, nome_parlante, anonimo, voce_di_altri, consenso_parlante, formato_audio, created_at, ascoltato_il')
+      .select('id, titolo, termine_ladino, durata_secondi, stato, parlata, comune_parlante, nome_parlante, anonimo, voce_di_altri, consenso_parlante, formato_audio, created_at, ascoltato_il')
       .eq('lemma_id', id).neq('stato', 'pubblicato').neq('stato', 'rifiutato')
       .order('created_at').limit(1);
 
@@ -1187,6 +1202,41 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   }
 
   // ── LE VOCI (audio) ─────────────────────────────────────────────────────
+
+  // POST MORTEM 26/8/2026 §5: per ogni riga, bucket/file_path valorizzati,
+  // il file presente nello storage indicato, e l'indirizzo costruito che
+  // risponde davvero. Il terzo controllo e' quello che conta: gli altri
+  // due erano veri anche il giorno in cui l'audio non si ascoltava.
+  async function verificaAudio() {
+    const btn = $('au-verifica-btn');
+    const esito = $('au-verifica-esito');
+    const banner = $('au-verifica-banner');
+    btn.disabled = true; btn.textContent = 'Verifico…'; esito.textContent = '';
+    banner.classList.add('hidden');
+    try {
+      const { data, error } = await supabase.functions.invoke('glossario-audio-revisione', { body: { azione: 'verifica' } });
+      if (error || !data?.ok) throw new Error(error?.message || data?.error || 'verifica non riuscita');
+      if (!data.problemi.length) {
+        esito.textContent = 'Tutte e ' + data.totale + ' le righe rispondono davvero.';
+        esito.style.color = '#2d8659';
+      } else {
+        esito.textContent = '';
+        banner.classList.remove('hidden');
+        banner.style.background = '#fbecec'; banner.style.borderColor = '#a33';
+        banner.innerHTML = '<p class="m-0 mb-2 font-semibold" style="color:#a33">'
+          + data.problemi.length + ' su ' + data.totale + ' registrazioni non rispondono davvero:</p>'
+          + '<ul class="m-0 pl-5 text-sm" style="color:#7a2828">'
+          + data.problemi.map((p) => '<li><strong>' + H(p.titolo) + '</strong> — ' + H(p.motivo) + '</li>').join('')
+          + '</ul>';
+      }
+    } catch (e) {
+      esito.style.color = '#a33';
+      esito.textContent = 'Verifica non riuscita: ' + (e && e.message ? e.message : e);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Verifica gli indirizzi';
+    }
+  }
+
   let audioInAttesa = [];
   async function caricaAudio() {
     const box = $('au-lista');
@@ -1195,7 +1245,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     // parola scritta e' gia' pubblica — sono state dieci voci ferme sotto
     // dieci parole gia' pubblicate, e da questa schermata non si vedeva.
     const { data, error } = await supabase.from('archivio_audio')
-      .select('id, titolo, termine_ladino, file_url, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, parlata, comune_parlante, lemma_id, created_at, mime_originale, formato_audio, lemma:lemma_id(lemma, definizione, stato, slug)')
+      .select('id, titolo, termine_ladino, durata_secondi, stato, voce_di_altri, nome_parlante, consenso_parlante, anonimo, portato_da_nome, portato_da_email, parlata, comune_parlante, lemma_id, created_at, mime_originale, formato_audio, lemma:lemma_id(lemma, definizione, stato, slug)')
       .eq('stato', 'in_attesa').order('created_at').limit(80);
     if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">Non riesco a leggere le registrazioni: ' + H(error.message) + '</p>'; return; }
     if (!data || !data.length) {
@@ -1307,8 +1357,9 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     if (!riga) { btn.disabled = false; btn.textContent = 'Riprova'; dillo('#a33', 'Non trovo la registrazione: ricarica la pagina.'); return; }
 
     try {
-      // AUDIT 25/8/2026 (SIC-06): riga.file_url punta al bucket privato finché
-      // non pubblicata, quindi non si scarica più direttamente.
+      // AUDIT 25/8/2026 (SIC-06): finché non pubblicata il file vive nel
+      // bucket privato, quindi non si scarica mai direttamente da un
+      // indirizzo memorizzato — si chiede sempre un indirizzo firmato.
       const firma = await firmaAudio(id);
       if (!firma.url) throw new Error(firma.errore || 'indirizzo non disponibile');
       const risposta = await fetch(firma.url);
@@ -1589,6 +1640,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   }
 
   $('au-avvia-sessione')?.addEventListener('click', apriSessione);
+  $('au-verifica-btn')?.addEventListener('click', verificaAudio);
   $('au-ses-chiudi')?.addEventListener('click', chiudiSessione);
 
   // ── TAB ─────────────────────────────────────────────────────────────────

@@ -32,6 +32,14 @@
 // ascolti e decida, nessuno con il solo indirizzo può sentirlo. Alla
 // pubblicazione, glossario-audio-revisione lo sposta nel bucket pubblico —
 // mai prima. Le 58 registrazioni già in attesa migrate separatamente.
+//
+// POST MORTEM 26/8/2026. Qui si scriveva `file_url` con getPublicUrl() su un
+// bucket privato: un indirizzo "public" che per un bucket privato non può
+// funzionare, per costruzione — non è un problema di permessi, è il tipo di
+// endpoint sbagliato. Un indirizzo memorizzato è la fotografia di un
+// momento; quello che non cambia è DOVE sta il file. Ora si scrivono
+// `bucket` e `file_path`, e l'indirizzo si costruisce al momento dell'uso
+// (glossario-audio-revisione), mai qui e mai prima del bisogno.
 
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
@@ -179,8 +187,6 @@ Deno.serve(async (req: Request) => {
     .upload(path, bytes, { contentType: tipo.mime, upsert: false });
   if (upErr) return J({ errore: 'caricamento_fallito', dettaglio: upErr.message }, 500, c);
 
-  const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-
   // I due vocabolari di `archivio_audio` esistono dal principio e vanno
   // rispettati, non allargati per comodita': `categoria_audio` ammette parola,
   // proverbio, racconto, canto, intervista, cantilena, preghiera, altro; la
@@ -200,7 +206,8 @@ Deno.serve(async (req: Request) => {
     categoria_audio: categoria,
     parlata,
     comune_parlante: lemma.comune,
-    file_url: url,
+    bucket: BUCKET,
+    file_path: path,
     durata_secondi: durata || null,
     formato_audio: tipo.ext,
     mime_originale: mimeDichiarato,

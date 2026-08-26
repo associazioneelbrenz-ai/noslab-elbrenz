@@ -1,12 +1,22 @@
 // glossario-audio-revisione (25/8/2026) — audit SIC-06.
 //
-// Le registrazioni non ancora ascoltate nascono ora in un bucket PRIVATO
+// Le registrazioni non ancora ascoltate nascono in un bucket PRIVATO
 // (glossario-audio-attesa): questa funzione è l'unico modo per un curatore
 // di sentirle (indirizzo firmato, breve scadenza) e per farle diventare
 // pubbliche (sposta il file nel bucket pubblico solo alla pubblicazione).
-// Stessa idea già applicata stasera ai video del corso: la validazione è
-// ciò che separa il privato dal pubblico, non un bucket comune con la
-// promessa di non guardare.
+// Stessa idea già applicata ai video del corso: la validazione è ciò che
+// separa il privato dal pubblico, non un bucket comune con la promessa di
+// non guardare.
+//
+// POST MORTEM 26/8/2026. Prima l'indirizzo si ricavava strappando un pezzo
+// di testo da `file_url` (che conteneva "/object/public/" anche per il
+// bucket privato — un endpoint che per costruzione non può funzionare).
+// L'estrazione a stringa aveva continuato a funzionare per puro caso, ma
+// era un indirizzo memorizzato: la fotografia di un momento, non una fonte
+// di verità. Ora l'unica fonte di verità sono `bucket` e `file_path`,
+// colonne che dicono DOVE sta il file, e l'indirizzo — firmato se il
+// bucket è privato, pubblico altrimenti — si costruisce al momento
+// dell'uso, mai prima, mai lato client.
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -15,7 +25,6 @@ const ALLOWED_ORIGINS = [
   "https://elbrenz.eu", "https://www.elbrenz.eu",
   "http://localhost:4321", "http://localhost:3000",
 ];
-const BUCKET_ATTESA = "glossario-audio-attesa";
 const BUCKET_PUBBLICO = "glossario-audio";
 const LIVELLO_MINIMO = 25;
 const SCADENZA_FIRMA_SECONDI = 300;
@@ -30,11 +39,21 @@ function corsFor(req: Request) {
   };
 }
 
-function pathDaUrl(url: string, bucket: string): string | null {
-  const marker = `/object/public/${bucket}/`;
-  const i = url.indexOf(marker);
-  if (i === -1) return null;
-  return url.slice(i + marker.length);
+/** L'indirizzo si costruisce qui, al momento dell'uso: firmato per un
+ * bucket privato, pubblico normale per il bucket pubblico. Mai il contrario. */
+async function costruisciIndirizzo(
+  admin: ReturnType<typeof createClient>,
+  bucket: string,
+  path: string,
+  scadenzaSecondi = SCADENZA_FIRMA_SECONDI,
+): Promise<{ url: string | null; firmato: boolean; errore?: string }> {
+  if (bucket === BUCKET_PUBBLICO) {
+    const { data } = admin.storage.from(bucket).getPublicUrl(path);
+    return { url: data.publicUrl, firmato: false };
+  }
+  const { data, error } = await admin.storage.from(bucket).createSignedUrl(path, scadenzaSecondi);
+  if (error || !data) return { url: null, firmato: true, errore: error?.message ?? "firma_fallita" };
+  return { url: data.signedUrl, firmato: true };
 }
 
 Deno.serve(async (req: Request) => {
@@ -62,30 +81,71 @@ Deno.serve(async (req: Request) => {
   // >=25 oppure il ruolo dedicato curatore_linguistico.
   const { data: ruoli } = await admin
     .from("utente_ruolo").select("ruolo:ruolo_id(nome, livello)").eq("utente_id", user.id);
-  const righe = (ruoli ?? []) as { ruolo: { nome: string; livello: number } | null }[];
-  const livello = Math.max(0, ...righe.map((r) => r.ruolo?.livello ?? 0));
-  const haCuratoreLinguistico = righe.some((r) => r.ruolo?.nome === "curatore_linguistico");
+  const righeRuolo = (ruoli ?? []) as { ruolo: { nome: string; livello: number } | null }[];
+  const livello = Math.max(0, ...righeRuolo.map((r) => r.ruolo?.livello ?? 0));
+  const haCuratoreLinguistico = righeRuolo.some((r) => r.ruolo?.nome === "curatore_linguistico");
   if (livello < LIVELLO_MINIMO && !haCuratoreLinguistico) return J({ error: "non_autorizzato" }, 403);
 
   let b: any;
   try { b = await req.json(); } catch { return J({ error: "invalid_json" }, 400); }
   const azione = String(b?.azione ?? "");
+
+  // La verifica guarda tutta la tabella, non una riga sola: e' la prova che
+  // deve impedire che la storia si ripeta (post mortem 26/8/2026, §5). Il
+  // terzo controllo — l'indirizzo che risponde davvero — e' quello che
+  // conta: gli altri due (colonne valorizzate, file presente) erano veri
+  // anche quando l'audio non si ascoltava.
+  if (azione === "verifica") {
+    const { data: righe, error: eSel } = await admin
+      .from("archivio_audio").select("id, titolo, stato, bucket, file_path");
+    if (eSel) { console.error("[glossario-audio-revisione] verifica, lettura fallita:", eSel.message); return J({ error: "errore_interno" }, 500); }
+
+    const problemi: { id: string; titolo: string; motivo: string }[] = [];
+    for (const r of (righe ?? []) as { id: string; titolo: string; stato: string; bucket: string | null; file_path: string | null }[]) {
+      if (!r.bucket || !r.file_path) {
+        problemi.push({ id: r.id, titolo: r.titolo, motivo: "manca bucket o percorso a database" });
+        continue;
+      }
+      const cartella = r.file_path.includes("/") ? r.file_path.slice(0, r.file_path.lastIndexOf("/")) : "";
+      const nomefile = r.file_path.includes("/") ? r.file_path.slice(r.file_path.lastIndexOf("/") + 1) : r.file_path;
+      const { data: elenco, error: eList } = await admin.storage.from(r.bucket).list(cartella, { search: nomefile });
+      if (eList || !(elenco ?? []).some((f) => f.name === nomefile)) {
+        problemi.push({ id: r.id, titolo: r.titolo, motivo: "il file non esiste nello storage indicato" });
+        continue;
+      }
+      const risultato = await costruisciIndirizzo(admin, r.bucket, r.file_path, 60);
+      if (!risultato.url) {
+        problemi.push({ id: r.id, titolo: r.titolo, motivo: "indirizzo non costruibile: " + (risultato.errore ?? "") });
+        continue;
+      }
+      try {
+        const risposta = await fetch(risultato.url, { method: "GET", headers: { Range: "bytes=0-0" } });
+        if (!risposta.ok && risposta.status !== 206) {
+          problemi.push({ id: r.id, titolo: r.titolo, motivo: `l'indirizzo risponde ${risposta.status}` });
+        }
+      } catch (e) {
+        problemi.push({ id: r.id, titolo: r.titolo, motivo: "richiesta fallita: " + ((e as Error)?.message ?? "") });
+      }
+    }
+    return J({ ok: true, totale: (righe ?? []).length, problemi });
+  }
+
   const id = String(b?.id ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) return J({ error: "id_non_valido" }, 400);
 
   const { data: riga, error: eRiga } = await admin
-    .from("archivio_audio").select("id, stato, file_url, lemma_id").eq("id", id).maybeSingle();
+    .from("archivio_audio").select("id, stato, bucket, file_path, lemma_id").eq("id", id).maybeSingle();
   if (eRiga) { console.error("[glossario-audio-revisione] lettura fallita:", eRiga.message); return J({ error: "errore_interno" }, 500); }
   if (!riga) return J({ error: "non_trovata" }, 404);
 
   if (azione === "firma") {
-    if (riga.stato === "pubblicato") return J({ ok: true, url: riga.file_url, firmato: false });
-    const path = pathDaUrl(riga.file_url, BUCKET_ATTESA);
-    if (!path) return J({ error: "percorso_non_riconosciuto" }, 500);
-    const { data: firmato, error: eFirma } = await admin.storage
-      .from(BUCKET_ATTESA).createSignedUrl(path, SCADENZA_FIRMA_SECONDI);
-    if (eFirma || !firmato) { console.error("[glossario-audio-revisione] firma fallita:", eFirma?.message); return J({ error: "firma_fallita" }, 500); }
-    return J({ ok: true, url: firmato.signedUrl, firmato: true });
+    if (!riga.bucket || !riga.file_path) return J({ error: "percorso_mancante" }, 500);
+    const risultato = await costruisciIndirizzo(admin, riga.bucket, riga.file_path);
+    if (!risultato.url) {
+      console.error("[glossario-audio-revisione] firma fallita:", risultato.errore);
+      return J({ error: "firma_fallita" }, 500);
+    }
+    return J({ ok: true, url: risultato.url, firmato: risultato.firmato });
   }
 
   if (azione === "decidi") {
@@ -95,34 +155,40 @@ Deno.serve(async (req: Request) => {
     if (esito === "rifiutato" && (!motivo || motivo.length < 3)) {
       return J({ error: "motivo_richiesto", dettaglio: "Scrivi perché la scarti." }, 400);
     }
-    // Stesso vincolo di decidiAudio: se un altro curatore ha già deciso
-    // questa voce nel frattempo, non si sovrascrive una decisione presa.
+    // Stesso vincolo di prima: se un altro curatore ha già deciso questa
+    // voce nel frattempo, non si sovrascrive una decisione presa.
     if (riga.stato !== "in_attesa") {
       return J({ error: "gia_decisa", dettaglio: "Già decisa da un altro curatore nel frattempo: nessuna modifica." }, 409);
     }
 
-    let nuovoUrl = riga.file_url;
+    let bucketFinale = riga.bucket;
+    const pathFinale = riga.file_path;
     if (esito === "pubblicato") {
-      const path = pathDaUrl(riga.file_url, BUCKET_ATTESA);
-      if (path) {
+      if (!riga.bucket || !riga.file_path) return J({ error: "percorso_mancante" }, 500);
+      if (riga.bucket !== BUCKET_PUBBLICO) {
+        // Il file si sposta E le colonne si aggiornano nella stessa
+        // operazione (§5 del post mortem): se lo spostamento fallisce, la
+        // riga sotto non si tocca, e la voce resta in attesa — mai un
+        // record che dice una cosa e uno storage che ne dice un'altra.
         const { error: eSposta } = await admin.storage
-          .from(BUCKET_ATTESA).move(path, path, { destinationBucket: BUCKET_PUBBLICO });
+          .from(riga.bucket).move(riga.file_path, riga.file_path, { destinationBucket: BUCKET_PUBBLICO });
         if (eSposta) {
           console.error("[glossario-audio-revisione] spostamento file fallito:", eSposta.message);
           return J({ error: "spostamento_fallito", dettaglio: eSposta.message }, 500);
         }
-        nuovoUrl = admin.storage.from(BUCKET_PUBBLICO).getPublicUrl(path).data.publicUrl;
+        bucketFinale = BUCKET_PUBBLICO;
       }
-      // path nullo: file già fuori dal bucket d'attesa (caso raro, non blocca
-      // la decisione — l'indirizzo resta quello che era).
     }
+    // Il rifiuto lascia il file dov'e', nel riservato: bucket/file_path non
+    // cambiano.
 
     const { data: aggiornata, error: eUpd } = await admin.from("archivio_audio").update({
       stato: esito,
       motivo_rifiuto: esito === "rifiutato" ? motivo : null,
       ascoltato_da: user.id,
       ascoltato_il: new Date().toISOString(),
-      file_url: nuovoUrl,
+      bucket: bucketFinale,
+      file_path: pathFinale,
     }).eq("id", id).eq("stato", "in_attesa").select("id, lemma_id").maybeSingle();
     if (eUpd || !aggiornata) {
       console.error("[glossario-audio-revisione] aggiornamento fallito:", eUpd?.message);
