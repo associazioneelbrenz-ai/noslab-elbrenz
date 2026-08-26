@@ -1,0 +1,138 @@
+---
+/**
+ * RiconosciPersona — il pulsante "Conosco questa persona" sulle schede di
+ * Cimiteri di guerra (brief "rifinire", 26/8/2026, §3.1).
+ *
+ * Chi arriva da un motore di ricerca e trova il proprio bisnonno non copia
+ * un indirizzo email da un paragrafo: chiude la pagina. Qui c'è un modulo
+ * breve che arriva a info@elbrenz.eu con il riferimento della scheda già
+ * dentro, senza che la persona debba spiegare di chi parla.
+ *
+ * Riusa il flusso esistente (contatti-submit -> richieste_contatto): nessuna
+ * tabella nuova, solo una categoria in più (cimiteri_riconosco) e un campo
+ * (scheda) che porta il riferimento. Stessa sicurezza (honeypot, time-trap,
+ * rate limit) dello Sportello.
+ */
+interface Props {
+  /** Nome della persona, per il titolo del modulo. */
+  nome: string;
+  /** Riferimento leggibile della scheda (es. "Josef Karaczow, tomba 126, Cimitero militare di Malè"). */
+  scheda: string;
+}
+const { nome, scheda } = Astro.props;
+
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
+const ENDPOINT = `${SUPABASE_URL}/functions/v1/contatti-submit`;
+
+const idBase = `rp-${Math.random().toString(36).slice(2, 8)}`;
+---
+
+<div class="riconosci" data-endpoint={ENDPOINT} data-scheda={scheda}>
+  <button type="button" class="bottone riconosci-apri" data-riconosci-apri>
+    Conosco questa persona
+  </button>
+
+  <form class="riconosci-form hidden" novalidate>
+    <input type="text" name="_honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" class="riconosci-hp" />
+    <p class="riconosci-titolo">Hai notizie su {nome}?</p>
+    <div class="riconosci-campo">
+      <label for={`${idBase}-nome`}>Il tuo nome *</label>
+      <input id={`${idBase}-nome`} name="nome" required maxlength="100" />
+    </div>
+    <div class="riconosci-campo">
+      <label for={`${idBase}-email`}>La tua email *</label>
+      <input id={`${idBase}-email`} name="email" type="email" required maxlength="200" />
+    </div>
+    <div class="riconosci-campo">
+      <label for={`${idBase}-rapporto`}>Che rapporto hai con questo nome</label>
+      <input id={`${idBase}-rapporto`} name="rapporto" maxlength="200" placeholder="es. è mio bisnonno, un parente di famiglia…" />
+    </div>
+    <div class="riconosci-campo">
+      <label for={`${idBase}-messaggio`}>Cosa sai *</label>
+      <textarea id={`${idBase}-messaggio`} name="messaggio" rows="4" required maxlength="5000" placeholder="Raccontaci quello che sai…"></textarea>
+    </div>
+    <label class="riconosci-consenso">
+      <input type="checkbox" name="consenso" required />
+      <span>Acconsento al trattamento dei dati per la gestione della mia richiesta, come da <a href="/privacy" target="_blank">informativa privacy</a>. *</span>
+    </label>
+    <div class="riconosci-feedback hidden" data-riconosci-feedback role="status"></div>
+    <button type="submit" class="bottone riconosci-invia">Invia</button>
+  </form>
+</div>
+
+<style>
+  .riconosci { margin: 2rem 0; max-width: 640px; }
+  .riconosci-form { border-left: 3px solid var(--oro); background: var(--crema-scura); padding: 1.3rem 1.4rem; margin-top: .75rem; }
+  .riconosci-form.hidden, .riconosci-hp, .riconosci-feedback.hidden { display: none; }
+  .riconosci-titolo { font-family: var(--serif); font-size: 1.1rem; margin: 0 0 1rem; color: var(--verde); }
+  .riconosci-campo { margin-bottom: .9rem; }
+  .riconosci-campo label { display: block; font-family: var(--mono); font-size: .66rem; letter-spacing: .1em; text-transform: uppercase; color: var(--oro-scuro); margin-bottom: .3rem; }
+  .riconosci-campo input, .riconosci-campo textarea {
+    width: 100%; padding: .6rem .7rem; font-family: var(--sans); font-size: .95rem;
+    border: 1px solid rgba(34,48,31,.25); background: #fff; color: var(--verde);
+  }
+  .riconosci-consenso { display: flex; align-items: start; gap: .5rem; font-size: .8rem; color: var(--verde-tenue); margin-bottom: 1rem; }
+  .riconosci-consenso a { color: var(--oro-scuro); }
+  .riconosci-feedback { padding: .7rem .9rem; margin-bottom: 1rem; font-size: .88rem; }
+  .riconosci-feedback[data-ok="true"] { background: rgba(80,140,100,.12); border-left: 3px solid #508c64; color: var(--verde); }
+  .riconosci-feedback[data-ok="false"] { background: rgba(138,59,38,.1); border-left: 3px solid var(--ruggine); color: var(--ruggine); }
+</style>
+
+<script>
+  document.querySelectorAll('.riconosci').forEach((box) => {
+    const apri = box.querySelector('[data-riconosci-apri]') as HTMLButtonElement | null;
+    const form = box.querySelector('.riconosci-form') as HTMLFormElement | null;
+    const feedback = box.querySelector('[data-riconosci-feedback]') as HTMLElement | null;
+    const endpoint = (box as HTMLElement).dataset.endpoint!;
+    const scheda = (box as HTMLElement).dataset.scheda!;
+    const apertura = Date.now();
+    if (!apri || !form) return;
+
+    apri.addEventListener('click', () => {
+      form.classList.remove('hidden');
+      apri.classList.add('hidden');
+      (form.querySelector('input[name=nome]') as HTMLInputElement | null)?.focus();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const invia = form.querySelector('.riconosci-invia') as HTMLButtonElement;
+      const mostra = (msg: string, ok: boolean) => {
+        if (!feedback) return;
+        feedback.classList.remove('hidden');
+        feedback.dataset.ok = String(ok);
+        feedback.textContent = msg;
+      };
+
+      const fd = new FormData();
+      fd.set('categoria', 'cimiteri_riconosco');
+      fd.set('_honeypot', (form.querySelector('[name=_honeypot]') as HTMLInputElement).value);
+      fd.set('_ts', String(apertura));
+      fd.set('nome', (form.querySelector('[name=nome]') as HTMLInputElement).value.trim());
+      fd.set('email', (form.querySelector('[name=email]') as HTMLInputElement).value.trim());
+      fd.set('messaggio', (form.querySelector('[name=messaggio]') as HTMLTextAreaElement).value.trim());
+      fd.set('p_scheda', scheda);
+      fd.set('p_rapporto', (form.querySelector('[name=rapporto]') as HTMLInputElement).value.trim());
+      fd.set('consenso', (form.querySelector('[name=consenso]') as HTMLInputElement).checked ? 'on' : '');
+
+      invia.disabled = true;
+      invia.textContent = 'Invio in corso…';
+      try {
+        const resp = await fetch(endpoint, { method: 'POST', body: fd });
+        const data = await resp.json().catch(() => ({}));
+        if (resp.ok && data.success) {
+          mostra('Grazie: il messaggio è arrivato all’Associazione, con il riferimento a questa scheda. Ti risponderemo alla tua email.', true);
+          form.reset();
+          form.querySelectorAll('.riconosci-campo, .riconosci-consenso').forEach((el) => ((el as HTMLElement).style.display = 'none'));
+        } else {
+          mostra(data.error || 'Si è verificato un errore: riprova o scrivi a info@elbrenz.eu.', false);
+        }
+      } catch {
+        mostra('Errore di rete: controlla la connessione e riprova.', false);
+      } finally {
+        invia.disabled = false;
+        invia.textContent = 'Invia';
+      }
+    });
+  });
+</script>

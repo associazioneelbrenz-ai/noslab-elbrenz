@@ -1,0 +1,120 @@
+---
+// Cimiteri di guerra — le tombe senza nome (brief "rifinire", 26/8/2026,
+// §3.4). L'unica pagina della sezione che chiede qualcosa invece di darlo:
+// elenca i numeri di tomba senza un nome nel registro e chiede aiuto. I
+// numeri vengono dalla stessa planimetria della mappa (memoria_fondo.
+// planimetria_geo), non da un elenco scritto a mano.
+import Layout from '../../../layouts/Layout.astro';
+import '../../../styles/archivio-dei-nomi.css';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import RiconosciPersona from '../../../components/RiconosciPersona.astro';
+import { leggiFondo, leggiPersone, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
+
+export async function getStaticPaths() {
+  const { leggiFondi } = await import('../../../lib/memoria');
+  const fondi = await leggiFondi();
+  return fondi.map((fondo) => ({ params: { fondo: fondo.slug_breve } }));
+}
+
+const fondo = await leggiFondo(Astro.params.fondo as string);
+if (!fondo) return Astro.redirect('/cimiteri-di-guerra');
+const persone = await leggiPersone(fondo.slug);
+
+const geo = fondo.planimetria_geo ?? { righe: [], civpos: {} };
+const perNumero = new Map<string, Persona>();
+for (const p of persone) {
+  if (p.settore && p.numero != null) perNumero.set(`${p.settore}:${p.numero}`, p);
+}
+function haNome(settore: string, numero: number): boolean {
+  const p = perNumero.get(`${settore}:${numero}`);
+  return !!p?.nome_completo && p.nome_completo !== 'sconosciuto';
+}
+
+const senzaNomeMilitari = geo.righe.flat().filter((n) => !haNome('militare', n)).sort((a, b) => a - b);
+const senzaNomeCivili = Object.keys(geo.civpos).map(Number).filter((n) => !haNome('civile', n)).sort((a, b) => a - b);
+
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: fondo.comune, url: `/cimiteri-di-guerra/${fondo.slug_breve}` },
+  { nome: 'Le tombe senza nome', url: `/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome` },
+];
+
+const riferimentoScheda = `Le tombe senza nome, ${fondo.titolo} — https://elbrenz.eu/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome`;
+
+export const prerender = true;
+---
+
+<Layout
+  title={`Le tombe senza nome · ${fondo.titolo}`}
+  description={`${fondo.senza_nome} tombe del ${fondo.titolo.toLowerCase()} non hanno ancora un nome nel registro.`}
+  ogImage={ogImageFondo(fondo)}
+>
+  <div class="sezione-cimiteri">
+  <header class="apertura">
+    <div class="dentro">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <a href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>{fondo.comune}</a> › <span aria-current="page">Le tombe senza nome</span>
+      </nav>
+      <p class="etichetta">Cimiteri di guerra · {fondo.comune}</p>
+      <h1>Le tombe<br /><em>senza nome</em></h1>
+      <p class="strillo">
+        {fondo.senza_nome} tombe su {fondo.posti_censiti ?? fondo.nomi_noti} non hanno ancora un nome nel registro del {fondo.titolo.toLowerCase()}.
+      </p>
+    </div>
+  </header>
+
+  <section class="dentro">
+    <h2>Perché sono vuote</h2>
+    <p class="guida">
+      Il registro di {fondo.ricercatore ?? 'chi lo ha trascritto'} riporta {fondo.nomi_noti} righe con un nome. Le altre
+      caselle esistono nella pianta del cimitero — hanno un numero di tomba — ma nel documento non c'è
+      scritto chi vi riposa: o la riga non è mai stata compilata, o il nome non si legge più. Non lo
+      sappiamo con certezza, e non lo scriviamo come se lo sapessimo.
+    </p>
+
+    {senzaNomeMilitari.length > 0 && (
+      <>
+        <h3>Cimitero militare</h3>
+        <div class="provenienze" style="margin-bottom:2rem">
+          {senzaNomeMilitari.map((n) => (
+            <a class="prov" style="text-decoration:none;color:inherit" href={`/cimiteri-di-guerra/${fondo.slug_breve}/mappa#t-militare-${n}`}>
+              <span class="n">#</span><span class="dove">Tomba {n}</span>
+            </a>
+          ))}
+        </div>
+      </>
+    )}
+
+    {senzaNomeCivili.length > 0 && (
+      <>
+        <h3>Cimitero civile</h3>
+        <div class="provenienze">
+          {senzaNomeCivili.map((n) => (
+            <a class="prov" style="text-decoration:none;color:inherit" href={`/cimiteri-di-guerra/${fondo.slug_breve}/mappa#t-civile-${n}`}>
+              <span class="n">#</span><span class="dove">Tomba {n}</span>
+            </a>
+          ))}
+        </div>
+      </>
+    )}
+  </section>
+
+  <div class="chiusa">
+    <div class="dentro">
+      <h2>Se sai qualcosa, è da qui che riparte l'archivio</h2>
+      <p>
+        Una lettera di famiglia, una fotografia con un numero di tomba annotato dietro, un racconto
+        tramandato: è così che una di queste caselle può riavere un nome. Ogni casella che si accende
+        è un uomo che smette di essere un numero.
+      </p>
+    </div>
+  </div>
+
+  <section class="dentro">
+    <RiconosciPersona nome="una delle tombe senza nome" scheda={riferimentoScheda} />
+  </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+</Layout>

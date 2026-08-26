@@ -5,7 +5,8 @@
 // perché una regione può comparire in più registri.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/archivio-dei-nomi.css';
-import { leggiProvenienze, leggiProvenienza, type GruppoProvenienza } from '../../../lib/memoria';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import { leggiProvenienze, leggiProvenienza, OG_CIMITERI_ORIZZONTALE, type GruppoProvenienza } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const gruppi = await leggiProvenienze();
@@ -22,15 +23,26 @@ const anniMorte = persone.map((p) => (p.data_morte ?? '').slice(0, 4)).filter(Bo
 const primoAnno = anniMorte.length ? anniMorte.reduce((a, b) => (a < b ? a : b)) : null;
 const ultimoAnno = anniMorte.length ? anniMorte.reduce((a, b) => (a > b ? a : b)) : null;
 
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: gruppo.regione, url: `/cimiteri-di-guerra/provenienza/${gruppo.slug}` },
+];
+
 export const prerender = true;
 ---
 
 <Layout
   title={`Soldati nati in ${gruppo.regione} sepolti a ${comuni.join(', ')}`}
   description={`${persone.length} uomini nati in ${gruppo.regione}, morti al servizio dell'esercito austro-ungarico e sepolti a ${comuni.join(', ')}${primoAnno && ultimoAnno ? `, ${primoAnno}-${ultimoAnno}` : ''}.`}
+  ogImage={OG_CIMITERI_ORIZZONTALE}
 >
+  <div class="sezione-cimiteri">
   <header class="apertura">
     <div class="dentro">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <span aria-current="page">{gruppo.regione}</span>
+      </nav>
       <p class="etichetta">Cimiteri di guerra · provenienza</p>
       <h1>{gruppo.regione}</h1>
       <p class="strillo">
@@ -58,4 +70,7 @@ export const prerender = true;
       </div>
     </div>
   </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

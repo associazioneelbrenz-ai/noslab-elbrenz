@@ -9,6 +9,16 @@ const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
+// Anteprima di condivisione (brief "rifinire", 26/8/2026 §1): il monumento,
+// finché un fondo non ha un'immagine propria. Nessuna didascalia finché il
+// segretario non conferma dove si trova esattamente e chi l'ha scattata.
+export const OG_CIMITERI_ORIZZONTALE = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/cimiteri-di-guerra/og-cimiteri-di-guerra.jpg`;
+export const OG_CIMITERI_QUADRATA = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/cimiteri-di-guerra/og-cimiteri-di-guerra-quadrata.jpg`;
+
+export function ogImageFondo(fondo: Fondo): string {
+  return fondo.planimetria_url ?? OG_CIMITERI_ORIZZONTALE;
+}
+
 export type Geo = { righe: number[][]; civpos: Record<string, [number, number]>; nota?: string };
 
 export type Fondo = {

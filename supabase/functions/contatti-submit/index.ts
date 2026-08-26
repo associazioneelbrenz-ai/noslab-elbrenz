@@ -37,6 +37,11 @@ const CATEGORIE: Record<string, { tipo: 'richiesta' | 'offerta'; campi: string[]
   scuole_visite:    { tipo: 'richiesta', campi: ['data', 'tipo_pubblico', 'tema'] },
   stampa_media:     { tipo: 'richiesta', campi: ['testata'] },
   altro:            { tipo: 'richiesta', campi: [] },
+  // Cimiteri di guerra (brief "rifinire", 26/8/2026): il pulsante "Conosco
+  // questa persona" su ogni scheda. Nessuna tabella nuova: stesso flusso,
+  // stessa richieste_contatto, solo un campo in piu' (scheda) che dice da
+  // dove arriva senza che la persona debba spiegarlo.
+  cimiteri_riconosco: { tipo: 'richiesta', campi: ['scheda', 'rapporto'] },
   documenti_foto:   { tipo: 'offerta', campi: ['periodo', 'luogo', 'modalita', 'consenso_custode'], upload: true, archivio: true },
   oggetti:          { tipo: 'offerta', campi: ['descrizione', 'consenso_custode'], upload: true, archivio: true },
   memorie_racconti: { tipo: 'offerta', campi: ['consenso_custode'], archivio: true },
@@ -47,7 +52,7 @@ const ETICHETTE: Record<string, string> = {
   ricerca_storica: 'Ricerca storica', pubblicazioni: 'Pubblicazioni', scuole_visite: 'Scuole e visite',
   stampa_media: 'Stampa e media', altro: 'Altro', documenti_foto: 'Documenti e fotografie',
   oggetti: 'Oggetti', memorie_racconti: 'Memorie e racconti', parole_proverbi: 'Parole e proverbi',
-  tempo_competenze: 'Tempo e competenze',
+  tempo_competenze: 'Tempo e competenze', cimiteri_riconosco: 'Cimiteri di guerra · riconoscimento',
 };
 
 function cors(origin: string | null): Record<string, string> {

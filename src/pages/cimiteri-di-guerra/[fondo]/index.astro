@@ -7,7 +7,8 @@
 // database: se un domani arriva un secondo fondo, questa pagina non cambia.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/archivio-dei-nomi.css';
-import { leggiFondo, leggiPersone, conNome, slugifica, SOGLIA_MINIMA_GRUPPO, type Fondo, type Persona } from '../../../lib/memoria';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import { leggiFondo, leggiPersone, conNome, slugifica, SOGLIA_MINIMA_GRUPPO, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const { leggiFondi } = await import('../../../lib/memoria');
@@ -51,15 +52,26 @@ const datiRicerca = persone.map((p) => ({
   m: p.data_morte_testo, pow: p.prigioniero_guerra, s: p.settore, num: p.numero, slug: p.slug,
 }));
 
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: fondo.comune, url: `/cimiteri-di-guerra/${fondo.slug_breve}` },
+];
+
 export const prerender = true;
 ---
 
 <Layout
   title={fondo.titolo}
   description={fondo.sottotitolo ?? fondo.descrizione ?? ''}
+  ogImage={ogImageFondo(fondo)}
 >
+  <div class="sezione-cimiteri">
   <header class="apertura">
     <div class="dentro">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <span aria-current="page">{fondo.comune}</span>
+      </nav>
       <p class="etichetta">Associazione El Brenz · Valli del Noce</p>
       <h1>{titoloParts.prima}{titoloParts.seconda && (<><br /><em>{titoloParts.seconda}</em></>)}</h1>
       {strillo && <p class="strillo">{strillo}</p>}
@@ -81,7 +93,7 @@ export const prerender = true;
   <div class="registro-numeri">
     <div class="dentro">
       <div class="cella acceso"><b>{nNomi}</b><span>nomi restituiti</span></div>
-      <div class="cella"><b>{nVuote}</b><span>tombe anonime</span></div>
+      <a class="cella" href={`/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome`} style="text-decoration:none;color:inherit;display:block"><b>{nVuote}</b><span>tombe anonime</span></a>
       <div class="cella acceso"><b>{nOtt}</b><span>morti in ottobre {fondo.anno_a ?? ''}</span></div>
       <div class="cella"><b>{nReg}</b><span>terre di provenienza</span></div>
       <div class="cella"><b>{nPow}</b><span>prigionieri di guerra</span></div>
@@ -150,6 +162,9 @@ export const prerender = true;
       <p class="motto">Raìs fonde no le 'nglacia.</p>
     </div>
   </div>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 
   <script type="application/json" id="an-dati" set:html={JSON.stringify({ fondoSlugBreve: fondo.slug_breve, persone: datiRicerca })} />
 

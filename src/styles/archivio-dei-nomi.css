@@ -5,6 +5,13 @@
    Palette: il verde e l'oro sono El Brenz. Il blu compare in un punto
    solo, il riquadro del fondo, perche' rappresenta la cianografia di
    Vienna: e' il documento, non l'Associazione.
+
+   SCOPATO sotto la classe sezione-cimiteri (brief rifinire, 26/8/2026): il
+   file originale aveva regole su body, asterisco, section, h2 senza
+   selettore, che uscivano dalla sezione e rompevano il resto del sito
+   (footer, nav, tutto). Ogni pagina della sezione avvolge il proprio
+   contenuto in un div con quella classe: qui sotto solo il prefisso e
+   cambiato, nessun valore. Il disegno resta quello.
    ===================================================================== */
 
   :root{
@@ -19,9 +26,8 @@
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     --mono:"SF Mono",Menlo,Consolas,monospace;
   }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{margin:0;background:var(--crema);color:var(--verde);font-family:var(--sans);
+  .sezione-cimiteri *{box-sizing:border-box}
+  .sezione-cimiteri{background:var(--crema);color:var(--verde);font-family:var(--sans);
        line-height:1.6;-webkit-font-smoothing:antialiased}
   .dentro{max-width:1060px;margin:0 auto;padding:0 1.5rem}
   .etichetta{font-family:var(--mono);font-size:.66rem;letter-spacing:.26em;text-transform:uppercase}
@@ -62,8 +68,8 @@
   .cella span{font-family:var(--mono);font-size:.63rem;letter-spacing:.11em;text-transform:uppercase;
               color:var(--verde-tenue);display:block;line-height:1.5}
 
-  section{padding:3.5rem 0}
-  h2{font-family:var(--serif);font-weight:400;font-size:clamp(1.65rem,4vw,2.3rem);margin:0 0 .45rem;
+  .sezione-cimiteri section{padding:3.5rem 0}
+  .sezione-cimiteri h2{font-family:var(--serif);font-weight:400;font-size:clamp(1.65rem,4vw,2.3rem);margin:0 0 .45rem;
      line-height:1.15;letter-spacing:-.01em}
   .guida{color:var(--verde-tenue);max-width:60ch;margin:0 0 2rem}
 
@@ -183,4 +189,17 @@
 
   .racconto h4{font-family:var(--serif);font-weight:400;font-size:1.12rem;margin:1.9rem 0 .5rem;
                color:var(--oro-scuro);letter-spacing:.01em}
-  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  /* briciole di pane (brief rifinire, 26/8/2026): su un archivio con 141
+     pagine, senza queste ci si perde. */
+  .briciole{font-family:var(--mono);font-size:.68rem;letter-spacing:.03em;margin:0 0 1.4rem}
+  .apertura .briciole{color:rgba(245,239,224,.5)}
+  .apertura .briciole a{color:rgba(245,239,224,.78);text-decoration:none}
+  .apertura .briciole a:hover{color:var(--oro-chiaro)}
+  .briciole a{color:var(--oro-scuro);text-decoration:none}
+  .briciole a:hover{text-decoration:underline}
+
+  /* data estesa + originale accanto (brief rifinire, sezione 3.5) */
+  .data-originale{font-family:var(--mono);font-size:.82em;color:var(--verde-tenue)}
+
+  @media (prefers-reduced-motion:reduce){.sezione-cimiteri *{transition:none!important}}

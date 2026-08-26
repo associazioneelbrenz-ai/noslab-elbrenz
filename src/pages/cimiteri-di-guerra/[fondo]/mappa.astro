@@ -9,8 +9,8 @@
 // interna come nello strumento originale): niente Leaflet, nessuna libreria
 // esterna.
 import Layout from '../../../layouts/Layout.astro';
-import '../../../styles/archivio-dei-nomi.css';
-import { leggiFondo, leggiPersone, type Fondo, type Persona } from '../../../lib/memoria';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import { leggiFondo, leggiPersone, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const { leggiFondi } = await import('../../../lib/memoria');
@@ -46,10 +46,17 @@ for (const p of persone) {
 const provenienzeTesto = [...provenienze.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
   .map(([r, n]) => `${r} ${n}`).join(' · ');
 
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: fondo.comune, url: `/cimiteri-di-guerra/${fondo.slug_breve}` },
+  { nome: 'Planimetria', url: `/cimiteri-di-guerra/${fondo.slug_breve}/mappa` },
+];
+
 export const prerender = true;
 ---
 
-<Layout title={`Planimetria · ${fondo.titolo}`} description={`Planimetria navigabile del ${fondo.titolo.toLowerCase()}.`}>
+<Layout title={`Planimetria · ${fondo.titolo}`} description={`Planimetria navigabile del ${fondo.titolo.toLowerCase()}.`} ogImage={ogImageFondo(fondo)}>
   <style is:global>
     /* Estratto verbatim da i-nomi-di-male.html (brief "rimettere il
        disegno", 26/8/2026). Le variabili duplicano quelle gia' presenti in
@@ -128,11 +135,17 @@ export const prerender = true;
     .coda strong{color:var(--verde);font-weight:600}
     .segnatura{font-family:var(--mono);font-size:.72rem;letter-spacing:.05em;color:var(--oro-scuro)}
     .avvertenza{border-left:2px solid var(--oro);padding-left:1rem;margin:1.5rem 0}
+    .briciole{font-family:var(--mono);font-size:.68rem;letter-spacing:.03em;color:rgba(245,239,224,.5);margin:0 0 1.1rem}
+    .briciole a{color:rgba(245,239,224,.78);text-decoration:none}
+    .briciole a:hover{color:var(--oro-chiaro)}
     @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
 
   <div class="involucro">
     <header>
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <a href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>{fondo.comune}</a> › <span aria-current="page">Planimetria</span>
+      </nav>
       <p class="occhiello">Associazione El Brenz · Valli del Noce</p>
       <h1>I nomi di {fondo.comune}</h1>
       <p class="sottotitolo">
@@ -221,6 +234,8 @@ export const prerender = true;
       )}
     </div>
   </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 
   <script is:inline>
     const input = document.getElementById('mappa-cerca');

@@ -4,59 +4,72 @@
 // senza toccare questo file.
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/archivio-dei-nomi.css';
-import { leggiFondi } from '../../lib/memoria';
+import { schemaBreadcrumb } from '../../lib/schema';
+import { leggiFondi, OG_CIMITERI_ORIZZONTALE } from '../../lib/memoria';
 import { VALLI_LUOGHI } from '../../lib/luoghi';
 
 const fondi = await leggiFondi();
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+];
 export const prerender = true;
 ---
 
 <Layout
   title="Cimiteri di guerra"
   description="Chi è passato di qui e non è più tornato a casa. Registri, elenchi e sepolture dell'impero nelle nostre valli, un documento alla volta."
+  ogImage={OG_CIMITERI_ORIZZONTALE}
 >
-  <header class="apertura">
-    <div class="dentro">
-      <p class="etichetta">Associazione El Brenz · Valli del Noce</p>
-      <h1>Cimiteri<br /><em>di guerra</em></h1>
-      <p class="strillo">
-        Chi è passato di qui e non è più tornato a casa. Registri, elenchi e sepolture dell'impero
-        nelle nostre valli, un documento alla volta.
-      </p>
-    </div>
-  </header>
+  <div class="sezione-cimiteri">
+    <header class="apertura">
+      <div class="dentro">
+        <nav class="briciole" aria-label="Percorso">
+          <a href="/archivio">Archivio</a> › <span aria-current="page">Cimiteri di guerra</span>
+        </nav>
+        <p class="etichetta">Associazione El Brenz · Valli del Noce</p>
+        <h1>Cimiteri<br /><em>di guerra</em></h1>
+        <p class="strillo">
+          Chi è passato di qui e non è più tornato a casa. Registri, elenchi e sepolture dell'impero
+          nelle nostre valli, un documento alla volta.
+        </p>
+      </div>
+    </header>
 
-  <section class="dentro">
-    <h2>I fondi aperti</h2>
-    <p class="guida">
-      Ogni fondo è un documento ritrovato, una persona che è andata a cercarlo e un luogo delle
-      nostre valli.
-    </p>
-    {fondi.length === 0 ? (
-      <p class="niente">Nessun fondo pubblicato al momento.</p>
-    ) : (
-      fondi.map((fondo) => (
-        <article class="fondo" style="margin-bottom:1.75rem">
-          <div class="carta">
-            <span class="luogo">{fondo.comune}{fondo.valle ? ` · ${VALLI_LUOGHI[fondo.valle] ?? fondo.valle}` : ''}</span>
-            <span class="grande">{fondo.nomi_noti}<small>nomi su {fondo.posti_censiti ?? fondo.nomi_noti} tombe</small></span>
-          </div>
-          <div class="corpo">
-            <h3>{fondo.titolo}</h3>
-            <p class="anni">{fondo.anno_da ?? ''}{fondo.anno_a ? ` – ${fondo.anno_a}` : ''}</p>
-            {fondo.descrizione && <p>{fondo.descrizione}</p>}
-            {fondo.ricercatore && (
-              <div class="firma">
-                Ritrovato grazie alla ricerca di <b>{fondo.ricercatore}</b>.
-                {fondo.segnatura && <span class="segnatura">{fondo.segnatura}</span>}
-              </div>
-            )}
-            <div class="azioni">
-              <a class="bottone" href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>Apri il fondo</a>
+    <section class="dentro">
+      <h2>I fondi aperti</h2>
+      <p class="guida">
+        Ogni fondo è un documento ritrovato, una persona che è andata a cercarlo e un luogo delle
+        nostre valli.
+      </p>
+      {fondi.length === 0 ? (
+        <p class="niente">Nessun fondo pubblicato al momento.</p>
+      ) : (
+        fondi.map((fondo) => (
+          <article class="fondo" style="margin-bottom:1.75rem">
+            <div class="carta">
+              <span class="luogo">{fondo.comune}{fondo.valle ? ` · ${VALLI_LUOGHI[fondo.valle] ?? fondo.valle}` : ''}</span>
+              <span class="grande">{fondo.nomi_noti}<small>nomi su {fondo.posti_censiti ?? fondo.nomi_noti} tombe</small></span>
             </div>
-          </div>
-        </article>
-      ))
-    )}
-  </section>
+            <div class="corpo">
+              <h3>{fondo.titolo}</h3>
+              <p class="anni">{fondo.anno_da ?? ''}{fondo.anno_a ? ` – ${fondo.anno_a}` : ''}</p>
+              {fondo.descrizione && <p>{fondo.descrizione}</p>}
+              {fondo.ricercatore && (
+                <div class="firma">
+                  Ritrovato grazie alla ricerca di <b>{fondo.ricercatore}</b>.
+                  {fondo.segnatura && <span class="segnatura">{fondo.segnatura}</span>}
+                </div>
+              )}
+              <div class="azioni">
+                <a class="bottone" href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>Apri il fondo</a>
+              </div>
+            </div>
+          </article>
+        ))
+      )}
+    </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

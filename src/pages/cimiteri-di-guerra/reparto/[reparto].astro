@@ -6,7 +6,8 @@
 // reparto resta quello del registro, non normalizzato (brief §7).
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/archivio-dei-nomi.css';
-import { leggiReparti, leggiReparto, dataLeggibile, eReggimentoTirolese, type GruppoReparto } from '../../../lib/memoria';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import { leggiReparti, leggiReparto, dataLeggibile, eReggimentoTirolese, OG_CIMITERI_ORIZZONTALE, type GruppoReparto } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const gruppi = await leggiReparti();
@@ -27,15 +28,26 @@ const comuni = [...new Set(persone.map((p) => p.comune))];
 
 const tirolese = eReggimentoTirolese(gruppo.reparto);
 
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: gruppo.reparto, url: `/cimiteri-di-guerra/reparto/${gruppo.slug}` },
+];
+
 export const prerender = true;
 ---
 
 <Layout
   title={`Reparto ${gruppo.reparto}`}
   description={`${persone.length} uomini del reparto ${gruppo.reparto} sepolti nei Cimiteri di guerra delle Valli del Noce.`}
+  ogImage={OG_CIMITERI_ORIZZONTALE}
 >
+  <div class="sezione-cimiteri">
   <header class="apertura">
     <div class="dentro">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <span aria-current="page">{gruppo.reparto}</span>
+      </nav>
       <p class="etichetta">Cimiteri di guerra · reparto</p>
       <h1>{gruppo.reparto}</h1>
       <p class="strillo">
@@ -119,4 +131,7 @@ export const prerender = true;
       </div>
     </section>
   )}
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

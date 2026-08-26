@@ -1,13 +1,19 @@
 ---
-// Cimiteri di guerra — scheda di una persona (brief 26/8/2026). Non aveva un
-// modello: carta chiara, titolo serif, dati in registro con etichette in
-// monospazio maiuscolo, filetto d'oro sui blocchi che contano — stesso
-// linguaggio della sezione, stesse variabili di archivio-dei-nomi.css. Una
-// pagina per uomo: chi cerca un cognome deve trovare un nome nel titolo, non
-// una tabella.
+// Cimiteri di guerra — scheda di una persona (brief 26/8/2026, poi
+// "rifinire" 26/8/2026). Non aveva un modello: carta chiara, titolo serif,
+// dati in registro con etichette in monospazio maiuscolo, filetto d'oro sui
+// blocchi che contano — stesso linguaggio della sezione, stesse variabili
+// di archivio-dei-nomi.css. Una pagina per uomo: chi cerca un cognome deve
+// trovare un nome nel titolo, non una tabella.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/archivio-dei-nomi.css';
-import { leggiFondi, leggiPersone, leggiFondo, conNome, dataLeggibile, titoloPersona, slugifica, leggiReparto, leggiProvenienza, type Fondo, type Persona } from '../../../lib/memoria';
+import Condividi from '../../../components/Condividi.astro';
+import RiconosciPersona from '../../../components/RiconosciPersona.astro';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import {
+  leggiFondi, leggiPersone, leggiFondo, conNome, dataLeggibile, titoloPersona, slugifica,
+  leggiReparto, leggiProvenienza, ogImageFondo, type Fondo, type Persona,
+} from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const fondi = await leggiFondi();
@@ -37,6 +43,15 @@ const gruppoReparto = persona.reparto ? await leggiReparto(slugifica(persona.rep
 const gruppoProvenienza = persona.regione_nascita ? await leggiProvenienza(slugifica(persona.regione_nascita)) : null;
 const ancoraTomba = persona.settore && persona.numero != null ? `#t-${persona.settore}-${persona.numero}` : '';
 
+const riferimentoScheda = `${persona.nome_completo}, ${persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? '—'}`}, ${fondo.titolo} — https://elbrenz.eu/cimiteri-di-guerra/${fondo.slug_breve}/${persona.slug}`;
+
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: fondo.comune, url: `/cimiteri-di-guerra/${fondo.slug_breve}` },
+  { nome: persona.nome_completo ?? '', url: `/cimiteri-di-guerra/${fondo.slug_breve}/${persona.slug}` },
+];
+
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Person',
@@ -49,7 +64,7 @@ const jsonLd = {
 export const prerender = true;
 ---
 
-<Layout title={titolo} description={descrizione}>
+<Layout title={titolo} description={descrizione} ogImage={ogImageFondo(fondo)} ogType="article">
   <style>
     .scheda-testata { max-width: 720px; }
     .scheda-testata .indietro {
@@ -73,10 +88,13 @@ export const prerender = true;
     .certezza { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--oro-scuro); color: var(--oro-scuro); padding: .15rem .5rem; display: inline-block; }
   </style>
 
+  <div class="sezione-cimiteri">
   <header class="apertura">
     <div class="dentro scheda-testata">
-      <a class="indietro" href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>&larr; {fondo.titolo}</a>
-      <p class="etichetta" style="margin-top:1rem">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <a href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>{fondo.comune}</a> › <span aria-current="page">{persona.nome_completo}</span>
+      </nav>
+      <p class="etichetta">
         {persona.settore === 'militare' ? 'Cimitero militare' : 'Cimitero civile'} &middot; {persona.ignoto ? 'tomba senza nome' : `tomba ${persona.numero ?? '—'}`}
       </p>
       <h1>{persona.nome_completo}</h1>
@@ -101,7 +119,10 @@ export const prerender = true;
 
     <dl class="registro-persona">
       {morte && (
-        <div class="campo"><dt>Morto</dt><dd>il {morte}, a {fondo.comune}</dd></div>
+        <div class="campo">
+          <dt>Morto</dt>
+          <dd>il {morte}, a {fondo.comune} {persona.data_morte_testo && <span class="data-originale">({persona.data_morte_testo})</span>}</dd>
+        </div>
       )}
       {nascita && (
         <div class="campo"><dt>Nato</dt><dd>{[persona.anno_nascita, persona.luogo_nascita].filter(Boolean).join(', a ')}</dd></div>
@@ -130,12 +151,17 @@ export const prerender = true;
     <div class="azioni">
       <a class="bottone" href={`/cimiteri-di-guerra/${fondo.slug_breve}`}>Tutte le persone del fondo</a>
       <a class="bottone vuoto" href={`/cimiteri-di-guerra/${fondo.slug_breve}/mappa${ancoraTomba}`}>Vedi sulla planimetria</a>
+      <Condividi titolo={`${persona.nome_completo} · ${fondo.titolo}`} testo="Un nome restituito dall'archivio di El Brenz." />
     </div>
+
+    <RiconosciPersona nome={persona.nome_completo ?? ''} scheda={riferimentoScheda} />
   </div>
 
   <p class="fonte">
     Fonte: {fondo.archivio}{fondo.segnatura ? `, ${fondo.segnatura}` : ''}. Ricerca di {fondo.ricercatore}.
   </p>
+  </div>
 
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

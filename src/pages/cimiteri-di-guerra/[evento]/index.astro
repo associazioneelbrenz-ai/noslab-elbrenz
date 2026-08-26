@@ -4,7 +4,8 @@
 // campo fonti reso leggibile, col grado di certezza sempre in chiaro.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/archivio-dei-nomi.css';
-import { leggiEventi, leggiEvento, leggiTutte, dataLeggibile, meseIt, type Evento } from '../../../lib/memoria';
+import { schemaBreadcrumb } from '../../../lib/schema';
+import { leggiEventi, leggiEvento, leggiTutte, dataLeggibile, meseIt, OG_CIMITERI_ORIZZONTALE, type Evento } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const eventi = await leggiEventi();
@@ -24,15 +25,26 @@ function dataEstesa(iso: string | null): string {
   return `${parseInt(d, 10)} ${meseIt(parseInt(m, 10))} ${y}`;
 }
 
+const briciole = [
+  { nome: 'Archivio', url: '/archivio' },
+  { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
+  { nome: evento.nome, url: `/cimiteri-di-guerra/${evento.slug}` },
+];
+
 export const prerender = true;
 ---
 
 <Layout
   title={evento.nome}
   description={evento.descrizione?.slice(0, 155) ?? evento.nome}
+  ogImage={OG_CIMITERI_ORIZZONTALE}
 >
+  <div class="sezione-cimiteri">
   <header class="apertura">
     <div class="dentro">
+      <nav class="briciole" aria-label="Percorso">
+        <a href="/archivio">Archivio</a> › <a href="/cimiteri-di-guerra">Cimiteri di guerra</a> › <span aria-current="page">{evento.nome}</span>
+      </nav>
       <p class="etichetta">Cimiteri di guerra · evento</p>
       <h1>{evento.nome}{evento.nome_originale && <><br /><em>{evento.nome_originale}</em></>}</h1>
       <p class="strillo">
@@ -74,6 +86,9 @@ export const prerender = true;
       )}
     </div>
   </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 </Layout>
 
 <style>
