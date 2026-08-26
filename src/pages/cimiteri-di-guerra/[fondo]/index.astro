@@ -14,6 +14,7 @@ import '../../../styles/cimiteri-di-guerra.css';
 import { schemaBreadcrumb } from '../../../lib/schema';
 import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import Planimetria from '../../../components/memoria/Planimetria.astro';
+import Cronologia from '../../../components/memoria/Cronologia.astro';
 import { leggiFondo, leggiPersone, conNome, slugifica, SOGLIA_MINIMA_GRUPPO, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
@@ -72,6 +73,11 @@ export const prerender = true;
   description={fondo.sottotitolo ?? fondo.descrizione ?? ''}
   ogImage={ogImageFondo(fondo)}
 >
+  <style>
+    .scheda-fonte { display: grid; grid-template-columns: auto 1fr; gap: .3rem 1rem; margin: .9rem 0 0; font-size: .78rem; }
+    .scheda-fonte dt { font-family: var(--mono); font-size: .63rem; letter-spacing: .08em; text-transform: uppercase; color: var(--oro-chiaro); margin: 0; }
+    .scheda-fonte dd { margin: 0; color: rgba(245, 239, 224, .82); }
+  </style>
   <div class="sezione-cimiteri">
   <BarraSezione fondo={fondo} />
   <header class="apertura">
@@ -88,7 +94,13 @@ export const prerender = true;
           <span class="etichetta">La ricerca è di</span>
           <p class="autore">{fondo.ricercatore}</p>
           {fondo.ricercatore_note && <p class="autore-nota">{fondo.ricercatore_note}</p>}
-          {fondo.segnatura && <span class="segnatura-alta">{fondo.segnatura}</span>}
+          <dl class="scheda-fonte">
+            {fondo.protocollo && <><dt>Protocollo</dt><dd>{fondo.protocollo}</dd></>}
+            {fondo.anno_pratica && <><dt>Anno della pratica</dt><dd>{fondo.anno_pratica}</dd></>}
+            {fondo.archivio && <><dt>Archivio</dt><dd>{fondo.archivio}</dd></>}
+            {fondo.segnatura && <><dt>Segnatura</dt><dd>{fondo.segnatura}</dd></>}
+            <dt>Ritrovamento</dt><dd>dott. {fondo.ricercatore}, 2026</dd>
+          </dl>
         </div>
       )}
 
@@ -120,6 +132,10 @@ export const prerender = true;
     <h2>La planimetria</h2>
     <Planimetria fondo={fondo} persone={tutte} />
   </section>
+
+  <div class="dentro">
+    <Cronologia persone={tutte} />
+  </div>
 
   {fondo.racconto_html && (
     <section class="racconto">

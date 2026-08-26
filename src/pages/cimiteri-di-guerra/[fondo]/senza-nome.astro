@@ -30,6 +30,13 @@ function haNome(settore: string, numero: number): boolean {
   const p = perNumero.get(`${settore}:${numero}`);
   return !!p?.nome_completo && p.nome_completo !== 'sconosciuto';
 }
+// Le tombe segnate "ignoto" (133, 186, 195) hanno una scheda propria (brief
+// "fondo 1941", 26/8/2026 §4): il numero porta li', non a un'ancora sulla
+// planimetria che non esiste per loro.
+function slugIgnoto(settore: string, numero: number): string | null {
+  const p = perNumero.get(`${settore}:${numero}`);
+  return p?.ignoto && p.slug ? p.slug : null;
+}
 
 const senzaNomeMilitari = geo.righe.flat().filter((n) => !haNome('militare', n)).sort((a, b) => a - b);
 const senzaNomeCivili = Object.keys(geo.civpos).map(Number).filter((n) => !haNome('civile', n)).sort((a, b) => a - b);
@@ -69,21 +76,26 @@ export const prerender = true;
   <section class="dentro">
     <h2>Perché sono vuote</h2>
     <p class="guida">
-      Il registro ritrovato a Vienna dal dott. Tommaso Mariotti riporta 118 righe con un nome. Le altre caselle
-      esistono nella pianta del cimitero, hanno un numero di tomba, ma nel documento non c'è scritto chi vi
-      riposa: o la riga non è mai stata compilata, o il nome non si legge più. Non lo sappiamo con certezza,
-      e non lo scriviamo come se lo sapessimo.
+      Il registro ritrovato a Vienna dal dott. Tommaso Mariotti — una pratica amministrativa austriaca del
+      1941, protocollo Zl. 13.800/1941 — riporta 118 righe: 115 con un nome, tre segnate "sconosciuto" già
+      nel 1941. Le altre caselle esistono nella pianta del cimitero, hanno un numero di tomba, ma nessuna
+      riga del registro le riguarda. Sulla pianta molte di queste tombe portano un tratto obliquo disegnato
+      a mano: non sappiamo ancora cosa significhi, e non lo scriviamo come se lo sapessimo.
     </p>
 
     {senzaNomeMilitari.length > 0 && (
       <>
         <h3>Cimitero militare</h3>
         <div class="provenienze" style="margin-bottom:2rem">
-          {senzaNomeMilitari.map((n) => (
-            <a class="prov" style="text-decoration:none;color:inherit" href={`/cimiteri-di-guerra/${fondo.slug_breve}/mappa#t-militare-${n}`}>
-              <span class="n">#</span><span class="dove">Tomba {n}</span>
-            </a>
-          ))}
+          {senzaNomeMilitari.map((n) => {
+            const slug = slugIgnoto('militare', n);
+            const href = slug ? `/cimiteri-di-guerra/${fondo.slug_breve}/${slug}` : `/cimiteri-di-guerra/${fondo.slug_breve}/mappa#t-militare-${n}`;
+            return (
+              <a class="prov" style="text-decoration:none;color:inherit" href={href}>
+                <span class="n">#</span><span class="dove">Tomba {n}</span>
+              </a>
+            );
+          })}
         </div>
       </>
     )}

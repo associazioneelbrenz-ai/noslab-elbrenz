@@ -29,6 +29,7 @@ export type Fondo = {
   ricercatore_note: string | null; licenza_immagini: string | null;
   planimetria_url: string | null; planimetria_geo: Geo | null; racconto_html: string | null;
   posti_censiti: number | null; nomi_noti: number; senza_nome: number;
+  protocollo: string | null; anno_pratica: number | null;
 };
 
 export type Persona = {
@@ -103,26 +104,35 @@ export async function leggiTutte(): Promise<Persona[]> {
   return (data ?? []) as Persona[];
 }
 
-export type GruppoReparto = { slug: string; reparto: string; persone: Persona[] };
+// Reparto (brief "fondo 1941", 26/8/2026 §2, §6): non più un raggruppamento
+// per sigla ricalcolato al volo dalle persone, ma la tabella vera
+// memoria_reparto — 55 sigle, tutte con una pagina propria, nessuna soglia.
+// Lo scioglimento e la denominazione vengono dal registro dell'esercito
+// austro-ungarico, non da un'ipotesi scritta qui.
+export type Reparto = {
+  sigla: string; slug: string; scioglimento: string | null; denominazione: string | null;
+  arma: string | null; certezza: 'certa' | 'alta' | 'da_verificare'; sigla_padre: string | null;
+  note: string | null; caduti: number; caduti_militare: number; caduti_civile: number;
+};
 
-export async function leggiReparti(soglia = SOGLIA_MINIMA_GRUPPO): Promise<GruppoReparto[]> {
-  const persone = (await leggiTutte()).filter(conNome).filter((p) => p.reparto);
-  const gruppi = new Map<string, Persona[]>();
-  for (const p of persone) {
-    const chiave = p.reparto as string;
-    const arr = gruppi.get(chiave) ?? [];
-    arr.push(p);
-    gruppi.set(chiave, arr);
-  }
-  return [...gruppi.entries()]
-    .filter(([, arr]) => arr.length >= soglia)
-    .map(([reparto, arr]) => ({ slug: slugifica(reparto), reparto, persone: arr }))
-    .sort((a, b) => b.persone.length - a.persone.length);
+export async function leggiReparti(): Promise<Reparto[]> {
+  const { data, error } = await sb.from('v_memoria_reparto_pubblico').select('*');
+  if (error) { console.error('[memoria] lettura reparti fallita:', error.message); return []; }
+  return ((data ?? []) as Reparto[]).sort((a, b) => b.caduti - a.caduti);
 }
 
-export async function leggiReparto(slug: string, soglia = SOGLIA_MINIMA_GRUPPO): Promise<GruppoReparto | null> {
-  const gruppi = await leggiReparti(soglia);
-  return gruppi.find((g) => g.slug === slug) ?? null;
+export async function leggiReparto(slug: string): Promise<Reparto | null> {
+  const { data, error } = await sb.from('v_memoria_reparto_pubblico').select('*').eq('slug', slug).maybeSingle();
+  if (error) { console.error('[memoria] lettura reparto fallita:', error.message); return null; }
+  return data as Reparto | null;
+}
+
+// Dalla sigla scritta nel registro (memoria_persona.reparto) alla scheda
+// vera: usata dalla pagina persona, che conosce solo la sigla.
+export async function leggiRepartoPerSigla(sigla: string): Promise<Reparto | null> {
+  const { data, error } = await sb.from('v_memoria_reparto_pubblico').select('*').eq('sigla', sigla).maybeSingle();
+  if (error) { console.error('[memoria] lettura reparto per sigla fallita:', error.message); return null; }
+  return data as Reparto | null;
 }
 
 export type GruppoProvenienza = { slug: string; regione: string; persone: Persona[] };

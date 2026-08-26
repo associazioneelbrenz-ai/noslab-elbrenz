@@ -1,10 +1,23 @@
 ---
 // Cimiteri di guerra — barra di navigazione di sezione (brief "Navigazione
-// della sezione Cimiteri di guerra", 26/8/2026, §5). Compare identica su
-// tutte le pagine della sezione: sette voci, quella della pagina corrente
-// evidenziata e non cliccabile. "Reparti" e "Provenienze" puntano a due
-// indici nuovi (non esistevano prima, c'erano solo le pagine di dettaglio);
-// tutto il resto punta a rotte gia' vive, non a percorsi immaginati qui.
+// della sezione", 26/8/2026 §5; rifatta dal brief "fondo 1941", 26/8/2026
+// §3). La prima versione sovrapponeva "Cimitero militare di Malè" e
+// "Planimetria": la causa vera non era la larghezza delle celle, era un
+// nome di classe. Le voci usavano `.voce`, la STESSA classe che
+// cimiteri-di-guerra.css usa per le righe della ricerca (`.sezione-cimiteri
+// .voce{display:grid;grid-template-columns:4.5rem 1fr auto}`). Le due
+// regole hanno la stessa specificità (due classi ciascuna); la mia non
+// dichiarava `display`, quindi quella del foglio globale vinceva di
+// default e trasformava ogni bottone in una griglia a tre colonne — da qui
+// il testo che finiva sopra il bottone accanto. Qui le voci si chiamano
+// `.scheda-nav`, un nome che non esiste da nessun'altra parte nel sito.
+//
+// Zona identità (il nome del fondo, etichetta non cliccabile) + zona
+// schede (sei bottoni, sempre in quest'ordine): Planimetria, Tutti i nomi,
+// Reparti, Provenienze, Tombe senza nome, l'evento. "Planimetria" punta
+// alla pagina del fondo, dove ora vive il blocco vero — non più a /mappa,
+// che resta raggiungibile (i link dalle schede persona e da senza-nome la
+// usano ancora) ma non è più nella barra.
 import { leggiFondi, leggiEventi, type Fondo } from '../../lib/memoria';
 
 interface Props { fondo?: Fondo }
@@ -21,19 +34,13 @@ type Voce = { label: string; href: string; attiva: (p: string) => boolean };
 
 const voci: Voce[] = fondo ? [
   {
-    label: fondo.titolo,
-    href: `/cimiteri-di-guerra/${fondo.slug_breve}`,
-    attiva: (p) => p === `/cimiteri-di-guerra/${fondo.slug_breve}`,
-  },
-  {
     label: 'Planimetria',
-    href: `/cimiteri-di-guerra/${fondo.slug_breve}/mappa`,
-    attiva: (p) => p.endsWith('/mappa'),
+    href: `/cimiteri-di-guerra/${fondo.slug_breve}`,
+    attiva: (p) => p === `/cimiteri-di-guerra/${fondo.slug_breve}` || p.endsWith('/mappa'),
   },
   {
     // Non esiste una pagina propria "Tutti i nomi": l'elenco e la ricerca
-    // vivono sulla pagina del fondo, sezione #cerca-un-nome. Il rimando e'
-    // a quella sezione, non a una rotta inventata per l'occasione.
+    // vivono sulla pagina del fondo, sezione #cerca-un-nome.
     label: 'Tutti i nomi',
     href: `/cimiteri-di-guerra/${fondo.slug_breve}#cerca-un-nome`,
     attiva: () => false,
@@ -61,14 +68,18 @@ const voci: Voce[] = fondo ? [
 ] : [];
 ---
 
-{voci.length > 0 && (
-  <nav class="barra-sezione" aria-label="Naviga nella sezione Cimiteri di guerra">
+{fondo && (
+  <nav class="barra-sezione" aria-label="Sezione Cimiteri di guerra">
     <div class="corsia">
-      {voci.map((v) => v.attiva(path) ? (
-        <span class="voce attiva" aria-current="page">{v.label}</span>
-      ) : (
-        <a class="voce" href={v.href}>{v.label}</a>
-      ))}
+      <span class="identita">{fondo.titolo}</span>
+      <span class="filetto" aria-hidden="true"></span>
+      <div class="schede" id="schede-sezione">
+        {voci.map((v) => v.attiva(path) ? (
+          <a class="scheda-nav attiva" href={v.href} aria-current="page">{v.label}</a>
+        ) : (
+          <a class="scheda-nav" href={v.href}>{v.label}</a>
+        ))}
+      </div>
     </div>
   </nav>
 )}
@@ -80,30 +91,101 @@ const voci: Voce[] = fondo ? [
   }
   .corsia {
     display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
+    align-items: center;
+    flex-wrap: wrap;
     max-width: 1060px;
     margin: 0 auto;
-    padding: 0 1.25rem;
+    padding: .6rem 1.25rem;
+    gap: .75rem;
   }
-  .voce {
+  .identita {
     flex: 0 0 auto;
-    font-family: var(--mono);
-    font-size: .68rem;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: rgba(245, 239, 224, .68);
-    text-decoration: none;
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: .92rem;
+    color: var(--crema);
     white-space: nowrap;
-    padding: .85rem .9rem;
-    border-bottom: 2px solid transparent;
   }
-  .voce:hover { color: var(--crema); }
-  .voce.attiva {
-    color: var(--oro-chiaro);
-    border-bottom-color: var(--oro);
-    cursor: default;
+  .filetto {
+    flex: 0 0 auto;
+    width: 1px;
+    align-self: stretch;
+    min-height: 1.4rem;
+    background: rgba(245, 239, 224, .22);
+  }
+  .schede {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    gap: .5rem;
+    min-width: 0;
+  }
+  .scheda-nav {
+    flex: 0 0 auto;
+    display: inline-block;
+    white-space: nowrap;
+    font-family: 'Inter', var(--sans);
+    font-size: .78rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: rgba(245, 239, 224, .85);
+    text-decoration: none;
+    border: 1px solid rgba(245, 239, 224, .18);
+    border-radius: 999px;
+    padding: .6rem 1.05rem;
+    min-height: 40px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 120ms, border-color 120ms;
+  }
+  .scheda-nav:hover {
+    background: rgba(245, 239, 224, .08);
+    border-color: rgba(245, 239, 224, .35);
+  }
+  .scheda-nav:focus-visible {
+    outline: 2px solid var(--oro);
+    outline-offset: 2px;
+  }
+  .scheda-nav.attiva {
+    background: var(--oro);
+    border-color: var(--oro);
+    color: #14200f;
+  }
+
+  /* Sotto 1024px lo spazio non basta per andare a capo con eleganza: la
+     riga delle schede scorre in orizzontale invece di impilarsi. */
+  @media (max-width: 1023px) {
+    .corsia { flex-wrap: nowrap; }
+    .schede {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      scroll-snap-type: x proximity;
+      -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+      mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+    }
+    .schede::-webkit-scrollbar { display: none; }
+    .scheda-nav { scroll-snap-align: start; }
+  }
+
+  @media (max-width: 639px) {
+    .corsia { flex-wrap: wrap; }
+    .identita { flex-basis: 100%; }
+    .filetto { display: none; }
+    .schede { flex-basis: 100%; }
   }
 </style>
+
+<script>
+  // La scheda attiva entra in vista da sola quando la riga scorre: chi apre
+  // la pagina su un telefono non deve cercarla scorrendo a mano.
+  const schede = document.getElementById('schede-sezione');
+  const attiva = schede?.querySelector('.attiva');
+  if (attiva) {
+    const ridotto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    attiva.scrollIntoView({ inline: 'center', block: 'nearest', behavior: ridotto ? 'auto' : 'smooth' });
+  }
+</script>

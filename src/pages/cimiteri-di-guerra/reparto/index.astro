@@ -1,9 +1,9 @@
 ---
 // Cimiteri di guerra — indice dei reparti (brief "Navigazione della sezione",
-// 26/8/2026 §5). Non esisteva prima: la barra di sezione ha bisogno di una
-// voce "Reparti" che porti da qualche parte, e le uniche pagine che c'erano
-// erano quelle di dettaglio, una per reparto. Stesso elenco di leggiReparti(),
-// nessun nuovo dato.
+// 26/8/2026 §5; rifatto dal brief "fondo 1941", 26/8/2026 §6). Tutte e
+// cinquantacinque le sigle di memoria_reparto, raggruppate per arma e
+// ordinate per caduti dentro ogni gruppo — non più solo le dieci sopra
+// soglia di tre uomini.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
 import BarraSezione from '../../../components/memoria/BarraSezione.astro';
@@ -11,7 +11,16 @@ import { schemaBreadcrumb } from '../../../lib/schema';
 import { leggiReparti, OG_CIMITERI_ORIZZONTALE } from '../../../lib/memoria';
 
 const gruppi = await leggiReparti();
-const maxUomini = gruppi[0]?.persone.length ?? 1;
+const maxUomini = gruppi[0]?.caduti ?? 1;
+
+const perArma = new Map<string, typeof gruppi>();
+for (const g of gruppi) {
+  const chiave = g.arma ?? 'arma non nota';
+  const arr = perArma.get(chiave) ?? [];
+  arr.push(g);
+  perArma.set(chiave, arr);
+}
+const gruppiPerArma = [...perArma.entries()].sort((a, b) => b[1].length - a[1].length);
 
 const briciole = [
   { nome: 'Archivio', url: '/archivio' },
@@ -24,7 +33,7 @@ export const prerender = true;
 
 <Layout
   title="Reparti · Cimiteri di guerra"
-  description="I reparti dell'esercito austro-ungarico con almeno tre uomini sepolti nei Cimiteri di guerra delle Valli del Noce."
+  description="I reparti dell'esercito austro-ungarico con almeno un caduto sepolto nei Cimiteri di guerra delle Valli del Noce."
   ogImage={OG_CIMITERI_ORIZZONTALE}
 >
   <div class="sezione-cimiteri">
@@ -37,25 +46,32 @@ export const prerender = true;
       <p class="etichetta">Cimiteri di guerra · reparti</p>
       <h1>I reparti</h1>
       <p class="strillo">
-        {gruppi.length} reparti dell'esercito austro-ungarico contano almeno tre uomini nel registro: gli
-        altri restano un nome scritto sulla scheda della singola persona, senza una pagina propria.
+        {gruppi.length} sigle dell'esercito austro-ungarico compaiono nel registro, raggruppate per arma.
+        Sei sono ancora in verifica con l'archivio: la pagina lo dice, senza inventare uno scioglimento.
       </p>
     </div>
   </header>
 
   <section class="dentro">
     {gruppi.length === 0 ? (
-      <p class="niente">Nessun reparto sopra soglia al momento.</p>
+      <p class="niente">Nessun reparto al momento.</p>
     ) : (
-      <div class="provenienze">
-        {gruppi.map((g) => (
-          <div class="prov">
-            <span class="n">{g.persone.length}</span>
-            <a class="dove" href={`/cimiteri-di-guerra/reparto/${g.slug}`} style="color:inherit">{g.reparto}</a>
-            <span class="barra"><i style={`width:${Math.round((g.persone.length / maxUomini) * 100)}%`}></i></span>
+      gruppiPerArma.map(([arma, elenco]) => (
+        <>
+          <h2 style="text-transform:capitalize">{arma}</h2>
+          <div class="provenienze" style="margin-bottom:2.25rem">
+            {elenco.sort((a, b) => b.caduti - a.caduti).map((g) => (
+              <div class="prov">
+                <span class="n">{g.caduti}</span>
+                <a class="dove" href={`/cimiteri-di-guerra/reparto/${g.slug}`} style="color:inherit">
+                  {g.certezza === 'da_verificare' ? g.sigla : (g.denominazione ?? g.sigla)}
+                </a>
+                <span class="barra"><i style={`width:${Math.round((g.caduti / maxUomini) * 100)}%`}></i></span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      ))
     )}
   </section>
   </div>

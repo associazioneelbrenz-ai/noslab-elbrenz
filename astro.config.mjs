@@ -213,6 +213,22 @@ export default defineConfig({
       status: 301,
       destination: '/en/gita-giochi-medievali-2026',
     },
+    // Cimiteri di guerra: le pagine reparto usavano lo slug ricavato dalla
+    // sigla del registro (slugifica()). Con memoria_reparto lo slug vero
+    // viene dalla tabella (denominazione leggibile, non piu' la sigla
+    // grezza) — le dieci vecchie rotte erano gia' indicizzate, restano
+    // vive con un redirect invece di sparire (brief "fondo 1941",
+    // 26/8/2026 §6).
+    '/cimiteri-di-guerra/reparto/22-gbartrgt': { status: 301, destination: '/cimiteri-di-guerra/reparto/22-gebirgsartillerieregiment' },
+    '/cimiteri-di-guerra/reparto/i-kschrgt': { status: 301, destination: '/cimiteri-di-guerra/reparto/kaiserschuetzenregiment-i' },
+    '/cimiteri-di-guerra/reparto/23-schrgt': { status: 301, destination: '/cimiteri-di-guerra/reparto/23-schuetzenregiment' },
+    '/cimiteri-di-guerra/reparto/16-feldjgrbaon': { status: 301, destination: '/cimiteri-di-guerra/reparto/16-feldjaegerbataillon' },
+    '/cimiteri-di-guerra/reparto/23-lndstrmkmp': { status: 301, destination: '/cimiteri-di-guerra/reparto/23-landsturmkompanie' },
+    '/cimiteri-di-guerra/reparto/26-schrgt': { status: 301, destination: '/cimiteri-di-guerra/reparto/26-schuetzenregiment' },
+    '/cimiteri-di-guerra/reparto/2-tkjgrrgt': { status: 301, destination: '/cimiteri-di-guerra/reparto/2-tiroler-kaiserjaegerregiment' },
+    '/cimiteri-di-guerra/reparto/5-ir': { status: 301, destination: '/cimiteri-di-guerra/reparto/5-infanterieregiment' },
+    '/cimiteri-di-guerra/reparto/1-gbartrgt': { status: 301, destination: '/cimiteri-di-guerra/reparto/1-gebirgsartillerieregiment' },
+    '/cimiteri-di-guerra/reparto/73-fliegerkp': { status: 301, destination: '/cimiteri-di-guerra/reparto/73-fliegerkompanie' },
   },
 
   // i18n (Fase 1a): IT alla radice, DE/EN sotto /de/ e /en/. pt/es predisposte
