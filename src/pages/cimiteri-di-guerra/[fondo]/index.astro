@@ -1,18 +1,19 @@
 ---
 // Cimiteri di guerra — pagina del fondo. Ordine riscritto dall'addendum
-// "Albo dei nomi, incipit, card in home" (26/8/2026 §4): la barra di
-// sezione fa gia' da navigazione, quindi il primo schermo si libera per
-// l'incipit — non piu' la planimetria, non il racconto. Ordine non
-// negoziabile: apertura -> muro/registro-numeri -> incipit -> ricerca ->
+// "Albo dei nomi, incipit, card in home" (26/8/2026 §4), poi corretto a
+// vivo lo stesso giorno: il racconto torna subito dopo l'incipit invece di
+// restare in fondo dopo l'albo dei 118 nomi — sepolto sotto una tabella
+// lunga si leggeva male. Ordine non negoziabile: apertura ->
+// muro/registro-numeri -> incipit -> racconto per intero -> ricerca ->
 // planimetria (militare + legenda, poi civile) -> cronologia e albo dei
-// nomi -> racconto per intero -> scheda della fonte -> provenienze ->
-// fondi futuri -> chiusa. Il racconto non e' cambiato di una virgola, solo
-// di posizione. La scheda della fonte (protocollo, segnatura, ricercatore)
-// era nell'intestazione scura, ora e' un congedo dopo il racconto: stessi
-// dati, colori adattati allo sfondo chiaro. CSS e classi sono quelli veri
-// di cimiteri-di-guerra.css, non tradotti nello stile del sito. Ogni
-// numero viene dal database: se un domani arriva un secondo fondo, questa
-// pagina non cambia.
+// nomi -> scheda della fonte -> provenienze -> fondi futuri -> chiusa. Il
+// racconto non e' cambiato di una virgola, solo di posizione (due volte).
+// La scheda della fonte (protocollo, segnatura, ricercatore) era
+// nell'intestazione scura, ora e' un congedo verso la fine della pagina:
+// stessi dati, colori adattati allo sfondo chiaro. CSS e classi sono
+// quelli veri di cimiteri-di-guerra.css, non tradotti nello stile del
+// sito. Ogni numero viene dal database: se un domani arriva un secondo
+// fondo, questa pagina non cambia.
 import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
 import { schemaBreadcrumb } from '../../../lib/schema';
@@ -125,6 +126,12 @@ export const prerender = true;
     <p>Centodiciotto nomi sono arrivati fino a noi. Gli altri riquadri sono ancora lì.</p>
   </section>
 
+  {fondo.racconto_html && (
+    <section class="racconto">
+      <div class="dentro" set:html={fondo.racconto_html} />
+    </section>
+  )}
+
   <section class="dentro" id="cerca-un-nome">
     <h2>Cerca un nome</h2>
     <p class="guida">Un cognome, un reggimento, un paese di nascita. Se cerchi un antenato austro-ungarico disperso sul fronte italiano, potrebbe essere qui.</p>
@@ -142,12 +149,6 @@ export const prerender = true;
   <div class="dentro">
     <Cronologia persone={tutte} />
   </div>
-
-  {fondo.racconto_html && (
-    <section class="racconto">
-      <div class="dentro" set:html={fondo.racconto_html} />
-    </section>
-  )}
 
   {fondo.ricercatore && (
     <section class="dentro">
