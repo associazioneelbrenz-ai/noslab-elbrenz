@@ -1,12 +1,16 @@
 ---
-// Cimiteri di guerra — pagina del fondo (brief 26/8/2026, "va in produzione";
-// ordine rivisto da "Navigazione della sezione", 26/8/2026 §6). Ordine non
-// negoziabile: apertura -> muro delle tacche/numeri -> ricerca -> planimetria
-// -> racconto per intero -> provenienze -> fondi futuri -> chiusa. La
-// planimetria e' salita sopra il racconto (prima stava sotto la ricerca,
-// dopo il racconto); il racconto non e' cambiato di una virgola, solo di
-// posizione. CSS e classi sono quelli veri di cimiteri-di-guerra.css, non
-// tradotti nello stile del sito (BRIEF_CODE_rimettere_il_disegno). Ogni
+// Cimiteri di guerra — pagina del fondo. Ordine riscritto dall'addendum
+// "Albo dei nomi, incipit, card in home" (26/8/2026 §4): la barra di
+// sezione fa gia' da navigazione, quindi il primo schermo si libera per
+// l'incipit — non piu' la planimetria, non il racconto. Ordine non
+// negoziabile: apertura -> muro/registro-numeri -> incipit -> ricerca ->
+// planimetria (militare + legenda, poi civile) -> cronologia e albo dei
+// nomi -> racconto per intero -> scheda della fonte -> provenienze ->
+// fondi futuri -> chiusa. Il racconto non e' cambiato di una virgola, solo
+// di posizione. La scheda della fonte (protocollo, segnatura, ricercatore)
+// era nell'intestazione scura, ora e' un congedo dopo il racconto: stessi
+// dati, colori adattati allo sfondo chiaro. CSS e classi sono quelli veri
+// di cimiteri-di-guerra.css, non tradotti nello stile del sito. Ogni
 // numero viene dal database: se un domani arriva un secondo fondo, questa
 // pagina non cambia.
 import Layout from '../../../layouts/Layout.astro';
@@ -74,9 +78,15 @@ export const prerender = true;
   ogImage={ogImageFondo(fondo)}
 >
   <style>
+    .incipit p { font-family: var(--serif); font-size: 1.18rem; line-height: 1.72; max-width: 62ch; margin: 0 0 1.1rem; color: var(--verde); }
+    .incipit p:last-child { margin-bottom: 0; }
+    .fonte-scheda { border-left: 3px solid var(--oro); padding: .15rem 0 .15rem 1.1rem; margin: 2.5rem 0 0; max-width: 42rem; }
+    .fonte-scheda .etichetta { color: var(--oro-scuro); display: block; margin-bottom: .35rem; }
+    .fonte-scheda .autore { font-family: var(--serif); font-size: 1.15rem; margin: 0 0 .3rem; color: var(--verde); }
+    .fonte-scheda .autore-nota { margin: 0; font-size: .88rem; color: var(--verde-tenue); line-height: 1.55; }
     .scheda-fonte { display: grid; grid-template-columns: auto 1fr; gap: .3rem 1rem; margin: .9rem 0 0; font-size: .78rem; }
-    .scheda-fonte dt { font-family: var(--mono); font-size: .63rem; letter-spacing: .08em; text-transform: uppercase; color: var(--oro-chiaro); margin: 0; }
-    .scheda-fonte dd { margin: 0; color: rgba(245, 239, 224, .82); }
+    .scheda-fonte dt { font-family: var(--mono); font-size: .63rem; letter-spacing: .08em; text-transform: uppercase; color: var(--oro-scuro); margin: 0; }
+    .scheda-fonte dd { margin: 0; color: var(--verde); }
   </style>
   <div class="sezione-cimiteri">
   <BarraSezione fondo={fondo} />
@@ -88,21 +98,6 @@ export const prerender = true;
       <p class="etichetta">Associazione El Brenz · Valli del Noce</p>
       <h1>{titoloParts.prima}{titoloParts.seconda && (<><br /><em>{titoloParts.seconda}</em></>)}</h1>
       {strillo && <p class="strillo">{strillo}</p>}
-
-      {fondo.ricercatore && (
-        <div class="ricerca-di">
-          <span class="etichetta">La ricerca è di</span>
-          <p class="autore">{fondo.ricercatore}</p>
-          {fondo.ricercatore_note && <p class="autore-nota">{fondo.ricercatore_note}</p>}
-          <dl class="scheda-fonte">
-            {fondo.protocollo && <><dt>Protocollo</dt><dd>{fondo.protocollo}</dd></>}
-            {fondo.anno_pratica && <><dt>Anno della pratica</dt><dd>{fondo.anno_pratica}</dd></>}
-            {fondo.archivio && <><dt>Archivio</dt><dd>{fondo.archivio}</dd></>}
-            {fondo.segnatura && <><dt>Segnatura</dt><dd>{fondo.segnatura}</dd></>}
-            <dt>Ritrovamento</dt><dd>dott. {fondo.ricercatore}, 2026</dd>
-          </dl>
-        </div>
-      )}
 
       <div class="muro" id="muro" data-tombe={fondo.posti_censiti ?? 0} data-nomi={fondo.nomi_noti}></div>
       <div class="conta"><b id="contaNomi">0</b>nomi su {fondo.posti_censiti ?? fondo.nomi_noti} posti censiti</div>
@@ -118,6 +113,15 @@ export const prerender = true;
       <div class="cella"><b>{nPow}</b><span>prigionieri di guerra</span></div>
     </div>
   </div>
+
+  <section class="dentro incipit">
+    <p class="capolettera">
+      Nel 1941, ventitré anni dopo la fine della guerra, qualcuno tornò a contare i morti di questo
+      cimitero uno per uno. Dove il nome c'era, lo scrisse. Dove non c'era, tracciò un segno sul
+      riquadro della pianta e passò oltre.
+    </p>
+    <p>Centodiciotto nomi sono arrivati fino a noi. Gli altri riquadri sono ancora lì.</p>
+  </section>
 
   <section class="dentro" id="cerca-un-nome">
     <h2>Cerca un nome</h2>
@@ -140,6 +144,23 @@ export const prerender = true;
   {fondo.racconto_html && (
     <section class="racconto">
       <div class="dentro" set:html={fondo.racconto_html} />
+    </section>
+  )}
+
+  {fondo.ricercatore && (
+    <section class="dentro">
+      <div class="fonte-scheda">
+        <span class="etichetta">La ricerca è di</span>
+        <p class="autore">{fondo.ricercatore}</p>
+        {fondo.ricercatore_note && <p class="autore-nota">{fondo.ricercatore_note}</p>}
+        <dl class="scheda-fonte">
+          {fondo.protocollo && <><dt>Protocollo</dt><dd>{fondo.protocollo}</dd></>}
+          {fondo.anno_pratica && <><dt>Anno della pratica</dt><dd>{fondo.anno_pratica}</dd></>}
+          {fondo.archivio && <><dt>Archivio</dt><dd>{fondo.archivio}</dd></>}
+          {fondo.segnatura && <><dt>Segnatura</dt><dd>{fondo.segnatura}</dd></>}
+          <dt>Ritrovamento</dt><dd>dott. {fondo.ricercatore}, 2026</dd>
+        </dl>
+      </div>
     </section>
   )}
 

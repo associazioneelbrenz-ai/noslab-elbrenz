@@ -45,20 +45,11 @@ import LightboxEmbed from '../components/LightboxEmbed.astro';
 import PopupLocandinaRitterspiele from '../components/PopupLocandinaRitterspiele.astro';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'node:fs';
-// Cimiteri di guerra in home (brief "rifinire", 26/8/2026 §2): il conteggio
-// viene da v_memoria_fondo_pubblico (nomi_noti/senza_nome gia' calcolati),
-// mai scritto a mano — cambia da solo con un secondo fondo o una casella
-// riempita, entro i 5 minuti di cache condivisa di questa pagina.
-import { leggiFondi as leggiFondiCimiteri, OG_CIMITERI_ORIZZONTALE } from '../lib/memoria';
-let cimiteriNomiNoti = 0;
-let cimiteriSenzaNome = 0;
-try {
-  const fondiCimiteri = await leggiFondiCimiteri();
-  cimiteriNomiNoti = fondiCimiteri.reduce((tot, f) => tot + f.nomi_noti, 0);
-  cimiteriSenzaNome = fondiCimiteri.reduce((tot, f) => tot + f.senza_nome, 0);
-} catch (e) {
-  console.error('[home] lettura cimiteri di guerra fallita:', e);
-}
+// Cimiteri di guerra in home (addendum "Albo dei nomi, incipit, card in
+// home", 26/8/2026 §5.2): testo definitivo, non più due conteggi calcolati
+// al volo — i numeri (118, 49, 55...) sono fatti fissi del fondo di Malè,
+// non cambiano con un secondo fondo come cambiava il vecchio conteggio.
+import { OG_CIMITERI_ORIZZONTALE } from '../lib/memoria';
 
 // M2.9 (deroga 8/7/2026): quando Cristian fornisce gli URL dei 3 post
 // Instagram delle migole, inserirli qui: le celle diventano embed
@@ -892,9 +883,14 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
     </div>
   </section>
 
-  {/* Cimiteri di guerra in home (brief "rifinire", 26/8/2026 §2): un blocco a
-      tutta larghezza, sopra la fascia progetti e non dentro. Il conteggio è
-      calcolato più sopra da v_memoria_fondo_pubblico, mai scritto qui. */}
+  {/* Cimiteri di guerra in home (addendum "Albo dei nomi, incipit, card in
+      home", 26/8/2026 §5.2). Testo definitivo, non ripete l'incipit della
+      pagina del fondo: chi arriva da qui non deve rileggere la stessa
+      frase due volte. Divieto esplicito nel brief: mai scrivere "se
+      riconosci un cognome delle nostre valli" o formule simili — questi
+      uomini sono nostri perché sono sepolti qui, non perché fossero di
+      qui. L'immagine è la cianografia del cimitero militare, non una
+      fotografia: stessa immagine dell'og:image della sezione. */}
   <section class="relative overflow-hidden bg-[#1E2E26]">
     <img
       src={OG_CIMITERI_ORIZZONTALE}
@@ -905,21 +901,15 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
     />
     <div class="absolute inset-0 bg-gradient-to-t from-[#1E2E26] via-[#1E2E26]/80 to-[#1E2E26]/40" aria-hidden="true"></div>
     <div class="relative max-w-4xl mx-auto px-6 py-16 md:py-20 text-center">
-      <p class="text-[11px] tracking-[0.24em] uppercase text-[#C8923E] font-semibold m-0 mb-6" style="font-family: 'Inter', sans-serif;">Cimiteri di guerra</p>
-      <div class="flex flex-wrap justify-center gap-x-10 gap-y-4 mb-6">
-        <p class="m-0">
-          <span class="block text-4xl md:text-5xl text-[#F5EEDD]" style="font-family: 'Playfair Display', serif; font-weight: 500;">{cimiteriNomiNoti}</span>
-          <span class="block text-[12px] tracking-[0.14em] uppercase text-[#F5EEDD]/60 mt-1" style="font-family: 'Inter', sans-serif;">nomi restituiti</span>
-        </p>
-        <p class="m-0">
-          <span class="block text-4xl md:text-5xl text-[#F5EEDD]" style="font-family: 'Playfair Display', serif; font-weight: 500;">{cimiteriSenzaNome}</span>
-          <span class="block text-[12px] tracking-[0.14em] uppercase text-[#F5EEDD]/60 mt-1" style="font-family: 'Inter', sans-serif;">tombe ancora senza nome</span>
-        </p>
-      </div>
+      <p class="text-[11px] tracking-[0.24em] uppercase text-[#C8923E] font-semibold m-0 mb-6" style="font-family: 'Inter', sans-serif;">Archivio · Cimiteri di guerra</p>
+      <h2 class="text-3xl md:text-4xl leading-tight text-[#F5EEDD] m-0 mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">Centodiciotto nomi tornati a Malè</h2>
       <p class="text-[#F5EEDD]/80 text-lg leading-relaxed max-w-2xl mx-auto m-0 mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
-        Registri austro-ungarici delle nostre valli, un nome alla volta: chi è sepolto, da dove veniva, con chi.
+        Nell'ottobre del 1918, in trentun giorni, morirono quarantanove uomini. L'ultimo fu sepolto il 23
+        novembre, tre settimane dopo la fine dei combattimenti. Venivano da cinquantacinque reparti
+        diversi e da mezza Europa, e adesso hanno di nuovo un nome e un posto sulla pianta.
       </p>
-      <a href="/cimiteri-di-guerra" class="inline-flex items-center gap-2 bg-[#C8923E] text-[#1E2E26] px-8 py-3.5 rounded-full text-[15px] font-bold no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]" style="font-family: 'Inter', sans-serif;">Apri l'archivio <span aria-hidden="true">→</span></a>
+      <a href="/cimiteri-di-guerra/male#cerca-un-nome" class="inline-flex items-center gap-2 bg-[#C8923E] text-[#1E2E26] px-8 py-3.5 rounded-full text-[15px] font-bold no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F5EEDD]" style="font-family: 'Inter', sans-serif;">Cerca un nome <span aria-hidden="true">→</span></a>
+      <p class="text-[#F5EEDD]/50 text-[13px] mt-5 m-0" style="font-family: 'Inter', sans-serif;">Se sai qualcosa di una di queste sepolture, scrivici a info@elbrenz.eu.</p>
     </div>
   </section>
 

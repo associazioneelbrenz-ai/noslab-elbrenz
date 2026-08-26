@@ -12,11 +12,16 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 // Anteprima di condivisione (brief "rifinire", 26/8/2026 §1): il monumento,
 // finché un fondo non ha un'immagine propria. Nessuna didascalia finché il
 // segretario non conferma dove si trova esattamente e chi l'ha scattata.
-export const OG_CIMITERI_ORIZZONTALE = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/cimiteri-di-guerra/og-cimiteri-di-guerra.jpg`;
+// Addendum "Albo dei nomi, incipit, card in home" (26/8/2026 §5.1): la
+// fotografia di monumento aveva provenienza e autore non accertati. Da qui
+// in avanti l'anteprima è la cianografia del cimitero militare, ritagliata
+// a 1200×630 dalla planimetria vera (mai la fotografia raw: quella non è
+// nel formato giusto per un'anteprima social).
+export const OG_CIMITERI_ORIZZONTALE = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/cimiteri-di-guerra/og-cimiteri-di-guerra-cianografia.jpg`;
 export const OG_CIMITERI_QUADRATA = `${SUPABASE_URL}/storage/v1/object/public/assets-pubblici/cimiteri-di-guerra/og-cimiteri-di-guerra-quadrata.jpg`;
 
 export function ogImageFondo(fondo: Fondo): string {
-  return fondo.planimetria_url ?? OG_CIMITERI_ORIZZONTALE;
+  return OG_CIMITERI_ORIZZONTALE;
 }
 
 export type Geo = { righe: number[][]; civpos: Record<string, [number, number]>; nota?: string };

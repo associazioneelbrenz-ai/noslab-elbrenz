@@ -214,6 +214,30 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
     </section>
   )}
 
+  <div class="legenda">
+    <p class="voce-legenda"><i class="campione noto"></i>Nome noto. La scheda si apre con un clic.</p>
+    <p class="voce-legenda"><i class="campione ignoto"></i>Nome ignoto già nel registro. La sepoltura è documentata, il nome no: non fu possibile identificarlo nemmeno allora.</p>
+    <p class="voce-legenda"><i class="campione barrato"></i>Riquadro barrato sulla pianta del 1941. Chi ha compilato la pianta ha tracciato un segno su questa tomba. Non sappiamo ancora cosa significhi.</p>
+    <p class="voce-legenda"><i class="campione integro"></i>Riquadro integro, nessun nome. La pianta mostra la tomba senza segni, ma negli elenchi non compare nessuno.</p>
+  </div>
+  <p class="nota-registro">
+    Questa pianta e questi elenchi vengono da una pratica amministrativa austriaca del 1941, protocollo
+    Zl. 13.800/1941, conservata a Vienna con segnatura ÖStA/KA/VL/KGräber/K42 e ritrovata dal dott.
+    Tommaso Mariotti. Ventitré anni dopo la fine della guerra, qualcuno tornò a contare questi morti uno
+    per uno: il prospetto dichiara centodue sepolture nel cimitero militare e quindici in quello civile.
+  </p>
+  <p class="nota-registro">
+    Quattordici tombe restano aperte. Sulla pianta i riquadri 12, 38, 40, 85, 86, 87, 88, 89, 91, 92,
+    93, 94, 95 e 96 non portano nessun segno, ma negli elenchi non compare nessun nome. Se sai qualcosa
+    di una di queste sepolture, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>.
+  </p>
+  <p class="nota-registro">
+    Quattro schede portano il tratto obliquo anche se hanno già un nome o sono già segnate ignote nel
+    registro (133, 137, 186 e 195): i due fatti convivono, non si escludono. Quale elenco sia barrato
+    non si legge più da un intervallo di numeri ma da una trascrizione voce per voce, ancora
+    provvisoria: la versione completa e definitiva arriverà separatamente.
+  </p>
+
   {Object.keys(geoCivile.civpos).length > 0 && (
     <section class="foglio-vero foglio-civile">
       <p class="titolo-foglio">Planimetria del cimitero civile di {fondo.comune}</p>
@@ -240,30 +264,6 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
       </p>
     </section>
   )}
-
-  <div class="legenda">
-    <p class="voce-legenda"><i class="campione noto"></i>Nome noto. La scheda si apre con un clic.</p>
-    <p class="voce-legenda"><i class="campione ignoto"></i>Nome ignoto già nel registro. La sepoltura è documentata, il nome no: non fu possibile identificarlo nemmeno allora.</p>
-    <p class="voce-legenda"><i class="campione barrato"></i>Riquadro barrato sulla pianta del 1941. Chi ha compilato la pianta ha tracciato un segno su questa tomba. Non sappiamo ancora cosa significhi.</p>
-    <p class="voce-legenda"><i class="campione integro"></i>Riquadro integro, nessun nome. La pianta mostra la tomba senza segni, ma negli elenchi non compare nessuno.</p>
-  </div>
-  <p class="nota-registro">
-    Questa pianta e questi elenchi vengono da una pratica amministrativa austriaca del 1941, protocollo
-    Zl. 13.800/1941, conservata a Vienna con segnatura ÖStA/KA/VL/KGräber/K42 e ritrovata dal dott.
-    Tommaso Mariotti. Ventitré anni dopo la fine della guerra, qualcuno tornò a contare questi morti uno
-    per uno: il prospetto dichiara centodue sepolture nel cimitero militare e quindici in quello civile.
-  </p>
-  <p class="nota-registro">
-    Quattordici tombe restano aperte. Sulla pianta i riquadri 12, 38, 40, 85, 86, 87, 88, 89, 91, 92,
-    93, 94, 95 e 96 non portano nessun segno, ma negli elenchi non compare nessun nome. Se sai qualcosa
-    di una di queste sepolture, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>.
-  </p>
-  <p class="nota-registro">
-    Quattro schede portano il tratto obliquo anche se hanno già un nome o sono già segnate ignote nel
-    registro (133, 137, 186 e 195): i due fatti convivono, non si escludono. Quale elenco sia barrato
-    non si legge più da un intervallo di numeri ma da una trascrizione voce per voce, ancora
-    provvisoria: la versione completa e definitiva arriverà separatamente.
-  </p>
 </div>
 
 <style>

@@ -1,19 +1,85 @@
 ---
-// Cimiteri di guerra — cronologia dei morti, mese per mese (brief "fondo
-// 1941", 26/8/2026 §7). memoria_persona.data_morte esiste da questa
-// settimana per 113 delle 118 schede: prima non si poteva costruire.
-// Istogramma SVG generato in build, come il resto della sezione — nessuna
-// libreria di grafici. Un clic su un mese filtra l'elenco sotto; l'elenco
-// si ordina per numero di tomba o per data, non solo per nome.
-import { conNome, dataLeggibile, meseIt, type Persona } from '../../lib/memoria';
+// Cimiteri di guerra — cronologia e albo dei nomi (brief "fondo 1941",
+// 26/8/2026 §7; rifatto dall'addendum "Albo dei nomi, incipit, card in
+// home", 26/8/2026 §2-3). L'elenco prima non ordinava mai: i due pulsanti
+// "Per tomba"/"Per data" cambiavano solo l'etichetta attiva, ma nessuno
+// script riordinava il DOM al caricamento — l'ordine visibile era quello
+// grezzo di ritorno dal database. Qui le due viste (per tomba, per data
+// raggruppata per mese) sono calcolate in build, non ricostruite a runtime:
+// non c'è nessun ordinamento client-side che possa non scattare.
+import {
+  leggiReparti, conNome, dataLeggibile, meseIt, type Persona, type Reparto,
+} from '../../lib/memoria';
 
 interface Props { persone: Persona[] }
 const { persone } = Astro.props as Props;
 
-const conScheda = persone.filter((p) => conNome(p) || p.ignoto);
-const conData = conScheda.filter((p) => p.data_morte);
-const senzaData = conScheda.filter((p) => !p.data_morte);
+const repartiTutti = await leggiReparti();
+const repartoPerSigla = new Map(repartiTutti.map((r) => [r.sigla, r] as [string, Reparto]));
 
+type Riga = {
+  numero: number | null; slug: string; fondoSlug: string;
+  nome: string | null; ignoto: boolean;
+  dataTesto: string | null; data: string | null; mese: string | null;
+  repartoLabel: string | null; repartoSlug: string | null;
+};
+
+function etichettaReparto(sigla: string): { label: string; slug: string | null } {
+  const r = repartoPerSigla.get(sigla);
+  if (!r) return { label: sigla, slug: null };
+  const label = (r.certezza === 'certa' || r.certezza === 'alta') ? (r.denominazione ?? r.sigla) : r.sigla;
+  return { label, slug: r.slug };
+}
+
+function costruisciRighe(settore: string): Riga[] {
+  return persone
+    .filter((p) => p.settore === settore && (conNome(p) || p.ignoto))
+    .map((p) => {
+      const rep = p.reparto ? etichettaReparto(p.reparto) : null;
+      return {
+        numero: p.numero, slug: p.slug, fondoSlug: p.fondo_slug_breve,
+        nome: conNome(p) ? p.nome_completo : null, ignoto: !conNome(p),
+        dataTesto: p.data_morte ? (dataLeggibile(p.data_morte_testo) ?? p.data_morte) : null,
+        data: p.data_morte, mese: p.data_morte ? (p.data_morte as string).slice(0, 7) : null,
+        repartoLabel: rep?.label ?? null, repartoSlug: rep?.slug ?? null,
+      };
+    });
+}
+
+function ordinaPerTomba(righe: Riga[]): Riga[] {
+  return [...righe].sort((a, b) => (a.numero ?? 0) - (b.numero ?? 0));
+}
+
+type Gruppo = { chiave: string; etichetta: string; righe: Riga[] };
+function raggruppaPerData(righe: Riga[]): Gruppo[] {
+  const conData = righe.filter((r) => r.data).sort((a, b) => (a.data as string).localeCompare(b.data as string));
+  const senzaData = righe.filter((r) => !r.data);
+  const gruppi: Gruppo[] = [];
+  for (const r of conData) {
+    const chiave = r.mese as string;
+    let g = gruppi.find((gg) => gg.chiave === chiave);
+    if (!g) {
+      const [y, m] = chiave.split('-').map(Number);
+      g = { chiave, etichetta: `${meseIt(m).toUpperCase()} ${y}`, righe: [] };
+      gruppi.push(g);
+    }
+    g.righe.push(r);
+  }
+  if (senzaData.length) gruppi.push({ chiave: '', etichetta: 'DATA NON RIPORTATA DAL REGISTRO', righe: senzaData });
+  return gruppi;
+}
+
+const settori = [
+  { chiave: 'militare', titolo: 'Cimitero militare' },
+  { chiave: 'civile', titolo: 'Cimitero civile' },
+].map((s) => {
+  const righe = costruisciRighe(s.chiave);
+  return { ...s, totale: righe.length, perTomba: ordinaPerTomba(righe), perData: raggruppaPerData(righe) };
+});
+
+// Istogramma: tutti i settori insieme, come nel brief precedente — le
+// morti civili sono troppo poche per meritare un grafico a sé.
+const conScheda = persone.filter((p) => conNome(p) || p.ignoto);
 type Mese = { chiave: string; etichetta: string; conteggio: number };
 const mesi: Mese[] = [];
 for (let y = 1914, m = 12; y < 1918 || (y === 1918 && m <= 11); m++) {
@@ -22,23 +88,16 @@ for (let y = 1914, m = 12; y < 1918 || (y === 1918 && m <= 11); m++) {
   mesi.push({ chiave, etichetta: `${meseIt(m).slice(0, 3)} ${y}`, conteggio: 0 });
 }
 const perMese = new Map(mesi.map((mm) => [mm.chiave, mm]));
-for (const p of conData) {
+for (const p of conScheda) {
+  if (!p.data_morte) continue;
   const chiave = (p.data_morte as string).slice(0, 7);
   const mm = perMese.get(chiave);
   if (mm) mm.conteggio++;
 }
 const massimo = Math.max(...mesi.map((mm) => mm.conteggio), 1);
 
-const ALTEZZA = 160, LARGHEZZA_BARRA = 14, GAP = 3;
+const ALTEZZA = 140, LARGHEZZA_BARRA = 14, GAP = 3;
 const larghezzaSvg = mesi.length * (LARGHEZZA_BARRA + GAP);
-
-const dati = conScheda.map((p) => ({
-  slug: p.slug, fondoSlug: p.fondo_slug_breve,
-  nome: conNome(p) ? p.nome_completo : `Tomba ${p.numero}, nome ignoto`,
-  numero: p.numero, settore: p.settore,
-  data: p.data_morte, dataTesto: p.data_morte ? dataLeggibile(p.data_morte_testo) ?? p.data_morte : null,
-  mese: p.data_morte ? (p.data_morte as string).slice(0, 7) : null,
-}));
 ---
 
 <section class="cronologia">
@@ -51,12 +110,12 @@ const dati = conScheda.map((p) => ({
   <div class="istogramma-scroll">
     <svg class="istogramma" viewBox={`0 0 ${larghezzaSvg} ${ALTEZZA + 24}`} role="img" aria-label="Numero di morti per mese, da dicembre 1914 a novembre 1918">
       {mesi.map((mm, i) => {
-        const h = Math.round((mm.conteggio / massimo) * (ALTEZZA - 20));
+        const h = mm.conteggio > 0 ? Math.max(Math.round((mm.conteggio / massimo) * ALTEZZA), 5) : 1;
         const x = i * (LARGHEZZA_BARRA + GAP);
         return (
           <g class="barra-mese" data-mese={mm.chiave} tabindex={mm.conteggio > 0 ? 0 : -1} role={mm.conteggio > 0 ? 'button' : undefined}
              aria-label={mm.conteggio > 0 ? `${mm.etichetta}: ${mm.conteggio} morti, filtra l'elenco` : `${mm.etichetta}: nessun morto`}>
-            <rect x={x} y={ALTEZZA - h} width={LARGHEZZA_BARRA} height={Math.max(h, mm.conteggio > 0 ? 2 : 1)} class="rettangolo" />
+            <rect x={x} y={ALTEZZA - h} width={LARGHEZZA_BARRA} height={h} class="rettangolo" />
             {(i % 3 === 0) && <text x={x + LARGHEZZA_BARRA / 2} y={ALTEZZA + 16} class="etichetta-mese" text-anchor="middle">{mm.etichetta}</text>}
           </g>
         );
@@ -65,28 +124,62 @@ const dati = conScheda.map((p) => ({
   </div>
   <p class="avviso-zoom">Tocca o clicca una barra per vedere solo i nomi di quel mese.</p>
 
-  <div class="elenco-cronologico">
-    <div class="intestazione-elenco">
-      <p class="filtro-attivo" id="cron-filtro" role="status"></p>
-      <div class="ordina">
-        <span class="etichetta">Ordina</span>
-        <button type="button" class="scelta attiva" data-ordina="tomba">per tomba</button>
-        <button type="button" class="scelta" data-ordina="data">per data</button>
+  <div class="albo" id="albo-nomi">
+    <div class="intestazione-albo">
+      <h2>L'albo dei nomi</h2>
+      <div class="ordina" role="group" aria-label="Ordina l'albo">
+        <button type="button" class="scelta attiva" data-ordina="tomba">Per tomba</button>
+        <button type="button" class="scelta" data-ordina="data">Per data</button>
       </div>
     </div>
-    <div class="risultati" id="cron-elenco">
-      {dati.map((p) => (
-        <a class="voce-cronologica" href={`/cimiteri-di-guerra/${p.fondoSlug}/${p.slug}`}
-           data-mese={p.mese ?? ''} data-numero={p.numero ?? 999999} data-data={p.data ?? ''}>
-          <span class="n">{p.settore === 'civile' ? 'civ · ' : 'mil · '}{p.numero ?? ''}</span>
-          <span class="nome">{p.nome}</span>
-          <span class="quando">{p.dataTesto ?? 'data non nota'}</span>
-        </a>
-      ))}
-    </div>
-    {senzaData.length > 0 && (
-      <p class="nota-senza-data">{senzaData.length} schede senza una data leggibile restano in fondo all'ordine per data, non nascoste.</p>
-    )}
+    <p class="filtro-attivo" id="cron-filtro" role="status"></p>
+
+    {settori.map((s) => (
+      <div class="sezione-settore">
+        <h3>{s.titolo.toUpperCase()} · {s.totale} nomi</h3>
+
+        <div class="vista vista-tomba" data-vista="tomba">
+          {s.perTomba.map((r) => (
+            <div class="riga-albo" data-mese={r.mese ?? ''}>
+              <a class="link-riga" href={`/cimiteri-di-guerra/${r.fondoSlug}/${r.slug}`} aria-label={r.ignoto ? `Tomba ${r.numero}, nome ignoto` : (r.nome ?? '')}></a>
+              <span class="col-numero">{r.numero}</span>
+              <span class:list={['col-nome', { ignoto: r.ignoto }]}>{r.ignoto ? 'Nome ignoto' : r.nome}</span>
+              <span class="col-dati">
+                {r.dataTesto && <span class="data">{r.dataTesto}</span>}
+                {r.repartoLabel && (
+                  r.repartoSlug
+                    ? <a class="link-reparto" href={`/cimiteri-di-guerra/reparto/${r.repartoSlug}`}>{r.repartoLabel}</a>
+                    : <span class="reparto-piano">{r.repartoLabel}</span>
+                )}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <div class="vista vista-data" data-vista="data" hidden>
+          {s.perData.map((g) => (
+            <div class="gruppo-mese" data-mese={g.chiave}>
+              <p class="testata-gruppo">{g.etichetta} · {g.righe.length}</p>
+              {g.righe.map((r) => (
+                <div class="riga-albo" data-mese={r.mese ?? ''}>
+                  <a class="link-riga" href={`/cimiteri-di-guerra/${r.fondoSlug}/${r.slug}`} aria-label={r.ignoto ? `Tomba ${r.numero}, nome ignoto` : (r.nome ?? '')}></a>
+                  <span class="col-numero">{r.numero}</span>
+                  <span class:list={['col-nome', { ignoto: r.ignoto }]}>{r.ignoto ? 'Nome ignoto' : r.nome}</span>
+                  <span class="col-dati">
+                    {r.dataTesto && <span class="data">{r.dataTesto}</span>}
+                    {r.repartoLabel && (
+                      r.repartoSlug
+                        ? <a class="link-reparto" href={`/cimiteri-di-guerra/reparto/${r.repartoSlug}`}>{r.repartoLabel}</a>
+                        : <span class="reparto-piano">{r.repartoLabel}</span>
+                    )}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
   </div>
 </section>
 
@@ -94,7 +187,7 @@ const dati = conScheda.map((p) => ({
   .cronologia { margin: 2rem 0; }
   .cronologia h2 { margin-bottom: .5rem; }
   .istogramma-scroll { overflow-x: auto; margin: 1.5rem 0 0; -webkit-overflow-scrolling: touch; }
-  .istogramma { display: block; height: 184px; width: auto; min-width: 100%; }
+  .istogramma { display: block; height: 164px; width: auto; min-width: 100%; }
   .rettangolo { fill: var(--oro); transition: fill 120ms; }
   .barra-mese[data-mese] { cursor: default; }
   .barra-mese[role="button"] { cursor: pointer; }
@@ -102,15 +195,71 @@ const dati = conScheda.map((p) => ({
   .barra-mese.selezionato .rettangolo { fill: var(--ruggine, #8A3B26); }
   .barra-mese:focus-visible { outline: 2px solid var(--oro-scuro); outline-offset: 2px; }
   .etichetta-mese { font-family: var(--mono); font-size: 6.5px; fill: rgba(34,48,31,.55); }
+  .avviso-zoom { font-family: var(--mono); font-size: .66rem; letter-spacing: .03em; color: rgba(34,48,31,.5); margin: .6rem 0 0; }
 
-  .elenco-cronologico { margin-top: 1.75rem; }
-  .intestazione-elenco { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; margin-bottom: .75rem; }
-  .filtro-attivo { font-family: var(--mono); font-size: .72rem; color: var(--oro-scuro); margin: 0; min-height: 1.4em; }
-  .ordina { display: flex; align-items: center; gap: .4rem; font-family: var(--mono); font-size: .68rem; letter-spacing: .04em; text-transform: uppercase; color: rgba(34,48,31,.55); }
-  .ordina .scelta { font: inherit; letter-spacing: inherit; text-transform: inherit; background: transparent; border: 1px solid rgba(34,48,31,.25); color: rgba(34,48,31,.6); padding: .3rem .6rem; cursor: pointer; }
+  .albo { margin-top: 2.5rem; }
+  .intestazione-albo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .75rem; }
+  .intestazione-albo h2 { margin: 0; }
+  .filtro-attivo { font-family: var(--mono); font-size: .72rem; color: var(--oro-scuro); margin: .5rem 0 0; min-height: 1.4em; }
+  .ordina { display: flex; gap: .5rem; }
+  .ordina .scelta {
+    font-family: var(--mono); font-size: .68rem; letter-spacing: .06em; text-transform: uppercase;
+    background: transparent; border: 1px solid rgba(34,48,31,.28); color: rgba(34,48,31,.65);
+    padding: .45rem .9rem; cursor: pointer; border-radius: 999px;
+  }
   .ordina .scelta.attiva { background: var(--verde); color: var(--crema); border-color: var(--verde); }
-  .voce-cronologica.nascosta { display: none; }
-  .nota-senza-data { font-family: var(--mono); font-size: .7rem; color: rgba(34,48,31,.5); margin-top: .75rem; }
+  .ordina .scelta:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+
+  .sezione-settore { margin-top: 2rem; }
+  .sezione-settore h3 {
+    font-family: var(--mono); font-size: .72rem; letter-spacing: .12em; color: var(--oro-scuro);
+    border-bottom: 1px solid rgba(34,48,31,.18); padding-bottom: .5rem; margin: 0 0 .25rem;
+  }
+  .vista[hidden] { display: none; }
+
+  .testata-gruppo {
+    font-family: var(--mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--oro-scuro); margin: 1.4rem 0 .3rem; padding-top: .3rem;
+  }
+  .gruppo-mese:first-child .testata-gruppo { margin-top: .8rem; }
+  .gruppo-mese[hidden] { display: none; }
+
+  .riga-albo {
+    position: relative; display: grid; grid-template-columns: 3.5rem 1fr auto; align-items: baseline;
+    gap: .75rem; padding: .6rem 0; border-bottom: 1px solid rgba(34,48,31,.12);
+  }
+  .riga-albo.nascosta { display: none; }
+  .riga-albo:hover, .riga-albo:focus-within { background: rgba(201,150,47,.08); }
+  .link-riga { position: absolute; inset: 0; z-index: 1; }
+  .link-riga:focus-visible { outline: 2px solid var(--oro); outline-offset: -2px; }
+  .col-numero {
+    position: relative; z-index: 2; pointer-events: none;
+    font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--oro-scuro);
+    width: 3.5rem; text-align: right; opacity: .75; transition: opacity 120ms;
+  }
+  .riga-albo:hover .col-numero, .riga-albo:focus-within .col-numero { opacity: 1; }
+  .col-nome {
+    position: relative; z-index: 2; pointer-events: none;
+    font-family: var(--serif); font-size: 1.05rem; color: var(--verde);
+  }
+  .col-nome.ignoto { font-style: italic; opacity: .55; }
+  .col-dati {
+    position: relative; z-index: 2; display: flex; flex-direction: column; align-items: flex-end;
+    gap: .1rem; font-family: var(--mono); font-size: .8rem; color: rgba(34,48,31,.65); text-align: right;
+  }
+  .col-dati .data { pointer-events: none; }
+  .link-reparto { position: relative; z-index: 3; pointer-events: auto; color: var(--oro-scuro); text-decoration: none; }
+  .link-reparto:hover, .link-reparto:focus-visible { text-decoration: underline; }
+  .reparto-piano { pointer-events: none; }
+
+  @media (max-width: 640px) {
+    .riga-albo {
+      grid-template-columns: 3rem 1fr; grid-template-areas: "numero nome" "vuoto dati";
+    }
+    .col-numero { grid-area: numero; }
+    .col-nome { grid-area: nome; font-size: .98rem; }
+    .col-dati { grid-area: dati; align-items: flex-end; font-size: .74rem; }
+  }
 
   @media (prefers-reduced-motion: reduce) { .rettangolo { transition: none; } }
 </style>
@@ -120,23 +269,33 @@ const dati = conScheda.map((p) => ({
     const radice = document.currentScript.closest('.cronologia');
     if (!radice) return;
     const barre = Array.from(radice.querySelectorAll('.barra-mese[role="button"]'));
-    const voci = Array.from(radice.querySelectorAll('.voce-cronologica'));
+    const righe = Array.from(radice.querySelectorAll('.riga-albo'));
+    const gruppi = Array.from(radice.querySelectorAll('.gruppo-mese'));
     const filtroEl = radice.querySelector('#cron-filtro');
-    const elenco = radice.querySelector('#cron-elenco');
+    const scelteOrdina = Array.from(radice.querySelectorAll('.ordina .scelta'));
     let meseAttivo = null;
 
     function applicaFiltro() {
       let visibili = 0;
-      voci.forEach((v) => {
-        const ok = !meseAttivo || v.getAttribute('data-mese') === meseAttivo;
-        v.classList.toggle('nascosta', !ok);
+      righe.forEach((r) => {
+        const ok = !meseAttivo || r.getAttribute('data-mese') === meseAttivo;
+        r.classList.toggle('nascosta', !ok);
         if (ok) visibili++;
+      });
+      gruppi.forEach((g) => {
+        const ok = !meseAttivo || g.getAttribute('data-mese') === meseAttivo;
+        g.hidden = !ok;
       });
       if (filtroEl) {
         filtroEl.textContent = meseAttivo
-          ? `${visibili} ${visibili === 1 ? 'nome' : 'nomi'} nel mese selezionato. `
+          ? `${visibili} ${visibili === 1 ? 'nome' : 'nomi'} nel mese selezionato.`
           : '';
       }
+    }
+
+    function mostraVista(modo) {
+      radice.querySelectorAll('.vista').forEach((v) => { v.hidden = v.getAttribute('data-vista') !== modo; });
+      scelteOrdina.forEach((b) => b.classList.toggle('attiva', b.getAttribute('data-ordina') === modo));
     }
 
     barre.forEach((b) => {
@@ -144,6 +303,7 @@ const dati = conScheda.map((p) => ({
         const m = b.getAttribute('data-mese');
         meseAttivo = meseAttivo === m ? null : m;
         barre.forEach((altra) => altra.classList.toggle('selezionato', altra.getAttribute('data-mese') === meseAttivo));
+        if (meseAttivo) mostraVista('data');
         applicaFiltro();
       });
       b.addEventListener('keydown', (e) => {
@@ -151,21 +311,8 @@ const dati = conScheda.map((p) => ({
       });
     });
 
-    radice.querySelectorAll('.ordina .scelta').forEach((bottone) => {
-      bottone.addEventListener('click', () => {
-        radice.querySelectorAll('.ordina .scelta').forEach((b) => b.classList.remove('attiva'));
-        bottone.classList.add('attiva');
-        const modo = bottone.getAttribute('data-ordina');
-        const ordinate = voci.slice().sort((a, b) => {
-          if (modo === 'data') {
-            const da = a.getAttribute('data-data') || '9999';
-            const db = b.getAttribute('data-data') || '9999';
-            return da.localeCompare(db);
-          }
-          return Number(a.getAttribute('data-numero')) - Number(b.getAttribute('data-numero'));
-        });
-        ordinate.forEach((v) => elenco.appendChild(v));
-      });
+    scelteOrdina.forEach((bottone) => {
+      bottone.addEventListener('click', () => mostraVista(bottone.getAttribute('data-ordina')));
     });
   })();
 </script>
