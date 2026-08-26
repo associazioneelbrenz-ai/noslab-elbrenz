@@ -1,13 +1,14 @@
 ---
-// Cimiteri di guerra — planimetria navigabile (brief 26/8/2026, rimettere il
-// disegno §4). Foglio di stile estratto verbatim da i-nomi-di-male.html, non
-// riscritto: solo le variabili gia' dichiarate in archivio-dei-nomi.css sono
-// state lasciate cadere (stessi valori, un solo posto). La griglia viene da
-// memoria_fondo.planimetria_geo, non incollata nel file. Il blu resta solo
-// dentro il foglio: e' la cianografia, non l'Associazione. Ogni riquadro con
-// un nome e' un link vero alla scheda della persona (non solo una scheda
-// interna come nello strumento originale): niente Leaflet, nessuna libreria
-// esterna.
+// Cimiteri di guerra — planimetria navigabile (brief "planimetria
+// cliccabile", 26/8/2026). Il cimitero militare non è più una griglia CSS
+// che imita la pianta: è la fotografia vera, raddrizzata in prospettiva
+// (memoria_fondo.planimetria_url), con i 215 riquadri disegnati
+// dall'impiegato austriaco sovrapposti in percentuale
+// (memoria_fondo.planimetria_geo.riquadri) — non incollati nel file. Il
+// collegamento riquadro/persona è numero di tomba + settore. Il cimitero
+// civile resta la resa CSS precedente: le sue 21 tombe non sono su una
+// griglia regolare e non sono ancora state mappate a mano sulla fotografia
+// (flag esplicito nel resoconto, non un dimenticanza).
 import Layout from '../../../layouts/Layout.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
 import { leggiFondo, leggiPersone, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
@@ -22,7 +23,11 @@ const fondo = await leggiFondo(Astro.params.fondo as string);
 if (!fondo) return Astro.redirect('/cimiteri-di-guerra');
 const persone = await leggiPersone(fondo.slug);
 
-const geo = fondo.planimetria_geo ?? { righe: [], civpos: {} };
+type Riquadro = { x: number; y: number; w: number; h: number; etichetta: string };
+const geo = (fondo.planimetria_geo ?? { righe: [], civpos: {} }) as {
+  righe?: number[][]; civpos?: Record<string, [number, number]>; nota?: string; riquadri?: Record<string, Riquadro>;
+};
+const riquadri = geo.riquadri ?? {};
 
 const perNumero = new Map<string, Persona>();
 for (const p of persone) {
@@ -35,6 +40,33 @@ function haNome(p: Persona | undefined): boolean {
   return !!p?.nome_completo && p.nome_completo !== 'sconosciuto';
 }
 
+// Ogni riquadro è chiavato sul numero principale; due riquadri portano due
+// numeri nella stessa cella (180-181, 182-183) — l'etichetta lo dice, la
+// scheda si sceglie sul primo dei due.
+type Cella = {
+  chiave: string; box: Riquadro; numeri: number[];
+  principale: Persona | undefined; secondaria: Persona | undefined;
+};
+const celleMilitari: Cella[] = Object.entries(riquadri).map(([chiave, box]) => {
+  const numeri = box.etichetta.includes('-') ? box.etichetta.split('-').map(Number) : [Number(chiave)];
+  return { chiave, box, numeri, principale: trova('militare', numeri[0]), secondaria: numeri[1] != null ? trova('militare', numeri[1]) : undefined };
+});
+
+function nomiCella(c: Cella): string[] {
+  return [c.principale, c.secondaria].filter(haNome).map((p) => p!.nome_completo as string);
+}
+function hrefCella(c: Cella): string {
+  const scelta = haNome(c.principale) ? c.principale : haNome(c.secondaria) ? c.secondaria : undefined;
+  return scelta?.slug ? `/cimiteri-di-guerra/${fondo!.slug_breve}/${scelta.slug}` : `/cimiteri-di-guerra/${fondo!.slug_breve}/senza-nome`;
+}
+function cercaCella(c: Cella): string {
+  return [c.principale, c.secondaria].filter(Boolean)
+    .flatMap((p) => [p!.nome_completo, p!.reparto, p!.luogo_nascita, p!.regione_nascita])
+    .filter(Boolean).join(' ').toLowerCase();
+}
+
+const geoCivile = { righe: geo.righe ?? [], civpos: geo.civpos ?? {} };
+
 const rgOttobre = new RegExp(`\\.10\\.${fondo.anno_a ?? ''}$`);
 const nOtt = persone.filter((p) => rgOttobre.test(p.data_morte_testo ?? '')).length;
 const nPow = persone.filter((p) => p.prigioniero_guerra).length;
@@ -45,6 +77,10 @@ for (const p of persone) {
 }
 const provenienzeTesto = [...provenienze.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
   .map(([r, n]) => `${r} ${n}`).join(' · ');
+
+const didascaliaPlanimetria = fondo.planimetria_url && riquadri && Object.keys(riquadri).length > 0
+  ? `Planimetria del ${(fondo.tipo === 'cimitero_militare' ? 'cimitero militare' : fondo.titolo.toLowerCase())} di ${fondo.comune}, scala 1:100, dal registro dell'${fondo.archivio}${fondo.segnatura ? `, segnatura ${fondo.segnatura}` : ''}.${fondo.ricercatore ? ` Ritrovata e fotografata dal dott. ${fondo.ricercatore}.` : ''} L'immagine è stata corretta in prospettiva per compensare la curvatura della pagina fotografata.`
+  : null;
 
 const briciole = [
   { nome: 'Archivio', url: '/archivio' },
@@ -60,8 +96,10 @@ export const prerender = true;
   <style is:global>
     /* Estratto verbatim da i-nomi-di-male.html (brief "rimettere il
        disegno", 26/8/2026). Le variabili duplicano quelle gia' presenti in
-       archivio-dei-nomi.css con nomi diversi: lasciate cosi' com'erano nel
-       foglio originale, per fedelta' al documento sorgente. */
+       cimiteri-di-guerra.css con nomi diversi: lasciate cosi' com'erano nel
+       foglio originale, per fedelta' al documento sorgente. Non importato
+       qui: questa pagina non usa nessuna delle sue classi, solo .involucro
+       (avvolto comunque in .sezione-cimiteri per coerenza con le altre). */
     :root{
       --verde:#22301F; --verde-fondo:#18220F;
       --crema:#F5EFE0; --crema-tenue:rgba(245,239,224,.62);
@@ -115,10 +153,33 @@ export const prerender = true;
     .tomba:hover,.tomba:focus{transform:scale(1.35);z-index:5;outline:none;
       box-shadow:0 0 0 2px var(--crema)}
     .tomba.spenta{opacity:.18}
-    .tomba.scelta{transform:scale(1.35);box-shadow:0 0 0 2px var(--crema);z-index:4}
 
     .civile{min-width:340px;height:340px;position:relative;margin:0 auto}
     .civile .tomba{position:absolute}
+
+    /* ---------- la carta vera (militare) ---------- */
+    .foglio-vero{background:#EFE9DA;border:1px solid rgba(34,48,31,.25);padding:1.25rem 1.25rem 1.5rem;margin:1.5rem 0}
+    .finestra-pianta{position:relative;overflow:hidden;touch-action:none;background:#000;border:1px solid rgba(34,48,31,.2);cursor:grab;user-select:none}
+    .finestra-pianta.trascina{cursor:grabbing}
+    .pianta-vera{position:relative;width:100%;transform-origin:0 0;will-change:transform}
+    .pianta-immagine{display:block;width:100%;height:auto;pointer-events:none;-webkit-user-drag:none}
+    .riquadro{position:absolute;margin:0;padding:0;background:transparent;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent;display:block}
+    /* area di tocco piu' generosa del riquadro disegnato, senza spostare il segno visivo */
+    .riquadro::before{content:"";position:absolute;inset:-8px;z-index:1}
+    .riquadro.con-nome::after{content:"";position:absolute;top:6%;right:6%;width:16px;height:16px;max-width:26%;max-height:26%;
+      background:var(--oro);border-radius:50%;box-shadow:0 0 0 1.5px rgba(255,255,255,.75);z-index:2}
+    .riquadro:hover,.riquadro:focus-visible{outline:2px solid var(--oro-chiaro);outline-offset:1px;background:rgba(201,150,47,.22);z-index:6}
+    .riquadro:focus-visible{outline-style:dashed}
+    .riquadro .etichetta-riquadro{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:5px;
+      background:var(--verde-fondo);color:var(--crema);font-family:var(--mono);font-size:.65rem;letter-spacing:.02em;
+      padding:.25rem .5rem;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;z-index:20;border:1px solid var(--oro)}
+    .riquadro:hover .etichetta-riquadro,.riquadro:focus-visible .etichetta-riquadro{opacity:1}
+    .riquadro.spenta{opacity:.12}
+    .riquadro.scelta::after{box-shadow:0 0 0 2px var(--verde-fondo),0 0 0 4px var(--oro-chiaro)}
+    .riquadro.scelta{outline:2px solid var(--oro-chiaro);outline-offset:1px;z-index:8}
+    .avviso-zoom{font-family:var(--mono);font-size:.66rem;letter-spacing:.03em;color:rgba(34,48,31,.5);
+      margin:.7rem 0 0;text-align:center}
+    .didascalia-vera{font-family:var(--sans);font-size:.8rem;color:rgba(34,48,31,.65);margin:.9rem 0 0;line-height:1.55;max-width:72ch}
 
     .legenda{display:flex;flex-wrap:wrap;gap:1.25rem;font-family:var(--mono);font-size:.68rem;
              color:rgba(34,48,31,.62);margin-top:1.25rem;letter-spacing:.03em}
@@ -141,6 +202,7 @@ export const prerender = true;
     @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
   </style>
 
+  <div class="sezione-cimiteri">
   <div class="involucro">
     <header>
       <nav class="briciole" aria-label="Percorso">
@@ -166,48 +228,87 @@ export const prerender = true;
       <p class="esiti" id="mappa-esiti" role="status"></p>
     </div>
 
-    <section class="foglio">
-      <p class="titolo-foglio">Cimitero Militare di {fondo.comune}</p>
-      <div class="pianta">
-        {geo.righe.map((fila) => (
-          <div class="fila">
-            {fila.map((n, i) => {
-              const p = trova('militare', n);
-              const nome = haNome(p);
-              const cerca = p ? [p.nome_completo, p.reparto, p.luogo_nascita, p.regione_nascita].filter(Boolean).join(' ').toLowerCase() : '';
+    {fondo.planimetria_url && celleMilitari.length > 0 ? (
+      <section class="foglio-vero">
+        <p class="titolo-foglio">Cimitero Militare di {fondo.comune}</p>
+        <div class="finestra-pianta" id="finestra-pianta">
+          <div class="pianta-vera" id="pianta-vera">
+            <img class="pianta-immagine" src={fondo.planimetria_url} alt={`Planimetria raddrizzata del cimitero militare di ${fondo.comune}, con i riquadri delle tombe disegnati a mano`} draggable="false" />
+            {celleMilitari.map((c) => {
+              const nomi = nomiCella(c);
+              const conNome = nomi.length > 0;
+              const label = conNome
+                ? `Tomba ${c.box.etichetta}, ${nomi.join(' e ')}`
+                : `Tomba ${c.box.etichetta}, senza nome`;
+              const stile = `left:${c.box.x}%;top:${c.box.y}%;width:${c.box.w}%;height:${c.box.h}%`;
               return (
-                <>
-                  {i === 12 && <span class="corridoio" />}
-                  {nome && p?.slug ? (
-                    <a id={`t-militare-${n}`} href={`/cimiteri-di-guerra/${fondo.slug_breve}/${p.slug}`} class={`tomba nota${p.prigioniero_guerra ? ' pow' : ''}`}
-                      data-cerca={cerca} title={p.nome_completo ?? ''} aria-label={`Tomba ${n}: ${p.nome_completo}`}>{n}</a>
-                  ) : (
-                    <span id={`t-militare-${n}`} class="tomba" aria-label={`Tomba ${n}: senza nome`}>{n}</span>
-                  )}
-                </>
+                <a
+                  class={`riquadro cercabile${conNome ? ' con-nome' : ''}`}
+                  style={stile}
+                  href={hrefCella(c)}
+                  data-numeri={c.numeri.join(' ')}
+                  data-cerca={cercaCella(c)}
+                  aria-label={label}
+                >
+                  <span class="etichetta-riquadro">{conNome ? nomi.join(' · ') : `Tomba ${c.box.etichetta} · senza nome`}</span>
+                </a>
               );
             })}
           </div>
-        ))}
-      </div>
-      <p class="scala">Scala 1:100</p>
-    </section>
+        </div>
+        <p class="scala">Scala 1:100</p>
+        <p class="avviso-zoom">Pizzica per ingrandire, trascina per spostarti sulla pianta.</p>
+        {didascaliaPlanimetria && <p class="didascalia-vera">{didascaliaPlanimetria}</p>}
+      </section>
+    ) : (
+      <section class="foglio">
+        <p class="titolo-foglio">Cimitero Militare di {fondo.comune}</p>
+        <div class="pianta">
+          {(geoCivile.righe ?? []).map((fila) => (
+            <div class="fila">
+              {fila.map((n, i) => {
+                const p = trova('militare', n);
+                const nome = haNome(p);
+                const cerca = p ? [p.nome_completo, p.reparto, p.luogo_nascita, p.regione_nascita].filter(Boolean).join(' ').toLowerCase() : '';
+                return (
+                  <>
+                    {i === 12 && <span class="corridoio" />}
+                    {nome && p?.slug ? (
+                      <a id={`t-militare-${n}`} href={`/cimiteri-di-guerra/${fondo.slug_breve}/${p.slug}`} class={`tomba cercabile nota${p.prigioniero_guerra ? ' pow' : ''}`}
+                        data-cerca={cerca} title={p.nome_completo ?? ''} aria-label={`Tomba ${n}: ${p.nome_completo}`}>{n}</a>
+                    ) : (
+                      <span id={`t-militare-${n}`} class="tomba cercabile" aria-label={`Tomba ${n}: senza nome`}>{n}</span>
+                    )}
+                  </>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        <p class="scala">Scala 1:100</p>
+      </section>
+    )}
 
     <section class="foglio">
       <p class="titolo-foglio">Cimitero Civile di {fondo.comune} &middot; Tombe militari</p>
       <div class="civile">
-        {Object.entries(geo.civpos).map(([n, xy]) => {
+        {Object.entries(geoCivile.civpos).map(([n, xy]) => {
           const p = trova('civile', Number(n));
           const nome = haNome(p);
           const cerca = p ? [p.nome_completo, p.reparto, p.luogo_nascita, p.regione_nascita].filter(Boolean).join(' ').toLowerCase() : '';
           return nome && p?.slug ? (
-            <a id={`t-civile-${n}`} href={`/cimiteri-di-guerra/${fondo.slug_breve}/${p.slug}`} class={`tomba nota${p.prigioniero_guerra ? ' pow' : ''}`}
+            <a id={`t-civile-${n}`} href={`/cimiteri-di-guerra/${fondo.slug_breve}/${p.slug}`} class={`tomba cercabile nota${p.prigioniero_guerra ? ' pow' : ''}`}
               style={`left:${xy[0]}%;top:${xy[1]}%`} data-cerca={cerca} title={p.nome_completo ?? ''} aria-label={`Tomba ${n}: ${p.nome_completo}`}>{n}</a>
           ) : (
-            <span id={`t-civile-${n}`} class="tomba" style={`left:${xy[0]}%;top:${xy[1]}%`} aria-label={`Tomba ${n}: senza nome`}>{n}</span>
+            <span id={`t-civile-${n}`} class="tomba cercabile" style={`left:${xy[0]}%;top:${xy[1]}%`} aria-label={`Tomba ${n}: senza nome`}>{n}</span>
           );
         })}
       </div>
+      <p class="didascalia-vera">
+        La disposizione di queste tombe non è ancora stata ricostruita su una fotografia raddrizzata: le ventuno tombe
+        del cimitero civile non seguono una griglia regolare, e la loro posizione qui resta la ricostruzione
+        approssimata già pubblicata, non la pianta vera.
+      </p>
     </section>
 
     <div class="legenda">
@@ -234,13 +335,14 @@ export const prerender = true;
       )}
     </div>
   </div>
+  </div>
 
   <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
 
   <script is:inline>
     const input = document.getElementById('mappa-cerca');
     const esiti = document.getElementById('mappa-esiti');
-    const tombe = Array.from(document.querySelectorAll('.tomba'));
+    const tombe = Array.from(document.querySelectorAll('.cercabile'));
     input?.addEventListener('input', () => {
       const t = input.value.trim().toLowerCase();
       if (!t) { tombe.forEach((b) => b.classList.remove('spenta')); if (esiti) esiti.textContent = ''; return; }
@@ -254,12 +356,129 @@ export const prerender = true;
       if (esiti) esiti.textContent = trovati === 0 ? 'Nessun nome corrisponde.' : trovati + (trovati === 1 ? ' tomba trovata.' : ' tombe trovate.');
     });
 
+    // collegamento inverso dalla scheda di una persona: #t-militare-N o
+    // #t-civile-N. Sulla carta vera un riquadro puo' portare due numeri
+    // (data-numeri="180 181"), quindi si cerca anche li'.
     if (location.hash.startsWith('#t-')) {
-      const scelta = document.querySelector(location.hash);
+      const resto = location.hash.slice(3);
+      const sep = resto.indexOf('-');
+      const settore = resto.slice(0, sep);
+      const numero = resto.slice(sep + 1);
+      let scelta = document.getElementById(location.hash.slice(1));
+      if (!scelta && settore === 'militare') {
+        scelta = document.querySelector(`[data-numeri~="${numero}"]`);
+      }
       if (scelta) {
         scelta.classList.add('scelta');
-        scelta.scrollIntoView({ block: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        scelta.scrollIntoView({ block: 'center', inline: 'center', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
       }
     }
+
+    // Pizzico per ingrandire e trascinamento, solo sulla fotografia vera.
+    // Niente librerie esterne: transform sul contenitore muove insieme
+    // l'immagine e i riquadri, che restano allineati a qualunque zoom.
+    (function () {
+      const finestra = document.getElementById('finestra-pianta');
+      const pianta = document.getElementById('pianta-vera');
+      if (!finestra || !pianta) return;
+
+      let scala = 1, tx = 0, ty = 0;
+      const SCALA_MIN = 1, SCALA_MAX = 4;
+      const punti = new Map();
+      let pinchIniziale = null;
+      let mosso = false;
+      let ultimoTap = 0;
+
+      function applica() {
+        pianta.style.transform = `translate(${tx}px,${ty}px) scale(${scala})`;
+      }
+      function limita() {
+        if (scala < SCALA_MIN) scala = SCALA_MIN;
+        if (scala > SCALA_MAX) scala = SCALA_MAX;
+        const rect = finestra.getBoundingClientRect();
+        const margineX = rect.width * (scala - 1);
+        const margineY = rect.height * (scala - 1);
+        tx = Math.min(0, Math.max(-margineX, tx));
+        ty = Math.min(0, Math.max(-margineY, ty));
+      }
+      function distanza(a, b) {
+        return Math.hypot(a.x - b.x, a.y - b.y);
+      }
+      function centro(a, b) {
+        return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      }
+
+      finestra.addEventListener('pointerdown', (e) => {
+        finestra.setPointerCapture(e.pointerId);
+        punti.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        mosso = false;
+        if (punti.size === 2) {
+          const [a, b] = [...punti.values()];
+          pinchIniziale = { distanza: distanza(a, b), scala, centro: centro(a, b), tx, ty };
+        }
+        finestra.classList.add('trascina');
+      });
+
+      finestra.addEventListener('pointermove', (e) => {
+        if (!punti.has(e.pointerId)) return;
+        const precedente = punti.get(e.pointerId);
+        const attuale = { x: e.clientX, y: e.clientY };
+        punti.set(e.pointerId, attuale);
+
+        if (punti.size === 2 && pinchIniziale) {
+          const [a, b] = [...punti.values()];
+          const rapporto = distanza(a, b) / (pinchIniziale.distanza || 1);
+          scala = pinchIniziale.scala * rapporto;
+          const c = centro(a, b);
+          tx = pinchIniziale.tx + (c.x - pinchIniziale.centro.x);
+          ty = pinchIniziale.ty + (c.y - pinchIniziale.centro.y);
+          mosso = true;
+        } else if (punti.size === 1) {
+          const dx = attuale.x - precedente.x, dy = attuale.y - precedente.y;
+          if (Math.abs(dx) > 3 || Math.abs(dy) > 3) mosso = true;
+          if (scala > 1) { tx += dx; ty += dy; }
+        }
+        limita();
+        applica();
+      });
+
+      function fine(e) {
+        punti.delete(e.pointerId);
+        if (punti.size < 2) pinchIniziale = null;
+        if (punti.size === 0) finestra.classList.remove('trascina');
+      }
+      finestra.addEventListener('pointerup', fine);
+      finestra.addEventListener('pointercancel', fine);
+
+      // doppio tocco/clic: torna alla scala originale
+      finestra.addEventListener('pointerup', (e) => {
+        const ora = Date.now();
+        if (ora - ultimoTap < 300 && punti.size === 0) {
+          scala = 1; tx = 0; ty = 0; applica();
+        }
+        ultimoTap = ora;
+      });
+
+      // rotellina del mouse: zoom centrato sul cursore
+      finestra.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const rect = finestra.getBoundingClientRect();
+        const px = e.clientX - rect.left, py = e.clientY - rect.top;
+        const precedente = scala;
+        scala *= e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        if (scala < SCALA_MIN) scala = SCALA_MIN;
+        if (scala > SCALA_MAX) scala = SCALA_MAX;
+        const rapporto = scala / precedente;
+        tx = px - (px - tx) * rapporto;
+        ty = py - (py - ty) * rapporto;
+        limita();
+        applica();
+      }, { passive: false });
+
+      // un riquadro va aperto solo se non c'e' stato un trascinamento
+      pianta.querySelectorAll('a.riquadro').forEach((a) => {
+        a.addEventListener('click', (e) => { if (mosso) e.preventDefault(); });
+      });
+    })();
   </script>
 </Layout>
