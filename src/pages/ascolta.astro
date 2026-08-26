@@ -1,0 +1,380 @@
+---
+/**
+ * /ascolta — la coda di ascolto (brief "La coda di ascolto", 26/8/2026).
+ * Una carta alla volta, a tutto schermo: 64 registrazioni di un secondo o
+ * due l'una, ferme perché nessuno le trovava. Isola client-side, stesso
+ * pattern OTP + gating per ruolo di /redazione e /glossario-console
+ * (nessuna logica sensibile qui: la sicurezza sta nelle RLS e nelle due
+ * funzioni conferma_ascolto/scarta_ascolto, che controllano il ruolo da
+ * sole). v_coda_ascolto arriva già ordinata e già contata — totale,
+ * posizione e secondi_totali sono nella vista, mai ricalcolati qui.
+ */
+import Layout from '../layouts/Layout.astro';
+const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]';
+---
+
+<Layout title="Ascolta · El Brenz" description="Coda di ascolto del glossario, area riservata." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen">
+    <div class="max-w-2xl mx-auto px-6 py-10 md:py-14" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8" style="font-family: 'Playfair Display', serif; font-weight: 500;">La coda di ascolto</h1>
+
+      <p id="asc-loading" class="text-[#1E2E26]/60">Carico…</p>
+
+      {/* LOGIN — stesso OTP di /redazione */}
+      <section id="asc-login" class="hidden bg-white border border-[#E5DFCF] rounded p-6 md:p-8 max-w-md">
+        <div id="asc-login-1">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Accedi con la tua email: ti invieremo un codice di verifica.</p>
+          <label class="block text-sm text-[#1E2E26]/75 mb-1" for="asc-email">Email</label>
+          <input class={inputCls} type="email" id="asc-email" autocomplete="email" placeholder="nome@esempio.it" />
+          <button type="button" id="asc-send" class="mt-4 w-full bg-[#1E2E26] text-[#F5EEDD] py-3 rounded font-medium hover:bg-[#2a3f34] transition-colors">Invia codice</button>
+        </div>
+        <div id="asc-login-2" class="hidden">
+          <p class="text-sm text-[#1E2E26]/70 m-0 mb-4">Inserisci il codice a 6 cifre inviato a <strong id="asc-email-echo"></strong>.</p>
+          <input class={`${inputCls} tracking-[0.4em] text-center text-xl`} type="text" id="asc-code" inputmode="numeric" maxlength="6" placeholder="000000" />
+          <button type="button" id="asc-verify" class="mt-4 w-full bg-[#C8923E] text-[#1E2E26] py-3 rounded font-semibold hover:bg-[#D9A94E] transition-colors">Verifica e accedi</button>
+          <button type="button" id="asc-back" class="mt-2 w-full text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Cambia email</button>
+        </div>
+        <div id="asc-login-err" class="hidden mt-3 text-sm rounded px-3 py-2" style="background:#fbecec;color:#1E2E26;"></div>
+      </section>
+
+      {/* NO ACCESS */}
+      <section id="asc-noaccess" class="hidden bg-white border border-[#E5DFCF] rounded p-6 max-w-md">
+        <p class="m-0 text-[#1E2E26]/80">Il tuo account non ha ancora accesso alla coda di ascolto. Se dovresti averlo, chiedi al segretario di abilitarti.</p>
+        <button type="button" id="asc-logout-2" class="mt-4 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Esci</button>
+      </section>
+
+      {/* CODA VUOTA */}
+      <section id="asc-vuota" class="hidden bg-white border border-[#E5DFCF] rounded p-8 text-center max-w-md">
+        <p class="text-2xl mb-2">✓</p>
+        <p class="m-0 text-[#1E2E26] font-medium">Niente in coda.</p>
+        <p class="m-0 mt-2 text-sm text-[#1E2E26]/65">Tutte le registrazioni arrivate finora sono state ascoltate.</p>
+      </section>
+
+      {/* CHIUSURA (fine coda in questa seduta) */}
+      <section id="asc-fine" class="hidden bg-white border border-[#E5DFCF] rounded p-8 text-center max-w-md">
+        <p class="text-2xl mb-2">✓</p>
+        <p class="m-0 text-[#1E2E26] font-medium"><span id="asc-fine-n">0</span> voci pubblicate</p>
+        <p class="m-0 mt-2 text-sm text-[#1E2E26]/65">in <span id="asc-fine-durata">—</span>.</p>
+      </section>
+
+      {/* APP — una carta alla volta */}
+      <section id="asc-app" class="hidden">
+        <div class="flex items-center justify-between text-sm text-[#1E2E26]/70 mb-2">
+          <span id="asc-posizione">1 di 1</span>
+          <span id="asc-restano">—</span>
+        </div>
+        <div class="h-1.5 bg-[#E5DFCF] rounded-full overflow-hidden mb-6">
+          <div id="asc-barra" class="h-full bg-[#C8923E]" style="width:0%"></div>
+        </div>
+
+        <div id="asc-banner-passata" class="hidden mb-4 text-sm bg-[#fff6e5] border border-[#E5DFCF] rounded px-4 py-3 flex items-center justify-between gap-3">
+          <span>Stai rivedendo una voce già lavorata: qui non si conferma né si scarta.</span>
+          <button type="button" id="asc-torna" class="flex-shrink-0 text-[#8a6215] underline bg-transparent border-0 cursor-pointer font-medium">Torna alla coda →</button>
+        </div>
+
+        <div class="bg-white border border-[#E5DFCF] rounded p-8 md:p-10 text-center">
+          <p id="asc-lemma" class="m-0 text-4xl md:text-5xl text-[#1E2E26]" style="font-family: 'Playfair Display', serif; font-weight: 500;"></p>
+          <p id="asc-meta" class="m-0 mt-3 text-sm text-[#1E2E26]/60"></p>
+          <p id="asc-definizione" class="hidden m-0 mt-4 text-[#1E2E26]/75 italic" style="font-family: 'Source Serif 4', Georgia, serif;"></p>
+          <p id="asc-parlante" class="hidden m-0 mt-3 text-xs text-[#1E2E26]/50"></p>
+
+          <div class="mt-8 flex items-center justify-center gap-2 text-sm text-[#1E2E26]/70">
+            <span id="asc-stato-audio" class="inline-block w-2.5 h-2.5 rounded-full bg-[#C8923E]" aria-hidden="true"></span>
+            <span id="asc-stato-testo">ascolto in corso</span>
+          </div>
+
+          <audio id="asc-audio" class="hidden" preload="auto"></audio>
+
+          <button type="button" id="asc-riascolta" class="mt-6 border border-[#E5DFCF] text-[#1E2E26]/80 px-5 py-2.5 rounded-full text-sm hover:border-[#C8923E] transition-colors">↻ Riascolta</button>
+        </div>
+
+        {/* MOTIVO SCARTO */}
+        <div id="asc-motivo-wrap" class="hidden mt-4 bg-white border border-[#E5DFCF] rounded p-5">
+          <p class="m-0 mb-3 text-sm text-[#1E2E26]/75">Perché scarti questa voce?</p>
+          <div class="flex flex-wrap gap-2 mb-3">
+            <button type="button" class="asc-motivo-rapido border border-[#E5DFCF] rounded-full px-3 py-1.5 text-sm hover:border-[#a33]" data-motivo="Audio incomprensibile">Audio incomprensibile</button>
+            <button type="button" class="asc-motivo-rapido border border-[#E5DFCF] rounded-full px-3 py-1.5 text-sm hover:border-[#a33]" data-motivo="Non corrisponde al lemma">Non corrisponde al lemma</button>
+            <button type="button" class="asc-motivo-rapido border border-[#E5DFCF] rounded-full px-3 py-1.5 text-sm hover:border-[#a33]" data-motivo="Qualità insufficiente">Qualità insufficiente</button>
+          </div>
+          <div class="flex gap-2">
+            <input id="asc-motivo-libero" type="text" class={inputCls} placeholder="oppure scrivi un motivo…" />
+            <button type="button" id="asc-motivo-invia" class="flex-shrink-0 bg-[#a33] text-white px-4 py-2.5 rounded text-sm font-medium">Scarta</button>
+          </div>
+          <button type="button" id="asc-motivo-annulla" class="mt-3 text-sm text-[#8a6215] underline bg-transparent border-0 cursor-pointer">Annulla</button>
+        </div>
+
+        <p class="mt-4 text-center text-xs text-[#1E2E26]/40">spazio riascolta · invio conferma · ↓ scarta · ← voce precedente</p>
+
+        {/* Barra azioni: fissa in fondo su mobile, nel terzo raggiungibile dal pollice */}
+        <div class="sticky bottom-0 left-0 right-0 mt-6 -mx-6 px-6 py-4 bg-[#F8F1E4]/95 backdrop-blur border-t border-[#E5DFCF] flex gap-4" style="padding-bottom: max(1rem, env(safe-area-inset-bottom));">
+          <button type="button" id="asc-conferma" disabled class="flex-1 min-h-[56px] bg-[#2d8659] text-white rounded-lg font-semibold text-base disabled:opacity-40 disabled:cursor-not-allowed transition-opacity">Conferma la voce</button>
+          <button type="button" id="asc-scarta" class="min-h-[56px] px-6 border-2 border-[#a33] text-[#a33] rounded-lg font-semibold text-base">Scarta</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  @media (prefers-reduced-motion: reduce) {
+    #asc-barra, #asc-conferma, #asc-riascolta { transition: none !important; }
+  }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const $ = (id: string) => document.getElementById(id);
+  const show = (id: string) => $(id)?.classList.remove('hidden');
+  const hide = (id: string) => $(id)?.classList.add('hidden');
+
+  type Riga = {
+    audio_id: string; bucket: string; file_path: string; durata_secondi: number | null;
+    parlata: string | null; comune_parlante: string | null; lemma: string; categoria_gramm: string | null;
+    definizione: string | null; nome_parlante: string | null; anonimo: boolean;
+    posizione: number; totale: number; secondi_totali: number;
+  };
+
+  let coda: Riga[] = [];
+  let attuale = 0;      // indice del prossimo da lavorare (avanza solo con conferma/scarta)
+  let vista = 0;        // indice mostrato a schermo (può tornare indietro in sola lettura)
+  let pubblicate = 0;
+  let inizioSeduta = 0;
+  const urlFirmati = new Map<string, { url: string; scad: number }>();
+  const audioPrecaricati = new Map<string, string>(); // audio_id -> blob URL (stringa vuota = in corso)
+  const SCADENZA_FIRMA = 600; // 10 minuti: piu' del tempo che serve a smaltire tre carte precaricate
+
+  function fmtDurata(sec: number): string {
+    const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+    return m > 0 ? `${m} min ${s} sec` : `${s} sec`;
+  }
+
+  async function firma(riga: Riga): Promise<string | null> {
+    const cache = urlFirmati.get(riga.audio_id);
+    if (cache && cache.scad > Date.now()) return cache.url;
+    const { data, error } = await supabase.storage.from(riga.bucket).createSignedUrl(riga.file_path, SCADENZA_FIRMA);
+    if (error || !data) { console.error('[ascolta] firma fallita', riga.audio_id, error); return null; }
+    urlFirmati.set(riga.audio_id, { url: data.signedUrl, scad: Date.now() + (SCADENZA_FIRMA - 30) * 1000 });
+    return data.signedUrl;
+  }
+
+  // Precarica le tre carte successive: firma l'URL, scarica il file (sono
+  // uno o due secondi l'uno) e lo tiene pronto come blob URL — non un
+  // <audio preload> che spera nella cache del browser: un file gia' in
+  // memoria, cosi' fra una parola e l'altra non c'e' davvero nessuna attesa.
+  async function precarica(daIndice: number) {
+    for (let i = daIndice; i < Math.min(daIndice + 3, coda.length); i++) {
+      const riga = coda[i];
+      if (audioPrecaricati.has(riga.audio_id)) continue;
+      audioPrecaricati.set(riga.audio_id, ''); // segna "in corso" per non richiederlo due volte
+      const url = await firma(riga);
+      if (!url) { audioPrecaricati.delete(riga.audio_id); continue; }
+      try {
+        const risposta = await fetch(url);
+        const blob = await risposta.blob();
+        audioPrecaricati.set(riga.audio_id, URL.createObjectURL(blob));
+      } catch (e) {
+        console.error('[ascolta] precaricamento fallito', riga.audio_id, e);
+        audioPrecaricati.delete(riga.audio_id);
+      }
+    }
+  }
+
+  function aggiornaProgresso() {
+    const riga = coda[attuale];
+    ($('asc-posizione') as HTMLElement).textContent = `${riga.posizione} di ${riga.totale}`;
+    const restanti = coda.slice(attuale).reduce((tot, r) => tot + (r.durata_secondi ?? 0), 0);
+    ($('asc-restano') as HTMLElement).textContent = `restano ${fmtDurata(restanti)}`;
+    ($('asc-barra') as HTMLElement).style.width = `${Math.round((riga.posizione / riga.totale) * 100)}%`;
+  }
+
+  function renderCarta(indice: number, soloLettura: boolean) {
+    const riga = coda[indice];
+    const audio = $('asc-audio') as HTMLAudioElement;
+
+    ($('asc-lemma') as HTMLElement).textContent = riga.lemma;
+    const meta = [riga.parlata, riga.comune_parlante, riga.categoria_gramm].filter(Boolean).join(' · ');
+    ($('asc-meta') as HTMLElement).textContent = meta;
+    if (riga.definizione) { ($('asc-definizione') as HTMLElement).textContent = `«${riga.definizione}»`; show('asc-definizione'); } else hide('asc-definizione');
+    if (!riga.anonimo && riga.nome_parlante) { ($('asc-parlante') as HTMLElement).textContent = riga.nome_parlante; show('asc-parlante'); } else hide('asc-parlante');
+
+    const conferma = $('asc-conferma') as HTMLButtonElement;
+    const scarta = $('asc-scarta') as HTMLButtonElement;
+    hide('asc-motivo-wrap');
+
+    if (soloLettura) {
+      show('asc-banner-passata');
+      conferma.classList.add('hidden'); scarta.classList.add('hidden');
+    } else {
+      hide('asc-banner-passata');
+      conferma.classList.remove('hidden'); scarta.classList.remove('hidden');
+      conferma.disabled = true;
+      ($('asc-stato-testo') as HTMLElement).textContent = 'ascolto in corso';
+    }
+
+    const blobPronto = audioPrecaricati.get(riga.audio_id);
+    if (blobPronto) {
+      audio.src = blobPronto;
+      audio.currentTime = 0;
+      audio.play().catch(() => { /* autoplay bloccato dal browser: resta il pulsante Riascolta */ });
+    } else {
+      // Non ancora precaricato (prima carta della seduta, o precaricamento
+      // non ancora finito): si firma e si suona appena pronto, verificando
+      // di essere ancora sulla stessa carta (l'utente potrebbe aver gia'
+      // confermato/scartato nel frattempo).
+      firma(riga).then((url) => {
+        if (url && vista === indice) { audio.src = url; audio.play().catch(() => {}); }
+      });
+    }
+
+    aggiornaProgresso();
+    if (!soloLettura) precarica(indice + 1);
+  }
+
+  function vai(indice: number, soloLettura: boolean) {
+    vista = indice;
+    renderCarta(indice, soloLettura);
+  }
+
+  async function avanti() {
+    pubblicate++;
+    attuale++;
+    if (attuale >= coda.length) { mostraFine(); return; }
+    setTimeout(() => vai(attuale, false), 250);
+  }
+
+  function mostraFine() {
+    hide('asc-app');
+    const durata = Math.round((Date.now() - inizioSeduta) / 1000);
+    ($('asc-fine-n') as HTMLElement).textContent = String(pubblicate);
+    ($('asc-fine-durata') as HTMLElement).textContent = fmtDurata(durata);
+    show('asc-fine');
+  }
+
+  // ---- azioni ----
+  $('asc-riascolta')?.addEventListener('click', () => {
+    const audio = $('asc-audio') as HTMLAudioElement;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+  });
+
+  ($('asc-audio') as HTMLAudioElement)?.addEventListener('ended', () => {
+    if (vista !== attuale) return; // in sola lettura non si riabilita niente
+    ($('asc-conferma') as HTMLButtonElement).disabled = false;
+    ($('asc-stato-testo') as HTMLElement).textContent = 'finito';
+  });
+
+  const BUCKET_PUBBLICO = 'glossario-audio';
+  $('asc-conferma')?.addEventListener('click', async () => {
+    if (vista !== attuale) return;
+    const riga = coda[attuale];
+    const btn = $('asc-conferma') as HTMLButtonElement;
+    const scartaBtn = $('asc-scarta') as HTMLButtonElement;
+    btn.disabled = true; scartaBtn.disabled = true;
+
+    // Il file va copiato sul bucket pubblico PRIMA di segnare la
+    // registrazione come pubblicata: se la copia fallisce, non si conferma
+    // — meglio una voce ancora in coda che una "pubblicata" muta.
+    if (riga.bucket !== BUCKET_PUBBLICO) {
+      const { error: erroreCopia } = await supabase.storage
+        .from(riga.bucket).copy(riga.file_path, riga.file_path, { destinationBucket: BUCKET_PUBBLICO });
+      if (erroreCopia) {
+        alert('Copia sul bucket pubblico non riuscita: ' + erroreCopia.message);
+        btn.disabled = false; scartaBtn.disabled = false;
+        return;
+      }
+    }
+
+    const { error } = await supabase.rpc('conferma_ascolto', { p_audio_id: riga.audio_id });
+    scartaBtn.disabled = false;
+    if (error) { alert('Conferma non riuscita: ' + error.message); btn.disabled = false; return; }
+    avanti();
+  });
+
+  $('asc-scarta')?.addEventListener('click', () => { show('asc-motivo-wrap'); ($('asc-motivo-libero') as HTMLInputElement).focus(); });
+  $('asc-motivo-annulla')?.addEventListener('click', () => hide('asc-motivo-wrap'));
+  document.querySelectorAll('.asc-motivo-rapido').forEach((b) => {
+    b.addEventListener('click', () => scartaConMotivo((b as HTMLElement).dataset.motivo || ''));
+  });
+  $('asc-motivo-invia')?.addEventListener('click', () => {
+    const m = ($('asc-motivo-libero') as HTMLInputElement).value.trim();
+    if (!m) { ($('asc-motivo-libero') as HTMLInputElement).focus(); return; }
+    scartaConMotivo(m);
+  });
+  async function scartaConMotivo(motivo: string) {
+    if (vista !== attuale || !motivo) return;
+    const riga = coda[attuale];
+    const invia = $('asc-motivo-invia') as HTMLButtonElement;
+    invia.disabled = true;
+    const { error } = await supabase.rpc('scarta_ascolto', { p_audio_id: riga.audio_id, p_motivo: motivo });
+    invia.disabled = false;
+    if (error) { alert('Scarto non riuscito: ' + error.message); return; }
+    ($('asc-motivo-libero') as HTMLInputElement).value = '';
+    hide('asc-motivo-wrap');
+    avanti();
+  }
+
+  $('asc-torna')?.addEventListener('click', () => vai(attuale, false));
+
+  // ---- tastiera ----
+  document.addEventListener('keydown', (e) => {
+    if ($('asc-app')?.classList.contains('hidden')) return;
+    const target = e.target as HTMLElement;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+    if (e.key === ' ') { e.preventDefault(); $('asc-riascolta')?.dispatchEvent(new Event('click')); }
+    else if (e.key === 'Enter') { if (!($('asc-conferma') as HTMLButtonElement)?.disabled && vista === attuale) $('asc-conferma')?.dispatchEvent(new Event('click')); }
+    else if (e.key === 'ArrowDown') { if (vista === attuale) $('asc-scarta')?.dispatchEvent(new Event('click')); }
+    else if (e.key === 'ArrowLeft') { if (vista > 0) vai(vista - 1, true); }
+  });
+
+  // ---- login (stesso OTP di /redazione e /glossario-console) ----
+  const loginErr = (t: string) => { const e = $('asc-login-err')!; e.classList.remove('hidden'); e.textContent = t; };
+  $('asc-send')?.addEventListener('click', async () => {
+    const email = ($('asc-email') as HTMLInputElement).value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { loginErr('Email non valida.'); return; }
+    $('asc-login-err')?.classList.add('hidden');
+    const btn = $('asc-send') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Invio…';
+    const { data, error } = await supabase.functions.invoke('otp-request', { body: { email, scope: 'login' } });
+    btn.disabled = false; btn.textContent = 'Invia codice';
+    if (error || !data?.ok) { loginErr('Impossibile inviare il codice. Riprova.'); return; }
+    (window as any)._ascEmail = email;
+    ($('asc-email-echo') as HTMLElement).textContent = email;
+    hide('asc-login-1'); show('asc-login-2');
+    setTimeout(() => ($('asc-code') as HTMLInputElement)?.focus(), 100);
+  });
+  $('asc-back')?.addEventListener('click', () => { hide('asc-login-2'); show('asc-login-1'); });
+  $('asc-verify')?.addEventListener('click', async () => {
+    const codice = ($('asc-code') as HTMLInputElement).value.replace(/\D/g, '');
+    if (!/^\d{6}$/.test(codice)) { loginErr('Il codice deve essere di 6 cifre.'); return; }
+    $('asc-login-err')?.classList.add('hidden');
+    const btn = $('asc-verify') as HTMLButtonElement; btn.disabled = true; btn.textContent = 'Verifica…';
+    const { data, error } = await supabase.functions.invoke('otp-verify', { body: { email: (window as any)._ascEmail, codice, scope: 'login' } });
+    if (error || !data?.ok || !data?.session) { btn.disabled = false; btn.textContent = 'Verifica e accedi'; loginErr('Codice errato o scaduto.'); return; }
+    await supabase.auth.setSession({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+    window.location.reload();
+  });
+  const logout = async () => { await supabase.auth.signOut(); window.location.reload(); };
+  $('asc-logout-2')?.addEventListener('click', logout);
+
+  // ---- avvio ----
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    hide('asc-loading');
+    if (!session) { show('asc-login'); return; }
+    const { data: ruoli } = await supabase
+      .from('utente_ruolo').select('ruolo:ruolo_id ( livello )').eq('utente_id', session.user.id);
+    const livello = (ruoli ?? []).reduce((m: number, r: any) => Math.max(m, r?.ruolo?.livello ?? 0), 0);
+    if (livello < 20) { show('asc-noaccess'); return; }
+
+    const { data, error } = await supabase.from('v_coda_ascolto').select('*').order('posizione', { ascending: true });
+    if (error) { show('asc-noaccess'); console.error('[ascolta] lettura coda fallita', error); return; }
+    coda = (data ?? []) as Riga[];
+    if (coda.length === 0) { show('asc-vuota'); return; }
+
+    inizioSeduta = Date.now();
+    show('asc-app');
+    vai(0, false);
+  }
+  init();
+</script>

@@ -281,6 +281,11 @@ verify_jwt = false
 [functions.guardiani-digest]
 verify_jwt = false
 
+# coda-ascolto-promemoria (brief "La coda di ascolto", 26/8/2026 §4c): stesso
+# canale x-ingest-token, chiamata solo dal cron settimanale. Nessun browser.
+[functions.coda-ascolto-promemoria]
+verify_jwt = false
+
 [functions.link-pagamento]
 # Riservata: la funzione richiede una sessione e ruolo >= 50, e il gateway
 # fa da prima porta. Vedi Trappola 12: ogni function va dichiarata qui,

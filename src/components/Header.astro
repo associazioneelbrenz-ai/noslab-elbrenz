@@ -72,6 +72,11 @@ type NavChild = { href?: string; label: string };
 type NavItem = { label: string; href?: string; highlight?: boolean; children?: NavChild[] };
 
 const GUARDIANI_LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
+// Per l'indicatore "coda di ascolto" (brief "La coda di ascolto", 26/8/2026
+// §4a): niente import di supabase-js nell'header, solo un fetch diretto —
+// servono comunque URL e chiave pubblica, passate allo script con define:vars.
+const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 const navItems: NavItem[] = [
   {
     label: t('nav.assoc'),
@@ -227,6 +232,28 @@ const navItems: NavItem[] = [
         prometteva al socio piu' domande senza che il sito gli desse modo di
         autenticarsi. Il testo lo scambia lo script in coda leggendo la
         sessione da localStorage: la pagina e' statica, lo stato no. */}
+    {/* AGGIUNTA 26/8/2026 (brief "La coda di ascolto" §4a) — indicatore
+        discreto per chi ha ruolo >= 20 e la coda non e' vuota: un invito,
+        non un colore d'allarme. Nascosto per difetto, lo script in coda lo
+        popola solo dopo aver verificato sessione + ruolo + conteggio reale
+        (mai un numero scritto qui). Sparisce da solo a coda vuota. */}
+    <a
+      id="eb-coda-ascolto"
+      href="/ascolta"
+      class="eb-coda-pill items-center flex-shrink-0 ml-3 text-[13px] tracking-[0.05em] text-[#1E2E26]/70 hover:text-[#8a6215] no-underline border border-[#E5DFCF] hover:border-[#C8923E] rounded-full px-4 py-1.5 transition-colors"
+      style="font-family: 'Inter', sans-serif;"
+    ></a>
+    <style>
+      /* Desktop soltanto (niente spazio nella barra mobile) e nascosta
+         finche' lo script non conferma ruolo + coda non vuota: display:none
+         qui non dipende dalle utility hidden/md:* di Tailwind, cosi' il
+         toggle da script resta semplice e non ambiguo. */
+      .eb-coda-pill { display: none; }
+      @media (min-width: 768px) {
+        .eb-coda-pill.eb-coda-pronta { display: inline-flex; }
+      }
+    </style>
+
     <div class="hidden md:flex items-center flex-shrink-0 ml-4">
       <a
         id="eb-accedi"
@@ -343,6 +370,15 @@ const navItems: NavItem[] = [
   </nav>
 
   <div class="px-6 py-6 mt-4 border-t border-[#F5EEDD]/15">
+    {/* Coda di ascolto, versione drawer: nascosta finche' lo script non la
+        popola, stesso meccanismo della pillola desktop ma senza il vincolo
+        del breakpoint (qui siamo gia' dentro il drawer mobile). */}
+    <a
+      id="eb-coda-ascolto-mobile"
+      href="/ascolta"
+      class="hidden block text-center text-[13px] tracking-[0.05em] text-[#F5EEDD] no-underline border border-[#F5EEDD]/30 rounded-full px-4 py-2.5 mb-3"
+      style="font-family: 'Inter', sans-serif;"
+    ></a>
     {/* Accedi anche nel drawer: su telefono e' l'unico posto dove si vede. */}
     <a
       id="eb-accedi-mobile"
@@ -365,20 +401,22 @@ const navItems: NavItem[] = [
     `elbrenz-auth` (src/lib/supabase.ts), la STESSA che il widget di Andreas
     controlla per allegare il token. Niente import di supabase-js: si legge la
     chiave e basta, per non caricare una libreria su ogni pagina del sito. */}
-<script is:inline>
+<script define:vars={{ SUPABASE_URL, SUPABASE_ANON_KEY }}>
   (function () {
-    function sessioneViva() {
+    function leggiSessione() {
       try {
         const raw = localStorage.getItem('elbrenz-auth');
-        if (!raw) return false;
+        if (!raw) return null;
         const s = JSON.parse(raw);
-        if (s && s.expires_at && s.expires_at * 1000 < Date.now()) return false;
-        return !!(s && s.access_token);
+        if (!s || !s.access_token) return null;
+        if (s.expires_at && s.expires_at * 1000 < Date.now()) return null;
+        return s;
       } catch (_) {
-        return false;
+        return null;
       }
     }
-    if (!sessioneViva()) return;
+    const sessione = leggiSessione();
+    if (!sessione) return;
     // Chi e' gia' dentro non ha bisogno di un invito ad entrare: il bottone
     // diventa l'uscita. Il profilo vero sta nell'app, qui basta poter uscire.
     for (const id of ['eb-accedi', 'eb-accedi-mobile']) {
@@ -392,6 +430,44 @@ const navItems: NavItem[] = [
         location.href = '/';
       });
     }
+
+    // Coda di ascolto (brief "La coda di ascolto", 26/8/2026 §4a): niente
+    // import di supabase-js, un fetch diretto alla REST API con lo stesso
+    // token gia' in sessione. Il ruolo si legge dal sub del JWT, non da un
+    // campo del session object su cui non vogliamo contare.
+    function subDelToken(jwt) {
+      try {
+        const payload = jwt.split('.')[1];
+        const norm = payload.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(norm)).sub || null;
+      } catch (_) { return null; }
+    }
+    const uid = subDelToken(sessione.access_token);
+    if (!uid || !SUPABASE_URL || !SUPABASE_ANON_KEY) return;
+
+    const intestazioni = {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: 'Bearer ' + sessione.access_token,
+    };
+
+    fetch(SUPABASE_URL + '/rest/v1/utente_ruolo?select=ruolo:ruolo_id(livello)&utente_id=eq.' + uid, { headers: intestazioni })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (righe) {
+        const livello = (righe || []).reduce(function (m, r) { return Math.max(m, (r.ruolo && r.ruolo.livello) || 0); }, 0);
+        if (livello < 20) return;
+        return fetch(SUPABASE_URL + '/rest/v1/v_coda_ascolto?select=totale&limit=1', { headers: intestazioni })
+          .then(function (r) { return r.ok ? r.json() : []; })
+          .then(function (righe2) {
+            const totale = (righe2 && righe2[0] && righe2[0].totale) || 0;
+            if (totale <= 0) return;
+            const testo = totale === 1 ? '1 voce da ascoltare' : totale + ' voci da ascoltare';
+            const pill = document.getElementById('eb-coda-ascolto');
+            if (pill) { pill.textContent = testo; pill.classList.add('eb-coda-pronta'); }
+            const pillMobile = document.getElementById('eb-coda-ascolto-mobile');
+            if (pillMobile) { pillMobile.textContent = testo; pillMobile.classList.remove('hidden'); }
+          });
+      })
+      .catch(function () { /* silenzioso: un indicatore mancante non deve rompere l'header */ });
   })();
 </script>
 

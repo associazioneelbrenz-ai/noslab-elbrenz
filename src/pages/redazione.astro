@@ -25,6 +25,19 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
       <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata</p>
       <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-8" style="font-family: 'Playfair Display', serif; font-weight: 500;">Redazione</h1>
 
+      {/* Coda di ascolto (brief "La coda di ascolto", 26/8/2026 §4b): prima
+          carta della pagina, indipendente dal gate a ruolo >=25 del resto
+          della redazione — un curatore di ruolo 20 la vede anche se non ha
+          accesso agli articoli. Nascosta per difetto, popolata solo se
+          davvero c'e' qualcosa in coda. Aggiuntiva: non tocca il resto. */}
+      <div id="rz-coda-ascolto-wrap" class="hidden mb-8 bg-white border border-[#E5DFCF] rounded p-5 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p class="m-0 text-[#1E2E26] font-medium">Coda di ascolto</p>
+          <p class="m-0 text-sm text-[#1E2E26]/65 mt-1"><span id="rz-coda-n">0</span> voci in attesa · <span id="rz-coda-durata">—</span></p>
+        </div>
+        <a href="/ascolta" class="flex-shrink-0 bg-[#C8923E] text-[#1E2E26] px-4 py-2 rounded text-sm font-semibold hover:bg-[#D9A94E] transition-colors no-underline">Ascolta →</a>
+      </div>
+
       {/* stato caricamento */}
       <p id="rz-loading" class="text-[#1E2E26]/60">Carico…</p>
 
@@ -349,5 +362,29 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 
   function escapeHtml(s: string) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
+  // ---- CODA DI ASCOLTO (brief "La coda di ascolto", 26/8/2026 §4b) ----
+  // Indipendente dal gate a 25 di init(): un curatore di ruolo 20 deve
+  // vederla anche senza accesso agli articoli. totale/secondi_totali
+  // arrivano gia' calcolati da v_coda_ascolto, mai ricalcolati qui.
+  function fmtDurataCoda(sec: number): string {
+    const m = Math.floor(sec / 60), s = Math.round(sec % 60);
+    return m > 0 ? `${m} min ${s} sec` : `${s} sec`;
+  }
+  async function caricaCodaAscolto() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { data: ruoli } = await supabase
+      .from('utente_ruolo').select('ruolo:ruolo_id ( livello )').eq('utente_id', session.user.id);
+    const liv = (ruoli ?? []).reduce((m: number, r: any) => Math.max(m, r?.ruolo?.livello ?? 0), 0);
+    if (liv < 20) return;
+    const { data } = await supabase.from('v_coda_ascolto').select('totale, secondi_totali').limit(1);
+    const riga = (data ?? [])[0];
+    if (!riga || !riga.totale) return;
+    ($('rz-coda-n') as HTMLElement).textContent = String(riga.totale);
+    ($('rz-coda-durata') as HTMLElement).textContent = fmtDurataCoda(riga.secondi_totali || 0);
+    show('rz-coda-ascolto-wrap');
+  }
+
   init();
+  caricaCodaAscolto();
 </script>

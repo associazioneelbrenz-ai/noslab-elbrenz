@@ -41,6 +41,14 @@ function componiTesto(
     case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/glossario-console`); break;
     case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto: ${d.contatto ?? '—'}`, `Gestisci su ${site}/museo-gg-curatela`); break;
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
+    // [26/8/2026] Coda di ascolto del glossario ferma da piu' di sette
+    // giorni. Testo definitivo del brief, invariato: solo la riga
+    // dell'etichetta sopra (comune a tutti i tipi) si aggiunge davanti.
+    case 'coda_ascolto': {
+      r.push(`Ci sono ${d.n ?? 0} voci in attesa di essere ascoltate. In tutto sono ${d.m ?? 0} secondi. La più vecchia aspetta dal ${d.data ?? '—'}.`);
+      r.push(`Ascoltale qui: ${site}/ascolta`);
+      break;
+    }
     // AGGIUNTA 31/7/2026 — digest settimanale del Radar eventi (GATE 3).
     // Elenco corto: il dettaglio sta nella pagina di curatela, non nel gruppo.
     // [6/8/2026] Riepilogo giornaliero dei Guardiani. Sostituisce il messaggio
