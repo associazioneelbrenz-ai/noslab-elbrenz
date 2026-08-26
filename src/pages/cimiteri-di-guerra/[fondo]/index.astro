@@ -78,6 +78,8 @@ export const prerender = true;
   ogImage={ogImageFondo(fondo)}
 >
   <style>
+    .intestazione-gruppo { color: var(--oro-scuro); margin: 1.1rem 0 .4rem; }
+    .risultati .intestazione-gruppo:first-child { margin-top: 0; }
     .incipit p { font-family: var(--serif); font-size: 1.18rem; line-height: 1.72; max-width: 62ch; margin: 0 0 1.1rem; color: var(--verde); }
     .incipit p:last-child { margin-bottom: 0; }
     .fonte-scheda { border-left: 3px solid var(--oro); padding: .15rem 0 .15rem 1.1rem; margin: 2.5rem 0 0; max-width: 42rem; }
@@ -263,13 +265,29 @@ export const prerender = true;
       const lista = dati.persone.filter((p) =>
         [p.n, p.g, p.r, p.l, p.reg, p.m].filter(Boolean).join(' ').toLowerCase().includes(t));
       if (!lista.length) { ris.innerHTML = '<p class="niente">Nessun nome corrisponde.</p>'; return; }
-      ris.innerHTML = lista.slice(0, 60).map((p) =>
-        `<a class="voce" style="text-decoration:none;color:inherit" href="/cimiteri-di-guerra/${dati.fondoSlugBreve}/${p.slug}">` +
-        `<span class="n">${p.s === 'civile' ? 'civ · ' : 'mil · '}${p.num ?? ''}</span>` +
-        `<span><span class="nome">${p.n}${p.pow ? '<span class="marchio">prigioniero</span>' : ''}</span>` +
-        `<span class="meta">${[p.g, p.r, p.l].filter(Boolean).join(' · ')}</span></span>` +
-        `<span class="quando">${p.m || ''}</span></a>`
-      ).join('') + (lista.length > 60 ? `<p class="niente">e altri ${lista.length - 60}.</p>` : '');
+      // Il marcatore "mil"/"civ" per ogni voce faceva credere che appartenesse
+      // alla voce successiva. Ora è un'intestazione di gruppo, una sola volta,
+      // non ripetuta su ogni riga.
+      const gruppi = [
+        { etichetta: 'Cimitero militare', voci: lista.filter((p) => p.s !== 'civile') },
+        { etichetta: 'Cimitero civile', voci: lista.filter((p) => p.s === 'civile') },
+      ];
+      const LIMITE = 60;
+      let mostrati = 0;
+      let html = '';
+      for (const g of gruppi) {
+        if (!g.voci.length || mostrati >= LIMITE) continue;
+        const daMostrare = g.voci.slice(0, LIMITE - mostrati);
+        mostrati += daMostrare.length;
+        html += `<p class="etichetta intestazione-gruppo">${g.etichetta}</p>` + daMostrare.map((p) =>
+          `<a class="voce" style="text-decoration:none;color:inherit" href="/cimiteri-di-guerra/${dati.fondoSlugBreve}/${p.slug}">` +
+          `<span class="n">${p.num ?? ''}</span>` +
+          `<span><span class="nome">${p.n}${p.pow ? '<span class="marchio">prigioniero</span>' : ''}</span>` +
+          `<span class="meta">${[p.g, p.r, p.l].filter(Boolean).join(' · ')}</span></span>` +
+          `<span class="quando">${p.m || ''}</span></a>`
+        ).join('');
+      }
+      ris.innerHTML = html + (lista.length > mostrati ? `<p class="niente">e altri ${lista.length - mostrati}.</p>` : '');
     });
   </script>
 </Layout>
