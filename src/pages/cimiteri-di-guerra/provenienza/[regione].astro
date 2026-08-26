@@ -38,6 +38,10 @@ export const prerender = true;
   description={`${persone.length} uomini nati in ${gruppo.regione}, morti al servizio dell'esercito austro-ungarico e sepolti a ${comuni.join(', ')}${primoAnno && ultimoAnno ? `, ${primoAnno}-${ultimoAnno}` : ''}.`}
   ogImage={OG_CIMITERI_ORIZZONTALE}
 >
+  <style>
+    .intestazione-gruppo { color: var(--oro-scuro); margin: 1.1rem 0 .4rem; }
+    .risultati .intestazione-gruppo:first-child { margin-top: 0; }
+  </style>
   <div class="sezione-cimiteri">
   <BarraSezione />
   <header class="apertura">
@@ -59,16 +63,25 @@ export const prerender = true;
     <p class="guida">Chi cerca un antenato nato in {gruppo.regione} e disperso sul fronte italiano può trovarlo qui.</p>
     <div class="schedario">
       <div class="risultati" style="max-height:none">
-        {persone.map((p) => (
-          <a class="voce" style="text-decoration:none;color:inherit" href={`/cimiteri-di-guerra/${p.fondo_slug_breve}/${p.slug}`}>
-            <span class="n">{p.settore === 'civile' ? 'civ · ' : 'mil · '}{p.numero ?? ''}</span>
-            <span>
-              <span class="nome">{p.nome_completo}{p.prigioniero_guerra && <span class="marchio">prigioniero</span>}</span>
-              <span class="meta">{[p.grado, p.reparto, p.luogo_nascita].filter(Boolean).join(' · ')}</span>
-            </span>
-            <span class="quando">{p.data_morte_testo || ''}</span>
-          </a>
-        ))}
+        {(['militare', 'civile'] as const).map((settore) => {
+          const gruppoSettore = persone.filter((p) => p.settore === settore);
+          if (gruppoSettore.length === 0) return null;
+          return (
+            <>
+              <p class="etichetta intestazione-gruppo">{settore === 'militare' ? 'Cimitero militare' : 'Cimitero civile'}</p>
+              {gruppoSettore.map((p) => (
+                <a class="voce" style="text-decoration:none;color:inherit" href={`/cimiteri-di-guerra/${p.fondo_slug_breve}/${p.slug}`}>
+                  <span class="n">{p.numero ?? ''}</span>
+                  <span>
+                    <span class="nome">{p.nome_completo}{p.prigioniero_guerra && <span class="marchio">prigioniero</span>}</span>
+                    <span class="meta">{[p.grado, p.reparto, p.luogo_nascita].filter(Boolean).join(' · ')}</span>
+                  </span>
+                  <span class="quando">{p.data_morte_testo || ''}</span>
+                </a>
+              ))}
+            </>
+          );
+        })}
       </div>
     </div>
   </section>
