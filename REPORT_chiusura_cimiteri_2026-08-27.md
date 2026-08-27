@@ -58,8 +58,21 @@ Più tre commenti di codice (non visibili al lettore, ma con lo stesso numero sc
 
 ## Verifica dal vivo dopo il deploy
 
-(Compilata dopo `netlify deploy --prod --build` e un controllo diretto sull'URL pubblico — vedi in fondo per l'esito puntuale.)
+Deploy pulito al primo tentativo (`netlify deploy --prod --build`, "Deploy is live!"). Ripetute in produzione le otto prove indicate dal brief:
+
+- **4**: `https://elbrenz.eu/cimiteri-di-guerra/male/` → sottotitolo "Centodiciassette sepolture, centoquattordici uomini". Sì.
+- **5**: stessa pagina → "CIMITERO MILITARE · 102 sepolture", "CIMITERO CIVILE · 15 sepolture". Sì.
+- **6**: `https://elbrenz.eu/cimiteri-di-guerra/male/mappa/` → riquadro 90 rende `stato-integro`; sulla pagina del fondo "90-august-fitz" compare una sola volta (il link "vedi sulla planimetria" della sua stessa scheda, non nell'albo). Sì.
+- **7**: schede live di posizione civile 1 e tomba militare 126 → rimando reciproco corretto in entrambe le direzioni. Sì.
+- **8**: paragrafo del 1941 una sola occorrenza nell'HTML live della planimetria. Sì.
+- **9**: riquadri 210 (dentro 202-217) e 1 (barrato) → nessuno dei due porta `con-nome` in produzione. Confermato non rotto.
+- **10**: pagina evento live → 3 caption "Il suo reparto risulta schierato…", 5 "Collegamento dedotto…", 10 voci nel blocco reparti schierati. Sì.
+- **12**: `og:image` live → stesso URL assoluto, 1200×630, `image/jpeg`. Requisiti tecnici confermati; il limite sulla prova reale di condivisione resta quello dichiarato sopra.
 
 ## Commit
 
-Vedi `git log origin/main --oneline` per gli hash effettivi dopo il push.
+```
+c980bd3 cimiteri di guerra: chiusura completa — conta_nei_totali, rimando, gradi di certezza, reparti schierati
+f473e87 cimiteri di guerra: Cimitero militare/civile per esteso anche in provenienza, come nell'albo
+```
+Entrambi su `origin/main` (`git log origin/main --oneline`), pushati con l'account `associazioneelbrenz-ai`.
