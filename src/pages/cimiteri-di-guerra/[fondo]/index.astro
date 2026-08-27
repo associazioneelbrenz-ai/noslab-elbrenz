@@ -38,14 +38,13 @@ const persone = tutte.filter(conNome).sort((a, b) => (a.nome_completo ?? '').loc
 // "nomi restituiti" viene da v_memoria_conteggi, non da fondo.nomi_noti
 // (brief "chiusura completa" 27/8/2026 §2): era proprio la divergenza fra
 // numeri calcolati per conto proprio da pagine diverse a produrre 118/117
-// mai allineati. "tombe anonime" resta posti_censiti - nomi restituiti,
-// la stessa relazione che il campo fondo.senza_nome aveva sempre rispettato
-// (118+118=236): non e' lo stesso conteggio dei "riquadri integri" di
-// Planimetria.astro (quindici, solo i quadrati senza segno) — qui contano
-// anche le tombe barrate, mai state nominate nel registro.
+// mai allineati. "Tombe senza nome" non è più un numero (messaggio di
+// Cristian, 27/8/2026): il totale dipendeva da posti_censiti, che è
+// esattamente la cifra in verifica con l'archivio (236 contro 238) — un
+// conteggio preciso costruito su un dato impreciso è un numero falso, non
+// impreciso. Resta qualitativo finché l'archivio non chiude la verifica.
 const conteggi = await leggiConteggi();
 const nNomi = conteggi?.uomini_distinti ?? fondo.nomi_noti;
-const nVuote = (fondo.posti_censiti ?? fondo.nomi_noti) - nNomi;
 const rgOttobre = new RegExp(`\\.10\\.${fondo.anno_a ?? ''}$`);
 const nOtt = tutte.filter((p) => rgOttobre.test(p.data_morte_testo ?? '')).length;
 const regioni = new Map<string, number>();
@@ -118,7 +117,7 @@ export const prerender = true;
   <div class="registro-numeri">
     <div class="dentro">
       <div class="cella acceso"><b>{nNomi}</b><span>nomi restituiti</span></div>
-      <a class="cella" href={`/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome`} style="text-decoration:none;color:inherit;display:block"><b>{nVuote}</b><span>tombe anonime</span></a>
+      <a class="cella" href={`/cimiteri-di-guerra/${fondo.slug_breve}/senza-nome`} style="text-decoration:none;color:inherit;display:block"><b>Molte</b><span>tombe senza nome, conto in verifica con l'archivio</span></a>
       <div class="cella acceso"><b>{nOtt}</b><span>morti in ottobre {fondo.anno_a ?? ''}</span></div>
       <div class="cella"><b>{nReg}</b><span>terre di provenienza</span></div>
       <div class="cella"><b>{nPow}</b><span>prigionieri di guerra</span></div>
@@ -212,12 +211,12 @@ export const prerender = true;
 
   <div class="chiusa">
     <div class="dentro">
-      <h2>{nVuote} {nVuote === 1 ? 'tomba non ha' : 'tombe non hanno'} ancora un nome</h2>
+      <h2>Molte tombe restano senza nome</h2>
       <p>
-        {nVuote === nNomi && 'È esattamente metà. '}
-        Se hai fotografie, memorie di famiglia, lettere o documenti che possano riempire una di quelle
-        caselle, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>. Ogni casella che si
-        accende è un uomo che smette di essere un numero.
+        Il conto esatto dipende da una verifica in corso presso l'archivio. Se hai fotografie, memorie
+        di famiglia, lettere o documenti che possano riempire una di quelle caselle, scrivici a
+        <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>. Ogni casella che si accende è un uomo che
+        smette di essere un numero.
       </p>
       <p class="motto">Raìs fonde no le 'nglacia.</p>
     </div>

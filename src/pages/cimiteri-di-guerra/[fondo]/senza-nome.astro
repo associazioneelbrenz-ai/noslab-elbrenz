@@ -43,10 +43,11 @@ function slugIgnoto(settore: string, numero: number): string | null {
 
 const senzaNomeMilitari = geo.righe.flat().filter((n) => !haNome('militare', n)).sort((a, b) => a - b);
 const senzaNomeCivili = Object.keys(geo.civpos).map(Number).filter((n) => !haNome('civile', n)).sort((a, b) => a - b);
-// Il conteggio testuale usa lo stesso elenco mostrato sotto, non il campo
-// fondo.senza_nome (stava fermo a 14, prima che la tomba 90 vi si aggiungesse
-// — brief "chiusura completa" 27/8/2026 §4).
-const nSenzaNome = senzaNomeMilitari.length + senzaNomeCivili.length;
+// Niente più un totale in testa (messaggio di Cristian, 27/8/2026): anche
+// contando l'elenco vero sotto, il numero dipende dagli stessi dati della
+// pianta ancora in verifica con l'archivio (posti_censiti, 236 contro 238).
+// L'elenco puntuale resta — sono tombe specifiche, individuate una per una —
+// solo il totale in cima smette di fingersi esatto.
 
 const briciole = [
   { nome: 'Archivio', url: '/archivio' },
@@ -62,7 +63,7 @@ export const prerender = true;
 
 <Layout
   title={`Le tombe senza nome · ${fondo.titolo}`}
-  description={`${nSenzaNome} tombe del ${titoloInFrase(fondo)} non hanno ancora un nome nel registro.`}
+  description={`Molte tombe del ${titoloInFrase(fondo)} non hanno ancora un nome nel registro: il conto esatto dipende da una verifica in corso presso l'archivio.`}
   ogImage={ogImageFondo(fondo)}
 >
   <div class="sezione-cimiteri">
@@ -75,7 +76,9 @@ export const prerender = true;
       <p class="etichetta">Cimiteri di guerra · {fondo.comune}</p>
       <h1>Le tombe<br /><em>senza nome</em></h1>
       <p class="strillo">
-        {nSenzaNome} tombe su {fondo.posti_censiti ?? fondo.nomi_noti} non hanno ancora un nome nel registro del {titoloInFrase(fondo)}.
+        Molte tombe non hanno ancora un nome nel registro del {titoloInFrase(fondo)}. Il conto esatto
+        dipende da una verifica in corso presso l'archivio: l'elenco sotto raccoglie i numeri già
+        individuati sulla pianta.
       </p>
     </div>
   </header>

@@ -24,14 +24,12 @@ const persone = await leggiPersone(fondo.slug);
 
 // "nomi restituiti" viene da v_memoria_conteggi, non da fondo.nomi_noti
 // (brief "chiusura completa" 27/8/2026 §2): era fermo a 118, causa della
-// divergenza con il resto della sezione. "tombe senza nome" resta
-// posti_censiti - nomi restituiti, la stessa relazione che fondo.senza_nome
-// aveva sempre rispettato (118+118=236) — non il conteggio dei soli
-// "riquadri integri" di Planimetria.astro (quindici): qui contano anche le
-// tombe barrate, mai nominate nel registro.
+// divergenza con il resto della sezione. "Tombe senza nome" non è più un
+// numero (messaggio di Cristian, 27/8/2026): dipendeva da posti_censiti,
+// la stessa cifra ancora in verifica con l'archivio (236 contro 238) — un
+// conteggio preciso su un dato impreciso è un numero falso, non impreciso.
 const conteggi = await leggiConteggi();
 const nNomi = conteggi?.uomini_distinti ?? fondo.nomi_noti;
-const nVuote = (fondo.posti_censiti ?? fondo.nomi_noti) - nNomi;
 
 const rgOttobre = new RegExp(`\\.10\\.${fondo.anno_a ?? ''}$`);
 const nOtt = persone.filter((p) => rgOttobre.test(p.data_morte_testo ?? '')).length;
@@ -101,11 +99,11 @@ export const prerender = true;
         <p class="sottotitolo">
           {fondo.tipo === 'cimitero_militare' ? 'Il cimitero militare austro-ungarico' : fondo.titolo}
           {fondo.anno_da && fondo.anno_a ? `, ${fondo.anno_da}–${fondo.anno_a}` : ''}.
-          {fondo.posti_censiti ?? fondo.nomi_noti} tombe, di cui {nNomi} hanno ancora un nome.
+          {nNomi} nomi restituiti; molte tombe restano ancora senza nome.
         </p>
         <div class="conteggio">
           <div class="acceso"><b>{nNomi}</b>nomi restituiti</div>
-          <div><b>{nVuote}</b>tombe senza nome</div>
+          <div><b>Molte</b>tombe senza nome, conto in verifica</div>
           <div class="acceso"><b>{nOtt}</b>morti nel solo ottobre {fondo.anno_a ?? ''}</div>
           <div><b>{nPow}</b>prigionieri di guerra</div>
         </div>
