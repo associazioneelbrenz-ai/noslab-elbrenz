@@ -6,10 +6,15 @@ import Layout from '../../layouts/Layout.astro';
 import '../../styles/cimiteri-di-guerra.css';
 import BarraSezione from '../../components/memoria/BarraSezione.astro';
 import { schemaBreadcrumb } from '../../lib/schema';
-import { leggiFondi, OG_CIMITERI_ORIZZONTALE } from '../../lib/memoria';
+import { leggiFondi, leggiConteggi, OG_CIMITERI_ORIZZONTALE } from '../../lib/memoria';
 import { VALLI_LUOGHI } from '../../lib/luoghi';
 
 const fondi = await leggiFondi();
+// "nomi" nella carta viene da v_memoria_conteggi, non da fondo.nomi_noti
+// (brief "chiusura completa" 27/8/2026 §2): stava fermo a 118 mentre il
+// resto della sezione era gia' passato a 117/114. fondo.posti_censiti resta
+// intoccato (§8): non e' questo il numero in discussione con l'archivio.
+const conteggi = await leggiConteggi();
 const briciole = [
   { nome: 'Archivio', url: '/archivio' },
   { nome: 'Cimiteri di guerra', url: '/cimiteri-di-guerra' },
@@ -51,7 +56,7 @@ export const prerender = true;
           <article class="fondo" style="margin-bottom:1.75rem">
             <div class="carta">
               <span class="luogo">{fondo.comune}{fondo.valle ? ` · ${VALLI_LUOGHI[fondo.valle] ?? fondo.valle}` : ''}</span>
-              <span class="grande">{fondo.nomi_noti}<small>nomi su {fondo.posti_censiti ?? fondo.nomi_noti} tombe</small></span>
+              <span class="grande">{conteggi?.uomini_distinti ?? fondo.nomi_noti}<small>nomi su {fondo.posti_censiti ?? fondo.nomi_noti} tombe</small></span>
             </div>
             <div class="corpo">
               <h3>{fondo.titolo}</h3>

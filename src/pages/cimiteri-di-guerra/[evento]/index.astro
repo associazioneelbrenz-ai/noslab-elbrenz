@@ -6,7 +6,10 @@ import Layout from '../../../layouts/Layout.astro';
 import '../../../styles/cimiteri-di-guerra.css';
 import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
-import { leggiEventi, leggiEvento, leggiTutte, dataLeggibile, meseIt, OG_CIMITERI_ORIZZONTALE, type Evento } from '../../../lib/memoria';
+import {
+  leggiEventi, leggiEvento, leggiTutte, leggiEventoReparti, dataLeggibile, meseIt,
+  TESTO_CERTEZZA_EVENTO, OG_CIMITERI_ORIZZONTALE, type Evento,
+} from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const eventi = await leggiEventi();
@@ -19,6 +22,11 @@ if (!evento) return Astro.redirect('/cimiteri-di-guerra');
 const tutte = await leggiTutte();
 const caduti = tutte.filter((p) => p.evento_slug === evento.slug)
   .sort((a, b) => (a.data_morte ?? '').localeCompare(b.data_morte ?? ''));
+
+// I reparti schierati (brief "Operazione Valanga", 27/8/2026 §6.2): le voci
+// da_verificare non si mostrano mai qui, quelle media portano un avviso in
+// coda. Nessuna immagine dei documenti Mariotti: solo la lettura.
+const repartiSchierati = (await leggiEventoReparti(evento.slug)).filter((r) => r.confidenza !== 'da_verificare');
 
 function dataEstesa(iso: string | null): string {
   if (!iso) return '';
@@ -61,6 +69,34 @@ export const prerender = true;
     <div class="dentro">
       {evento.descrizione && <p class="capolettera">{evento.descrizione}</p>}
 
+      {repartiSchierati.length > 0 && (
+        <div class="blocco-reparti-schierati">
+          <h3>I reparti schierati</h3>
+          <p class="cappello-reparti">
+            Quanto segue è ricavato da carte di situazione e da una carta di trincea annotata, messe a
+            disposizione dal dott. Tommaso Mariotti. Le riproduzioni non sono pubblicate per volontà del
+            ricercatore. La lettura è in corso: questo elenco è parziale e destinato a crescere.
+          </p>
+          <ul class="reparti-schierati">
+            {repartiSchierati.map((r) => (
+              <li>
+                <span class="documento">{r.denominazione_documento}</span>
+                {r.comando && <span class="comando">{r.comando}</span>}
+                {r.reparto_slug ? (
+                  <a class="reparto-link" href={`/cimiteri-di-guerra/reparto/${r.reparto_slug}`}>
+                    {r.reparto_denominazione}
+                    {r.sepolture_a_male > 0 && <span class="sepolture"> · {r.sepolture_a_male} sepolture a Malè</span>}
+                  </a>
+                ) : r.reparto_denominazione && (
+                  <span class="reparto-piano">{r.reparto_denominazione}</span>
+                )}
+                {r.confidenza === 'media' && <span class="da-confermare">lettura da confermare</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {caduti.length > 0 && (
         <>
           <h3>Gli uomini collegati</h3>
@@ -71,12 +107,22 @@ export const prerender = true;
                 <span>
                   <a href={`/cimiteri-di-guerra/${p.fondo_slug_breve}/${p.slug}`}>{p.nome_completo}</a>
                   {[p.reparto, p.luogo_nascita].filter(Boolean).length > 0 && `, ${[p.reparto, p.luogo_nascita].filter(Boolean).join(', ')}`}
-                  {' · '}
-                  <span class="certezza-inline">{p.evento_certezza === 'certo' ? 'certo' : 'probabile'}</span>
+                  {p.evento_certezza && (
+                    <>
+                      {' · '}
+                      <span class="certezza-inline">{p.evento_certezza.replace('_', ' ')}</span>
+                      <span class="certezza-testo">{TESTO_CERTEZZA_EVENTO[p.evento_certezza]}</span>
+                    </>
+                  )}
                 </span>
               </li>
             ))}
           </ul>
+          <p class="nota-certezza">
+            Una carta di situazione mostra le unità inquadrate nello schieramento, non ogni uomo sul
+            terreno: artiglierie in rinforzo, salmerie, sanità e formazioni della milizia vi compaiono di
+            rado. «Non sostenuto» non significa escluso, e il registro non annota mai la causa della morte.
+          </p>
         </>
       )}
 
@@ -96,6 +142,26 @@ export const prerender = true;
 <style>
   .certezza-inline {
     font-family: var(--mono); font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
-    color: var(--oro-scuro); border: 1px solid var(--oro-scuro); padding: .05rem .4rem;
+    color: var(--oro-scuro); border: 1px solid var(--oro-scuro); padding: .05rem .4rem; margin-right: .5rem;
   }
+  .certezza-testo { font-family: var(--sans); font-size: .85rem; color: var(--verde-tenue); }
+
+  .blocco-reparti-schierati { border-left: 3px solid var(--oro); background: var(--crema-scura); padding: 1.1rem 1.3rem; margin: 0 0 2rem; }
+  .blocco-reparti-schierati h3 { margin-top: 0; }
+  .cappello-reparti { font-family: var(--sans); font-size: .88rem; color: var(--verde-tenue); line-height: 1.55; margin: 0 0 1rem; }
+  .reparti-schierati { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .7rem; }
+  .reparti-schierati li { border-bottom: 1px solid rgba(34,48,31,.12); padding-bottom: .7rem; }
+  .reparti-schierati li:last-child { border-bottom: 0; padding-bottom: 0; }
+  .reparti-schierati .documento { display: block; font-family: var(--serif); font-size: 1.05rem; color: var(--verde); }
+  .reparti-schierati .comando { display: block; font-family: var(--mono); font-size: .68rem; letter-spacing: .04em; color: rgba(34,48,31,.55); margin-top: .1rem; }
+  .reparti-schierati .reparto-link, .reparti-schierati .reparto-piano { display: block; font-family: var(--sans); font-size: .88rem; color: var(--oro-scuro); margin-top: .3rem; }
+  .reparti-schierati a.reparto-link { text-decoration: none; }
+  .reparti-schierati a.reparto-link:hover { text-decoration: underline; }
+  .reparti-schierati .sepolture { color: rgba(34,48,31,.55); }
+  .reparti-schierati .da-confermare {
+    display: inline-block; margin-top: .3rem; font-family: var(--mono); font-size: .62rem; letter-spacing: .06em;
+    text-transform: uppercase; color: rgba(34,48,31,.5); font-style: italic;
+  }
+
+  .nota-certezza { font-family: var(--sans); font-size: .84rem; line-height: 1.6; color: var(--verde-tenue); margin: 1.2rem 0 0; max-width: 72ch; }
 </style>

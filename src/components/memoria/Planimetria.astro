@@ -60,8 +60,12 @@ for (const p of persone) {
 function trova(settore: string, numero: number): Persona | undefined {
   return perNumero.get(`${settore}:${numero}`);
 }
+// La tomba 90 ha ancora un nome vero in colonna (August Fitz), ma e' una
+// registrazione superflua (relazione_registrazione='doppia_registrazione',
+// brief "chiusura completa" 27/8/2026 §1.1, §4): per il lettore va trattata
+// come se il nome non ci fosse, riquadro integro come le altre quattordici.
 function haNome(p: Persona | undefined): boolean {
-  return !!p?.nome_completo && p.nome_completo !== 'sconosciuto';
+  return !!p?.nome_completo && p.nome_completo !== 'sconosciuto' && p?.conta_nei_totali !== false;
 }
 // Ha una scheda propria: un nome vero, oppure "ignoto" (le tombe 133, 186,
 // 195 hanno una pagina anche se il registro non riporta chi vi riposa).
@@ -76,7 +80,10 @@ const BARRATO_ESPLICITI = new Set([
   ...intervallo(1, 11), ...intervallo(13, 37), 39, ...intervallo(41, 84),
   125, 133, 137, 186, 195, 199, 200, ...intervallo(202, 217),
 ]);
-const INTEGRO_ESPLICITI = new Set([12, 38, 40, ...intervallo(85, 89), ...intervallo(91, 96)]);
+// La tomba 90 si aggiunge qui il 27/8/2026 (brief "chiusura completa" §4):
+// non e' barrata sulla pianta e non ha piu' un nome per il lettore, quindi
+// riempie il buco fra 89 e 91 — 85-96 e' ora un'unica serie continua.
+const INTEGRO_ESPLICITI = new Set([12, 38, 40, ...intervallo(85, 96)]);
 
 type Stato = 'noto' | 'ignoto' | 'barrato' | 'integro';
 type Cella = {
@@ -232,9 +239,9 @@ const didascaliaPlanimetria = fondo.planimetria_url && Object.keys(riquadri).len
     per uno: il prospetto dichiara centodue sepolture nel cimitero militare e quindici in quello civile.
   </p>
   <p class="nota-registro">
-    Quattordici tombe restano aperte. Sulla pianta i riquadri 12, 38, 40, 85, 86, 87, 88, 89, 91, 92,
-    93, 94, 95 e 96 non portano nessun segno, ma negli elenchi non compare nessun nome. Se sai qualcosa
-    di una di queste sepolture, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>.
+    Quindici tombe restano aperte. Sulla pianta i riquadri 12, 38, 40 e tutti quelli dall'85 al 96 non
+    portano nessun segno, ma negli elenchi non compare nessun nome. Se sai qualcosa di una di queste
+    sepolture, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>.
   </p>
   <p class="nota-registro">
     Quattro schede portano il tratto obliquo anche se hanno già un nome o sono già segnate ignote nel

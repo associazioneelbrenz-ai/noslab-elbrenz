@@ -26,9 +26,12 @@ const perNumero = new Map<string, Persona>();
 for (const p of persone) {
   if (p.settore && p.numero != null) perNumero.set(`${p.settore}:${p.numero}`, p);
 }
+// La tomba 90 ha ancora un nome vero in colonna (August Fitz) ma e' una
+// registrazione superflua (brief "chiusura completa" 27/8/2026 §1.1, §4):
+// per il lettore conta come senza nome, come le altre quattordici.
 function haNome(settore: string, numero: number): boolean {
   const p = perNumero.get(`${settore}:${numero}`);
-  return !!p?.nome_completo && p.nome_completo !== 'sconosciuto';
+  return !!p?.nome_completo && p.nome_completo !== 'sconosciuto' && p.conta_nei_totali !== false;
 }
 // Le tombe segnate "ignoto" (133, 186, 195) hanno una scheda propria (brief
 // "fondo 1941", 26/8/2026 §4): il numero porta li', non a un'ancora sulla
@@ -40,6 +43,10 @@ function slugIgnoto(settore: string, numero: number): string | null {
 
 const senzaNomeMilitari = geo.righe.flat().filter((n) => !haNome('militare', n)).sort((a, b) => a - b);
 const senzaNomeCivili = Object.keys(geo.civpos).map(Number).filter((n) => !haNome('civile', n)).sort((a, b) => a - b);
+// Il conteggio testuale usa lo stesso elenco mostrato sotto, non il campo
+// fondo.senza_nome (stava fermo a 14, prima che la tomba 90 vi si aggiungesse
+// — brief "chiusura completa" 27/8/2026 §4).
+const nSenzaNome = senzaNomeMilitari.length + senzaNomeCivili.length;
 
 const briciole = [
   { nome: 'Archivio', url: '/archivio' },
@@ -55,7 +62,7 @@ export const prerender = true;
 
 <Layout
   title={`Le tombe senza nome · ${fondo.titolo}`}
-  description={`${fondo.senza_nome} tombe del ${titoloInFrase(fondo)} non hanno ancora un nome nel registro.`}
+  description={`${nSenzaNome} tombe del ${titoloInFrase(fondo)} non hanno ancora un nome nel registro.`}
   ogImage={ogImageFondo(fondo)}
 >
   <div class="sezione-cimiteri">
@@ -68,7 +75,7 @@ export const prerender = true;
       <p class="etichetta">Cimiteri di guerra · {fondo.comune}</p>
       <h1>Le tombe<br /><em>senza nome</em></h1>
       <p class="strillo">
-        {fondo.senza_nome} tombe su {fondo.posti_censiti ?? fondo.nomi_noti} non hanno ancora un nome nel registro del {titoloInFrase(fondo)}.
+        {nSenzaNome} tombe su {fondo.posti_censiti ?? fondo.nomi_noti} non hanno ancora un nome nel registro del {titoloInFrase(fondo)}.
       </p>
     </div>
   </header>
@@ -77,7 +84,7 @@ export const prerender = true;
     <h2>Perché sono vuote</h2>
     <p class="guida">
       Il registro ritrovato a Vienna dal dott. Tommaso Mariotti — una pratica amministrativa austriaca del
-      1941, protocollo Zl. 13.800/1941 — riporta 118 righe: 115 con un nome, tre segnate "sconosciuto" già
+      1941, protocollo Zl. 13.800/1941 — riporta 117 righe: 114 con un nome, tre segnate "sconosciuto" già
       nel 1941. Le altre caselle esistono nella pianta del cimitero, hanno un numero di tomba, ma nessuna
       riga del registro le riguarda. Sulla pianta molte di queste tombe portano un tratto obliquo disegnato
       a mano: non sappiamo ancora cosa significhi, e non lo scriviamo come se lo sapessimo.

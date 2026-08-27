@@ -8,7 +8,7 @@
 // raggruppata per mese) sono calcolate in build, non ricostruite a runtime:
 // non c'è nessun ordinamento client-side che possa non scattare.
 import {
-  leggiReparti, conNome, dataLeggibile, meseIt, type Persona, type Reparto,
+  leggiReparti, leggiConteggi, conNome, trovaRimando, dataLeggibile, meseIt, type Persona, type Reparto,
 } from '../../lib/memoria';
 
 interface Props { persone: Persona[] }
@@ -16,12 +16,17 @@ const { persone } = Astro.props as Props;
 
 const repartiTutti = await leggiReparti();
 const repartoPerSigla = new Map(repartiTutti.map((r) => [r.sigla, r] as [string, Reparto]));
+// Contatori di sezione dalla vista, mai ricalcolati (brief "chiusura
+// completa" 27/8/2026 §2, §3): il motivo per cui erano divergenti e' che
+// ogni pagina se li contava per conto suo.
+const conteggi = await leggiConteggi();
 
 type Riga = {
   numero: number | null; slug: string; fondoSlug: string;
   nome: string | null; ignoto: boolean;
   dataTesto: string | null; data: string | null; mese: string | null;
   repartoLabel: string | null; repartoSlug: string | null;
+  rimando: { settore: string; numero: number; slug: string } | null;
 };
 
 function etichettaReparto(sigla: string): { label: string; slug: string | null } {
@@ -31,9 +36,13 @@ function etichettaReparto(sigla: string): { label: string; slug: string | null }
   return { label, slug: r.slug };
 }
 
+// Le righe con conta_nei_totali=false (oggi solo la tomba 90, una
+// registrazione superflua) non entrano mai nell'albo (brief "chiusura
+// completa" 27/8/2026 §1.1, §3). Le righe doppia_sepoltura restano visibili
+// con un rimando; le righe da_verificare restano visibili senza nessun segno.
 function costruisciRighe(settore: string): Riga[] {
   return persone
-    .filter((p) => p.settore === settore && (conNome(p) || p.ignoto))
+    .filter((p) => p.settore === settore && (conNome(p) || p.ignoto) && p.conta_nei_totali !== false)
     .map((p) => {
       const rep = p.reparto ? etichettaReparto(p.reparto) : null;
       return {
@@ -42,8 +51,15 @@ function costruisciRighe(settore: string): Riga[] {
         dataTesto: p.data_morte ? (dataLeggibile(p.data_morte_testo) ?? p.data_morte) : null,
         data: p.data_morte, mese: p.data_morte ? (p.data_morte as string).slice(0, 7) : null,
         repartoLabel: rep?.label ?? null, repartoSlug: rep?.slug ?? null,
+        rimando: trovaRimando(p, persone),
       };
     });
+}
+
+function testoRimando(r: { settore: string; numero: number }): string {
+  const cimitero = r.settore === 'civile' ? 'cimitero civile' : 'cimitero militare';
+  const luogo = r.settore === 'civile' ? 'posizione' : 'tomba';
+  return `Registrato anche nel ${cimitero}, ${luogo} ${r.numero}.`;
 }
 
 function ordinaPerTomba(righe: Riga[]): Riga[] {
@@ -70,11 +86,11 @@ function raggruppaPerData(righe: Riga[]): Gruppo[] {
 }
 
 const settori = [
-  { chiave: 'militare', titolo: 'Cimitero militare' },
-  { chiave: 'civile', titolo: 'Cimitero civile' },
+  { chiave: 'militare', titolo: 'Cimitero militare', totaleVista: conteggi?.sepolture_militari ?? null },
+  { chiave: 'civile', titolo: 'Cimitero civile', totaleVista: conteggi?.sepolture_civili ?? null },
 ].map((s) => {
   const righe = costruisciRighe(s.chiave);
-  return { ...s, totale: righe.length, perTomba: ordinaPerTomba(righe), perData: raggruppaPerData(righe) };
+  return { ...s, totale: s.totaleVista ?? righe.length, perTomba: ordinaPerTomba(righe), perData: raggruppaPerData(righe) };
 });
 
 // Istogramma: tutti i settori insieme, come nel brief precedente — le
@@ -136,14 +152,17 @@ const larghezzaSvg = mesi.length * (LARGHEZZA_BARRA + GAP);
 
     {settori.map((s) => (
       <div class="sezione-settore">
-        <h3>{s.titolo.toUpperCase()} · {s.totale} nomi</h3>
+        <h3>{s.titolo.toUpperCase()} · {s.totale} sepolture</h3>
 
         <div class="vista vista-tomba" data-vista="tomba">
           {s.perTomba.map((r) => (
             <div class="riga-albo" data-mese={r.mese ?? ''}>
               <a class="link-riga" href={`/cimiteri-di-guerra/${r.fondoSlug}/${r.slug}`} aria-label={r.ignoto ? `Tomba ${r.numero}, nome ignoto` : (r.nome ?? '')}></a>
               <span class="col-numero">{r.numero}</span>
-              <span class:list={['col-nome', { ignoto: r.ignoto }]}>{r.ignoto ? 'Nome ignoto' : r.nome}</span>
+              <span class="col-nome-blocco">
+                <span class:list={['col-nome', { ignoto: r.ignoto }]}>{r.ignoto ? 'Nome ignoto' : r.nome}</span>
+                {r.rimando && <span class="rimando">{testoRimando(r.rimando)}</span>}
+              </span>
               <span class="col-dati">
                 {r.dataTesto && <span class="data">{r.dataTesto}</span>}
                 {r.repartoLabel && (
@@ -164,7 +183,10 @@ const larghezzaSvg = mesi.length * (LARGHEZZA_BARRA + GAP);
                 <div class="riga-albo" data-mese={r.mese ?? ''}>
                   <a class="link-riga" href={`/cimiteri-di-guerra/${r.fondoSlug}/${r.slug}`} aria-label={r.ignoto ? `Tomba ${r.numero}, nome ignoto` : (r.nome ?? '')}></a>
                   <span class="col-numero">{r.numero}</span>
-                  <span class:list={['col-nome', { ignoto: r.ignoto }]}>{r.ignoto ? 'Nome ignoto' : r.nome}</span>
+                  <span class="col-nome-blocco">
+                    <span class:list={['col-nome', { ignoto: r.ignoto }]}>{r.ignoto ? 'Nome ignoto' : r.nome}</span>
+                    {r.rimando && <span class="rimando">{testoRimando(r.rimando)}</span>}
+                  </span>
                   <span class="col-dati">
                     {r.dataTesto && <span class="data">{r.dataTesto}</span>}
                     {r.repartoLabel && (
@@ -238,11 +260,17 @@ const larghezzaSvg = mesi.length * (LARGHEZZA_BARRA + GAP);
     width: 3.5rem; text-align: right; opacity: .75; transition: opacity 120ms;
   }
   .riga-albo:hover .col-numero, .riga-albo:focus-within .col-numero { opacity: 1; }
-  .col-nome {
+  .col-nome-blocco {
     position: relative; z-index: 2; pointer-events: none;
+    display: flex; flex-direction: column; gap: .15rem;
+  }
+  .col-nome {
     font-family: var(--serif); font-size: 1.05rem; color: var(--verde);
   }
   .col-nome.ignoto { font-style: italic; opacity: .55; }
+  .rimando {
+    font-family: var(--mono); font-size: .66rem; letter-spacing: .02em; color: rgba(34,48,31,.55);
+  }
   .col-dati {
     position: relative; z-index: 2; display: flex; flex-direction: column; align-items: flex-end;
     gap: .1rem; font-family: var(--mono); font-size: .8rem; color: rgba(34,48,31,.65); text-align: right;
@@ -257,7 +285,8 @@ const larghezzaSvg = mesi.length * (LARGHEZZA_BARRA + GAP);
       grid-template-columns: 3rem 1fr; grid-template-areas: "numero nome" "vuoto dati";
     }
     .col-numero { grid-area: numero; }
-    .col-nome { grid-area: nome; font-size: .98rem; }
+    .col-nome-blocco { grid-area: nome; }
+    .col-nome { font-size: .98rem; }
     .col-dati { grid-area: dati; align-items: flex-end; font-size: .74rem; }
   }
 

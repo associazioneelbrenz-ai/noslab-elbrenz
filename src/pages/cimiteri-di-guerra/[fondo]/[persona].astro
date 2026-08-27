@@ -13,7 +13,7 @@ import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
 import {
   leggiFondi, leggiPersone, leggiFondo, conNome, dataLeggibile, titoloPersona, titoloInFrase, slugifica,
-  leggiRepartoPerSigla, leggiProvenienza, ogImageFondo, type Fondo, type Persona,
+  leggiRepartoPerSigla, leggiProvenienza, ogImageFondo, trovaRimando, TESTO_CERTEZZA_EVENTO, type Fondo, type Persona,
 } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
@@ -58,6 +58,17 @@ const ancoraTomba = persona.settore && persona.numero != null ? `#t-${persona.se
 // senza scheda. Chi e' primo o ultimo vede la direzione mancante disattivata,
 // non nascosta.
 const tuttiPersonaggi = await leggiPersone(fondo.slug);
+
+// Rimando fra le due sepolture dello stesso uomo (brief "chiusura completa",
+// 27/8/2026 §3, verifica 7): funziona in entrambe le direzioni anche se il
+// campo altra_* e' scritto oggi solo sul lato civile della coppia.
+const rimando = trovaRimando(persona, tuttiPersonaggi);
+function testoRimando(r: { settore: string; numero: number }): string {
+  const cimitero = r.settore === 'civile' ? 'cimitero civile' : 'cimitero militare';
+  const luogo = r.settore === 'civile' ? 'posizione' : 'tomba';
+  return `Registrato anche nel ${cimitero}, ${luogo} ${r.numero}.`;
+}
+
 const ordinatiPerSettore = tuttiPersonaggi
   .filter((p) => p.settore === persona.settore && (conNome(p) || p.ignoto) && p.numero != null)
   .sort((a, b) => (a.numero as number) - (b.numero as number));
@@ -111,6 +122,7 @@ export const prerender = true;
     .blocco-evento p { margin: 0 0 .6rem; font-size: .92rem; color: var(--verde); }
     .certezza { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--oro-scuro); color: var(--oro-scuro); padding: .15rem .5rem; display: inline-block; }
     .nota-ignoto { font-family: var(--sans); font-size: .95rem; color: var(--verde); background: var(--crema-scura); border-left: 3px solid var(--oro); padding: 1.1rem 1.3rem; margin: 0 0 2rem; max-width: 640px; }
+    .nota-rimando { font-family: var(--mono); font-size: .74rem; letter-spacing: .02em; color: var(--verde-tenue); margin: 0 0 2rem; max-width: 640px; }
     .scorri-settore { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(34,48,31,.15); }
     .scorri-settore a, .scorri-settore span { font-family: var(--mono); font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; color: var(--oro-scuro); text-decoration: none; max-width: 46%; }
     .scorri-settore a span, .scorri-settore span span { display: block; font-family: var(--serif); font-size: .95rem; text-transform: none; letter-spacing: 0; color: var(--verde); margin-top: .25rem; }
@@ -147,11 +159,15 @@ export const prerender = true;
         <span class="etichetta">Legato a un evento</span>
         <h2>{persona.evento_nome}</h2>
         <p>
-          <span class="certezza">{persona.evento_certezza === 'certo' ? 'certo' : 'probabile'}</span>
-          {persona.evento_certezza !== 'certo' && ' Il collegamento è un\'inferenza, non una menzione esplicita nel registro.'}
+          {persona.evento_certezza && <span class="certezza">{persona.evento_certezza.replace('_', ' ')}</span>}
+          {' '}{persona.evento_certezza && TESTO_CERTEZZA_EVENTO[persona.evento_certezza]}
         </p>
         <a class="bottone" href={`/cimiteri-di-guerra/${persona.evento_slug}`}>Leggi dell'evento</a>
       </div>
+    )}
+
+    {rimando && (
+      <p class="nota-rimando">{testoRimando(rimando)}</p>
     )}
 
     <dl class="registro-persona">

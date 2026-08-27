@@ -10,7 +10,7 @@ import Layout from '../../../layouts/Layout.astro';
 import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import Planimetria from '../../../components/memoria/Planimetria.astro';
 import { schemaBreadcrumb } from '../../../lib/schema';
-import { leggiFondo, leggiPersone, ogImageFondo, titoloInFrase, type Fondo, type Persona } from '../../../lib/memoria';
+import { leggiFondo, leggiPersone, leggiConteggi, ogImageFondo, titoloInFrase, type Fondo } from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const { leggiFondi } = await import('../../../lib/memoria');
@@ -21,6 +21,17 @@ export async function getStaticPaths() {
 const fondo = await leggiFondo(Astro.params.fondo as string);
 if (!fondo) return Astro.redirect('/cimiteri-di-guerra');
 const persone = await leggiPersone(fondo.slug);
+
+// "nomi restituiti" viene da v_memoria_conteggi, non da fondo.nomi_noti
+// (brief "chiusura completa" 27/8/2026 §2): era fermo a 118, causa della
+// divergenza con il resto della sezione. "tombe senza nome" resta
+// posti_censiti - nomi restituiti, la stessa relazione che fondo.senza_nome
+// aveva sempre rispettato (118+118=236) — non il conteggio dei soli
+// "riquadri integri" di Planimetria.astro (quindici): qui contano anche le
+// tombe barrate, mai nominate nel registro.
+const conteggi = await leggiConteggi();
+const nNomi = conteggi?.uomini_distinti ?? fondo.nomi_noti;
+const nVuote = (fondo.posti_censiti ?? fondo.nomi_noti) - nNomi;
 
 const rgOttobre = new RegExp(`\\.10\\.${fondo.anno_a ?? ''}$`);
 const nOtt = persone.filter((p) => rgOttobre.test(p.data_morte_testo ?? '')).length;
@@ -90,11 +101,11 @@ export const prerender = true;
         <p class="sottotitolo">
           {fondo.tipo === 'cimitero_militare' ? 'Il cimitero militare austro-ungarico' : fondo.titolo}
           {fondo.anno_da && fondo.anno_a ? `, ${fondo.anno_da}–${fondo.anno_a}` : ''}.
-          {fondo.posti_censiti ?? fondo.nomi_noti} tombe, di cui {fondo.nomi_noti} hanno ancora un nome.
+          {fondo.posti_censiti ?? fondo.nomi_noti} tombe, di cui {nNomi} hanno ancora un nome.
         </p>
         <div class="conteggio">
-          <div class="acceso"><b>{fondo.nomi_noti}</b>nomi restituiti</div>
-          <div><b>{fondo.senza_nome}</b>tombe senza nome</div>
+          <div class="acceso"><b>{nNomi}</b>nomi restituiti</div>
+          <div><b>{nVuote}</b>tombe senza nome</div>
           <div class="acceso"><b>{nOtt}</b>morti nel solo ottobre {fondo.anno_a ?? ''}</div>
           <div><b>{nPow}</b>prigionieri di guerra</div>
         </div>

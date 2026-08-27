@@ -2,7 +2,7 @@
 // Cimiteri di guerra — pagina del fondo. Ordine riscritto dall'addendum
 // "Albo dei nomi, incipit, card in home" (26/8/2026 §4), poi corretto a
 // vivo lo stesso giorno: il racconto torna subito dopo l'incipit invece di
-// restare in fondo dopo l'albo dei 118 nomi — sepolto sotto una tabella
+// restare in fondo dopo l'albo dei nomi — sepolto sotto una tabella
 // lunga si leggeva male. Ordine non negoziabile: apertura ->
 // muro/registro-numeri -> incipit -> racconto per intero -> ricerca ->
 // planimetria (militare + legenda, poi civile) -> cronologia e albo dei
@@ -20,7 +20,9 @@ import { schemaBreadcrumb } from '../../../lib/schema';
 import BarraSezione from '../../../components/memoria/BarraSezione.astro';
 import Planimetria from '../../../components/memoria/Planimetria.astro';
 import Cronologia from '../../../components/memoria/Cronologia.astro';
-import { leggiFondo, leggiPersone, conNome, slugifica, SOGLIA_MINIMA_GRUPPO, ogImageFondo, type Fondo, type Persona } from '../../../lib/memoria';
+import {
+  leggiFondo, leggiPersone, leggiConteggi, conNome, slugifica, SOGLIA_MINIMA_GRUPPO, ogImageFondo, type Fondo,
+} from '../../../lib/memoria';
 
 export async function getStaticPaths() {
   const { leggiFondi } = await import('../../../lib/memoria');
@@ -33,11 +35,17 @@ if (!fondo) return Astro.redirect('/cimiteri-di-guerra');
 const tutte = await leggiPersone(fondo.slug);
 const persone = tutte.filter(conNome).sort((a, b) => (a.nome_completo ?? '').localeCompare(b.nome_completo ?? ''));
 
-// nomi restituiti/tombe anonime vengono dalla vista (fondo.nomi_noti,
-// fondo.senza_nome), non ricalcolati qui: sono i numeri gia' verificati sul
-// fondo, comprese le righe con tomba nota ma nome non leggibile.
-const nNomi = fondo.nomi_noti;
-const nVuote = fondo.senza_nome;
+// "nomi restituiti" viene da v_memoria_conteggi, non da fondo.nomi_noti
+// (brief "chiusura completa" 27/8/2026 §2): era proprio la divergenza fra
+// numeri calcolati per conto proprio da pagine diverse a produrre 118/117
+// mai allineati. "tombe anonime" resta posti_censiti - nomi restituiti,
+// la stessa relazione che il campo fondo.senza_nome aveva sempre rispettato
+// (118+118=236): non e' lo stesso conteggio dei "riquadri integri" di
+// Planimetria.astro (quindici, solo i quadrati senza segno) — qui contano
+// anche le tombe barrate, mai state nominate nel registro.
+const conteggi = await leggiConteggi();
+const nNomi = conteggi?.uomini_distinti ?? fondo.nomi_noti;
+const nVuote = (fondo.posti_censiti ?? fondo.nomi_noti) - nNomi;
 const rgOttobre = new RegExp(`\\.10\\.${fondo.anno_a ?? ''}$`);
 const nOtt = tutte.filter((p) => rgOttobre.test(p.data_morte_testo ?? '')).length;
 const regioni = new Map<string, number>();
@@ -123,7 +131,7 @@ export const prerender = true;
       cimitero uno per uno. Dove il nome c'era, lo scrisse. Dove non c'era, tracciò un segno sul
       riquadro della pianta e passò oltre.
     </p>
-    <p>Centodiciotto nomi sono arrivati fino a noi. Gli altri riquadri sono ancora lì.</p>
+    <p>Centodiciassette sepolture registrate, centoquattordici uomini: tre di loro compaiono in entrambi i cimiteri.</p>
   </section>
 
   {fondo.racconto_html && (
@@ -204,9 +212,9 @@ export const prerender = true;
 
   <div class="chiusa">
     <div class="dentro">
-      <h2>{fondo.senza_nome} {fondo.senza_nome === 1 ? 'tomba non ha' : 'tombe non hanno'} ancora un nome</h2>
+      <h2>{nVuote} {nVuote === 1 ? 'tomba non ha' : 'tombe non hanno'} ancora un nome</h2>
       <p>
-        {fondo.senza_nome === fondo.nomi_noti && 'È esattamente metà. '}
+        {nVuote === nNomi && 'È esattamente metà. '}
         Se hai fotografie, memorie di famiglia, lettere o documenti che possano riempire una di quelle
         caselle, scrivici a <a href="mailto:info@elbrenz.eu">info@elbrenz.eu</a>. Ogni casella che si
         accende è un uomo che smette di essere un numero.

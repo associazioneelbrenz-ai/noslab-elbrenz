@@ -45,6 +45,52 @@ export type Persona = {
   luogo_nascita: string | null; regione_nascita: string | null;
   prigioniero_guerra: boolean; ignoto: boolean; note: string | null;
   evento_slug: string | null; evento_nome: string | null; evento_certezza: string | null;
+  // Brief "Sezione cimiteri, chiusura completa" (27/8/2026 §1.1-1.2): tre
+  // colonne nuove su memoria_persona, in coda alla vista pubblica.
+  relazione_registrazione: 'doppia_registrazione' | 'doppia_sepoltura' | 'da_verificare' | null;
+  conta_nei_totali: boolean;
+  nota_registrazione: string | null;
+  // nota_registrazione e' una nota di redazione interna (spiega perche' una
+  // riga e' doppia o da verificare): non va mai mostrata al lettore. Solo
+  // altra_* e' pubblico, ed e' popolato oggi solo sul lato "civile" delle tre
+  // doppie sepolture — trovaRimando() sotto lo legge in entrambe le
+  // direzioni, senza toccare la vista.
+  altra_settore: string | null; altra_numero: number | null; altra_slug: string | null;
+  reparto_denominazione: string | null; reparto_scioglimento: string | null;
+  reparto_slug: string | null; reparto_certezza: 'certa' | 'alta' | 'da_verificare' | null;
+};
+
+// Un rimando funziona in entrambe le direzioni anche se altra_* e' scritto
+// oggi solo su una riga per coppia (brief 27/8/2026 §3, verifica 7): se la
+// riga non ha un proprio altra_*, si cerca fra le altre persone dello stesso
+// fondo quella che rimanda A questa — mai un elenco di coppie scritto a mano,
+// solo il campo altra_* letto nei due sensi.
+export function trovaRimando(persona: Persona, tutte: Persona[]): { settore: string; numero: number; slug: string } | null {
+  if (persona.relazione_registrazione === 'doppia_sepoltura' && persona.altra_settore && persona.altra_numero != null && persona.altra_slug) {
+    return { settore: persona.altra_settore, numero: persona.altra_numero, slug: persona.altra_slug };
+  }
+  // Solo una riga doppia_sepoltura genera un rimando: la tomba 90
+  // (doppia_registrazione) punta anch'essa a un'altra riga con altra_*
+  // (la sua registrazione vera, 97), ma quel puntatore non e' un rimando fra
+  // due sepolture dello stesso uomo — senza questo filtro, la pagina di 97
+  // mostrerebbe "registrato anche alla tomba 90", che non esiste piu' per il
+  // lettore.
+  const reciproco = tutte.find((p) =>
+    p.fondo_slug === persona.fondo_slug && p.relazione_registrazione === 'doppia_sepoltura'
+    && p.altra_settore === persona.settore && p.altra_numero === persona.numero);
+  return reciproco && reciproco.settore && reciproco.numero != null
+    ? { settore: reciproco.settore, numero: reciproco.numero, slug: reciproco.slug }
+    : null;
+}
+
+// I quattro gradi di certezza di un collegamento a un evento (brief
+// "Operazione Valanga", 27/8/2026 §6.1): testo definitivo, scritto accanto
+// al nome, mai in nota.
+export const TESTO_CERTEZZA_EVENTO: Record<string, string> = {
+  attestato: 'Nominato nei documenti dell\'operazione.',
+  sostenuto: 'Il suo reparto risulta schierato nel settore in quelle ore.',
+  probabile: 'Collegamento dedotto dalla data e dal luogo.',
+  non_sostenuto: 'Il reparto è stato cercato nei documenti e non compare.',
 };
 
 export type Evento = {
@@ -98,6 +144,31 @@ export async function leggiPersone(fondoSlug: string): Promise<Persona[]> {
 
 export function conNome(p: Persona): boolean {
   return !!p.nome_completo && p.nome_completo !== 'sconosciuto';
+}
+
+// Ha davvero un nome E conta: usata ovunque una riga con
+// conta_nei_totali=false (oggi solo la tomba 90, una registrazione
+// superflua) deve sparire da conteggi, albo e planimetria pur restando nel
+// database (brief "chiusura completa", 27/8/2026 §1.1, §3, §4). conNome()
+// resta la verita' grezza del dato, non tocca la; questa e' la lettura "conta
+// per il lettore".
+export function contaComeNoto(p: Persona): boolean {
+  return conNome(p) && p.conta_nei_totali !== false;
+}
+
+// Vista v_memoria_conteggi (brief "chiusura completa", 27/8/2026 §1.3): una
+// riga sola, tutti i totali del fondo. Ogni numero in pagina viene da qui,
+// mai da una count() scritta a mano — e' il motivo per cui erano divergenti.
+export type Conteggi = {
+  sepolture_militari: number; sepolture_civili: number; sepolture_totali: number;
+  uomini_distinti: number; uomini_in_entrambi_i_cimiteri: number;
+  senza_nome: number; coppie_aperte: number; con_data_di_morte: number;
+};
+
+export async function leggiConteggi(): Promise<Conteggi | null> {
+  const { data, error } = await sb.from('v_memoria_conteggi').select('*').maybeSingle();
+  if (error) { console.error('[memoria] lettura conteggi fallita:', error.message); return null; }
+  return data as Conteggi | null;
 }
 
 // Tutte le persone di tutti i fondi pubblicati: le pagine di reparto e di
@@ -172,6 +243,23 @@ export async function leggiEvento(slug: string): Promise<Evento | null> {
   const { data, error } = await sb.from('v_memoria_evento_pubblico').select('*').eq('slug', slug).maybeSingle();
   if (error) { console.error('[memoria] lettura evento fallita:', error.message); return null; }
   return data as Evento | null;
+}
+
+// Vista v_memoria_evento_reparto_pubblico (brief "Operazione Valanga",
+// 27/8/2026 §1.4, §6.2): i reparti letti sulle carte del dott. Mariotti per
+// un evento. Le riproduzioni non sono pubblicate per volontà del
+// ricercatore: questa vista non porta nessuna immagine, solo la lettura.
+export type EventoReparto = {
+  evento_slug: string; denominazione_documento: string; comando: string | null; sigla: string | null;
+  reparto_slug: string | null; reparto_denominazione: string | null;
+  confidenza: 'alta' | 'media' | 'da_verificare'; fonte: string | null; citazione: string | null;
+  note: string | null; sepolture_a_male: number;
+};
+
+export async function leggiEventoReparti(eventoSlug: string): Promise<EventoReparto[]> {
+  const { data, error } = await sb.from('v_memoria_evento_reparto_pubblico').select('*').eq('evento_slug', eventoSlug);
+  if (error) { console.error('[memoria] lettura reparti evento fallita:', error.message); return []; }
+  return (data ?? []) as EventoReparto[];
 }
 
 export function meseIt(mese: number): string {
