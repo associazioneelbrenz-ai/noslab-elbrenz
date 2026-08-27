@@ -41,6 +41,22 @@ function componiTesto(
     case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/glossario-console`); break;
     case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto: ${d.contatto ?? '—'}`, `Gestisci su ${site}/museo-gg-curatela`); break;
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
+    // [27/8/2026] Cruscotto del direttivo, promemoria settimanale. Regola
+    // non negoziabile del brief: si manda anche a zero allarmi, una riga
+    // sola — il silenzio non deve poter significare sia "tutto bene" sia
+    // "sono morto".
+    case 'cruscotto_allarmi': {
+      if (d.tuttoAPosto) {
+        r.push(`Nessun allarme. Ultima raccolta del radar: ${d.radarUltimo ?? '—'}.`);
+      } else {
+        const code = Array.isArray(d.code) ? d.code : [];
+        const lavori = Array.isArray(d.lavori) ? d.lavori : [];
+        for (const c of code) r.push(`· ${c.coda} ferma da ${c.giorni_ferma} giorni`);
+        for (const l of lavori) r.push(`· ${l.lavoro} guasto (${l.esito})`);
+        r.push(`Cura su ${site}/cruscotto`);
+      }
+      break;
+    }
     // [26/8/2026] Coda di ascolto del glossario ferma da piu' di sette
     // giorni. Testo definitivo del brief, invariato: solo la riga
     // dell'etichetta sopra (comune a tutti i tipi) si aggiunge davanti.

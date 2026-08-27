@@ -270,6 +270,10 @@ export default defineConfig({
           '/paga-quota', '/scheda-domanda', '/rinnovo', '/integrazione/',
           '/tessera/', '/guardiani/conferma', '/newsletter/conferma',
           '/newsletter/disiscrizione',
+          // AGGIUNTA 27/8/2026 — /cruscotto (brief "Cruscotto del direttivo"):
+          // area riservata al direttivo (ruolo>=50), noindex, non deve
+          // comparire in sitemap ne' essere indicizzata.
+          '/cruscotto',
         ];
         for (const p of RISERVATE) if (page.includes(p)) return false;
 

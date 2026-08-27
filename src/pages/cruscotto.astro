@@ -1,0 +1,325 @@
+---
+/**
+ * /cruscotto — il cruscotto del direttivo (brief "Cruscotto del direttivo e
+ * separazione delle note", 27/8/2026). Non una pagina di statistiche: un
+ * rilevatore di silenzi — quattro guasti diversi in due giorni avevano tutti
+ * la stessa forma, qualcosa che aspettava e nessuno se ne accorgeva.
+ *
+ * Accessibile solo a ruolo>=50. Per chiunque altro — anonimo, socio, persino
+ * un curatore — risponde come una pagina inesistente: stesso contenuto del
+ * vero 404 del sito, visibile di default, finche' un controllo lato client
+ * non conferma il ruolo e non lo sostituisce con il cruscotto vero. Nessuna
+ * schermata di accesso: chi arriva qui deve gia' avere una sessione (da
+ * /accedi o da un'altra pagina riservata). Isola client-side, nessuna logica
+ * sensibile: la sicurezza sta nelle RLS e nel gate a ruolo dentro le
+ * funzioni SECURITY DEFINER, non in questo script.
+ *
+ * Nessun dato personale in pagina (§9): solo numeri e date, mai nomi di
+ * soci — anche dove le viste sottostanti (v_soci_in_regola, domande_
+ * tesseramento) contengono PII vera, qui arrivano solo conteggi aggregati.
+ */
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Cruscotto · El Brenz" description="Area riservata di El Brenz." ogImage="/og/og-default.jpg" noindex={true}>
+  <main class="bg-[#F8F1E4] min-h-screen">
+
+    {/* Stesso contenuto del vero 404 (src/pages/404.astro): per chi non ha
+        un ruolo>=50 questa pagina non deve raccontare nient'altro. */}
+    <section id="cru-notfound" class="py-20 px-6 min-h-[70vh] flex items-center">
+      <div class="max-w-xl mx-auto text-center">
+        <p class="text-[#C8923E] uppercase tracking-[.2em] text-xs font-semibold mb-3">Errore 404</p>
+        <h1 class="text-3xl md:text-4xl text-[#1E2E26] mb-6" style="font-family: 'Playfair Display', serif; font-weight: 500;">
+          Questo sentiero non porta da nessuna parte
+        </h1>
+        <div class="w-14 h-[2px] bg-[#C8923E] mx-auto mb-6" aria-hidden="true"></div>
+        <p class="text-[#1E2E26]/80 leading-relaxed mb-8" style="font-family: 'Source Serif 4', Georgia, serif;">
+          La pagina che cerchi non esiste o è stata spostata. Puoi tornare sui sentieri battuti:
+        </p>
+        <div class="flex flex-wrap justify-center gap-3">
+          <a href="/" class="inline-block bg-[#C8923E] text-[#1E2E26] px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:bg-[#D9A94E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+            Torna alla home
+          </a>
+          <a href="/archivio-storico" class="inline-block bg-white text-[#1E2E26] border border-[#C8923E]/60 px-6 py-3 text-sm font-medium tracking-wider uppercase no-underline hover:border-[#C8923E] transition-colors focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C8923E]">
+            Archivio storico
+          </a>
+        </div>
+        <p class="mt-8 text-sm text-[#1E2E26]/60">
+          Cercavi qualcosa di preciso? Chiedi ad <a href="/andreas" class="underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]">Andreas</a> o scrivici a <a href="mailto:info@elbrenz.eu" class="underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]">info@elbrenz.eu</a>.
+        </p>
+      </div>
+    </section>
+
+    {/* IL CRUSCOTTO VERO — nascosto finche' il ruolo non e' confermato */}
+    <div id="cru-app" class="hidden max-w-3xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
+      <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo</p>
+      <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-10" style="font-family: 'Playfair Display', serif; font-weight: 500;">Cruscotto</h1>
+
+      {/* 6.1 · Cosa aspetta qualcuno */}
+      <section class="mb-14">
+        <h2 class="cru-h2">Cosa aspetta qualcuno</h2>
+        <div id="cru-code" class="mt-4 flex flex-col gap-2"></div>
+      </section>
+
+      {/* 6.2 · Cosa gira da solo */}
+      <section class="mb-14">
+        <h2 class="cru-h2">Cosa gira da solo</h2>
+        <div id="cru-lavori" class="mt-4 flex flex-col gap-2"></div>
+
+        <p class="mt-8 mb-3 text-sm text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Queste sono le funzioni che qualcuno ha davvero chiamato. Una funzione pubblicata che non
+          compare qui non viene invocata da nessuno.
+        </p>
+        <div id="cru-funzioni" class="flex flex-col gap-2"></div>
+      </section>
+
+      {/* 6.3 · Quanto è pieno */}
+      <section class="mb-14">
+        <h2 class="cru-h2">Quanto è pieno</h2>
+        <p class="mt-2 mb-4 text-sm text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Non sono statistiche di successo. Sono le distanze fra quello che il sistema può contenere e
+          quello che contiene davvero.
+        </p>
+        <div id="cru-completezza" class="flex flex-col gap-3"></div>
+      </section>
+
+      {/* 6.4 · Sicurezza */}
+      <section class="mb-6">
+        <h2 class="cru-h2">Sicurezza</h2>
+        <div id="cru-sicurezza" class="mt-4 flex flex-col gap-2"></div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .cru-h2 {
+    font-family: 'Playfair Display', serif; font-weight: 500; font-size: 1.4rem; color: #1E2E26;
+    margin: 0; padding-bottom: .6rem; border-bottom: 1px solid #E5DFCF;
+  }
+
+  .cru-riga {
+    display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .35rem 1rem;
+    background: #fff; border: 1px solid #E5DFCF; border-radius: 6px; padding: .9rem 1.1rem;
+  }
+  .cru-riga.allarme { border-color: #C8923E; background: #FBF3E3; }
+  .cru-riga .titolo { font-size: .98rem; color: #1E2E26; font-weight: 500; }
+  .cru-riga .dettaglio { grid-column: 1 / -1; font-size: .8rem; color: #1E2E26b3; }
+  .cru-riga.allarme .dettaglio { color: #8a6215; font-weight: 600; }
+  .cru-riga .numero { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 1.1rem; color: #1E2E26; text-align: right; }
+  .cru-riga.allarme .numero { color: #8a6215; }
+  .cru-riga a.cru-link {
+    text-decoration: none; color: inherit; display: contents;
+  }
+  .cru-riga a.cru-link:focus-visible { outline: 2px solid #C8923E; outline-offset: 2px; border-radius: 4px; }
+
+  .cru-bar-wrap { background: #fff; border: 1px solid #E5DFCF; border-radius: 6px; padding: .9rem 1.1rem; text-decoration: none; color: inherit; display: block; }
+  .cru-bar-wrap:focus-visible { outline: 2px solid #C8923E; outline-offset: 2px; }
+  .cru-bar-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: .5rem; }
+  .cru-bar-top .titolo { font-size: .92rem; color: #1E2E26; font-weight: 500; }
+  .cru-bar-top .frazione { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: .82rem; color: #1E2E2699; flex-shrink: 0; }
+  .cru-bar-traccia { height: 8px; background: #F0E9D8; border-radius: 999px; overflow: hidden; }
+  .cru-bar-piena { height: 100%; background: #C8923E; border-radius: 999px; }
+
+  .cru-sic-riga { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; background: #fff; border: 1px solid #E5DFCF; border-radius: 6px; padding: .9rem 1.1rem; }
+  .cru-sic-riga.allarme { border-color: #C8923E; background: #FBF3E3; }
+  .cru-sic-testo .titolo { font-size: .92rem; color: #1E2E26; }
+  .cru-sic-testo .data { font-size: .78rem; color: #1E2E2699; margin-top: .15rem; }
+  .cru-sic-riga.allarme .cru-sic-testo .data { color: #8a6215; font-weight: 600; }
+  .cru-btn {
+    font-family: 'Inter', sans-serif; font-size: .8rem; font-weight: 500; color: #1E2E26; background: #fff;
+    border: 1px solid #C8923E88; border-radius: 999px; padding: .5rem 1rem; cursor: pointer; white-space: nowrap;
+  }
+  .cru-btn:hover { border-color: #C8923E; }
+  .cru-btn:focus-visible { outline: 2px solid #C8923E; outline-offset: 2px; }
+  .cru-btn:disabled { opacity: .5; cursor: default; }
+
+  .cru-vuoto { font-size: .88rem; color: #1E2E2699; font-style: italic; padding: .5rem 0; }
+
+  @media (max-width: 560px) {
+    .cru-riga { grid-template-columns: 1fr; }
+    .cru-riga .numero { text-align: left; }
+  }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  const $ = (id: string) => document.getElementById(id);
+  const fmtData = (iso: string | null) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+  const fmtDataOra = (iso: string | null) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }) + ' ' +
+      d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+  };
+  const GIORNI = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
+  // Traduce le pianificazioni cron davvero in uso in questo progetto: non è
+  // un parser cron generico, solo i pattern reali (minuto/ora fissi, ogni
+  // ora, ogni N minuti, un giorno della settimana).
+  function cronLeggibile(espr: string): string {
+    const parti = espr.trim().split(/\s+/);
+    if (parti.length !== 5) return espr;
+    const [min, ora, giornoMese, mese, giornoSett] = parti;
+    if (min === '*' && ora === '*') return 'ogni minuto';
+    if (min.startsWith('*/') && ora === '*') return `ogni ${min.slice(2)} minuti`;
+    if (ora === '*' && giornoMese === '*' && mese === '*' && giornoSett === '*') return `al minuto ${min} di ogni ora`;
+    const oraTesto = `${ora.padStart(2, '0')}:${min.padStart(2, '0')}`;
+    if (giornoMese === '*' && mese === '*' && giornoSett !== '*') {
+      const g = GIORNI[parseInt(giornoSett, 10) % 7] ?? giornoSett;
+      return `ogni ${g} alle ${oraTesto}`;
+    }
+    if (giornoMese === '*' && mese === '*' && giornoSett === '*') return `ogni giorno alle ${oraTesto}`;
+    return espr;
+  }
+
+  function riga(titolo: string, numero: string, dettaglio: string, allarme: boolean, href: string | null): HTMLElement {
+    const el = document.createElement(href ? 'a' : 'div');
+    el.className = 'cru-riga' + (allarme ? ' allarme' : '') + (href ? ' cru-link' : '');
+    if (href) (el as HTMLAnchorElement).href = href;
+    const span = (t: string, cls: string) => { const s = document.createElement('span'); s.className = cls; s.textContent = t; return s; };
+    el.appendChild(span(titolo, 'titolo'));
+    el.appendChild(span(numero, 'numero'));
+    if (dettaglio) el.appendChild(span(dettaglio, 'dettaglio'));
+    return el;
+  }
+  function vuoto(testo: string): HTMLElement {
+    const p = document.createElement('p');
+    p.className = 'cru-vuoto';
+    p.textContent = testo;
+    return p;
+  }
+
+  // ---- 6.1 · Cosa aspetta qualcuno ----------------------------------------
+  async function caricaCode() {
+    const cont = $('cru-code');
+    if (!cont) return;
+    const { data, error } = await supabase.from('v_cruscotto_code').select('*');
+    if (error || !data) { cont.appendChild(vuoto('Non leggibile in questo momento.')); return; }
+    const ordinate = [...data].sort((a: any, b: any) =>
+      (b.in_allarme === true ? 1 : 0) - (a.in_allarme === true ? 1 : 0) || b.giorni_ferma - a.giorni_ferma);
+    for (const r of ordinate as any[]) {
+      const dettaglio = r.in_allarme
+        ? `ferma da ${r.giorni_ferma} giorn${r.giorni_ferma === 1 ? 'o' : 'i'}`
+        : (r.in_attesa > 0 ? `${r.giorni_ferma} giorn${r.giorni_ferma === 1 ? 'o' : 'i'}` : '');
+      cont.appendChild(riga(r.coda, String(r.in_attesa), dettaglio, !!r.in_allarme, r.dove));
+    }
+  }
+
+  // ---- 6.2 · Cosa gira da solo ---------------------------------------------
+  async function caricaLavori() {
+    const cont = $('cru-lavori');
+    if (!cont) return;
+    const { data, error } = await supabase.rpc('cruscotto_lavori');
+    if (error || !data) { cont.appendChild(vuoto('Non leggibile in questo momento.')); return; }
+    const ordinati = [...data].sort((a: any, b: any) => (b.in_allarme === true ? 1 : 0) - (a.in_allarme === true ? 1 : 0));
+    for (const l of ordinati as any[]) {
+      const ultima = fmtDataOra(l.ultima_esecuzione);
+      const dettaglio = `${cronLeggibile(l.pianificazione)} · ${ultima ? `ultima il ${ultima}` : 'mai eseguito'} · ${l.esito}`;
+      cont.appendChild(riga(l.lavoro, l.attivo ? 'attivo' : 'fermo', dettaglio, !!l.in_allarme, null));
+    }
+  }
+
+  async function caricaFunzioni() {
+    const cont = $('cru-funzioni');
+    if (!cont) return;
+    const { data, error } = await supabase.rpc('cruscotto_funzioni');
+    if (error || !data || data.length === 0) { cont.appendChild(vuoto('Nessuna chiamata registrata negli ultimi 30 giorni.')); return; }
+    // Se il dato non e' disponibile la funzione restituisce una riga sola
+    // con chiamate_30gg=0 e ultima=null: si mostra come nota, non come una
+    // riga di funzione vera (non e' un elenco vuoto: e' un elenco che non sa).
+    const nonDisponibile = data.length === 1 && data[0].ultima === null && data[0].chiamate_30gg === 0;
+    if (nonDisponibile) { cont.appendChild(vuoto((data as any[])[0].funzione)); return; }
+    for (const f of data as any[]) {
+      const ultima = fmtDataOra(f.ultima);
+      cont.appendChild(riga(f.funzione, `${f.chiamate_30gg}`, `ultima chiamata ${ultima ?? '—'} · stato ${f.ultimo_stato ?? '—'}`, false, null));
+    }
+  }
+
+  // ---- 6.3 · Quanto è pieno -------------------------------------------------
+  async function caricaCompletezza() {
+    const cont = $('cru-completezza');
+    if (!cont) return;
+    const { data, error } = await supabase.from('v_cruscotto_completezza').select('*');
+    if (error || !data) { cont.appendChild(vuoto('Non leggibile in questo momento.')); return; }
+    const ordinati = [...data].sort((a: any, b: any) =>
+      (a.totale ? a.fatti / a.totale : 0) - (b.totale ? b.fatti / b.totale : 0));
+    for (const r of ordinati as any[]) {
+      const pct = r.totale > 0 ? Math.round((r.fatti / r.totale) * 100) : 0;
+      const a = document.createElement('a');
+      a.className = 'cru-bar-wrap';
+      a.href = r.dove;
+      a.innerHTML = `
+        <div class="cru-bar-top">
+          <span class="titolo">${r.indicatore}</span>
+          <span class="frazione">${r.fatti} su ${r.totale}</span>
+        </div>
+        <div class="cru-bar-traccia"><div class="cru-bar-piena" style="width:${pct}%"></div></div>`;
+      cont.appendChild(a);
+    }
+  }
+
+  // ---- 6.4 · Sicurezza -------------------------------------------------------
+  const CONTROLLI: { chiave: string; testo: string }[] = [
+    { chiave: 'advisor_sicurezza', testo: 'Advisor di sicurezza Supabase, letto dalla dashboard' },
+    { chiave: 'lettura_anon', testo: 'Prova di lettura pubblica impersonando anon' },
+    { chiave: 'anteprima_condivisione', testo: 'Prova reale dell\'anteprima di condivisione su un dispositivo' },
+  ];
+  const SOGLIA_GIORNI_SICUREZZA = 30;
+
+  function rigaSicurezza(chiave: string, testo: string, dataIso: string | null): HTMLElement {
+    const giorni = dataIso ? Math.floor((Date.now() - new Date(dataIso).getTime()) / 86400000) : null;
+    const allarme = giorni === null || giorni > SOGLIA_GIORNI_SICUREZZA;
+    const el = document.createElement('div');
+    el.className = 'cru-sic-riga' + (allarme ? ' allarme' : '');
+    const testoWrap = document.createElement('div');
+    testoWrap.className = 'cru-sic-testo';
+    const t = document.createElement('p'); t.className = 'titolo'; t.style.margin = '0'; t.textContent = testo;
+    const d = document.createElement('p'); d.className = 'data'; d.style.margin = '0';
+    d.textContent = dataIso ? `Ultima verifica il ${fmtData(dataIso)}` : 'Mai segnato';
+    testoWrap.append(t, d);
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'cru-btn'; btn.textContent = 'Segnato oggi';
+    btn.addEventListener('click', async () => {
+      btn.disabled = true; btn.textContent = 'Segno…';
+      const { data: nuovoValore, error } = await supabase.rpc('cruscotto_segna_controllo', { p_controllo: chiave });
+      if (error) { btn.disabled = false; btn.textContent = 'Segnato oggi'; alert('Non riuscito: ' + error.message); return; }
+      const nuovaData = (nuovoValore as any)?.[chiave] ?? null;
+      d.textContent = nuovaData ? `Ultima verifica il ${fmtData(nuovaData + 'T00:00:00')}` : d.textContent;
+      el.classList.remove('allarme');
+      btn.disabled = false; btn.textContent = 'Segnato oggi';
+    });
+    el.append(testoWrap, btn);
+    return el;
+  }
+
+  async function caricaSicurezza() {
+    const cont = $('cru-sicurezza');
+    if (!cont) return;
+    const { data } = await supabase.from('config_app').select('valore').eq('chiave', 'cruscotto_controlli').maybeSingle();
+    const valore = (data?.valore ?? {}) as Record<string, string>;
+    for (const c of CONTROLLI) {
+      cont.appendChild(rigaSicurezza(c.chiave, c.testo, valore[c.chiave] ? valore[c.chiave] + 'T00:00:00' : null));
+    }
+  }
+
+  // ---- avvio: nessuna schermata di accesso, solo un controllo silenzioso --
+  async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return; // resta la pagina "inesistente"
+    const { data: ruoli } = await supabase
+      .from('utente_ruolo').select('ruolo:ruolo_id ( livello )').eq('utente_id', session.user.id);
+    const livello = (ruoli ?? []).reduce((m: number, r: any) => Math.max(m, r?.ruolo?.livello ?? 0), 0);
+    if (livello < 50) return; // resta la pagina "inesistente"
+
+    $('cru-notfound')?.classList.add('hidden');
+    $('cru-app')?.classList.remove('hidden');
+
+    await Promise.all([caricaCode(), caricaLavori(), caricaFunzioni(), caricaCompletezza(), caricaSicurezza()]);
+  }
+  init();
+</script>
