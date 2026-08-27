@@ -45,6 +45,12 @@ export type Persona = {
   luogo_nascita: string | null; regione_nascita: string | null;
   prigioniero_guerra: boolean; ignoto: boolean; note: string | null;
   evento_slug: string | null; evento_nome: string | null; evento_certezza: string | null;
+  // note = osservazioni del registro del 1941, evento_motivazione = perche'
+  // NOI colleghiamo la persona all'evento (brief "Cruscotto del direttivo e
+  // separazione delle note", 27/8/2026 §1-3): due cose diverse, mai lo
+  // stesso paragrafo. Un testo redazionale nostro era finito per errore in
+  // note su tre schede; spostato in evento_motivazione, note tornata vuota.
+  evento_motivazione: string | null;
   // Brief "Sezione cimiteri, chiusura completa" (27/8/2026 §1.1-1.2): tre
   // colonne nuove su memoria_persona, in coda alla vista pubblica.
   relazione_registrazione: 'doppia_registrazione' | 'doppia_sepoltura' | 'da_verificare' | null;
