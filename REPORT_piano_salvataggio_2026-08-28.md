@@ -214,4 +214,5 @@ mano rileggendo ogni file prima del commit.
 
 ## Commit su `origin/main`
 
-_Da compilare dopo il push._
+`aa92c53` — "backup: salvataggio settimanale cifrato, automatico e gratuito"
+(verificato con `git log origin/main --oneline -1` dopo il push).
