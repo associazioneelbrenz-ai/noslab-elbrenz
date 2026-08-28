@@ -139,4 +139,4 @@ Nessun file applicativo toccato — nessun deploy Netlify necessario.
 
 ## Commit su `origin/main`
 
-_Da compilare dopo il push — vedi ultimo commit di questo lavoro._
+`ffbb08b` — "db: baseline dello schema fondativo, per introspezione, mai applicata" (verificato con `git log origin/main --oneline -1` dopo il push).
