@@ -15,7 +15,7 @@
     "og:museo": "node scripts/genera-og-museo.mjs",
     "og:glossario": "node scripts/genera-og-glossario.mjs",
     "articoli:esporta": "node scripts/esporta-articoli-db.mjs",
-    "prebuild": "node scripts/genera-og-eventi.mjs || echo \"[og] eventi saltati: restano le immagini committate\"; node scripts/genera-og-storie.mjs || echo \"[og] storie saltate: restano le immagini committate\"; node scripts/genera-og-museo.mjs || echo \"[og] museo saltato: restano le immagini committate\"; node scripts/genera-og-glossario.mjs || echo \"[og] glossario saltato: restano le immagini committate\""
+    "prebuild": "node scripts/scrivi-versione.mjs; node scripts/genera-og-eventi.mjs || echo \"[og] eventi saltati: restano le immagini committate\"; node scripts/genera-og-storie.mjs || echo \"[og] storie saltate: restano le immagini committate\"; node scripts/genera-og-museo.mjs || echo \"[og] museo saltato: restano le immagini committate\"; node scripts/genera-og-glossario.mjs || echo \"[og] glossario saltato: restano le immagini committate\""
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",

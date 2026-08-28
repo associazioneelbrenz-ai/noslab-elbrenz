@@ -2,6 +2,10 @@
 dist/
 .astro/
 
+# Generata a ogni build da scripts/scrivi-versione.mjs — mai committata,
+# altrimenti mostrerebbe un commit vecchio finche' non si rifà la build.
+public/versione.json
+
 # Dependencies
 node_modules/
 

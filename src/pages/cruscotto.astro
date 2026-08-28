@@ -71,6 +71,7 @@ import Layout from '../layouts/Layout.astro';
           Ogni servizio programmato dichiara di aver girato e come è andata. Un servizio che non
           compare come sano qui, o non sta girando, o sta fallendo in silenzio.
         </p>
+        <div id="cru-versione" class="mb-4 flex flex-col gap-2"></div>
         <div id="cru-servizi" class="flex flex-col gap-2"></div>
 
         <h3 class="mt-10 mb-2 text-sm uppercase tracking-[0.08em] text-[#8a6215] font-semibold">Lavori pianificati</h3>
@@ -214,6 +215,39 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
+  // ---- 6.2a · Versione in produzione ---------------------------------------
+  // Brief "Piano di salvataggio gratuito" (28/8/2026), buco trovato dopo il
+  // deploy mancato: il sito si pubblica da CLI locale, non da git, quindi
+  // "committato" non ha mai significato "in produzione" — e la sentinella,
+  // controllando solo che le rotte rispondano 200, non se ne accorgerebbe:
+  // una build vecchia risponde bene quanto una nuova. Questa riga legge
+  // /versione.json (scritto da scripts/scrivi-versione.mjs a ogni build) e
+  // mostra il commit vivo e da quanti giorni è stato costruito. La pagina
+  // non conosce git, quindi non può confrontare da sola con origin/main:
+  // mostrare l'hash e la data basta, un umano che si aspetta un hash diverso
+  // lo nota subito.
+  const SOGLIA_GIORNI_VERSIONE = 7;
+
+  async function caricaVersione() {
+    const cont = $('cru-versione');
+    if (!cont) return;
+    try {
+      const r = await fetch('/versione.json', { cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      const v = await r.json();
+      if (!v.costruito_il || v.costruito_il === null) {
+        cont.appendChild(riga('Versione in produzione', v.commit ?? 'sconosciuto', 'data di build sconosciuta', true, null));
+        return;
+      }
+      const giorni = Math.floor((Date.now() - new Date(v.costruito_il).getTime()) / 86400000);
+      const allarme = giorni > SOGLIA_GIORNI_VERSIONE;
+      const dettaglio = `ramo ${v.ramo ?? 'sconosciuto'} · costruita il ${fmtDataOra(v.costruito_il)} · ${giorni} giorn${giorni === 1 ? 'o' : 'i'} fa`;
+      cont.appendChild(riga('Versione in produzione', v.commit ?? 'sconosciuto', dettaglio, allarme, null));
+    } catch (_) {
+      cont.appendChild(riga('Versione in produzione', 'sconosciuto', '/versione.json non raggiungibile', true, null));
+    }
+  }
+
   // ---- 6.2 · Cosa gira da solo ---------------------------------------------
   // Brief "Il battito dei servizi" (28/8/2026 §4.1): cruscotto_servizi(),
   // sopra i lavori pg_cron. Sostituisce cruscotto_funzioni() (segnaposto
@@ -328,7 +362,7 @@ import Layout from '../layouts/Layout.astro';
     $('cru-notfound')?.classList.add('hidden');
     $('cru-app')?.classList.remove('hidden');
 
-    await Promise.all([caricaCode(), caricaServizi(), caricaLavori(), caricaCompletezza(), caricaSicurezza()]);
+    await Promise.all([caricaVersione(), caricaCode(), caricaServizi(), caricaLavori(), caricaCompletezza(), caricaSicurezza()]);
   }
   init();
 </script>

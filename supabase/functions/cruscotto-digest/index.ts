@@ -104,14 +104,30 @@ Deno.serve(async (req: Request) => {
   const code = ((righeCoda ?? []) as any[]).map((r) => ({ coda: r.coda, giorni_ferma: r.giorni_ferma }));
   const tuttoAPosto = code.length === 0 && lavoriGuasti.length === 0 && serviziGuasti.length === 0;
 
+  // Versione in produzione (brief "Piano di salvataggio gratuito", 28/8/2026):
+  // il sito si pubblica da CLI locale, non da git — un commit su main non
+  // dice niente su cosa gira davvero. Una riga sola nel promemoria, letta
+  // dallo stesso /versione.json del cruscotto. Se non risponde, non deve
+  // rompere il resto del digest: si dice "sconosciuta" e si va avanti.
+  let versione: { commit: string; giorni: number | null } = { commit: 'sconosciuta', giorni: null };
+  try {
+    const rv = await fetch('https://elbrenz.eu/versione.json', { cache: 'no-store' });
+    if (rv.ok) {
+      const v = await rv.json();
+      const giorni = v.costruito_il ? Math.floor((Date.now() - new Date(v.costruito_il).getTime()) / 86400000) : null;
+      versione = { commit: v.commit ?? 'sconosciuta', giorni };
+    }
+  } catch (_) { /* il digest non deve mai rompersi per questo */ }
+
   if (!esegui) {
-    return json({ ok: true, giro_a_vuoto: true, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti });
+    return json({ ok: true, giro_a_vuoto: true, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti, versione });
   }
 
   await notificaDirettivo(supabase, 'cruscotto_allarmi', {
     tuttoAPosto,
     servizi: serviziGuasti,
     code,
+    versione,
     lavori: lavoriGuasti,
     radarUltimo: dataOraLeggibile(radarUltimo),
   }).catch(() => {});

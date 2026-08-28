@@ -196,8 +196,10 @@ npm run dev   # Astro su localhost:4321 (o 4322 se 4321 occupata)
 ```bash
 npm run build                                                              # genera dist/
 netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2
-curl -I https://elbrenz-app.netlify.app                                    # verifica HTTP 200
+curl -s https://elbrenz.eu/versione.json                                   # l'hash deve combaciare con `git rev-parse --short HEAD`
 ```
+Un HTTP 200 non basta (Trappola 17): verifica sempre `/versione.json` contro
+l'hash atteso, non solo che il sito risponda.
 
 ### Edge function deploy (Supabase)
 ```bash
@@ -355,6 +357,30 @@ ritroso è un lavoro a rischio di sicurezza che non va mescolato con altro.
 
 Vedi `REPORT_migrazioni_recupero_2026-08-28.md` per il recupero eseguito e
 per la fondazione mancante, non affrontata.
+
+### Trappola 17 — Il push su main non pubblica niente
+
+28/8/2026, brief "Piano di salvataggio gratuito": un commit sulla pagina del
+cruscotto era su `origin/main` da ore, dichiarato come "consegnato" in un
+report — e in produzione non c'era. Il sito si deploya da CLI locale
+(`netlify deploy --prod`), non da GitHub: il push aggiorna il repository,
+non il sito. Peggio, nessuno se ne accorge da solo: la sentinella controlla
+che le rotte rispondano, e una build vecchia risponde 200 su tutto quanto
+una nuova — sana in apparenza, ferma di fatto. Stessa forma dei cinque
+guasti della settimana: qualcosa sembra a posto perché nessuno guarda la
+cosa giusta.
+
+> **Il push su main non pubblica niente.** Un lavoro che tocca file di
+> runtime (`src/`, `public/`, edge function escluse — quelle si deployano a
+> parte, vedi sopra) non è consegnato finché non è stato lanciato
+> `netlify deploy --prod` E finché `/versione.json` in produzione non mostra
+> il commit atteso.
+>
+> Nei report, la voce "deploy" va sempre distinta dalla voce "commit". La
+> verifica del deploy è il confronto fra l'hash atteso e quello vivo letto
+> da `/versione.json` (anche visibile nel cruscotto, blocco "Cosa gira da
+> solo"), mai il solo fatto che la build sia riuscita o che il push sia
+> andato a buon fine.
 
 ## Cose da NON fare mai
 

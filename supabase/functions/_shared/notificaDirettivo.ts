@@ -46,6 +46,11 @@ function componiTesto(
     // sola — il silenzio non deve poter significare sia "tutto bene" sia
     // "sono morto".
     case 'cruscotto_allarmi': {
+      // [28/8/2026] Brief "Piano di salvataggio gratuito": una riga sola,
+      // sempre presente (allarme o no), perche' il sito si pubblica da CLI
+      // locale e "committato" non e' mai stato "in produzione".
+      const v = d.versione ?? {};
+      r.push(`Versione in produzione: ${v.commit ?? 'sconosciuta'} (${v.giorni ?? '?'} giorni)`);
       if (d.tuttoAPosto) {
         r.push(`Nessun allarme. Ultima raccolta del radar: ${d.radarUltimo ?? '—'}.`);
       } else {
