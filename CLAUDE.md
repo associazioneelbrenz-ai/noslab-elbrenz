@@ -311,6 +311,28 @@ Trappola 13. La concatenazione è la via sicura.
 Il difetto è invisibile a build verde e si vede solo nell'HTML prodotto: dopo
 ogni modifica a un testo composto, `grep` sul `dist/` e leggere la stringa vera.
 
+### Trappola 15 — Una funzione consegnata è una funzione chiamata
+
+Censimento del 28/8/2026 (BRIEF "Censimento delle funzioni e chiusura degli
+orfani"): cinque edge function pubblicate e mai collegate a nulla, scoperte
+tutte per inciampo in tre giorni (bucket senza policy, funzione aperta ad
+`anon`, due cron mai creati, un terzo cron cercato da Code e trovato assente).
+Il `CREATE` che non dà errore, o il `deploy` che risponde 200, non sono una
+prova che qualcosa userà quella funzione.
+
+> **Nessuna edge function si considera consegnata finché non è dichiarata in
+> `config.toml` e non ha un chiamante scritto.** Se il chiamante è pg_cron, il
+> lavoro schedulato fa parte della consegna. Se è il sito o l'app, il file che
+> la invoca fa parte della consegna. Se non deve averne uno (uno strumento
+> manuale, una migrazione una tantum), la motivazione va scritta da qualche
+> parte leggibile — non lasciata implicita.
+>
+> Una funzione pubblicata e non chiamata non è lavoro finito in attesa: è
+> lavoro perduto che sembra fatto.
+
+Vedi `CENSIMENTO_FUNZIONI_2026-08-28.md` per il censimento completo e
+`REPORT_censimento_funzioni_2026-08-28.md` per l'esito delle verifiche.
+
 ## Cose da NON fare mai
 
 - ❌ Modificare il codice direttamente in produzione (anche se il sito è giù)

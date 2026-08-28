@@ -358,3 +358,20 @@ verify_jwt = true
 
 [functions.libro-sociale-file]
 verify_jwt = true
+
+# glossario-audio-migrazione, pulizia-ricevute-prova, upload-temp-og-cimiteri
+# (censimento 28/8/2026): tre strumenti una tantum, gia' eseguiti e disattivati
+# a mano (rispondono solo un messaggio fisso), deployate ma mai dichiarate qui.
+# Oggi verify_jwt=false dal vivo; senza questa riga un redeploy in blocco le
+# riporterebbe al default, non a quello che hanno ora. Nessuna delle tre ha un
+# sorgente in questo repository: il codice esiste solo a Supabase (verificato
+# con get_edge_function), coerente con l'essere state disattivate sul posto
+# invece che ridispiegate da qui.
+[functions.glossario-audio-migrazione]
+verify_jwt = false
+
+[functions.pulizia-ricevute-prova]
+verify_jwt = false
+
+[functions.upload-temp-og-cimiteri]
+verify_jwt = false
