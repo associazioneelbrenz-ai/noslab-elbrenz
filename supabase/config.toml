@@ -375,3 +375,11 @@ verify_jwt = false
 
 [functions.upload-temp-og-cimiteri]
 verify_jwt = false
+
+# salvataggio-settimanale (28/8/2026, brief "Piano di salvataggio gratuito"):
+# esporta dati + inventario Storage, cifra con age (BACKUP_PUBKEY, solo
+# pubblica), carica su Drive. Schedulata (pg_cron, domenica 02:00 UTC) e
+# gated da x-ingest-token come le altre pianificate: mai pubblica,
+# verify_jwt=false, il gate e' il token.
+[functions.salvataggio-settimanale]
+verify_jwt = false
