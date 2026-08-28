@@ -212,6 +212,18 @@ Nessun oggetto vivo modificato, nessuna riga rimossa da nessuna parte,
 nessuna credenziale in nessun file di questo repository — verificato a
 mano rileggendo ogni file prima del commit.
 
+## Nota su Netlify
+
+`src/pages/cruscotto.astro` è un file applicativo (la quarta voce
+Sicurezza): a differenza degli ultimi due brief, qui un deploy Netlify
+serve. Il sito `elbrenz-app` (elbrenz.eu) è collegato a questo repository
+su GitHub, quindi il push su `main` dovrebbe aver avviato una build
+automatica — ma lo strumento Netlify di questa sessione ha risposto con un
+errore del suo gateway (502, Cloudflare) a ogni tentativo di controllo, e
+non ho potuto confermare l'esito della build. **Deployed non è testato**:
+va controllato a mano che la quarta riga Sicurezza compaia su
+`elbrenz.eu/cruscotto` prima di darlo per fatto.
+
 ## Commit su `origin/main`
 
 `aa92c53` — "backup: salvataggio settimanale cifrato, automatico e gratuito"
