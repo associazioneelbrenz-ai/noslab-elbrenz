@@ -333,6 +333,29 @@ prova che qualcosa userà quella funzione.
 Vedi `CENSIMENTO_FUNZIONI_2026-08-28.md` per il censimento completo e
 `REPORT_censimento_funzioni_2026-08-28.md` per l'esito delle verifiche.
 
+### Trappola 16 — Nessun oggetto di database nasce fuori da una migrazione
+
+Stesso giorno del censimento delle funzioni (28/8/2026, BRIEF "Riportare in
+git ciò che vive solo nel database"): dieci funzioni, quattro tabelle, sette
+viste, una vista sostituita e cinque lavori pg_cron erano nati direttamente
+sul database via MCP nei tre giorni precedenti, senza nessuna migrazione.
+Nella stessa indagine è emerso un problema più grande e più vecchio — la
+fondazione del progetto (aprile-maggio 2026) non ha nessun file in questo
+repository — lasciato apposta fuori da quel recupero, perché ricostruirla a
+ritroso è un lavoro a rischio di sicurezza che non va mescolato con altro.
+
+> **Nessun oggetto di database si crea fuori da una migrazione.** Vale per
+> le tabelle, le viste, le funzioni, le policy, i grant e i lavori
+> schedulati. Vale anche per chi lavora via MCP: se un oggetto nasce in una
+> sessione di chat, la migrazione corrispondente fa parte della consegna
+> della stessa sessione, non del giro dopo.
+>
+> Un oggetto che vive solo nel database non è un lavoro finito fuori posto:
+> è un lavoro che nessuno potrà ricostruire.
+
+Vedi `REPORT_migrazioni_recupero_2026-08-28.md` per il recupero eseguito e
+per la fondazione mancante, non affrontata.
+
 ## Cose da NON fare mai
 
 - ❌ Modificare il codice direttamente in produzione (anche se il sito è giù)
