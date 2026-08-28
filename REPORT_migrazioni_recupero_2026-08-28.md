@@ -89,4 +89,12 @@ Aggiunta a `CLAUDE.md`, come Trappola 16 (dopo la Trappola 15 del censimento del
 
 ## Commit verificati su `origin/main`
 
-*(da confermare dopo il push — vedi comando sotto)*
+- **`ccd582d`** — *migrazioni: recupero schema e dati del 26-28 agosto, mai versionati* — 5 file: `CLAUDE.md` (Trappola 16), questo report, e le tre migrazioni (`20260828100000_recupero_schema_servizi_reparti_cruscotto.sql`, `20260828100100_recupero_cron_radar_eventi.sql`, `20260828100200_recupero_dati_riferimento.sql`).
+
+Verificato con `git log origin/main --oneline` dopo il push (autenticato come `associazioneelbrenz-ai`):
+
+```
+ccd582d migrazioni: recupero schema e dati del 26-28 agosto, mai versionati
+f63760c report: censimento delle funzioni, quattro orfane e settanta non sessantanove
+0625eef censimento: settanta funzioni, non sessantanove, quattro orfane trovate
+```
