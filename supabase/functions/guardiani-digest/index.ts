@@ -92,6 +92,15 @@ Deno.serve(async (req: Request) => {
   // `?tutti=1` forza il richiamo dell'arretrato anche in un giorno vuoto.
   const forza = new URL(req.url).searchParams.get('tutti') === '1';
   if (lemmi.length === 0 || (nuoviOggi === 0 && !forza)) {
+    // Battito (brief "Il battito dei servizi", 28/8/2026 §3): niente da
+    // mandare e' uno stato sano, non un errore.
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'guardiani-digest',
+        p_esito: 'niente_da_fare',
+        p_dettaglio: { totale_coda: lemmi.length, nuovi_oggi: nuoviOggi },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
     return json({
       ok: true, totale_coda: lemmi.length, nuovi_oggi: nuoviOggi,
       inviato: false, nota: lemmi.length === 0 ? 'coda vuota' : 'nessun arrivo oggi',
@@ -210,6 +219,15 @@ Deno.serve(async (req: Request) => {
 
   // --- Messaggio unico al gruppo del direttivo ---
   await notificaDirettivo(supabase, 'guardiani_digest', { totale, contributori }).catch(() => {});
+
+  // Battito (brief "Il battito dei servizi", 28/8/2026 §3).
+  try {
+    await supabase.rpc('registra_battito', {
+      p_servizio: 'guardiani-digest',
+      p_esito: mailOk ? 'ok' : 'errore',
+      p_dettaglio: { totale, contributori: contributori.length, mail_inviata: mailOk },
+    });
+  } catch (_) { /* il battito non deve mai rompere il lavoro */ }
 
   // Si dice anche A CHI e' andata: un riepilogo che dichiara «inviata» senza
   // dire a chi e' esattamente il tipo di risposta da cui questo progetto ha

@@ -145,6 +145,17 @@ Deno.serve(async (req: Request) => {
   }
 
   const falliti = esiti.filter((e) => !e.ok).length;
+
+  // Battito (brief "Il battito dei servizi", 28/8/2026 §3): ultima
+  // operazione prima di rispondere, mai capace di far fallire il lavoro vero.
+  try {
+    await supabase.rpc('registra_battito', {
+      p_servizio: 'radar-eventi-harvest',
+      p_esito: errori.length > 0 ? 'errore' : 'ok',
+      p_dettaglio: { raccolti: raccolti.length, inseriti, portali_falliti: falliti },
+    });
+  } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+
   return json({
     ok: errori.length === 0,
     oggi,

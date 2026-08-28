@@ -59,10 +59,37 @@ Deno.serve(async (req: Request) => {
 
   const { data: righeCoda, error: erroreCoda } = await supabase
     .from('v_cruscotto_code').select('coda, giorni_ferma, in_allarme').eq('in_allarme', true);
-  if (erroreCoda) return json({ ok: false, error: erroreCoda.message }, 500);
+  if (erroreCoda) {
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'cruscotto-digest', p_esito: 'errore', p_dettaglio: { errore: erroreCoda.message },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    return json({ ok: false, error: erroreCoda.message }, 500);
+  }
 
   const { data: lavori, error: erroreLavori } = await supabase.rpc('cruscotto_lavori');
-  if (erroreLavori) return json({ ok: false, error: erroreLavori.message }, 500);
+  if (erroreLavori) {
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'cruscotto-digest', p_esito: 'errore', p_dettaglio: { errore: erroreLavori.message },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    return json({ ok: false, error: erroreLavori.message }, 500);
+  }
+
+  // Servizi in allarme (brief "Il battito dei servizi", 28/8/2026 §4.2): un
+  // servizio che non gira e' piu' grave di una coda che si allunga, perche'
+  // di solito e' la causa — va prima delle code nel messaggio.
+  const { data: servizi, error: erroreServizi } = await supabase.rpc('cruscotto_servizi');
+  if (erroreServizi) {
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'cruscotto-digest', p_esito: 'errore', p_dettaglio: { errore: erroreServizi.message },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    return json({ ok: false, error: erroreServizi.message }, 500);
+  }
 
   const lavoriGuasti = ((lavori ?? []) as any[])
     .filter((l) => l.in_allarme)
@@ -70,19 +97,33 @@ Deno.serve(async (req: Request) => {
   const radar = ((lavori ?? []) as any[]).find((l) => l.lavoro === 'radar-eventi-harvest');
   const radarUltimo = radar?.esito === 'succeeded' ? (radar.ultima_esecuzione as string) : null;
 
+  const serviziGuasti = ((servizi ?? []) as any[])
+    .filter((s) => s.in_allarme)
+    .map((s) => ({ servizio: s.servizio, diagnosi: s.diagnosi }));
+
   const code = ((righeCoda ?? []) as any[]).map((r) => ({ coda: r.coda, giorni_ferma: r.giorni_ferma }));
-  const tuttoAPosto = code.length === 0 && lavoriGuasti.length === 0;
+  const tuttoAPosto = code.length === 0 && lavoriGuasti.length === 0 && serviziGuasti.length === 0;
 
   if (!esegui) {
-    return json({ ok: true, giro_a_vuoto: true, tutto_a_posto: tuttoAPosto, code, lavori_guasti: lavoriGuasti });
+    return json({ ok: true, giro_a_vuoto: true, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti });
   }
 
   await notificaDirettivo(supabase, 'cruscotto_allarmi', {
     tuttoAPosto,
+    servizi: serviziGuasti,
     code,
     lavori: lavoriGuasti,
     radarUltimo: dataOraLeggibile(radarUltimo),
   }).catch(() => {});
 
-  return json({ ok: true, inviato: true, tutto_a_posto: tuttoAPosto, code, lavori_guasti: lavoriGuasti });
+  // Battito (brief "Il battito dei servizi", 28/8/2026 §3).
+  try {
+    await supabase.rpc('registra_battito', {
+      p_servizio: 'cruscotto-digest',
+      p_esito: 'ok',
+      p_dettaglio: { tutto_a_posto: tuttoAPosto, servizi_guasti: serviziGuasti.length, code_in_allarme: code.length, lavori_guasti: lavoriGuasti.length },
+    });
+  } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+
+  return json({ ok: true, inviato: true, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti });
 });

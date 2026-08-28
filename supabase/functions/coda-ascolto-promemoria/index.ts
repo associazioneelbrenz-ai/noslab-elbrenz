@@ -46,7 +46,14 @@ Deno.serve(async (req: Request) => {
     .from('v_coda_ascolto')
     .select('audio_id, durata_secondi, created_at')
     .order('created_at', { ascending: true });
-  if (error) return json({ ok: false, error: error.message }, 500);
+  if (error) {
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'coda-ascolto-promemoria', p_esito: 'errore', p_dettaglio: { errore: error.message },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    return json({ ok: false, error: error.message }, 500);
+  }
 
   const coda = righe ?? [];
   const n = coda.length;
@@ -55,6 +62,15 @@ Deno.serve(async (req: Request) => {
   const settimanaFa = Date.now() - 7 * 24 * 60 * 60 * 1000;
 
   if (n === 0 || !piuVecchia || new Date(piuVecchia).getTime() > settimanaFa) {
+    // Battito (brief "Il battito dei servizi", 28/8/2026 §3): solo
+    // sull'esecuzione vera (?esegui=1), mai su un giro di collaudo.
+    if (esegui) {
+      try {
+        await supabase.rpc('registra_battito', {
+          p_servizio: 'coda-ascolto-promemoria', p_esito: 'niente_da_fare', p_dettaglio: { n, secondi },
+        });
+      } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    }
     return json({
       ok: true, inviato: false, n, secondi,
       nota: n === 0 ? 'coda vuota' : 'la voce piu\' vecchia ha meno di sette giorni',
@@ -68,6 +84,13 @@ Deno.serve(async (req: Request) => {
   await notificaDirettivo(supabase, 'coda_ascolto', {
     n, m: secondi, data: dataLeggibile(piuVecchia),
   }).catch(() => {});
+
+  // Battito (brief "Il battito dei servizi", 28/8/2026 §3).
+  try {
+    await supabase.rpc('registra_battito', {
+      p_servizio: 'coda-ascolto-promemoria', p_esito: 'ok', p_dettaglio: { n, secondi },
+    });
+  } catch (_) { /* il battito non deve mai rompere il lavoro */ }
 
   return json({ ok: true, inviato: true, n, secondi, piu_vecchia: piuVecchia });
 });

@@ -49,8 +49,12 @@ function componiTesto(
       if (d.tuttoAPosto) {
         r.push(`Nessun allarme. Ultima raccolta del radar: ${d.radarUltimo ?? '—'}.`);
       } else {
+        // [28/8/2026] Brief "Il battito dei servizi" §4.2: i servizi in
+        // allarme vengono prima delle code — di solito ne sono la causa.
+        const servizi = Array.isArray(d.servizi) ? d.servizi : [];
         const code = Array.isArray(d.code) ? d.code : [];
         const lavori = Array.isArray(d.lavori) ? d.lavori : [];
+        for (const s of servizi) r.push(`· ${s.servizio}: ${s.diagnosi}`);
         for (const c of code) r.push(`· ${c.coda} ferma da ${c.giorni_ferma} giorni`);
         for (const l of lavori) r.push(`· ${l.lavoro} guasto (${l.esito})`);
         r.push(`Cura su ${site}/cruscotto`);

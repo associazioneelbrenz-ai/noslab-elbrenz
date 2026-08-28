@@ -408,6 +408,23 @@ Deno.serve(async (req: Request) => {
     }
   }
 
+  // Battito (brief "Il battito dei servizi", 28/8/2026 §3): solo per la
+  // classificazione vera, mai per ?digest=1 (non e' il servizio registrato)
+  // ne' per un giro a vuoto (?dryrun=1, nessuna scrittura reale avvenuta).
+  if (!dryrun) {
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'radar-eventi-classifica',
+        p_esito: righe.length === 0 ? 'niente_da_fare' : (errori.length > 0 ? 'errore' : 'ok'),
+        p_dettaglio: {
+          esaminati: righe.length,
+          proposti: esiti.filter((e) => e.stato === 'proposto').length,
+          scartati: esiti.filter((e) => e.stato === 'scartato').length,
+        },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+  }
+
   return json({
     ok: errori.length === 0,
     dryrun,

@@ -81,7 +81,14 @@ Deno.serve(async (req: Request) => {
     .from('v_soci_in_regola')
     .select('domanda_id, nome, email, numero_tessera, approvata_il, metodo_scelto, pagamenti_in_verifica')
     .eq('posizione', 'ammesso_senza_incasso');
-  if (errSel) return json({ error: 'lettura fallita', dettaglio: errSel.message }, 500);
+  if (errSel) {
+    try {
+      await sb.rpc('registra_battito', {
+        p_servizio: 'solleciti-quota', p_esito: 'errore', p_dettaglio: { errore: errSel.message },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    return json({ error: 'lettura fallita', dettaglio: errSel.message }, 500);
+  }
 
   // Chi ha gia' ricevuto qualcosa, e quale.
   const { data: giaInviati } = await sb
@@ -194,5 +201,15 @@ Deno.serve(async (req: Request) => {
   }
 
   console.log(`[solleciti-quota] inviati=${inviati.length} falliti=${falliti.length} saltati=${saltati.length}`);
+
+  // Battito (brief "Il battito dei servizi", 28/8/2026 §3).
+  try {
+    await sb.rpc('registra_battito', {
+      p_servizio: 'solleciti-quota',
+      p_esito: daFare.length === 0 ? 'niente_da_fare' : (falliti.length > 0 ? 'errore' : 'ok'),
+      p_dettaglio: { inviati: inviati.length, falliti: falliti.length, saltati: saltati.length },
+    });
+  } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+
   return json({ eseguito: true, inviati, falliti, saltati });
 });

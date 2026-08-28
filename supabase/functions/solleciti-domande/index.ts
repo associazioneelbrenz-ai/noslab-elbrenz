@@ -57,10 +57,27 @@ Deno.serve(async (req: Request) => {
     .or(`sollecito_direttivo_il.is.null,sollecito_direttivo_il.lt.${sogliaRipeti}`)
     .order('created_at', { ascending: true });
 
-  if (error) return json({ error: 'query_fallita', detail: error.message }, 500);
+  if (error) {
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'solleciti-domande', p_esito: 'errore', p_dettaglio: { errore: error.message },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    return json({ error: 'query_fallita', detail: error.message }, 500);
+  }
   const lista = domande ?? [];
 
   if (lista.length === 0) {
+    // Battito (brief "Il battito dei servizi", 28/8/2026 §3): niente da
+    // sollecitare e' uno stato sano, non un errore. Non per un giro a vuoto
+    // di collaudo (?dryrun=1): qui non e' ancora successo, e' un controllo.
+    if (!dryrun) {
+      try {
+        await supabase.rpc('registra_battito', {
+          p_servizio: 'solleciti-domande', p_esito: 'niente_da_fare', p_dettaglio: { sollecitate: 0 },
+        });
+      } catch (_) { /* il battito non deve mai rompere il lavoro */ }
+    }
     return json({ ok: true, dryrun, sollecitate: 0, messaggio: 'nessuna domanda oltre 48h da sollecitare' });
   }
 
@@ -97,6 +114,15 @@ Deno.serve(async (req: Request) => {
       .update({ sollecito_direttivo_il: new Date().toISOString() })
       .in('id', ids);
   }
+
+  // Battito (brief "Il battito dei servizi", 28/8/2026 §3).
+  try {
+    await supabase.rpc('registra_battito', {
+      p_servizio: 'solleciti-domande',
+      p_esito: inviata ? 'ok' : 'errore',
+      p_dettaglio: { sollecitate: lista.length, notifica_inviata: inviata },
+    });
+  } catch (_) { /* il battito non deve mai rompere il lavoro */ }
 
   return json({ ok: true, dryrun: false, sollecitate: lista.length, notifica_inviata: inviata });
 });

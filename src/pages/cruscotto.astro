@@ -61,16 +61,20 @@ import Layout from '../layouts/Layout.astro';
         <div id="cru-code" class="mt-4 flex flex-col gap-2"></div>
       </section>
 
-      {/* 6.2 · Cosa gira da solo */}
+      {/* 6.2 · Cosa gira da solo — brief "Il battito dei servizi" (28/8/2026):
+          il blocco cruscotto_funzioni() (il "segnaposto" di leggi-appena) non
+          compare più: sostituito da cruscotto_servizi(), sopra i lavori
+          pg_cron. La funzione resta a database, non è più chiamata da qui. */}
       <section class="mb-14">
         <h2 class="cru-h2">Cosa gira da solo</h2>
-        <div id="cru-lavori" class="mt-4 flex flex-col gap-2"></div>
-
-        <p class="mt-8 mb-3 text-sm text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
-          Queste sono le funzioni che qualcuno ha davvero chiamato. Una funzione pubblicata che non
-          compare qui non viene invocata da nessuno.
+        <p class="mt-2 mb-4 text-sm text-[#1E2E26]/70" style="font-family: 'Source Serif 4', Georgia, serif;">
+          Ogni servizio programmato dichiara di aver girato e come è andata. Un servizio che non
+          compare come sano qui, o non sta girando, o sta fallendo in silenzio.
         </p>
-        <div id="cru-funzioni" class="flex flex-col gap-2"></div>
+        <div id="cru-servizi" class="flex flex-col gap-2"></div>
+
+        <h3 class="mt-10 mb-2 text-sm uppercase tracking-[0.08em] text-[#8a6215] font-semibold">Lavori pianificati</h3>
+        <div id="cru-lavori" class="mt-4 flex flex-col gap-2"></div>
       </section>
 
       {/* 6.3 · Quanto è pieno */}
@@ -211,6 +215,26 @@ import Layout from '../layouts/Layout.astro';
   }
 
   // ---- 6.2 · Cosa gira da solo ---------------------------------------------
+  // Brief "Il battito dei servizi" (28/8/2026 §4.1): cruscotto_servizi(),
+  // sopra i lavori pg_cron. Sostituisce cruscotto_funzioni() (segnaposto
+  // "leggi appena", mai davvero realizzabile — la funzione resta a
+  // database ma non è più chiamata da questa pagina).
+  async function caricaServizi() {
+    const cont = $('cru-servizi');
+    if (!cont) return;
+    const { data, error } = await supabase.rpc('cruscotto_servizi');
+    if (error || !data) { cont.appendChild(vuoto('Non leggibile in questo momento.')); return; }
+    for (const s of data as any[]) {
+      // Diagnosi come testo principale (§4.1): va nello slot "numero" della
+      // riga, che rende in grassetto — la descrizione e le ore sono il
+      // dettaglio sotto.
+      const dettaglio = s.ultimo_battito
+        ? `${s.descrizione} · ultimo battito ${fmtDataOra(s.ultimo_battito)}, ${s.ore_fa} ore fa`
+        : `${s.descrizione} · mai battuto`;
+      cont.appendChild(riga(s.servizio, s.diagnosi, dettaglio, !!s.in_allarme, null));
+    }
+  }
+
   async function caricaLavori() {
     const cont = $('cru-lavori');
     if (!cont) return;
@@ -221,22 +245,6 @@ import Layout from '../layouts/Layout.astro';
       const ultima = fmtDataOra(l.ultima_esecuzione);
       const dettaglio = `${cronLeggibile(l.pianificazione)} · ${ultima ? `ultima il ${ultima}` : 'mai eseguito'} · ${l.esito}`;
       cont.appendChild(riga(l.lavoro, l.attivo ? 'attivo' : 'fermo', dettaglio, !!l.in_allarme, null));
-    }
-  }
-
-  async function caricaFunzioni() {
-    const cont = $('cru-funzioni');
-    if (!cont) return;
-    const { data, error } = await supabase.rpc('cruscotto_funzioni');
-    if (error || !data || data.length === 0) { cont.appendChild(vuoto('Nessuna chiamata registrata negli ultimi 30 giorni.')); return; }
-    // Se il dato non e' disponibile la funzione restituisce una riga sola
-    // con chiamate_30gg=0 e ultima=null: si mostra come nota, non come una
-    // riga di funzione vera (non e' un elenco vuoto: e' un elenco che non sa).
-    const nonDisponibile = data.length === 1 && data[0].ultima === null && data[0].chiamate_30gg === 0;
-    if (nonDisponibile) { cont.appendChild(vuoto((data as any[])[0].funzione)); return; }
-    for (const f of data as any[]) {
-      const ultima = fmtDataOra(f.ultima);
-      cont.appendChild(riga(f.funzione, `${f.chiamate_30gg}`, `ultima chiamata ${ultima ?? '—'} · stato ${f.ultimo_stato ?? '—'}`, false, null));
     }
   }
 
@@ -319,7 +327,7 @@ import Layout from '../layouts/Layout.astro';
     $('cru-notfound')?.classList.add('hidden');
     $('cru-app')?.classList.remove('hidden');
 
-    await Promise.all([caricaCode(), caricaLavori(), caricaFunzioni(), caricaCompletezza(), caricaSicurezza()]);
+    await Promise.all([caricaCode(), caricaServizi(), caricaLavori(), caricaCompletezza(), caricaSicurezza()]);
   }
   init();
 </script>
