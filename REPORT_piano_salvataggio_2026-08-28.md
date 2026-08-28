@@ -1,5 +1,76 @@
 # Report · Piano di salvataggio gratuito — 28/8/2026
 
+## Aggiornamento dello stesso giorno: il deploy mancante, e il buco dietro
+
+La nota sul deploy Netlify "non verificabile" scritta più sotto si è
+rivelata un problema vero, non solo uno strumento capriccioso: il deploy
+**non era andato in produzione**. La build live di `elbrenz.eu` risaliva
+alle 03:53 UTC dello stesso giorno — ore prima di tutto il lavoro di questa
+sessione — perché **questo sito si pubblica da Netlify CLI locale, non da
+GitHub**: un push su `main` non aggiorna il sito, serve sempre un
+`netlify deploy --prod` a mano. "Committato" non ha mai voluto dire "in
+produzione", e nessuno se ne accorgeva perché la sentinella controlla solo
+che le rotte rispondano 200 — una build vecchia risponde altrettanto bene
+di una nuova.
+
+**Fatto, autorizzato da Cristian**: `netlify deploy --prod` con la build
+corrente. **Poi**, su sua richiesta esplicita ("è più importante del deploy
+stesso"), costruito il timbro di versione perché questo non possa più
+succedere inosservato:
+
+- **`scripts/scrivi-versione.mjs`** — scrive `public/versione.json` (commit
+  breve, timestamp ISO, ramo) prima di ogni `astro build` (agganciato allo
+  script `prebuild` già esistente). Se git non è disponibile, i campi
+  valgono `"sconosciuto"` e la build non fallisce. Il file non è mai
+  committato (è in `.gitignore`): si rigenera a ogni build.
+- **`src/pages/cruscotto.astro`** — nuova riga "Versione in produzione" nel
+  blocco "Cosa gira da solo": legge `/versione.json`, mostra l'hash e da
+  quanti giorni è stato costruito, va in allarme oltre 7 giorni (o se il
+  file non risponde).
+- **`supabase/functions/cruscotto-digest/index.ts`** e
+  **`_shared/notificaDirettivo.ts`** — il promemoria del lunedì legge lo
+  stesso `/versione.json` (server-side, da `elbrenz.eu`) e aggiunge una riga
+  fissa: `Versione in produzione: <commit> (<giorni> giorni)`, presente sia
+  quando tutto è a posto sia quando non lo è. Deployata (versione 3).
+- **`CLAUDE.md`, Trappola 17** — la regola per le prossime sessioni: *"Il
+  push su main non pubblica niente [...] Nei report, la voce 'deploy' va
+  sempre distinta dalla voce 'commit', e la verifica del deploy è il
+  confronto fra l'hash atteso e quello vivo, non il fatto che la build sia
+  riuscita."* Aggiornato anche il comando di verifica nel workflow standard
+  (`curl .../versione.json` invece del solo `curl -I`).
+
+### Le sei verifiche del brief, verificate dal vivo — non dedotte
+
+1. **`/versione.json` su `elbrenz.eu` risponde con l'hash corrente** ✅ —
+   `curl -s https://elbrenz.eu/versione.json` → `{"commit":"58dff4d","costruito_il":"2026-08-28T21:46:32.981Z","ramo":"main"}`,
+   e `git rev-parse --short HEAD` sul commit appena pushato è `58dff4d`:
+   coincide.
+2. **Il cruscotto mostra hash ed età** ✅ — confermato nel bundle JS
+   effettivamente servito da produzione (`curl` sull'asset compilato):
+   contiene la stringa `"Versione in produzione"` e la logica di lettura di
+   `/versione.json`.
+3. **La riga va in allarme oltre 7 giorni** — verificata **a livello di
+   logica** (la stessa formula usata nel file, eseguita isolata in Node con
+   date simulate a 1/6/7/8/30 giorni: allarme falso fino a 7, vero da 8 in
+   poi), non con una prova visiva nel browser autenticato — questa sessione
+   non ha una sessione di login nell'area riservata del direttivo. Da
+   confermare a vista alla prima occasione.
+4. **Il promemoria del lunedì include la riga** ✅ — lanciato
+   `select lancia_cruscotto_digest(false)` (giro a vuoto, nessun messaggio
+   Telegram inviato) due volte: la prima, prima del redeploy del sito,
+   restituiva `"versione":{"commit":"sconosciuta","giorni":null}` (fallito
+   pulito, come previsto, perché `/versione.json` non era ancora live); la
+   seconda, dopo, restituiva `"versione":{"commit":"58dff4d","giorni":0}` —
+   il commit vero, appena deployato.
+5. **La quarta voce Sicurezza è visibile in produzione** ✅ — stessa
+   verifica sul bundle JS servito da `elbrenz.eu`: contiene la stringa
+   `"Prova di ripristino di un backup: decifrato e confrontato con la
+   produzione"`.
+6. **`git log origin/main --oneline`, hash coincidente con `/versione.json`** ✅
+   — vedi sezione commit in fondo: `58dff4d` in entrambi i posti.
+
+---
+
 ## Prima di tutto: cosa è pronto e cosa resta solo a Cristian
 
 Questo brief ha una parte che il codice può fare da solo (l'automatismo
@@ -212,19 +283,25 @@ Nessun oggetto vivo modificato, nessuna riga rimossa da nessuna parte,
 nessuna credenziale in nessun file di questo repository — verificato a
 mano rileggendo ogni file prima del commit.
 
-## Nota su Netlify
+## Nota su Netlify — superata dai fatti, lasciata per la cronologia
 
-`src/pages/cruscotto.astro` è un file applicativo (la quarta voce
-Sicurezza): a differenza degli ultimi due brief, qui un deploy Netlify
-serve. Il sito `elbrenz-app` (elbrenz.eu) è collegato a questo repository
-su GitHub, quindi il push su `main` dovrebbe aver avviato una build
-automatica — ma lo strumento Netlify di questa sessione ha risposto con un
-errore del suo gateway (502, Cloudflare) a ogni tentativo di controllo, e
-non ho potuto confermare l'esito della build. **Deployed non è testato**:
-va controllato a mano che la quarta riga Sicurezza compaia su
-`elbrenz.eu/cruscotto` prima di darlo per fatto.
+Questa nota diceva, subito dopo il primo push del giorno: *"il sito
+elbrenz-app è collegato a GitHub, quindi il push dovrebbe aver avviato una
+build automatica, ma non ho potuto confermarlo per un errore del gateway
+Netlify"*. **Era una supposizione sbagliata**: il collegamento a GitHub non
+c'è, il sito si pubblica solo da CLI locale, e nessun deploy automatico è
+mai partito. Vedi la sezione in cima a questo report ("Aggiornamento dello
+stesso giorno") per cosa è successo dopo e cosa è stato costruito perché
+non ricapiti inosservato.
 
 ## Commit su `origin/main`
 
-`aa92c53` — "backup: salvataggio settimanale cifrato, automatico e gratuito"
-(verificato con `git log origin/main --oneline -1` dopo il push).
+`58dff4d` — "runtime: timbro di versione, perché il push su main non
+pubblica niente" (verificato con `git log origin/main --oneline -1` dopo il
+push). Commit precedente della stessa giornata: `aa92c53` — "backup:
+salvataggio settimanale cifrato, automatico e gratuito".
+
+**Deploy** (voce distinta dal commit, Trappola 17): `netlify deploy --prod`
+eseguito due volte oggi, l'ultima con la build del commit `58dff4d`.
+Verificato dal vivo, non dedotto: `https://elbrenz.eu/versione.json`
+risponde con quello stesso hash.
