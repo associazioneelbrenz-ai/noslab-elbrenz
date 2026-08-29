@@ -383,3 +383,11 @@ verify_jwt = false
 # verify_jwt=false, il gate e' il token.
 [functions.salvataggio-settimanale]
 verify_jwt = false
+
+# glossario-audio-pubblica (29/8/2026, brief "La coda di ascolto dentro
+# l'app soci"): copia un file dal bucket privato glossario-audio-attesa al
+# pubblico glossario-audio, service role, chiamata dall'app soci prima di
+# conferma_ascolto. getUser() + gate di livello, stessa forma di
+# carica-media: verify_jwt=true, il gateway pretende un JWT valido.
+[functions.glossario-audio-pubblica]
+verify_jwt = true
