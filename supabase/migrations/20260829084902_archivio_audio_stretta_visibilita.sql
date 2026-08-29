@@ -1,0 +1,42 @@
+-- 20260829084902 — stringe aa_select_per_visibilita su archivio_audio
+-- Brief "La coda di ascolto dentro l'app soci" (29/8/2026), verifica 9.
+--
+-- GIA' APPLICATA in produzione (ALTER POLICY diretto, dopo censimento e
+-- verifiche — vedi REPORT_censimento_archivio_audio_2026-08-29.md e
+-- REPORT_coda_ascolto_app_2026-08-29.md nel repo elbrenz-community). Qui si
+-- versiona.
+--
+-- PRIMA: (visibile_ospiti = true) OR has_ruolo_min(10) — concedeva lettura
+-- di TUTTA la tabella (comprese le 64 righe in_attesa, con nome del
+-- parlante, comune, percorso del file) a qualunque socio, non solo ai
+-- curatori: has_ruolo_min(10) non guarda la riga, guarda solo chi chiede.
+-- visibile_ospiti era sempre false su ogni riga della tabella, comprese le
+-- pubblicate: la colonna non la scrive nessuno.
+--
+-- DOPO: (stato = 'pubblicato' AND auth.uid() IS NOT NULL) OR has_ruolo_min(20).
+-- I curatori (livello >= 20) leggono tutto, come serve alla coda di
+-- ascolto. Chiunque sia autenticato legge solo cio' che e' gia' pubblicato.
+-- Gli anonimi restano fuori, esattamente come prima (has_ruolo_min(10) su
+-- un auth.uid() nullo era gia' falso; ora la condizione richiede
+-- esplicitamente un utente autenticato).
+--
+-- Deciso di NON allargare agli anonimi: tutti i 68 audio portano il nome
+-- del parlante, nessuno e' marcato anonimo, e il modello di consenso del
+-- parlante e' una decisione ancora aperta del direttivo. Quando sara'
+-- chiusa, aggiungere gli anonimi e' una riga sola.
+--
+-- CENSIMENTO PRIMA DELLA MODIFICA (non dedotto): cercata ogni lettura di
+-- archivio_audio e delle quattro viste che lo attraversano (pg_depend, non
+-- un grep) in entrambi i repository e nelle edge function. Trovato che
+-- un'ipotesi di stretta scritta con `visibile_ospiti` invece di `stato`
+-- avrebbe rotto in silenzio (elenco vuoto, nessun errore)
+-- `luoghi-curatela.astro:380`, che con `curatore_contenuti` (livello 10,
+-- non 20) collega registrazioni di toponimi gia' pubblicate. Verificato
+-- dopo la modifica, impersonando un socio reale con solo curatore_contenuti
+-- (set_config('request.jwt.claims', ...) in transazione, mai committata
+-- fuori da questa verifica): vede le 3 righe pubblicate, zero delle 64
+-- in_attesa. Un curatore vero (livello >= 20) vede tutte e 68. Un anonimo
+-- zero. `glossario_pubblico` (non security_invoker, bypassa comunque questa
+-- policy) invariata: 245 lemmi, 3 con audio, anche da anonimo.
+alter policy aa_select_per_visibilita on public.archivio_audio
+using (((stato = 'pubblicato'::text) AND ((select auth.uid()) IS NOT NULL)) OR has_ruolo_min(20));
