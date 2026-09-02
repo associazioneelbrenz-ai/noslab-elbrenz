@@ -28,7 +28,9 @@ const RECIPIENT = 'info@elbrenz.eu';
 const SITO = 'https://elbrenz.eu';
 const LOGO_URL = `${SITO}/logo-eb-footer@2x.png`;
 const VARIANTI = ['noneso', 'solander', 'rabies', 'pegaes'];
-const TIPI = ['parola', 'frase', 'espressione'];
+// [2/9/2026] 'scotum' aggiunto (BRIEF CD 1/9/2026 punto 6): soprannome di
+// famiglia legato a un luogo, quarto tipo accanto a parola/frase/espressione.
+const TIPI = ['parola', 'frase', 'espressione', 'scotum'];
 
 // [10/8/2026] TRE OBBLIGHI, NON DI PIU'.
 //

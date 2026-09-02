@@ -33,7 +33,10 @@ const VARIANTI: [string, string][] = [
   ['rabies', 'Rabies · Val di Rabbi'],
   ['pegaes', 'Pegaes · Val di Pejo'],
 ];
-const TIPI: [string, string][] = [['parola', 'Parola'], ['frase', 'Frase'], ['espressione', 'Espressione']];
+// [2/9/2026] 'scotum' aggiunto (BRIEF CD 1/9/2026 punto 6): il glossario ha
+// gia' la voce «Scotúm» = «soprannome di famiglia» — e' il nome che la cosa
+// ha gia' nella lingua, non un'invenzione del modulo.
+const TIPI: [string, string][] = [['parola', 'Parola'], ['frase', 'Frase'], ['espressione', 'Espressione'], ['scotum', 'Scotúm']];
 
 type Voce = {
   id: string; termine: string; tipo: string | null; variante: string | null;
@@ -153,7 +156,9 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
           <div class="grid md:grid-cols-2 gap-4">
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Termine, frase o proverbio *</label><input name="termine" required maxlength="200" class={input} placeholder="in ladino anaunico" /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Parlata *</label><select name="variante" required class={input}><option value="">Scegli…</option>{VARIANTI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
-            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Tipo *</label><select name="tipo" required class={input}><option value="">Scegli…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Tipo *</label><select name="tipo" required class={input}><option value="">Scegli…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select>
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">Scotúm, se scegli questo: il soprannome di famiglia legato a un luogo — non il cognome, ma il nome con cui la casa o i suoi erano conosciuti in paese.</p>
+            </div>
             {/* IL PAESE. Mancava in ventiquattro casi su centoquarantasei, e chi
                 propone una parola sa sempre dove si dice: qui diventa
                 obbligatorio, ma con la strada per chi non trova il suo. */}
@@ -323,6 +328,7 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
               <option value="">Parole e detti</option>
               <option value="parola">Solo parole</option>
               <option value="detto">Solo detti e modi di dire</option>
+              <option value="scotum">Solo scotúm</option>
             </select>
           </div>
           <div class="flex flex-wrap gap-1 justify-center mb-5" style="font-family: 'Inter', sans-serif;">
@@ -911,10 +917,14 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
     const tp = fTipo?.value ?? '';
     let visibili = 0;
     document.querySelectorAll<HTMLElement>('.gloss-voce').forEach((li) => {
-      const eDetto = (li.dataset.tipo ?? 'parola') !== 'parola';
+      // [2/9/2026] 'scotum' e' un terzo secchio, non un "detto": prima era
+      // binario (parola / tutto il resto), e uno scotum sarebbe finito sotto
+      // "detti e modi di dire", che non e'.
+      const tipoVoce = li.dataset.tipo ?? 'parola';
+      const eDetto = tipoVoce === 'frase' || tipoVoce === 'espressione';
       const ok = (!q || (li.dataset.t ?? '').includes(q)) && (!v || li.dataset.v === v)
         && (!c || li.dataset.c === c)
-        && (!tp || (tp === 'detto' ? eDetto : !eDetto))
+        && (!tp || (tp === 'detto' ? eDetto : tp === 'scotum' ? tipoVoce === 'scotum' : !eDetto && tipoVoce !== 'scotum'))
         && (!lettera || li.dataset.l === lettera);
       li.style.display = ok ? '' : 'none';
       if (ok) visibili++;

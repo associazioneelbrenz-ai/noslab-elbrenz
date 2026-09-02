@@ -17,7 +17,7 @@ const VARIANTI: [string, string][] = [
   ['rabies', 'Rabies · Val di Rabbi'],
   ['pegaes', 'Pegaes · Val di Pejo'],
 ];
-const TIPI: [string, string][] = [['parola', 'Word'], ['frase', 'Phrase'], ['espressione', 'Expression']];
+const TIPI: [string, string][] = [['parola', 'Word'], ['frase', 'Phrase'], ['espressione', 'Expression'], ['scotum', 'Scotúm']];
 
 type Voce = { id: string; termine: string; tipo: string | null; variante: string | null; comune: string | null; significato_it: string; esempio_uso: string | null; contributore_firma: string | null };
 let glossario: Voce[] = [];
@@ -101,7 +101,9 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Term, phrase or proverb *</label><input name="termine" required maxlength="200" class={input} placeholder="in Anaunian Ladin" /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Meaning in Italian *</label><input name="significato" required maxlength="2000" class={input} /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Variety *</label><select name="variante" required class={input}><option value="">Choose…</option>{VARIANTI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
-            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Type *</label><select name="tipo" required class={input}><option value="">Choose…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Type *</label><select name="tipo" required class={input}><option value="">Choose…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select>
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">Scotúm: the family nickname tied to a place — not the surname.</p>
+            </div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Village or hamlet</label><input name="comune" maxlength="100" class={input} placeholder="e.g. Rabbi, Croviana…" /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Example of use</label><input name="esempio" maxlength="1000" class={input} /></div>
           </div>

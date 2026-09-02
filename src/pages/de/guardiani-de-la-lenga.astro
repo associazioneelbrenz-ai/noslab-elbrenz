@@ -17,7 +17,7 @@ const VARIANTI: [string, string][] = [
   ['rabies', 'Rabies · Rabbital'],
   ['pegaes', 'Pegaes · Pejotal'],
 ];
-const TIPI: [string, string][] = [['parola', 'Wort'], ['frase', 'Satz'], ['espressione', 'Ausdruck']];
+const TIPI: [string, string][] = [['parola', 'Wort'], ['frase', 'Satz'], ['espressione', 'Ausdruck'], ['scotum', 'Scotúm']];
 
 type Voce = { id: string; termine: string; tipo: string | null; variante: string | null; comune: string | null; significato_it: string; esempio_uso: string | null; contributore_firma: string | null };
 let glossario: Voce[] = [];
@@ -101,7 +101,9 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Begriff, Redewendung oder Sprichwort *</label><input name="termine" required maxlength="200" class={input} placeholder="auf Anaunisch Ladinisch" /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Bedeutung auf Italienisch *</label><input name="significato" required maxlength="2000" class={input} /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Varietät *</label><select name="variante" required class={input}><option value="">Wählen…</option>{VARIANTI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
-            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Art *</label><select name="tipo" required class={input}><option value="">Wählen…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select></div>
+            <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Art *</label><select name="tipo" required class={input}><option value="">Wählen…</option>{TIPI.map(([v, l]) => <option value={v}>{l}</option>)}</select>
+              <p class="text-[12px] text-[#1E2E26]/60 m-0 mt-1">Scotúm: der Familienspitzname, der mit einem Ort verbunden ist — nicht der Nachname.</p>
+            </div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Dorf oder Fraktion</label><input name="comune" maxlength="100" class={input} placeholder="z. B. Rabbi, Croviana…" /></div>
             <div><label class="block text-sm mb-1 text-[#1E2E26]/80">Anwendungsbeispiel</label><input name="esempio" maxlength="1000" class={input} /></div>
           </div>
