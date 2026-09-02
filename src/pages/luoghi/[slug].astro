@@ -69,14 +69,32 @@ const CERTEZZA_LABEL: Record<string, string> = {
   documentata: 'documentata', probabile: 'probabile', ipotesi: 'ipotesi', incerta: 'incerta',
 };
 
-// Luoghi vicini: stessa valle, esclusi se stesso. Fanno navigare invece di uscire.
-const { data: viciniRaw } = await supabase
+// Luoghi vicini (BRIEF CD 1/9/2026, punto 5): prossimita' geografica reale +
+// affinita' di categoria, non piu' solo "stessa valle" — una valle e' larga
+// chilometri, "stessa valle" metteva vicini luoghi lontani fra loro e ne
+// escludeva altri appena oltre il confine. Prima versione voluta dal
+// Consiglio: nessun modello, nessuna libreria nuova. Verificato che il dato
+// regge (58/58 luoghi pubblicati con coordinate valide e plausibili, dentro
+// il Trentino): nessun dato di percorso reale esiste in questo schema, quindi
+// la prossimita' resta in linea d'aria, non sul sentiero vero.
+const { data: candidatiRaw } = await supabase
   .from('v_luoghi_pagina')
-  .select('slug, nome, categoria, valle, descrizione_breve')
-  .eq('valle', luogo.valle)
-  .neq('slug', luogo.slug)
-  .limit(4);
-const vicini = viciniRaw ?? [];
+  .select('slug, nome, categoria, valle, descrizione_breve, lat, lng')
+  .neq('slug', luogo.slug);
+const distanzaKm = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+  const R = 6371; // km, raggio terrestre medio
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+};
+// L'affinita' di categoria e' un bonus (equivale a 1.5km piu' vicino), non un
+// filtro: un mulino a 2km conta piu' di un castello a 20, ma un castello a
+// 2km conta ancora piu' di un mulino a 15.
+const vicini = (candidatiRaw ?? [])
+  .map((v: any) => ({ ...v, distanzaKm: distanzaKm(luogo!.lat, luogo!.lng, v.lat, v.lng), stessaCategoria: v.categoria === luogo!.categoria }))
+  .sort((a, b) => (a.distanzaKm - (a.stessaCategoria ? 1.5 : 0)) - (b.distanzaKm - (b.stessaCategoria ? 1.5 : 0)))
+  .slice(0, 4);
 
 const categoriaLabel = CATEGORIE_LUOGHI[luogo.categoria] ?? luogo.categoria;
 const valleLabel = VALLI_LUOGHI[luogo.valle] ?? luogo.valle;
@@ -249,13 +267,13 @@ const schemaPlace = {
 
       {vicini.length > 0 && (
         <section class="border-t border-[#E5DFCF] pt-8">
-          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Altri luoghi in {valleLabel}</h2>
+          <h2 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-medium m-0 mb-4" style="font-family: 'Inter', sans-serif;">Luoghi vicini</h2>
           <ul class="list-none p-0 m-0 grid gap-3">
             {vicini.map((v: any) => (
               <li class="bg-white border-l-4 border-[#C8923E] px-4 py-3">
                 <a href={`/luoghi/${v.slug}`} class="no-underline">
                   <strong class="text-[#1E2E26]">{v.nome}</strong>
-                  <span class="text-xs text-[#1E2E26]/55"> · {CATEGORIE_LUOGHI[v.categoria] ?? v.categoria}</span>
+                  <span class="text-xs text-[#1E2E26]/55"> · {CATEGORIE_LUOGHI[v.categoria] ?? v.categoria} · {VALLI_LUOGHI[v.valle] ?? v.valle} · {v.distanzaKm < 1 ? `${Math.round(v.distanzaKm * 1000)} m` : `${v.distanzaKm.toFixed(1)} km`}</span>
                   {v.descrizione_breve && <p class="text-sm text-[#1E2E26]/75 m-0 mt-1">{v.descrizione_breve}</p>}
                 </a>
               </li>
