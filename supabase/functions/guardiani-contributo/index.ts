@@ -356,7 +356,20 @@ Deno.serve(async (req: Request) => {
   if (!licenza) return json({ error: 'Serve accettare la licenza del contributo.' }, 400, c);
 
   // upsert contributore (per email); doppio opt-in marketing con token
-  const marketingToken = consensoMarketing ? crypto.randomUUID().replace(/-/g, '') : null;
+  //
+  // [2/9/2026] IL TOKEN NON SI RIGENERA PIU' A OGNI INVIO.
+  //
+  // Prima ogni lemma proposto dalla stessa email creava un marketing_token
+  // nuovo: chi aveva gia' ricevuto la mail di conferma e cliccava il link
+  // vecchio si vedeva `link_non_valido`, perche' in tabella il token era gia'
+  // cambiato. Ora si legge il contributore esistente PRIMA di scrivere, e il
+  // token si genera solo se non ce n'e' gia' uno.
+  const { data: contribEsistente } = await supabase.from('guardiani_contributori')
+    .select('id, marketing_token, marketing_double_optin, marketing_invitato_il')
+    .eq('email', email).maybeSingle();
+  let marketingToken: string | null = contribEsistente?.marketing_token ?? null;
+  if (consensoMarketing && !marketingToken) marketingToken = crypto.randomUUID().replace(/-/g, '');
+
   const { data: contrib, error: errC } = await supabase.from('guardiani_contributori')
     .upsert({
       nome, email, consenso_glossario: true, consenso_marketing: consensoMarketing,
@@ -462,7 +475,22 @@ Deno.serve(async (req: Request) => {
       </div></body></html>`);
 
   // double opt-in newsletter (solo se ha chiesto il marketing)
-  if (consensoMarketing && marketingToken) {
+  //
+  // [2/9/2026] TRE CANCELLI, NON UNO.
+  //
+  // Chi ha gia' confermato (marketing_double_optin=true) non deve ricevere
+  // piu' nulla: prima si guardava solo `consensoMarketing && marketingToken`,
+  // mai lo stato di conferma gia' letto dall'upsert poche righe sopra. Chi
+  // non ha ancora confermato riceve al massimo un promemoria al mese, non uno
+  // per ogni lemma: si guarda `marketing_invitato_il` del contributore letto
+  // PRIMA della scrittura (`contribEsistente`, sopra) e si aspettano 30 giorni.
+  const giaConfermato = contrib.marketing_double_optin === true;
+  const ultimoInvito = contribEsistente?.marketing_invitato_il
+    ? new Date(contribEsistente.marketing_invitato_il as string).getTime() : 0;
+  const giorniDaUltimoInvito = (Date.now() - ultimoInvito) / (1000 * 60 * 60 * 24);
+  const devoInvitareMarketing = consensoMarketing && marketingToken && !giaConfermato && giorniDaUltimoInvito >= 30;
+
+  if (devoInvitareMarketing) {
     // Il link punta alla pagina sul NOSTRO dominio (che chiama l'edge in JSON):
     // piu' rassicurante di un URL supabase.co in una mail, e niente sorgente a
     // schermo. Il vecchio indirizzo dell'edge resta valido e rimanda qui.
@@ -475,6 +503,8 @@ Deno.serve(async (req: Request) => {
           <p style="text-align:center;margin:22px 0;"><a href="${link}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 26px;text-decoration:none;font-weight:600;font-size:15px;border-radius:4px;">Conferma l’iscrizione</a></p>
           <p style="color:#999;font-size:12px;margin:0;">Se non l’hai richiesta tu, ignora questa email: senza conferma non riceverai nulla.</p>
         </div></body></html>`);
+    await supabase.from('guardiani_contributori')
+      .update({ marketing_invitato_il: new Date().toISOString() }).eq('id', contrib.id);
   }
 
   // [10/8] Si restituisce l'identificativo del lemma perche' subito dopo la
