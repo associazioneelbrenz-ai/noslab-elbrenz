@@ -93,6 +93,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
           <button type="button" data-t="qualita" class={tabCls}>La qualità</button>
           <button type="button" data-t="vocabolario" class={tabCls}>Il vocabolario</button>
           <button type="button" data-t="audio" class={tabCls}>Le voci</button>
+          <button type="button" data-t="massivo" class={tabCls}>Caricamento massivo</button>
         </div>
 
         {/* ══════════ I LEMMI ══════════ */}
@@ -370,6 +371,55 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
             <div id="au-lista" class="grid gap-3"></div>
           </div>
         </div>
+
+        {/* ══════════ CARICAMENTO MASSIVO (BRIEF CD 1/9/2026, punto 4) ══════════
+            Vincolo non negoziabile del brief: l'algoritmo PROPONE, non inserisce
+            mai un lemma pubblicato. Ogni riga diventa un candidato in stato
+            in_revisione — esattamente come un contributo dal modulo — e da qui
+            in poi passa dalla STESSA coda di sempre (tab "I lemmi", filtro "In
+            revisione"): niente pannello di curatela nuovo, perche' quello che
+            gia' esiste (buchi mostrati come "N da completare" su ogni riga,
+            scheda con tutti i campi editabili) funziona identico qui.
+            Non esiste un analizzatore morfologico del ladino anaunico: la
+            categoria grammaticale resta un suggerimento SOLO quando il criterio
+            e' affidabile (la definizione italiana comincia con un articolo ->
+            probabile sostantivo), e resta vuota in ogni altro caso — mai un
+            valore scritto da solo, mai una scommessa travestita da dato. */}
+        <div id="pan-massivo" class="gc-pan hidden">
+          <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-lg p-5 mb-6">
+            <h2 class="text-xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">Caricamento massivo</h2>
+            <p class="text-sm text-[#1E2E26]/75 m-0" style="font-family: 'Source Serif 4', Georgia, serif;">
+              Per chi porta molte parole in una volta invece che un modulo alla volta. L'algoritmo spezza le righe e propone
+              termine, parlata, paese, definizione ed eventuale categoria — ma non pubblica mai niente da solo: ogni candidato
+              entra <strong>in revisione</strong>, come un contributo dal modulo pubblico, e si cura da qui in poi dalla stessa
+              coda di sempre: <em>I lemmi → In revisione</em>.
+            </p>
+          </div>
+
+          <div class="grid md:grid-cols-2 gap-4 mb-3">
+            <label class="text-[13px] text-[#1E2E26]/80">Parlata di riserva <span class="text-[#1E2E26]/50">— usata dove la riga non la scrive</span>
+              <select id="mi-parlata-def" class={inputCls}></select></label>
+            <label class="text-[13px] text-[#1E2E26]/80">Paese di riserva <span class="text-[#1E2E26]/50">— usato dove la riga non lo scrive</span>
+              <select id="mi-paese-def" class={inputCls}></select></label>
+          </div>
+
+          <label class="text-[13px] text-[#1E2E26]/80">Testo, una riga per candidato
+            <textarea id="mi-testo" rows="8" class={inputCls} placeholder={'Colonne separate da tabulazione (o punto e virgola), in questo ordine: termine\tdefinizione\tparlata\tpaese\tesempio.\nLe colonne mancanti restano vuote, o usano le riserve qui sopra. Una riga con solo il termine è ammessa: sarà segnalata come da completare, non scartata.'}></textarea>
+          </label>
+          <div class="flex items-center gap-3 flex-wrap mt-3">
+            <button type="button" id="mi-analizza" class="bg-[#C8923E] text-[#1E2E26] px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Analizza</button>
+            <span id="mi-analizza-esito" class="text-sm text-[#1E2E26]/70"></span>
+          </div>
+
+          <div id="mi-anteprima-wrap" class="hidden mt-6">
+            <div class="flex items-center justify-between gap-3 flex-wrap mb-3">
+              <h3 class="text-[11px] tracking-[0.2em] uppercase text-[#8a6215] font-semibold m-0">Anteprima</h3>
+              <button type="button" id="mi-importa" class="bg-[#2d8659] text-white px-5 py-2.5 rounded text-sm font-semibold border-0 cursor-pointer">Importa i candidati spuntati, in revisione</button>
+            </div>
+            <div id="mi-anteprima" class="grid gap-2 max-h-[55vh] overflow-y-auto pr-1"></div>
+            <p id="mi-esito" class="text-[13px] m-0 mt-3"></p>
+          </div>
+        </div>
       </section>
     </div>
   </main>
@@ -435,6 +485,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   let apertoId = null;
   let ultimaOperazione = null;
   let vocDominio = 'comune';
+  let miCandidati = [];
 
   // ── ACCESSO ─────────────────────────────────────────────────────────────
   async function avvia() {
@@ -495,6 +546,8 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
     riempiSelect('sc-parlata', 'parlata', 'nessuna');
     riempiSelect('sc-comune', 'comune', 'nessuno');
     riempiSelect('sc-categoria_gramm', 'categoria_gramm', 'nessuna');
+    riempiSelect('mi-parlata-def', 'parlata', 'nessuna — lascia vuoto dove manca');
+    riempiSelect('mi-paese-def', 'comune', 'nessuno — lascia vuoto dove manca');
     aggiornaValoriBlocco();
   }
 
@@ -988,7 +1041,7 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   async function caricaCandidate() {
     const box = $('va-candidate');
     const { data, error } = await supabase.from('v_variante_candidate')
-      .select('*').order('stessa_parlata').order('forza', { ascending: false }).limit(100);
+      .select('*').order('stesso_comune', { ascending: false }).order('forza', { ascending: false }).limit(100);
     if (error) { box.innerHTML = '<p class="text-[#a33] text-sm m-0">' + H(error.message) + '</p>'; return; }
     if (!data || !data.length) {
       box.innerHTML = '<p class="text-[#1E2E26]/60 text-sm m-0">Nessuna coppia da guardare in questo momento. Ricompariranno da sole quando arriveranno parole nuove.</p>';
@@ -1001,8 +1054,8 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
         + '<p class="m-0 text-[12px] text-[#1E2E26]/70">' + H(s ?? '') + '</p></div>';
       return '<div class="bg-white border border-[#E5DFCF] rounded-lg p-4" data-a="' + c.a_id + '" data-b="' + c.b_id + '">'
         + '<p class="m-0 mb-2 text-[11px] tracking-[0.16em] uppercase text-[#8a6215] font-semibold">'
-        + (c.motivo === 'traduzione' ? 'stessa traduzione' : 'grafia simile')
-        + (c.stessa_parlata ? ' · stessa parlata' : ' · valli diverse') + '</p>'
+        + (c.motivo === 'stesso_termine' ? 'termine identico' : c.motivo === 'traduzione' ? 'stessa traduzione' : 'grafia simile')
+        + (c.stesso_comune ? ' · stesso paese' : ' · paesi diversi') + '</p>'
         + '<div class="flex gap-4 flex-wrap items-start mb-3">' + lato(c.a_lemma, c.a_parlata, c.a_comune, c.a_definizione)
         + '<span class="text-[#C8923E] text-xl self-center">·</span>'
         + lato(c.b_lemma, c.b_parlata, c.b_comune, c.b_definizione) + '</div>'
@@ -1642,6 +1695,142 @@ const tabCls = 'gc-tab px-4 py-2 rounded text-sm cursor-pointer border border-[#
   $('au-avvia-sessione')?.addEventListener('click', apriSessione);
   $('au-verifica-btn')?.addEventListener('click', verificaAudio);
   $('au-ses-chiudi')?.addEventListener('click', chiudiSessione);
+
+  // ── CARICAMENTO MASSIVO (BRIEF CD 1/9/2026, punto 4) ─────────────────────
+  // Stesse soglie del modulo pubblico (guardiani-contributo/index.ts): una
+  // definizione vera E' quindici caratteri, oppure una definizione corta con
+  // un esempio di almeno cinque. Duplicate qui apposta (un frontend Astro non
+  // puo' importare il codice di una edge function Deno): la fonte di verita'
+  // resta quella, questa e' una copia fedele.
+  const MI_DEF_MIN = 15;
+  const MI_ESEMPIO_MIN = 5;
+  function miSpiegata(definizione, esempio) {
+    const d = (definizione ?? '').trim();
+    const e = (esempio ?? '').trim();
+    if (d.length >= MI_DEF_MIN) return true;
+    return d.length >= 2 && e.length >= MI_ESEMPIO_MIN;
+  }
+  const miNormLc = (s) => (s ?? '').toString().trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
+  // Cerca il valore controllato (parlata o comune) uguale al testo scritto,
+  // tollerante ad accenti e maiuscole. Non indovina mai una parlata che non
+  // esiste; per il paese chi ha scritto qualcosa di suo lo tiene com'e' (lo
+  // stesso comportamento del modulo pubblico: entra come proposto).
+  function miTrovaControllato(dominio, testo) {
+    const t = miNormLc(testo);
+    if (!t) return null;
+    const m = (voc[dominio] ?? []).find((v) => miNormLc(v.valore) === t || miNormLc(v.etichetta) === t);
+    return m ? m.valore : null;
+  }
+
+  // L'UNICO suggerimento di categoria che ci si concede: una definizione
+  // italiana che comincia con un articolo e' quasi sempre la traduzione di un
+  // sostantivo. Ogni altro indizio (desinenze del termine ladino, lunghezza,
+  // ...) e' stato scartato apposta: senza un analizzatore morfologico vero
+  // sbaglierebbe in silenzio, ed e' esattamente cio' che il brief vieta.
+  const MI_ARTICOLI = ['il ', 'lo ', 'la ', "l'", 'un ', 'uno ', 'una ', 'i ', 'gli ', 'le '];
+  function miSuggerisciCategoria(definizione) {
+    const d = miNormLc(definizione);
+    return MI_ARTICOLI.some((a) => d.startsWith(a)) ? 'sostantivo' : '';
+  }
+
+  function miSpezzaRiga(riga) {
+    const linea = riga.replace(/\r$/, '');
+    if (!linea.trim()) return null;
+    let campi = linea.split('\t');
+    if (campi.length < 2) campi = linea.split(';');
+    return campi.map((c) => c.trim());
+  }
+
+  function miAnalizza() {
+    const testo = $('mi-testo')?.value ?? '';
+    const parlataDef = $('mi-parlata-def')?.value ?? '';
+    const paeseDef = $('mi-paese-def')?.value ?? '';
+    const righeGrezze = testo.split('\n').map(miSpezzaRiga).filter(Boolean);
+
+    miCandidati = righeGrezze.map((campi) => {
+      const [termine = '', definizione = '', parlataTesto = '', paeseTesto = '', esempio = ''] = campi;
+      const parlata = miTrovaControllato('parlata', parlataTesto) || parlataDef || '';
+      const paeseControllato = miTrovaControllato('comune', paeseTesto);
+      // Il paese scritto libero (non nel vocabolario) si tiene com'e': lo
+      // stesso principio del modulo pubblico, che lo aggiunge come "proposto".
+      const paese = paeseControllato || paeseTesto.trim() || paeseDef || '';
+      const categoria = miSuggerisciCategoria(definizione);
+      const problemi = [];
+      if (!termine.trim()) problemi.push('manca il termine');
+      if (!paese.trim()) problemi.push('manca il paese');
+      if (!miSpiegata(definizione, esempio)) problemi.push('manca una definizione vera o un esempio');
+      return { termine: termine.trim(), definizione: definizione.trim(), parlata, paese, esempio: esempio.trim(), categoria, problemi, includi: true };
+    });
+    miRendiAnteprima();
+    const esito = $('mi-analizza-esito');
+    if (esito) esito.textContent = miCandidati.length
+      ? miCandidati.length + (miCandidati.length === 1 ? ' candidato trovato.' : ' candidati trovati.')
+      : 'Nessuna riga da leggere.';
+  }
+
+  function miRendiAnteprima() {
+    const wrap = $('mi-anteprima-wrap');
+    const box = $('mi-anteprima');
+    if (!wrap || !box) return;
+    wrap.classList.toggle('hidden', miCandidati.length === 0);
+    box.innerHTML = miCandidati.map((c, i) => '<div class="flex items-start gap-3 bg-white border border-[#E5DFCF] rounded px-3 py-2.5">'
+      + '<input type="checkbox" class="mi-check mt-1 accent-[#C8923E]" data-i="' + i + '"' + (c.includi ? ' checked' : '') + ' />'
+      + '<div class="min-w-0 flex-1">'
+      + '<p class="m-0 text-[15px] text-[#1E2E26]" style="font-family: Playfair Display, serif;">' + H(c.termine || '(termine mancante)') + '</p>'
+      + '<p class="m-0 text-[12px] text-[#1E2E26]/60 truncate">' + H(c.definizione || '—') + '</p>'
+      + '<p class="m-0 text-[11px] text-[#1E2E26]/45">' + [PARLATA[c.parlata] || c.parlata || null, c.paese || null, c.categoria ? 'categoria: ' + c.categoria : null].filter(Boolean).map(H).join(' · ') + '</p>'
+      + (c.problemi.length ? '<p class="m-0 mt-1 text-[12px] text-[#a33]">segnalato: ' + H(c.problemi.join(', ')) + '</p>' : '')
+      + '</div></div>').join('');
+    box.querySelectorAll('.mi-check').forEach((el) => el.addEventListener('change', () => {
+      miCandidati[Number(el.getAttribute('data-i'))].includi = el.checked;
+    }));
+  }
+
+  async function miImporta() {
+    const daImportare = miCandidati.filter((c) => c.includi && c.termine);
+    const esito = $('mi-esito');
+    if (!daImportare.length) { if (esito) { esito.style.color = '#a33'; esito.textContent = 'Nessun candidato spuntato con un termine.'; } return; }
+    const btn = $('mi-importa');
+    if (btn) { btn.disabled = true; btn.textContent = 'Importo…'; }
+
+    // Prima i paesi nuovi (una sola proposta per valore distinto, non uno per
+    // riga): lo stesso comportamento del modulo pubblico, in blocco.
+    const paesiNuovi = [...new Set(daImportare.map((c) => c.paese).filter((p) => p && !miTrovaControllato('comune', p)))];
+    for (const valore of paesiNuovi) {
+      await supabase.from('vocabolario_voce').insert({
+        dominio: 'comune', valore, stato: 'proposto',
+        proposto_da: 'caricamento massivo', nota: 'arrivato dal caricamento massivo',
+      });
+    }
+
+    const righe = daImportare.map((c) => ({
+      lemma: c.termine, tipo: 'parola', parlata: c.parlata || null, comune: c.paese || null,
+      definizione: c.definizione, esempi_uso: c.esempio || null, categoria_gramm: c.categoria || null,
+      stato: 'in_revisione', sorgente_utm: { origine: 'caricamento_massivo' },
+    }));
+    const { data, error } = await supabase.from('dizionario_lemma').insert(righe).select('id');
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Importa i candidati spuntati, in revisione'; }
+    if (error) {
+      if (esito) { esito.style.color = '#a33'; esito.textContent = 'Non importato: ' + error.message; }
+      return;
+    }
+    if (esito) {
+      esito.style.color = '#2d8659';
+      const segnalati = daImportare.filter((c) => c.problemi.length).length;
+      esito.textContent = (data?.length ?? 0) + ' candidati entrati in revisione'
+        + (segnalati ? ' (' + segnalati + ' segnalati, da completare nella scheda)' : '') + '.'
+        + (paesiNuovi.length ? ' ' + paesiNuovi.length + ' paese/i nuovo/i proposto/i nel vocabolario.' : '');
+    }
+    miCandidati = miCandidati.filter((c) => !(c.includi && c.termine));
+    miRendiAnteprima();
+    await caricaVocabolario();
+    await caricaLemmi();
+  }
+
+  $('mi-analizza')?.addEventListener('click', miAnalizza);
+  $('mi-importa')?.addEventListener('click', miImporta);
 
   // ── TAB ─────────────────────────────────────────────────────────────────
   function apriTab(nome) {
