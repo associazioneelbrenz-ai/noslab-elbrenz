@@ -165,11 +165,15 @@ grep -rlE 'PGHOST|PGPORT|PGUSER|PGDATABASE|PGPASSWORD|SUPABASE_SERVICE_KEY|postg
   ~/El-Brenz-Salvataggi-DA-COPIARE-su-Drive-e-disco-esterno ~/.elbrenz-backup-work/20260905 REPORT_backup_2026-09-05.md | wc -l
 ```
 
-Risultato: **0 file**. (Alla prima passata ne risultavano 2: le due
-copie di `PROCEDURA-DI-RIPRISTINO.md`, per i *nomi* delle variabili
-nell'esempio di ripristino e per il prefisso della riga della chiave
-nella descrizione. Nessun valore, solo documentazione; gli esempi sono
-stati riscritti senza quei token e la passata ripetuta dà 0.)
+Risultato: **0 file**, esclusa questa relazione. Alla prima passata
+ne risultavano 2, le due copie di `PROCEDURA-DI-RIPRISTINO.md`, per i
+*nomi* delle variabili nell'esempio di ripristino e per il prefisso
+della riga della chiave nella descrizione: nessun valore, solo
+documentazione; gli esempi sono stati riscritti senza quei token e la
+passata ripetuta dà 0. L'unico file che contiene ancora i token è
+questo report, perché cita il comando qui sopra: è una circolarità
+del criterio, non una traccia di segreti (il report è nel repository
+pubblico ed è stato riletto riga per riga).
 
 Ricerca aggiuntiva sui **valori veri** (password e chiave di servizio,
 `grep -F` sui valori, senza stamparli) in cartella di lavoro e output
