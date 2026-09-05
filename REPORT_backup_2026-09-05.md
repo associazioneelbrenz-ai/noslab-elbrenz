@@ -205,12 +205,12 @@ arrivato l'addendum (vedi sezione 9). Fatti al loro posto:
   non apre nulla di cifrato verso quella chiave, quindi non avrebbe
   aperto nemmeno i file del 3/9. La diagnosi di mercoledì regge.
 
-La voce v1 **non è stata cancellata**: l'addendum lega la cancellazione
-al test sul file vero, che non ho potuto eseguire. Per farlo alla
-lettera, i due file del 3/9 potrebbero essere ancora in
-"Eliminati di recente" di iCloud Drive (iCloud.com, 30 giorni). La
-cancellazione della voce resta un comando, quando Cristian lo vuole:
-`security delete-generic-password -s elbrenz-backup-age-key`.
+La voce v1 è stata **cancellata su indicazione esplicita di Cristian**,
+data dopo la lettura di questo report, con
+`security delete-generic-password -s elbrenz-backup-age-key`. Verifica:
+la ricerca della voce risponde "could not be found"; la v2 è intatta e
+deriva ancora la chiave pubblica attesa. Motivo: la voce conteneva
+una chiave che age non riconosce, senza più alcun file che la usi.
 
 ## 8. Gate H — SHA256SUMS per le copie manuali
 
@@ -239,7 +239,8 @@ Differenze da dichiarare:
    derivata = destinatario, decifratura identica byte per byte,
    127/43/5 conteggi, 521 file e 66+65 audio), ma F non era stato
    fatto e G era stato fatto sui valori, non sui pattern. Conseguenza:
-   F eseguito in forma sostitutiva (sezione 7), voce v1 non cancellata.
+   F eseguito in forma sostitutiva (sezione 7); voce v1 cancellata solo
+   dopo il via esplicito di Cristian.
 2. **Nella prima decifratura di prova l'identità è stata scritta in
    un file temporaneo** (`mktemp`, permessi 600, cancellato subito),
    contro il C2. La verifica è stata ripetuta per pipe.
@@ -295,5 +296,4 @@ Differenze da dichiarare:
    base64, la procedura di ripristino spiega come decodificarlo).
 3. Decidere dove vivono le credenziali per il giro settimanale, poi
    riattivare il lavoro (comandi nella sezione 2).
-4. Decidere su `~/.elbrenz-backup-env` e sulla voce v1 del Portachiavi
-   (sezione 7).
+4. Decidere su `~/.elbrenz-backup-env`.
