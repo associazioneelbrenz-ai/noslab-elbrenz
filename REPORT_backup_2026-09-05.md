@@ -271,9 +271,11 @@ Differenze da dichiarare:
 
 ## 11. Credenziali
 
-- `~/.elbrenz-backup-env` **non è stato cancellato**: la decisione su
-  dove far vivere le credenziali per l'automazione è aperta e spetta a
-  Cristian. È un file in chiaro nella home, permessi 600.
+- `~/.elbrenz-backup-env` è stato **cancellato con sovrascrittura**
+  (`rm -P`) su indicazione di Cristian, a lavoro chiuso e report
+  letto. Per il prossimo giro manuale va ricreato con i sei valori
+  veri; la decisione su dove far vivere le credenziali per
+  l'automazione resta aperta.
 - La chiave v2 vive in **un solo posto fisico** (Portachiavi del
   MacBook Air).
 - Nota per l'automazione: `elbrenz-backup.sh` usa `mktemp` e cancella
@@ -296,4 +298,3 @@ Differenze da dichiarare:
    base64, la procedura di ripristino spiega come decodificarlo).
 3. Decidere dove vivono le credenziali per il giro settimanale, poi
    riattivare il lavoro (comandi nella sezione 2).
-4. Decidere su `~/.elbrenz-backup-env`.
