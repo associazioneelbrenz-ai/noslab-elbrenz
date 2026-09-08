@@ -93,7 +93,10 @@ Da eseguire **sempre**, dopo `npm run build` e **prima** di `netlify deploy`.
 grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs
 ```
 
-- Se stampa `SUPABASE_ANON = "eyJ...` la build ha i secret: si puo' deployare.
+- Se stampa `SUPABASE_ANON = "sb_publishab` la build ha i secret: si puo'
+  deployare. E' il formato nuovo delle chiavi Supabase (`sb_publishable_...`,
+  verificato l'8/9/2026); una chiave vecchia inizierebbe con `eyJ`. In entrambi
+  i casi il criterio e' uno solo: il valore non e' vuoto.
 - Se stampa `SUPABASE_ANON = ""` **fermarsi**: manca `.env.local`. Deployare
   quella build significa rompere verifica socio, convenzioni, posti gita e
   chat Andreas tutti insieme.
@@ -115,7 +118,7 @@ git status                          # atteso: working tree clean
 git pull origin main
 npm run build
 
-# GATE (vedi sopra): non proseguire se l anon key e vuota
+# GATE (vedi sopra): non proseguire se l anon key e vuota (attesa sb_publishab...)
 grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs
 
 netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2
