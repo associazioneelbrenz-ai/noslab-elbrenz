@@ -391,3 +391,15 @@ verify_jwt = false
 # carica-media: verify_jwt=true, il gateway pretende un JWT valido.
 [functions.glossario-audio-pubblica]
 verify_jwt = true
+
+# corso-video-crea (8/9/2026, brief "Caricamento video su Bunny Stream dalla
+# PWA soci", Lotto A): crea l'oggetto video su Bunny, lo collega alla lezione
+# (RLS "lezione_write_collab" con la sessione del chiamante) e restituisce la
+# firma TUS. BUNNY_API_KEY mai al client -> verify_jwt=true.
+[functions.corso-video-crea]
+verify_jwt = true
+
+# corso-video-stato (8/9/2026, stesso brief): stato di elaborazione del video
+# di una lezione letto da Bunny, gate di livello >=25 + RLS -> verify_jwt=true.
+[functions.corso-video-stato]
+verify_jwt = true
