@@ -114,7 +114,7 @@ ls dist/de/index.html dist/en/index.html           # devono esistere se DE/EN so
 
 Una sola catena in `&&`, in primo piano: al primo passo che fallisce ci si
 ferma, e non si arriva mai al deploy con una build sbagliata o senza secret.
-Non lanciarla in background e non usare `;` tra i passi (10/9/2026: con `;`
+Non lanciarla in background e non usare `;` tra i passi (9/9/2026: con `;`
 un `netlify deploy` fallito per "Project not found" e' passato inosservato e
 la verifica finale ha letto la pagina vecchia).
 
@@ -128,7 +128,7 @@ cd ~/Sviluppo/noslab-elbrenz \
 && netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2 --json > /tmp/deploy.json \
 && DEPLOY_ID=$(python3 -c "import json;print(json.load(open('/tmp/deploy.json'))['deploy_id'])") \
 && netlify api getDeploy --data "{\"deploy_id\":\"$DEPLOY_ID\"}" \
-   | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['id'],d['state'],d.get('published_at'))" \
+   | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['id'],d['state'],d.get('published_at'));sys.exit(0 if d['state']=='ready' else 1)" \
 && curl -sf -o /dev/null -w 'elbrenz.eu -> HTTP %{http_code}\n' https://elbrenz.eu
 ```
 
@@ -138,7 +138,7 @@ Cosa controlla ogni passo:
 - il `grep` del gate fallisce, e ferma tutto, se la chiave anon non e' nella build
   (formato `sb_publishable_...` oggi, `eyJ...` per le chiavi vecchie).
 - `--json` fa scrivere a `netlify deploy` l'id del deploy; `netlify api getDeploy`
-  ne rilegge lo **stato da Netlify**: si prosegue solo se stampa `ready`.
+  ne rilegge lo **stato da Netlify** e fa fallire la catena se non e' `ready`.
 - l'ultimo `curl` e' il minimo. La prova vera e' per contenuto: aprire con `curl -s`
   la pagina che si e' toccata e cercarci la stringa nuova, non fidarsi di "il
   comando non ha dato errore".
