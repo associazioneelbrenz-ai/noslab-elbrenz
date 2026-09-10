@@ -112,18 +112,41 @@ ls dist/de/index.html dist/en/index.html           # devono esistere se DE/EN so
 
 ## Sequenza di deploy del sito (da MacBook Air o Mac Mini)
 
+Una sola catena in `&&`, in primo piano: al primo passo che fallisce ci si
+ferma, e non si arriva mai al deploy con una build sbagliata o senza secret.
+Non lanciarla in background e non usare `;` tra i passi (10/9/2026: con `;`
+un `netlify deploy` fallito per "Project not found" e' passato inosservato e
+la verifica finale ha letto la pagina vecchia).
+
 ```bash
-cd ~/Sviluppo/noslab-elbrenz        # su MacBook Air adattare il percorso
-git status                          # atteso: working tree clean
-git pull origin main
-npm run build
-
-# GATE (vedi sopra): non proseguire se l anon key e vuota (attesa sb_publishab...)
-grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs
-
-netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2
-curl -I https://elbrenz.eu
+cd ~/Sviluppo/noslab-elbrenz \
+&& test -z "$(git status --short | grep -v '^?? public/og')" \
+&& git pull origin main \
+&& npm run build \
+&& grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs | head -1 \
+   | grep -E 'SUPABASE_ANON = "(sb_publishab|eyJ)' \
+&& netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2 --json > /tmp/deploy.json \
+&& DEPLOY_ID=$(python3 -c "import json;print(json.load(open('/tmp/deploy.json'))['deploy_id'])") \
+&& netlify api getDeploy --data "{\"deploy_id\":\"$DEPLOY_ID\"}" \
+   | python3 -c "import json,sys;d=json.load(sys.stdin);print(d['id'],d['state'],d.get('published_at'))" \
+&& curl -sf -o /dev/null -w 'elbrenz.eu -> HTTP %{http_code}\n' https://elbrenz.eu
 ```
+
+Cosa controlla ogni passo:
+
+- `test -z ...`: working tree pulito (le OG in `public/og/` non tracciate sono tollerate).
+- il `grep` del gate fallisce, e ferma tutto, se la chiave anon non e' nella build
+  (formato `sb_publishable_...` oggi, `eyJ...` per le chiavi vecchie).
+- `--json` fa scrivere a `netlify deploy` l'id del deploy; `netlify api getDeploy`
+  ne rilegge lo **stato da Netlify**: si prosegue solo se stampa `ready`.
+- l'ultimo `curl` e' il minimo. La prova vera e' per contenuto: aprire con `curl -s`
+  la pagina che si e' toccata e cercarci la stringa nuova, non fidarsi di "il
+  comando non ha dato errore".
+
+Se un passo si ferma su `netlify deploy` con "Project not found": e' capitato
+il 9/9/2026 e al tentativo successivo, senza cambiare nulla, e' passato.
+Rilanciare la catena; se insiste, `netlify status` deve mostrare il progetto
+`elbrenz-app` con l'id qui sopra, altrimenti `netlify link`.
 
 Nota: Netlify **non** builda da git. Il deploy corrente risulta
 `deploy_source: cli`, quindi la produzione si aggiorna **solo** quando qualcuno
