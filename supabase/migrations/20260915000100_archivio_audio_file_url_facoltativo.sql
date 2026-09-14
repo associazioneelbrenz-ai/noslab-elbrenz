@@ -1,0 +1,12 @@
+-- Il 26/8/2026 (post mortem "percorso invece di url") glossario-audio ha
+-- smesso di scrivere `file_url` e scrive `bucket` + `file_path`; la migrazione
+-- di quel giorno ha aggiunto le due colonne ma non ha tolto il vincolo
+-- NOT NULL alla colonna deprecata. Da allora ogni registrazione proposta dal
+-- modulo dei Guardiani finisce con "null value in column file_url violates
+-- not-null constraint": la parola arriva, la voce no, e il file caricato viene
+-- rimosso dalla funzione stessa. Ultima riga in archivio_audio: 25/8; ultimi
+-- tentativi falliti nei log: 14/9 (segnalazione del Direttivo, 15/9).
+--
+-- La colonna resta (le viste e i 68 file storici la usano ancora come
+-- ripiego): diventa soltanto facoltativa, come lo e' gia' nel codice.
+alter table public.archivio_audio alter column file_url drop not null;
