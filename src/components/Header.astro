@@ -469,7 +469,7 @@ const navItems: NavItem[] = [
         try { localStorage.removeItem('elbrenz-community-auth'); } catch (_) {}
         try { cancellaCookieSessione(); } catch (_) {}
         // La cache del service worker puo' tenere pagine viste da autenticati.
-        try { if (window.caches) caches.delete('el-brenz-runtime-v2'); } catch (_) {}
+        try { if (window.caches) caches.delete('el-brenz-runtime-v3'); } catch (_) {} // [15/9/2026, audit XSS-06] allineato al nome cache di sw.js
         location.href = '/';
       });
     }

@@ -510,9 +510,19 @@ const linkPezzo = (p: Pezzo) => (p.slug ? `/non-e-sole-grande-guerra/${p.slug}` 
         return `${v}${v.includes('?') ? '&' : '?'}width=${larghezza}&quality=75&resize=contain`;
       };
 
+      // [15/9/2026, audit XSS-10] Gli indirizzi delle immagini li scrivono i
+      // soci e finiscono in un attributo dentro innerHTML: si escapano, e si
+      // rende l'immagine solo se sta nello Storage pubblico del progetto o
+      // e' un percorso del sito. Tutto il resto si salta senza rumore.
+      const escAttr = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      const STORAGE_PUBBLICO = 'https://wacknihvdjxltiqvxtqr.supabase.co/storage/v1/object/public/';
+      const urlAmmesso = (u: unknown): u is string =>
+        typeof u === 'string' && (u.startsWith(STORAGE_PUBBLICO) || (u.startsWith('/') && !u.startsWith('//')));
+
       function apri(p: any) {
         elImg.innerHTML = (p.immagini_urls || [])
-          .map((u: string) => `<img src="${rid(u, 1200)}" srcset="${rid(u, 600)} 600w, ${rid(u, 1200)} 1200w" sizes="(min-width: 768px) 600px, 100vw" alt="${(p.titolo || '').replace(/"/g, '&quot;')}" class="w-full h-auto rounded" loading="lazy" />`)
+          .filter(urlAmmesso)
+          .map((u: string) => `<img src="${escAttr(rid(u, 1200))}" srcset="${escAttr(rid(u, 600))} 600w, ${escAttr(rid(u, 1200))} 1200w" sizes="(min-width: 768px) 600px, 100vw" alt="${escAttr(p.titolo || '')}" class="w-full h-auto rounded" loading="lazy" />`)
           .join('');
         elTit.textContent = p.titolo || '';
         elDes.textContent = p.descrizione || '';

@@ -140,7 +140,16 @@ import Layout from '../layouts/Layout.astro';
   /** Dove tornare dopo l'accesso: ?dopo=/percorso, solo interno. */
   function destinazione(): string {
     const p = new URLSearchParams(location.search).get('dopo') ?? '';
-    return p.startsWith('/') && !p.startsWith('//') ? p : '/';
+    // [15/9/2026, audit XSS-07] Il controllo sui due slash iniziali non basta:
+    // i browser normalizzano anche `/\host` in `//host`. Si lascia decidere
+    // al parser degli URL: e' interno solo se l'origine coincide con la nostra.
+    if (!p.startsWith('/') || p.startsWith('//')) return '/';
+    try {
+      const u = new URL(p, location.origin);
+      return u.origin === location.origin ? u.pathname + u.search + u.hash : '/';
+    } catch {
+      return '/';
+    }
   }
 
   step1.addEventListener('submit', async (e) => {

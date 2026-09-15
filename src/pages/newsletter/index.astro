@@ -45,6 +45,14 @@ const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/iscrizione`;
           <input id="nl-nome" type="text" maxlength="120" autocomplete="name"
                  class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E] mb-4" />
 
+          {/* [15/9/2026, audit modulo newsletter] Campo anti-automa: nascosto con
+              la tecnica clip (non left:-9999px, vedi tesseramento.astro), deve
+              restare vuoto; l'edge lo controlla insieme al tempo di apertura. */}
+          <div aria-hidden="true" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;">
+            <label for="nl-website">Website (lascia vuoto)</label>
+            <input type="text" id="nl-website" name="_honeypot" tabindex="-1" autocomplete="off" />
+          </div>
+
           <label class="block text-sm text-[#1E2E26]/75 mb-1" for="nl-email">La tua email</label>
           <input id="nl-email" type="email" required autocomplete="email" placeholder="nome@esempio.it"
                  class="w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1E2E26] rounded focus:outline-none focus:border-[#C8923E]" />
@@ -74,6 +82,9 @@ const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/iscrizione`;
   const ANON = root.getAttribute('data-anon')!;
   const $ = (id: string) => document.getElementById(id)!;
   const val = (id: string) => ($(id) as HTMLInputElement).value.trim();
+  // [15/9/2026, audit modulo newsletter] Quando si e' aperto il modulo: l'edge
+  // respinge gli invii troppo rapidi, come per tesseramento e convenzioni.
+  const formOpenedAt = Date.now();
 
   function esito(html: string) {
     $('nl-modulo').classList.add('hidden');
@@ -105,7 +116,11 @@ const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/iscrizione`;
       const r = await fetch(EDGE, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: ANON },
-        body: JSON.stringify({ email, nome: val('nl-nome'), origine: 'modulo_sito' }),
+        body: JSON.stringify({
+          email, nome: val('nl-nome'), origine: 'modulo_sito',
+          _honeypot: val('nl-website'),
+          _ts: formOpenedAt,
+        }),
       });
       const d = await r.json();
       if (d.ok && d.gia_iscritto) {

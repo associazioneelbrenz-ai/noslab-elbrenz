@@ -55,9 +55,14 @@
     MOCK_DELAY_MIN: 1800,
     MOCK_DELAY_MAX: 3500,
 
-    // CDN per markdown + sanitization
-    CDN_MARKED: 'https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js',
-    CDN_DOMPURIFY: 'https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js',
+    // Librerie per markdown + sanitization.
+    // [15/9/2026, audit XSS-05] Servite da /vendor/ (stesso dominio) invece che
+    // da cdn.jsdelivr.net: DOMPurify aggiornato da 3.0.6 a 3.2.6 (correzioni
+    // mXSS), marked invariato a 9.1.6. Stesso ordine di caricamento, stesse
+    // variabili globali (window.marked, window.DOMPurify); le chiavi restano
+    // CDN_* per non cambiare l'override via window.ANDREAS_CONFIG.
+    CDN_MARKED: '/vendor/marked-9.1.6.min.js',
+    CDN_DOMPURIFY: '/vendor/dompurify-3.2.6.min.js',
   };
 
   const CONFIG = Object.assign({}, DEFAULT_CONFIG, window.ANDREAS_CONFIG || {});

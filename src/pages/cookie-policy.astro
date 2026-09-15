@@ -13,14 +13,19 @@ import Layout from '../layouts/Layout.astro';
 <Layout ogImage="/og/og-cookie-policy.jpg" title="Cookie policy" description="Cookie policy dell'ecosistema El Brenz (sito e app soci) · Associazione Storico Culturale Linguistica El Brenz">
   <main class="container mx-auto px-4 py-12 max-w-3xl prose prose-lg">
     <h1>Cookie policy</h1>
-    <p class="lead">Ultimo aggiornamento: 30 luglio 2026</p>
+    {/* [15/9/2026, audit PRIV-03 e PRIV-08] Aggiornata: PayPal come terza parte
+        nelle pagine di pagamento; tabella allineata allo storage reale. */}
+    <p class="lead">Ultimo aggiornamento: 15 settembre 2026</p>
 
     <h2>Cosa sono i cookie</h2>
     <p>
       I cookie sono piccoli file di testo che i siti salvano sul tuo dispositivo; tecnologie simili,
       come l'archiviazione locale e di sessione del browser, svolgono funzioni analoghe. Su
       <strong>elbrenz.eu</strong> e nell'app soci <strong>community.elbrenz.eu</strong> utilizziamo
-      soltanto strumenti tecnici e di prima parte, necessari al funzionamento dei servizi.
+      strumenti tecnici, quasi tutti di prima parte, necessari al funzionamento dei servizi.
+      L'unica eccezione sono le pagine in cui si paga (donazioni, tesseramento, iscrizione alle gite,
+      rinnovo e pagamento della quota): lì si carica il modulo di pagamento di PayPal, che può
+      impostare propri cookie tecnici e di sicurezza secondo la sua informativa.
       Non usiamo cookie analitici, di profilazione né strumenti pubblicitari o di analisi di terze parti.
     </p>
 
@@ -33,6 +38,13 @@ import Layout from '../layouts/Layout.astro';
       <tbody>
         <tr><td><code>cc_cookie</code></td><td>cookie</td><td>Ricorda le tue preferenze sui cookie</td><td>~6 mesi</td><td>El Brenz</td></tr>
         <tr><td><code>elbrenz-auth</code></td><td>archiviazione locale</td><td>Sessione e accesso alle pagine riservate del sito</td><td>Fino a logout o scadenza</td><td>El Brenz</td></tr>
+        <tr><td><code>elbrenz-auth</code></td><td>cookie tecnico (dominio <code>.elbrenz.eu</code>)</td><td>Condivide la sessione fra il sito e l'app soci, così non devi accedere due volte</td><td>1 anno, o fino a logout</td><td>El Brenz</td></tr>
+        <tr><td><code>eb_rz_gettone</code></td><td>archiviazione locale</td><td>Codice casuale generato dal tuo browser per contare una volta sola la tua reazione «La conosco anch'io» alle parole del glossario; non ti identifica</td><td>Persistente</td><td>El Brenz</td></tr>
+        <tr><td><code>eb_rz_comune</code></td><td>archiviazione locale</td><td>Ricorda il paese che hai indicato con la reazione, per non richiedertelo</td><td>Persistente</td><td>El Brenz</td></tr>
+        <tr><td><code>lead-soft-fioi</code></td><td>archiviazione di sessione</td><td>Ricorda che l'invito «Resta in contatto» nella pagina del documentario è già comparso, per non riproporlo</td><td>Sessione</td><td>El Brenz</td></tr>
+        <tr><td><code>eb-glossario-sessione-ultimo-creato</code></td><td>archiviazione locale</td><td>Solo per i curatori del glossario: ricorda a che punto era arrivata l'ultima sessione di ascolto delle pronunce</td><td>Persistente</td><td>El Brenz</td></tr>
+        <tr><td>Cache Storage (service worker)</td><td>archiviazione locale</td><td>Copia di pagine pubbliche e file statici per aprire il sito più in fretta e anche senza rete; le pagine personali e di curatela non vengono conservate</td><td>Fino a un nuovo aggiornamento del sito o a logout</td><td>El Brenz</td></tr>
+        <tr><td>Cookie di <code>paypal.com</code></td><td>cookie di terza parte</td><td>Funzionamento e sicurezza del modulo di pagamento nelle pagine di donazione, tesseramento, iscrizione alle gite, rinnovo e pagamento della quota</td><td>Secondo l'<a href="https://www.paypal.com/it/legalhub/cookie-full">informativa PayPal</a></td><td>PayPal (Europe) S.à r.l. et Cie, S.C.A., Lussemburgo</td></tr>
         <tr><td><code>eb_embed_&lt;servizio&gt;</code></td><td>cookie di sessione</td><td>Ricorda il consenso a caricare un contenuto incorporato (Instagram, YouTube)</td><td>Sessione</td><td>El Brenz</td></tr>
         <tr><td><code>andreas_widget_seen</code></td><td>archiviazione locale</td><td>Ricorda che hai già visto l'assistente Andreas</td><td>Persistente</td><td>El Brenz</td></tr>
         <tr><td><code>eb_popup_ritter_chiuso</code></td><td>archiviazione locale</td><td>Ricorda la chiusura dell'avviso eventi in home</td><td>7 giorni</td><td>El Brenz</td></tr>
@@ -59,6 +71,12 @@ import Layout from '../layouts/Layout.astro';
       I contenuti incorporati da <strong>Instagram (Meta)</strong> e <strong>YouTube (Google)</strong> si
       caricano solo su tua richiesta: in quel momento quei servizi possono impostare propri cookie,
       secondo le loro informative. Prima del caricamento nessun dato viene trasmesso a terzi.
+    </p>
+    <p>
+      Nelle pagine in cui si paga, il modulo di <strong>PayPal (Europe) S.à r.l. et Cie, S.C.A.</strong>
+      (Lussemburgo) si carica insieme alla pagina, perché serve a completare il pagamento: i cookie che
+      imposta sono descritti nell'<a href="https://www.paypal.com/it/legalhub/cookie-full">informativa cookie di PayPal</a>.
+      Nelle altre pagine del sito PayPal non è presente.
     </p>
 
     <h2>Come gestirli e revocare il consenso</h2>

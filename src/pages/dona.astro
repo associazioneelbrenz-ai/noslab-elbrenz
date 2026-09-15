@@ -83,6 +83,12 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
         dell'associazione come erogazione liberale. Senza nominativo non
         possiamo emettere ricevuta ai fini fiscali.
       </p>
+      {/* [15/9/2026, audit LEG-02] La ricevuta non parte da sola: si rilascia su richiesta. */}
+      <p class="text-xs text-[#0F0F0F]/60 leading-relaxed mt-2 mb-0 pl-7" style="font-family: 'Inter', sans-serif;">
+        La ricevuta non viene inviata in automatico: la rilasciamo su richiesta,
+        scrivendo a <a href="mailto:info@elbrenz.eu" class="underline decoration-[#C8923E] hover:text-[#C8923E]">info@elbrenz.eu</a>
+        e indicando la data e l'importo della donazione.
+      </p>
     </div>
 
     <div id="dona-dati" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8" style="font-family: 'Inter', sans-serif;">
@@ -93,7 +99,7 @@ const PAYPAL_CLIENT_ID = 'AYz2660-eybOrnWhf2NleXBBE2FRM_eul8rOcWrU2UVVNoZl7fVvSJ
       <div>
         <label for="dona-email" class="block text-sm text-[#0F0F0F]/70 mb-2">Email (per la ricevuta)</label>
         <input type="email" id="dona-email" maxlength="200" autocomplete="email" class="w-full border-2 border-[#E5DFCF] px-4 py-3 text-base text-[#1E2E26] focus:outline-none focus:border-[#C8923E]" />
-        <p class="text-xs text-[#0F0F0F]/55 mt-2">Nome ed email sono usati solo per emettere la ricevuta, come da <a href="/privacy" class="underline decoration-[#C8923E] hover:text-[#C8923E]">informativa privacy</a>.</p>
+        <p class="text-xs text-[#0F0F0F]/55 mt-2">Nome ed email sono usati solo per emettere la ricevuta, che si rilascia su richiesta, come da <a href="/privacy" class="underline decoration-[#C8923E] hover:text-[#C8923E]">informativa privacy</a>.</p>
       </div>
     </div>
 

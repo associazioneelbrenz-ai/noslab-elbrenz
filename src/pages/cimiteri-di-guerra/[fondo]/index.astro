@@ -267,6 +267,9 @@ export const prerender = true;
     const dati = datiEl ? JSON.parse(datiEl.textContent || '{}') : { fondoSlugBreve: '', persone: [] };
     const input = document.getElementById('an-cerca');
     const ris = document.getElementById('an-risultati');
+    // [15/9/2026, audit XSS-09] I campi dei caduti finiscono in innerHTML:
+    // si escapano tutti, anche se oggi arrivano dal nostro archivio.
+    const esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     input?.addEventListener('input', () => {
       const t = input.value.trim().toLowerCase();
       if (!ris) return;
@@ -289,11 +292,11 @@ export const prerender = true;
         const daMostrare = g.voci.slice(0, LIMITE - mostrati);
         mostrati += daMostrare.length;
         html += `<p class="etichetta intestazione-gruppo">${g.etichetta}</p>` + daMostrare.map((p) =>
-          `<a class="voce" style="text-decoration:none;color:inherit" href="/cimiteri-di-guerra/${dati.fondoSlugBreve}/${p.slug}">` +
-          `<span class="n">${p.num ?? ''}</span>` +
-          `<span><span class="nome">${p.n}${p.pow ? '<span class="marchio">prigioniero</span>' : ''}</span>` +
-          `<span class="meta">${[p.g, p.r, p.l].filter(Boolean).join(' · ')}</span></span>` +
-          `<span class="quando">${p.m || ''}</span></a>`
+          `<a class="voce" style="text-decoration:none;color:inherit" href="/cimiteri-di-guerra/${esc(dati.fondoSlugBreve)}/${esc(p.slug)}">` +
+          `<span class="n">${esc(p.num ?? '')}</span>` +
+          `<span><span class="nome">${esc(p.n)}${p.pow ? '<span class="marchio">prigioniero</span>' : ''}</span>` +
+          `<span class="meta">${esc([p.g, p.r, p.l].filter(Boolean).join(' · '))}</span></span>` +
+          `<span class="quando">${esc(p.m || '')}</span></a>`
         ).join('');
       }
       ris.innerHTML = html + (lista.length > mostrati ? `<p class="niente">e altri ${lista.length - mostrati}.</p>` : '');
