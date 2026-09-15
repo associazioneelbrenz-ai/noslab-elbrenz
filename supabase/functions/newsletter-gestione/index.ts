@@ -165,7 +165,7 @@ Deno.serve(async (req: Request) => {
     // dominio. Vuole il token amministrativo: non e' a disposizione del
     // pubblico.
     const provaSenzaInvio = corpo?.prova_senza_invio === true
-      && req.headers.get('x-ingest-token') === (Deno.env.get('INGEST_TOKEN') ?? ' ');
+      && req.headers.get('x-ingest-token') === (Deno.env.get('INGEST_TOKEN') ?? '\u0000');
 
     const { data: esistente } = await sb.from('newsletter_iscritto')
       .select('id, stato, updated_at, created_at').eq('email', email).maybeSingle();
