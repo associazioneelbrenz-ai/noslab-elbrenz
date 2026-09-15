@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../../lib/jsonPerScript';
 // Cimiteri di guerra — pagina del fondo. Ordine riscritto dall'addendum
 // "Albo dei nomi, incipit, card in home" (26/8/2026 §4), poi corretto a
 // vivo lo stesso giorno: il racconto torna subito dopo l'incipit invece di
@@ -223,9 +224,9 @@ export const prerender = true;
   </div>
   </div>
 
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb(briciole))} is:inline />
 
-  <script type="application/json" id="an-dati" set:html={JSON.stringify({ fondoSlugBreve: fondo.slug_breve, persone: datiRicerca })} />
+  <script type="application/json" id="an-dati" set:html={jsonPerScript({ fondoSlugBreve: fondo.slug_breve, persone: datiRicerca })} />
 
   <script is:inline>
     document.querySelectorAll('.muro').forEach((muro) => {

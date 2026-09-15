@@ -1,4 +1,5 @@
 ---
+import { urlEsterno } from '../lib/urlSicuro';
 /**
  * /convenzioni — Convenzioni Soci (M5.0 v2).
  *
@@ -220,9 +221,9 @@ const perCategoria = CATEGORIE
                       {c.dettagli}
                     </p>
                   )}
-                  {c.url && (
+                  {urlEsterno(c.url) && (
                     <a
-                      href={c.url}
+                      href={urlEsterno(c.url)}
                       target="_blank"
                       rel="noopener nofollow"
                       class="text-sm text-[#1E2E26] underline decoration-[#C8923E] underline-offset-2 hover:text-[#C8923E]"

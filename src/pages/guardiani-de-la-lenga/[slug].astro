@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../lib/jsonPerScript';
 /**
  * /guardiani-de-la-lenga/<slug> — la voce di dizionario di una parola sola.
  *
@@ -146,7 +147,7 @@ const jsonLd = {
   description={descrizione}
   ogImage={ogVoce}
 >
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" set:html={jsonPerScript(jsonLd)} />
 
   <main class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">

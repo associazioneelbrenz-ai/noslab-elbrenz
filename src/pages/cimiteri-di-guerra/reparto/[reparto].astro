@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../../lib/jsonPerScript';
 // Cimiteri di guerra — pagina di un reparto (brief 26/8/2026, §2.2; rifatta
 // dal brief "fondo 1941", 26/8/2026 §6). Prima generava dieci pagine da un
 // raggruppamento delle persone per sigla, sopra soglia di tre uomini. Ora
@@ -188,5 +189,5 @@ export const prerender = true;
   </section>
   </div>
 
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

@@ -1,4 +1,6 @@
 ---
+import { urlEsterno, urlSicuro } from '../../lib/urlSicuro';
+import { jsonPerScript } from '../../lib/jsonPerScript';
 /**
  * /luoghi/{slug} — pagina di un luogo delle Valli del Noce (§B del brief 18/7).
  *
@@ -120,8 +122,8 @@ const schemaPlace = {
 ---
 
 <Layout title={titoloSeo} description={descrizione}>
-  <script type="application/ld+json" set:html={JSON.stringify(schemaPlace)} />
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb([
+  <script type="application/ld+json" set:html={jsonPerScript(schemaPlace)} />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb([
     { nome: 'El Brenz', url: '/' },
     { nome: 'Luoghi delle Valli', url: '/luoghi' },
     { nome: luogo.nome, url: `/luoghi/${luogo.slug}` },
@@ -224,7 +226,7 @@ const schemaPlace = {
                   </p>
                   <p class="m-0 text-[12.5px] text-[#1E2E26]/55 mt-1" style="font-family: 'Inter', sans-serif;">
                     {a.fonte}{a.collocazione_archivistica ? ` · ${a.collocazione_archivistica}` : ''}
-                    {a.url_fonte && <> · <a href={a.url_fonte} target="_blank" rel="noopener noreferrer" class="text-[#8a6215] underline">collegamento</a></>}
+                    {urlEsterno(a.url_fonte) && <> · <a href={urlEsterno(a.url_fonte)} target="_blank" rel="noopener noreferrer" class="text-[#8a6215] underline">collegamento</a></>}
                   </p>
                   {a.note && <p class="m-0 text-[13px] text-[#1E2E26]/75 mt-1.5" style="font-family: 'Source Serif 4', Georgia, serif;">{a.note}</p>}
                 </li>
@@ -254,9 +256,9 @@ const schemaPlace = {
       </div>
 
       {/* Articolo collegato, oppure invito a raccontare */}
-      {luogo.url_articolo ? (
+      {urlSicuro(luogo.url_articolo) ? (
         <p class="m-0 mb-8">
-          <a href={luogo.url_articolo} class="text-[#8a6215] underline" style="font-family: 'Source Serif 4', Georgia, serif;">Leggi la storia di questo luogo →</a>
+          <a href={urlSicuro(luogo.url_articolo)} class="text-[#8a6215] underline" style="font-family: 'Source Serif 4', Georgia, serif;">Leggi la storia di questo luogo →</a>
         </p>
       ) : (
         <div class="bg-[#F5EEDD] border border-[#C8923E]/40 rounded-md p-5 mb-8">

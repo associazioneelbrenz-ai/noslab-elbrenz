@@ -11,7 +11,7 @@ Token: leggi `INGEST_TOKEN` dalle variabili d'ambiente della sessione (NON chied
 
 ## STEP 2 — TESSERA: nuovo design QR → prova → batch
 1. Completa il redesign QR della tessera (richiesta mia di ieri sera). Poi **nuova prova**: reinvia la tessera n.4 al mio indirizzo → STOP → attendi il mio ok sul rendering.
-2. Al mio ok: **batch delle 18 restanti** — tessera_inviata=true SOLO a invio riuscito; casi email condivise già decisi: n.13 Nadia Pangrazzi → diegomagnoni@live.it; n.14 M.L. Battistini → monica_valentinotti@hotmail.it con riga di avviso nel corpo ("la tessera di Maria Luisa viene recapitata all'indirizzo di famiglia").
+2. Al mio ok: **batch delle 18 restanti** — tessera_inviata=true SOLO a invio riuscito; casi email condivise già decisi: n.13 N. P. → [indirizzo personale, omesso]; n.14 M. L. B. → [indirizzo personale, omesso] con riga di avviso nel corpo ("la tessera di Maria Luisa viene recapitata all'indirizzo di famiglia").
 3. Report finale: tabella socio→esito. Nessun sollecito rinnovo prima del 31/12/2026.
 
 ## STEP 3 — CONVENZIONI: rifiniture di contenuto

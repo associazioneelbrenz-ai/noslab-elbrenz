@@ -1,8 +1,8 @@
 -- IL PONTE FRA ACCOUNT E NUMERO DI SOCIO (7/8/2026)
 --
 -- Il caso che lo rende necessario: Diego Magnoni si e' registrato nell'app con
--- diegomagnoni9@gmail.com, mentre a registro ha diegomagnoni@live.it, che e' poi
--- la casella che CONDIVIDE con Nadia Pangrazzi. Per il sistema e' una persona
+-- [indirizzo personale, omesso], mentre a registro ha [indirizzo personale, omesso], che e' poi
+-- la casella che CONDIVIDE con N. P.. Per il sistema e' una persona
 -- nuova: livello ospite, niente tessera, niente Comunita', niente Museo.
 --
 -- L'email non puo' fare da identita' qui, e i motivi sono tre e tutti reali:

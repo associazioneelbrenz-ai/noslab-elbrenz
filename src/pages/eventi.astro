@@ -1,4 +1,5 @@
 ---
+import { urlEsterno } from '../lib/urlSicuro';
 /**
  * /eventi — il calendario. Due blocchi, in quest'ordine:
  *   A. I nostri appuntamenti, da `evento` (pubblicato = true).
@@ -268,9 +269,9 @@ const postiLiberi = posti ? Math.max(0, posti.posti_totali - posti.posti_occupat
                     </p>
                   )}
 
-                  {e.url_fonte && (
+                  {urlEsterno(e.url_fonte) && (
                     <p class="m-0 mt-2">
-                      <a href={e.url_fonte} target="_blank" rel="noopener noreferrer"
+                      <a href={urlEsterno(e.url_fonte)} target="_blank" rel="noopener noreferrer"
                          class="text-sm text-[#8a6215] underline">Informazioni dell'organizzatore</a>
                     </p>
                   )}

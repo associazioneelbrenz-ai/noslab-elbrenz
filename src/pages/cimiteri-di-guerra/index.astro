@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../lib/jsonPerScript';
 // Cimiteri di guerra — indice della sezione (brief 25/8/2026). L'elenco
 // viene da leggiFondi(): quando arriva un secondo fondo compare qui da solo,
 // senza toccare questo file.
@@ -78,5 +79,5 @@ export const prerender = true;
     </section>
   </div>
 
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

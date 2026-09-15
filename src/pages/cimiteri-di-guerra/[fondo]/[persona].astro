@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../../lib/jsonPerScript';
 // Cimiteri di guerra — scheda di una persona (brief 26/8/2026, poi
 // "rifinire" 26/8/2026). Non aveva un modello: carta chiara, titolo serif,
 // dati in registro con etichette in monospazio maiuscolo, filetto d'oro sui
@@ -258,6 +259,6 @@ export const prerender = true;
   </p>
   </div>
 
-  {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} is:inline />}
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+  {jsonLd && <script type="application/ld+json" set:html={jsonPerScript(jsonLd)} is:inline />}
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

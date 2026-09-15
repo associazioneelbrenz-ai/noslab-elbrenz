@@ -39,7 +39,9 @@ function componiTesto(
     case 'integrazione_quota': r.push(`${d.nome ?? '—'} · ${d.importo ?? '?'} €`); break;
     case 'ricevuta_bonifico':  r.push(`${d.nome ?? '—'} · ricevuta bonifico da verificare${d.anomalia ? ' ⚠ anomalia OCR' : ''}`); break;
     case 'guardiani_lemma':    r.push(`«${d.lemma ?? '—'}» (${d.variante ?? '?'})`, `Valida su ${site}/glossario-console`); break;
-    case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto: ${d.contatto ?? '—'}`, `Gestisci su ${site}/museo-gg-curatela`); break;
+    // [15/9/2026, audit PRIV-01] Il contatto del proponente non passa piu' dal
+    // gruppo Telegram: sta nella scheda di curatela, dove serve davvero.
+    case 'museo_gg_proposta':  r.push(`${d.nome ?? '—'}${d.tipo ? ` · ${d.tipo}` : ''}`, `${String(d.estratto ?? '').slice(0, 140)}`, `Contatto e gestione su ${site}/museo-gg-curatela`); break;
     case 'alert_anomalia':     r.push(`${d.dettaglio ?? '—'}`); break;
     // [27/8/2026] Cruscotto del direttivo, promemoria settimanale. Regola
     // non negoziabile del brief: si manda anche a zero allarmi, una riga
@@ -109,7 +111,10 @@ function componiTesto(
             ? `💶 Pagamento: contanti · incassato da ${d.incassato_da_nome}${d.incassato_il ? ` il ${d.incassato_il}` : ''}`
             : '💶 Pagamento: contanti · da incassare')
         : 'Pagamento: non indicato';
-      r.push(`${d.nome ?? '—'}${d.email ? ` · ${d.email}` : ''}`, pagamento);
+      // [15/9/2026, audit PRIV-01] Niente email nel gruppo: e' un recapito di
+      // una persona che non ha collegato Telegram e Telegram ha sede fuori
+      // dall'Unione. Il direttivo la trova nella scheda della domanda.
+      r.push(`${d.nome ?? '—'}`, pagamento, `Scheda su ${site}/tesseramento-curatela`);
       break;
     }
     default:                   r.push(String(d.dettaglio ?? JSON.stringify(dati)).slice(0, 200));

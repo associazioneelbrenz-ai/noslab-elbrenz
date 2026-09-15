@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../../lib/jsonPerScript';
 /**
  * /non-e-sole-grande-guerra/raccolte/<slug> — una raccolta tematica del Museo.
  *
@@ -94,7 +95,7 @@ const jsonLd = {
   description={descrizioneSeo}
   ogImage={copertina}
 >
-  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <script type="application/ld+json" set:html={jsonPerScript(jsonLd)} />
 
   <main class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">

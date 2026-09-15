@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../../lib/jsonPerScript';
 // Cimiteri di guerra — le tombe senza nome (brief "rifinire", 26/8/2026,
 // §3.4). L'unica pagina della sezione che chiede qualcosa invece di darlo:
 // elenca i numeri di tomba senza un nome nel registro e chiede aiuto. I
@@ -140,5 +141,5 @@ export const prerender = true;
   </section>
   </div>
 
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

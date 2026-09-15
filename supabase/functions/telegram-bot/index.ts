@@ -338,6 +338,25 @@ serve(async (req: Request) => {
         return new Response('', { status: 200 });
       }
       const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+      // [15/9/2026, audit SIC-03] Essere amministratore di UN gruppo Telegram
+      // non dice niente su chi si e': chiunque puo' aprire un gruppo, metterci
+      // il bot e scrivere /attiva_notifiche, e da quel momento nomi, importi
+      // e recapiti dei richiedenti arriverebbero a lui. Il mittente deve
+      // essere una persona del direttivo (ruolo El Brenz >= 50, via
+      // collegamento Telegram), come per tutti i comandi di gestione. E se un
+      // gruppo e' gia' registrato, il cambio si accetta solo da quel gruppo:
+      // per spostare le notifiche altrove prima le si spegne da dentro.
+      const ruolo = await risolviRuolo(supabase, fromId);
+      if (!ruolo || ruolo.livello < 50) {
+        await sendMessage(token, chatId, 'Le notifiche del direttivo le gestisce solo chi ha un ruolo di direttivo in El Brenz e ha collegato il proprio account Telegram dall\'app.');
+        return new Response('', { status: 200 });
+      }
+      const { data: registrato } = await supabase.from('telegram_config')
+        .select('valore').eq('chiave', 'direttivo_chat_id').maybeSingle();
+      if (registrato?.valore && String(registrato.valore) !== String(chatId)) {
+        await sendMessage(token, chatId, 'Le notifiche sono già registrate su un altro gruppo. Per spostarle qui, prima usa <b>/disattiva_notifiche</b> dentro quel gruppo.');
+        return new Response('', { status: 200 });
+      }
       if (cmd.startsWith('/disattiva_notifiche')) {
         await supabase.from('telegram_config').delete().eq('chiave', 'direttivo_chat_id');
         await sendMessage(token, chatId, '🔕 Notifiche disattivate: questo gruppo non riceverà più gli avvisi.');

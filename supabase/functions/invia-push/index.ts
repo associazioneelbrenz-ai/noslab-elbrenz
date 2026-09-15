@@ -26,13 +26,27 @@ Deno.serve(async (req: Request) => {
   const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
   const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
   const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:info@elbrenz.eu";
-  const WEBHOOK_SECRET = Deno.env.get("PUSH_WEBHOOK_SECRET") ?? "";
-
-  // Difesa: se e' impostato un secret condiviso, l'header deve combaciare.
-  if (WEBHOOK_SECRET) {
-    const got = req.headers.get("x-webhook-secret") ?? "";
-    if (got !== WEBHOOK_SECRET) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403 });
+  // [15/9/2026, audit SIC-02] IL SEGRETO NON E' PIU' FACOLTATIVO. Prima il
+  // controllo scattava solo se PUSH_WEBHOOK_SECRET era impostato, e non lo
+  // era: il gateway lasciava passare la chiave anonima (pubblica nel sito) e
+  // chiunque poteva recapitare una notifica con titolo, testo e link a scelta
+  // sul telefono di qualsiasi socio. Ora: senza segreto configurato la
+  // funzione si ferma (503, e lo dice), con segreto sbagliato o assente
+  // nell'header rifiuta (403). Il trigger `notifica_push_webhook` legge lo
+  // stesso valore dal Vault e lo manda in `x-webhook-secret`. Si riusa
+  // INGEST_TOKEN, gia' nei secret e nel Vault, cosi' il canale e' chiuso da
+  // subito senza un segreto nuovo da provisionare; PUSH_WEBHOOK_SECRET, se un
+  // giorno impostato, ha la precedenza (SIC-19: separare i token).
+  const WEBHOOK_SECRET = Deno.env.get("PUSH_WEBHOOK_SECRET") || Deno.env.get("INGEST_TOKEN") || "";
+  if (!WEBHOOK_SECRET) {
+    console.error("[invia-push] nessun segreto configurato (PUSH_WEBHOOK_SECRET / INGEST_TOKEN): consegna rifiutata");
+    return new Response(JSON.stringify({ error: "secret_not_configured" }), { status: 503 });
   }
+  const got = req.headers.get("x-webhook-secret") ?? "";
+  // Confronto a tempo costante: la lunghezza si confronta prima, poi ogni byte.
+  let diff = got.length === WEBHOOK_SECRET.length ? 0 : 1;
+  for (let i = 0; i < WEBHOOK_SECRET.length; i++) diff |= (got.charCodeAt(i) ?? 0) ^ WEBHOOK_SECRET.charCodeAt(i);
+  if (diff !== 0) return new Response(JSON.stringify({ error: "forbidden" }), { status: 403 });
 
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
     // Setup non ancora completato: esce senza errore (nessun invio).

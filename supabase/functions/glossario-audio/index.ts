@@ -185,7 +185,12 @@ Deno.serve(async (req: Request) => {
   const path = `${lemma_id}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${tipo.ext}`;
   const { error: upErr } = await sb.storage.from(BUCKET)
     .upload(path, bytes, { contentType: tipo.mime, upsert: false });
-  if (upErr) return J({ errore: 'caricamento_fallito', dettaglio: upErr.message }, 500, c);
+  // [15/9/2026, audit SIC-23] Il messaggio interno resta nei log; a chi
+  // registra si dice solo che non e' colpa sua.
+  if (upErr) {
+    console.error('[glossario-audio] upload fallito:', upErr.message);
+    return J({ errore: 'caricamento_fallito', dettaglio: 'un problema nostro, non tuo: riprova fra poco' }, 500, c);
+  }
 
   // I due vocabolari di `archivio_audio` esistono dal principio e vanno
   // rispettati, non allargati per comodita': `categoria_audio` ammette parola,
@@ -228,7 +233,10 @@ Deno.serve(async (req: Request) => {
     // Il file e' gia' nel contenitore: si toglie, altrimenti resta un audio
     // orfano che nessuno sapra' mai a chi apparteneva.
     await sb.storage.from(BUCKET).remove([path]).catch(() => {});
-    return J({ errore: 'scrittura_fallita', dettaglio: error?.message ?? 'nessuna riga' }, 500, c);
+    // [15/9/2026, audit SIC-23] Per tre settimane questo messaggio ha
+    // mostrato ai soci il vincolo Postgres violato; il dettaglio va nei log.
+    console.error('[glossario-audio] scrittura fallita:', error?.message ?? 'nessuna riga');
+    return J({ errore: 'scrittura_fallita', dettaglio: 'un problema nostro, non tuo: riprova fra poco' }, 500, c);
   }
 
   return J({

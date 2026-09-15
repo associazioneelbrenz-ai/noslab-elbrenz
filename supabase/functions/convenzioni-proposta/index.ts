@@ -509,6 +509,12 @@ serve(async (req) => {
   if (dettagli.length > L.dettagli.max) return jsonResponse({ error: `I dettagli non possono superare ${L.dettagli.max} caratteri.` }, 400, cors)
   if (punti_extra_grezzi.length > 1000) return jsonResponse({ error: 'Gli altri punti vendita non possono superare 1000 caratteri.' }, 400, cors)
   if (rawUrl.length > L.url.max) return jsonResponse({ error: 'URL troppo lungo.' }, 400, cors)
+  // [15/9/2026, audit SIC-06] Un sito e' un indirizzo http(s), non una
+  // stringa qualsiasi: "javascript:" passerebbe la lunghezza e finirebbe in un
+  // link cliccabile su /convenzioni dopo l'approvazione.
+  if (rawUrl && !/^https?:\/\/[^\s]+$/i.test(rawUrl)) {
+    return jsonResponse({ error: 'Il sito deve essere un indirizzo completo che inizia con http:// o https://.' }, 400, cors)
+  }
   if (!tra(referente_nome, L.referente_nome)) return jsonResponse({ error: 'Nome referente non valido.' }, 400, cors)
   if (referente_email.length > L.email.max || !EMAIL_REGEX.test(referente_email)) return jsonResponse({ error: 'Email referente non valida.' }, 400, cors)
   if (referente_telefono.length > L.telefono.max) return jsonResponse({ error: 'Telefono non valido.' }, 400, cors)

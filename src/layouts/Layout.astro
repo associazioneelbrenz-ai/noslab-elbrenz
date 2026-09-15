@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../lib/jsonPerScript';
 /**
  * Layout — Shell HTML principale di El Brenz
  *
@@ -143,7 +144,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
   I dati sono quelli veri del footer: stessa fonte, cosi' non possono divergere.
 */}
 {!effectiveNoindex && (
-  <script type="application/ld+json" set:html={JSON.stringify({
+  <script type="application/ld+json" set:html={jsonPerScript({
     '@context': 'https://schema.org',
     '@graph': [
       {

@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../../lib/jsonPerScript';
 // Cimiteri di guerra — pagina di un evento (brief 26/8/2026, §2.4). Modello
 // per gli eventi che arriveranno: cos'era, quando, chi vi è collegato e il
 // campo fonti reso leggibile, col grado di certezza sempre in chiaro.
@@ -136,7 +137,7 @@ export const prerender = true;
   </section>
   </div>
 
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb(briciole))} is:inline />
 </Layout>
 
 <style>

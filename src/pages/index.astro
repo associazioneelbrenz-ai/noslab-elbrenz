@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../lib/jsonPerScript';
 /**
  * Home — El Brenz da le Val del Nos
  *
@@ -350,7 +351,7 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
 >
 
   {/* A5 — dati strutturati dell'ente (una sola volta, in home) */}
-  <script type="application/ld+json" set:html={JSON.stringify(schemaOrganization())} />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaOrganization())} />
 
   {/* PROVA (14/7): richiamo laterale — logo El Brenz dorato che pulsa, porta al
       tesseramento. Fisso a sinistra, si espande in "Diventa socio" all'hover.

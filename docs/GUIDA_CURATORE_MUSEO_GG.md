@@ -8,7 +8,7 @@ Questa guida spiega come mettere un pezzo nel Museo digitale della Grande Guerra
 
 ## 1. Dove si lavora
 
-L'indirizzo è **community.elbrenz.eu**, la stessa app dei soci. Si entra con la tua email, `mic.trento@virgilio.it`: il sistema ti manda un codice di sei cifre, lo scrivi e sei dentro. Nessuna password da ricordare.
+L'indirizzo è **community.elbrenz.eu**, la stessa app dei soci. Si entra con la tua email, `[indirizzo personale del curatore, omesso]`: il sistema ti manda un codice di sei cifre, lo scrivi e sei dentro. Nessuna password da ricordare.
 
 Da lì, la sezione **Museo** e poi **Curatela**. Quello è il tuo posto.
 

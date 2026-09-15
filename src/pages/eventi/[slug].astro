@@ -1,4 +1,6 @@
 ---
+import { urlEsterno } from '../../lib/urlSicuro';
+import { jsonPerScript } from '../../lib/jsonPerScript';
 /**
  * /eventi/<slug> — la scheda di un singolo appuntamento delle valli.
  *
@@ -131,7 +133,7 @@ if (dove) {
   ogImage={ogEvento}
   ogType="article"
 >
-  <script type="application/ld+json" set:html={JSON.stringify(schemaEvento)} />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaEvento)} />
 
   <article class="bg-[#FDF9F0] py-16 md:py-24">
     <div class="max-w-3xl mx-auto px-6">
@@ -194,10 +196,10 @@ if (dove) {
         </p>
       )}
 
-      {evento.url_fonte && (
+      {urlEsterno(evento.url_fonte) && (
         <p class="mt-8 m-0" style="font-family: 'Inter', sans-serif;">
           <a
-            href={evento.url_fonte}
+            href={urlEsterno(evento.url_fonte)}
             target="_blank"
             rel="noopener nofollow"
             class="text-[15px] text-[#8a6215] no-underline hover:underline"

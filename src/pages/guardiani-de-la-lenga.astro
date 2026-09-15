@@ -813,6 +813,9 @@ const input = 'w-full px-3 py-2 rounded bg-white text-[#1E2E26] border border-[#
         const d = await r.json().catch(() => ({}));
         // Si dice com'e' andata davvero: una voce data per salvata e persa e'
         // peggio di una voce mai chiesta.
+        // [15/9/2026] Se l'errore e' nostro (5xx) non si scarica il problema su
+        // chi ha registrato: lo si dice, e si dice cosa fare.
+        if (r.status >= 500) return 'La parola è arrivata, la voce no: è un problema nostro, non tuo. Riprova fra qualche minuto dalla scheda della parola, oppure scrivi a info@elbrenz.eu.';
         return d && d.ok ? null : 'La parola è arrivata, la voce no: ' + (d.dettaglio || d.errore || 'errore sconosciuto') + '. Puoi riprovare dalla scheda quando sarà pubblicata.';
       } catch {
         return 'La parola è arrivata, la voce no (errore di rete). Riprova più tardi.';

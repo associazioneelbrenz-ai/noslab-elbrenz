@@ -1,4 +1,5 @@
 ---
+import { jsonPerScript } from '../../../lib/jsonPerScript';
 // Cimiteri di guerra — planimetria navigabile (brief "planimetria
 // cliccabile", 26/8/2026; ristrutturata da "Navigazione della sezione",
 // 26/8/2026 §6-8). Il blocco con la fotografia vera, i riquadri e la
@@ -131,5 +132,5 @@ export const prerender = true;
     </div>
   </div>
 
-  <script type="application/ld+json" set:html={JSON.stringify(schemaBreadcrumb(briciole))} is:inline />
+  <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb(briciole))} is:inline />
 </Layout>

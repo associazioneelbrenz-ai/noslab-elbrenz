@@ -403,9 +403,48 @@ const navItems: NavItem[] = [
     chiave e basta, per non caricare una libreria su ogni pagina del sito. */}
 <script define:vars={{ SUPABASE_URL, SUPABASE_ANON_KEY }}>
   (function () {
+    // [15/9/2026, audit XSS-04] La sessione vive anche in un cookie su
+    // .elbrenz.eu (sessione-condivisa.ts), intero o a pezzi `.0`..`.5`: qui
+    // lo si legge, cosi' chi arriva autenticato dall'app vede «Esci», e lo si
+    // cancella all'uscita, cosi' «Esci» esce davvero anche su un computer
+    // condiviso. Prima si toglieva solo il localStorage e il cookie, che
+    // vale un anno, rimetteva dentro la sessione alla pagina dopo.
+    var NOME_COOKIE = 'elbrenz-auth';
+    var MAX_PEZZI = 6;
+    function cookieGrezzi() {
+      var out = {};
+      try {
+        var parti = document.cookie.split(';');
+        for (var i = 0; i < parti.length; i++) {
+          var k = parti[i].indexOf('=');
+          if (k < 1) continue;
+          out[decodeURIComponent(parti[i].slice(0, k).trim())] = parti[i].slice(k + 1).trim();
+        }
+      } catch (_) {}
+      return out;
+    }
+    function leggiCookieSessione() {
+      var tutti = cookieGrezzi();
+      try {
+        if (tutti[NOME_COOKIE]) return decodeURIComponent(tutti[NOME_COOKIE]);
+        var unito = '';
+        for (var i = 0; i < MAX_PEZZI; i++) {
+          var p = tutti[NOME_COOKIE + '.' + i];
+          if (!p) break;
+          unito += p;
+        }
+        return unito ? decodeURIComponent(unito) : null;
+      } catch (_) { return null; }
+    }
+    function cancellaCookieSessione() {
+      if (!/(^|\.)elbrenz\.eu$/.test(location.hostname)) return;
+      var comune = 'Domain=.elbrenz.eu; Path=/; SameSite=Lax; Secure; Max-Age=0';
+      document.cookie = NOME_COOKIE + '=; ' + comune;
+      for (var i = 0; i < MAX_PEZZI; i++) document.cookie = NOME_COOKIE + '.' + i + '=; ' + comune;
+    }
     function leggiSessione() {
       try {
-        const raw = localStorage.getItem('elbrenz-auth');
+        var raw = leggiCookieSessione() || localStorage.getItem('elbrenz-auth');
         if (!raw) return null;
         const s = JSON.parse(raw);
         if (!s || !s.access_token) return null;
@@ -427,6 +466,10 @@ const navItems: NavItem[] = [
       a.addEventListener('click', function (e) {
         e.preventDefault();
         try { localStorage.removeItem('elbrenz-auth'); } catch (_) {}
+        try { localStorage.removeItem('elbrenz-community-auth'); } catch (_) {}
+        try { cancellaCookieSessione(); } catch (_) {}
+        // La cache del service worker puo' tenere pagine viste da autenticati.
+        try { if (window.caches) caches.delete('el-brenz-runtime-v2'); } catch (_) {}
         location.href = '/';
       });
     }

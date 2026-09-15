@@ -13,8 +13,8 @@
 --
 -- 2) IL SETTIMO CONTROLLO DELLA PLANCIA: la stessa persona con due account.
 --    E' il difetto che ha bloccato il Presidente fuori dalla sua Associazione:
---    accedeva con diegomagnoni@live.it mentre punti e lemmi stavano su
---    diegomagnoni9@gmail.com, e il sistema gli diceva che non era socio.
+--    accedeva con [indirizzo personale, omesso] mentre punti e lemmi stavano su
+--    [indirizzo personale, omesso], e il sistema gli diceva che non era socio.
 --    Nessuno l'avrebbe visto se lui non si fosse lamentato.
 --    Segnala, non corregge: unire due account e' una decisione su una persona,
 --    e la prende un essere umano.

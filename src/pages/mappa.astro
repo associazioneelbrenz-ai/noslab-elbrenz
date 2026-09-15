@@ -1,4 +1,6 @@
 ---
+import { urlSicuro } from '../lib/urlSicuro';
+import { jsonPerScript } from '../lib/jsonPerScript';
 /**
  * /mappa — Mappa delle Valli (M-F1, Fase 1).
  *
@@ -191,7 +193,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
                   <strong class="text-[#1E2E26]">{l.nome}{l.nome_ladino && <em class="font-normal text-[#8a6215]"> · {l.nome_ladino}</em>}</strong>
                   <span class="text-xs text-[#1E2E26]/55"> · {CATEGORIE_LUOGHI[l.categoria] ?? l.categoria} · {VALLI[l.valle] ?? l.valle}</span>
                   {l.descrizione_breve && <p class="text-sm text-[#1E2E26]/75 m-0 mt-1">{l.descrizione_breve}</p>}
-                  {l.url_articolo && <a href={l.url_articolo} class="text-sm text-[#8a6215] underline">Leggi la storia</a>}
+                  {urlSicuro(l.url_articolo) && <a href={urlSicuro(l.url_articolo)} class="text-sm text-[#8a6215] underline">Leggi la storia</a>}
                 </li>
               ))}
               {convenzioni.map((c) => (
@@ -251,7 +253,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
   .mappa-catasto .mc-fuori { color: #8a6215; font-weight: 600; }
 </style>
 
-<script type="application/json" id="mappa-dati" set:html={JSON.stringify(datiMappa)} />
+<script type="application/json" id="mappa-dati" set:html={jsonPerScript(datiMappa)} />
 
 <script>
   // Mappa delle Valli — init SOLO su gesto (import dinamico di Leaflet).
@@ -570,7 +572,7 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       const voci = figli.map((m: any) => {
         const nome = m.options?.title ?? m.getPopup?.()?.getContent?.() ?? 'luogo';
         const testo = String(nome).replace(/<[^>]+>/g, ' ').trim().split(/\s{2,}/)[0];
-        return `<li style="margin:0 0 4px;">${testo}</li>`;
+        return `<li style="margin:0 0 4px;">${H(testo)}</li>`;
       }).join('');
       L.popup({ maxWidth: 260 })
         .setLatLng(gruppo.getLatLng())
@@ -590,15 +592,26 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
       className: '', iconSize: [32, 44], iconAnchor: [16, 43], popupAnchor: [0, -40],
     });
 
+    // [15/9/2026, audit XSS-02] `bindPopup` con una stringa e' innerHTML: ogni
+    // testo che arriva dal database (nomi dei luoghi scritti dai curatori,
+    // nome e beneficio delle convenzioni proposte dal pubblico) va escapato,
+    // e i collegamenti si rendono solo se sono indirizzi veri.
+    const H = (s: unknown) => String(s ?? '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const linkOk = (u: unknown) => {
+      const s = String(u ?? '').trim();
+      return /^https?:\/\/[^\s]+$/i.test(s) || /^\/(?![\/\\])[^\s]*$/.test(s) ? s : null;
+    };
     for (const l of dati.luoghi ?? []) {
       const m = L.marker([l.lat, l.lng], { icon: iconaLuogoCat(l.categoria), title: l.nome, alt: l.nome });
+      const articolo = linkOk(l.url_articolo);
       m.bindPopup(`
         <div style="font-family:'Source Serif 4',Georgia,serif;min-width:200px;max-width:250px;">
-          <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1E2E26;margin:0 0 4px;">${l.nome}${l.nome_ladino ? ` <em style="color:#8a6215;font-size:14px;">· ${l.nome_ladino}</em>` : ''}</p>
-          <span style="font-family:'Inter',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a6215;background:rgba(200,146,62,.15);border-radius:999px;padding:2px 10px;">${dati.categorie?.[l.categoria] ?? l.categoria}</span>
-          ${l.descrizione_breve ? `<p style="font-size:13px;color:rgba(30,46,38,.8);margin:8px 0 0;">${l.descrizione_breve}</p>` : ''}
-          ${l.slug ? `<p style="margin:8px 0 0;"><a href="/luoghi/${l.slug}" style="color:#8a6215;font-weight:600;">Scheda del luogo →</a></p>` : ''}
-          ${l.url_articolo ? `<p style="margin:6px 0 0;"><a href="${l.url_articolo}" style="color:#8a6215;">Leggi la storia →</a></p>` : ''}
+          <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1E2E26;margin:0 0 4px;">${H(l.nome)}${l.nome_ladino ? ` <em style="color:#8a6215;font-size:14px;">· ${H(l.nome_ladino)}</em>` : ''}</p>
+          <span style="font-family:'Inter',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#8a6215;background:rgba(200,146,62,.15);border-radius:999px;padding:2px 10px;">${H(dati.categorie?.[l.categoria] ?? l.categoria)}</span>
+          ${l.descrizione_breve ? `<p style="font-size:13px;color:rgba(30,46,38,.8);margin:8px 0 0;">${H(l.descrizione_breve)}</p>` : ''}
+          ${l.slug ? `<p style="margin:8px 0 0;"><a href="/luoghi/${encodeURIComponent(String(l.slug))}" style="color:#8a6215;font-weight:600;">Scheda del luogo →</a></p>` : ''}
+          ${articolo ? `<p style="margin:6px 0 0;"><a href="${H(articolo)}" style="color:#8a6215;">Leggi la storia →</a></p>` : ''}
         </div>`);
       markers.push({ tipo: 'luoghi', valle: l.valle, categoria: l.categoria, slug: l.slug, m });
     }
@@ -614,10 +627,10 @@ const datiMappa = { luoghi, convenzioni, valli: VALLI, categorie: CATEGORIE_LUOG
         const m = L.marker([s.lat, s.lng], { icon: iconaConv, title: titolo, alt: titolo });
         m.bindPopup(`
           <div style="font-family:'Source Serif 4',Georgia,serif;min-width:200px;max-width:250px;">
-            <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1E2E26;margin:0 0 4px;">${c.nome_attivita}</p>
-            ${s.nome_punto ? `<p style="font-family:'Inter',sans-serif;font-size:12px;color:#1E2E26;margin:0 0 4px;">${s.nome_punto}</p>` : ''}
+            <p style="font-family:'Playfair Display',serif;font-size:17px;color:#1E2E26;margin:0 0 4px;">${H(c.nome_attivita)}</p>
+            ${s.nome_punto ? `<p style="font-family:'Inter',sans-serif;font-size:12px;color:#1E2E26;margin:0 0 4px;">${H(s.nome_punto)}</p>` : ''}
             <span style="font-family:'Inter',sans-serif;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:#F5EEDD;background:#1E2E26;border-radius:999px;padding:2px 10px;">Convenzione soci</span>
-            <p style="font-size:13px;color:#8a6215;font-weight:600;margin:8px 0 0;">${c.beneficio}</p>
+            <p style="font-size:13px;color:#8a6215;font-weight:600;margin:8px 0 0;">${H(c.beneficio)}</p>
             <p style="margin:8px 0 0;"><a href="/convenzioni" style="color:#8a6215;">Vedi la convenzione →</a></p>
           </div>`);
         markers.push({ tipo: 'convenzioni', valle: '', m });
