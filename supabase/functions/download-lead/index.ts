@@ -55,6 +55,13 @@ async function sha256Hex(s: string): Promise<string> {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
+// [15/9/2026, audit SIC-08] Il nome entra nel corpo HTML della mail: si fa
+// l'escape come in guardiani-contributo, perche' la mail va a un indirizzo
+// scelto dal client e cento caratteri bastano per un tag.
+function esc(s: unknown): string {
+  return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
 
 serve(async (req: Request) => {
   const origin = req.headers.get('Origin');
@@ -118,7 +125,7 @@ serve(async (req: Request) => {
   if (secret && haPdf && url) {
     const titolo = RISORSE[risorsa].titolo;
     const html = `<!DOCTYPE html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#F8F1E4;color:#1E2E26;">
-<h2 style="font-family:Georgia,serif;">Grazie, ${nome}!</h2>
+<h2 style="font-family:Georgia,serif;">Grazie, ${esc(nome)}!</h2>
 <p>Ecco il libro <em>«${titolo}»</em>, concesso gratuitamente dall'autore Everton Altmayer. Se il download non è partito, puoi scaricarlo qui:</p>
 <p style="margin:20px 0;"><a href="${url}" style="display:inline-block;background:#C8923E;color:#1E2E26;padding:12px 24px;text-decoration:none;font-weight:600;border-radius:4px;">Scarica il libro (PDF)</a></p>
 <p style="color:#6b5a3a;font-size:14px;">Buona lettura, dalle nostre valli.<br/>El Brenz APS · <a href="https://elbrenz.eu/a-proposito-di-tirolo" style="color:#8a6215;">la pagina del libro</a></p>

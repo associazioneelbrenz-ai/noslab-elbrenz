@@ -89,6 +89,13 @@ Deno.serve(async (req) => {
       .eq('gettone', chiave)
       .gte('created_at', new Date(Date.now() - 3600_000).toISOString());
     if ((count ?? 0) > TETTO_ORARIO) return J({ errore: 'troppe_reazioni' }, 429, origin);
+    // [15/9/2026, audit SIC-07] Il conteggio qui sopra cerca l'impronta
+    // dell'indirizzo nella colonna `gettone`, che pero' contiene il gettone del
+    // browser: era sempre zero e il tetto non scattava mai. Il tetto vero passa
+    // dalla RPC condivisa convenzioni_rl_hit (finestra oraria per impronta),
+    // come gia' fanno download-lead e guardiani-contributo.
+    const { data: entro } = await sb.rpc('convenzioni_rl_hit', { p_ip_hash: chiave, p_max: TETTO_ORARIO });
+    if (entro === false) return J({ errore: 'troppe_reazioni' }, 429, origin);
   } catch { /* fallisce aperto, di proposito */ }
 
   // Solo su cio' che e' davvero pubblico: una reazione a un lemma non ancora
@@ -96,6 +103,31 @@ Deno.serve(async (req) => {
   if (oggetto_tipo === 'lemma') {
     const { data: pub } = await sb.from('dizionario_lemma')
       .select('id').eq('id', oggetto_id).eq('stato', 'pubblicato').maybeSingle();
+    if (!pub) return J({ errore: 'oggetto_non_pubblico' }, 404, origin);
+  }
+  // [15/9/2026, audit SIC-07] Anche per gli altri tipi si verifica che
+  // l'oggetto esista e sia pubblico: prima bastava un identificativo qualunque.
+  // Tabelle e colonne verificate su information_schema (storia.pubblica,
+  // museo_gg_pezzo.stato, articolo.pubblicato; forum_post non ha uno stato
+  // pubblico, si controlla solo che esista).
+  if (oggetto_tipo === 'storia') {
+    const { data: pub } = await sb.from('storia')
+      .select('id').eq('id', oggetto_id).eq('pubblica', true).maybeSingle();
+    if (!pub) return J({ errore: 'oggetto_non_pubblico' }, 404, origin);
+  }
+  if (oggetto_tipo === 'museo_pezzo') {
+    const { data: pub } = await sb.from('museo_gg_pezzo')
+      .select('id').eq('id', oggetto_id).eq('stato', 'pubblicato').maybeSingle();
+    if (!pub) return J({ errore: 'oggetto_non_pubblico' }, 404, origin);
+  }
+  if (oggetto_tipo === 'articolo') {
+    const { data: pub } = await sb.from('articolo')
+      .select('id').eq('id', oggetto_id).eq('pubblicato', true).maybeSingle();
+    if (!pub) return J({ errore: 'oggetto_non_pubblico' }, 404, origin);
+  }
+  if (oggetto_tipo === 'post') {
+    const { data: pub } = await sb.from('forum_post')
+      .select('id').eq('id', oggetto_id).maybeSingle();
     if (!pub) return J({ errore: 'oggetto_non_pubblico' }, 404, origin);
   }
 

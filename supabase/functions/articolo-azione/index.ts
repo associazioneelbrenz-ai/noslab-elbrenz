@@ -38,14 +38,28 @@ const ATTR: Record<string, Set<string>> = { A: new Set(['href','title']), IMG: n
 const KILL = new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','FORM','INPUT','LINK','META','SVG']);
 
 function urlOk(v: string): boolean {
-  const s = v.trim().toLowerCase();
+  // [15/9/2026, audit XSS-08] Spazi e caratteri di controllo si tolgono PRIMA
+  // del test (un «java\nscript:» passava intero), poi si accetta solo cio' che
+  // e' in allowlist: http(s), mailto, percorso assoluto o ancora. Un valore
+  // senza alcun «:» e' un percorso relativo e passa; tutto il resto no.
+  const s = v.trim().toLowerCase().replace(/[\s\u0000-\u001F\u007F]/g, '');
   if (s.startsWith('javascript:') || s.startsWith('vbscript:') || s.startsWith('data:')) return false;
-  return true;
+  if (/^(https?:|mailto:|\/|#)/.test(s)) return true;
+  return !s.includes(':');
+}
+// [15/9/2026, audit XSS-08] Titolo, estratto e meta sono testo semplice: in
+// pagina Astro li rende con l'escape, quindi basta togliere i tag e i
+// caratteri di controllo, senza escape (che in pagina raddoppierebbe).
+function pulisciTesto(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  return String(v).replace(/<[^>]*>/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim() || null;
 }
 function cleanEl(el: Element) {
   // profondità: lavora su una copia della lista figli (muta durante il ciclo)
   for (const child of Array.from(el.children)) cleanEl(child as Element);
-  const tag = el.tagName;
+  // [15/9/2026, audit XSS-08] deno-dom puo' esporre i tag in minuscolo:
+  // il confronto con le liste in maiuscolo va fatto senza distinzione.
+  const tag = String(el.tagName ?? '').toUpperCase();
   if (KILL.has(tag)) { el.remove(); return; }
   if (!TAGS.has(tag)) {
     // unwrap: sposta i figli al posto dell'elemento, poi rimuovilo
@@ -122,8 +136,20 @@ Deno.serve(async (req: Request) => {
   if (!/^[0-9a-f-]{36}$/i.test(articoloId)) return json({ error: 'articolo_id non valido' }, 400, c);
 
   const { data: art } = await service.from('articolo')
-    .select('id, titolo, autore_id, stato, corpo_html').eq('id', articoloId).maybeSingle();
+    .select('id, titolo, autore_id, stato, corpo_html, sottotitolo, estratto, meta_title, meta_description, immagine_alt').eq('id', articoloId).maybeSingle();
   if (!art) return json({ error: 'Articolo non trovato' }, 404, c);
+
+  // [15/9/2026, audit XSS-08] Campi di testo ripuliti dai tag, scritti sia
+  // all'invio sia all'approvazione (prima non lo erano mai). Il titolo, se
+  // ripulito resta vuoto, non si tocca: e' obbligatorio.
+  const campiTesto = {
+    titolo: pulisciTesto(art.titolo) ?? art.titolo,
+    sottotitolo: pulisciTesto(art.sottotitolo),
+    estratto: pulisciTesto(art.estratto),
+    meta_title: pulisciTesto(art.meta_title),
+    meta_description: pulisciTesto(art.meta_description),
+    immagine_alt: pulisciTesto(art.immagine_alt),
+  };
 
   const now = new Date().toISOString();
 
@@ -153,6 +179,7 @@ Deno.serve(async (req: Request) => {
     const pulito = sanitize(String(art.corpo_html ?? ''));
     const esito = await scrivi({
       stato: 'in_approvazione', inviato_at: now, corpo_html: pulito, motivo_rifiuto: null, updated_at: now,
+      ...campiTesto, // [15/9/2026, audit XSS-08]
     });
     if ('errore' in esito) return json({ error: `Articolo non inviato: ${esito.errore}` }, 500, c);
     await inviaEmail(DIRETTIVO, `Redazione: nuovo articolo da approvare — ${art.titolo}`,
@@ -168,8 +195,12 @@ Deno.serve(async (req: Request) => {
     try { const { data: au } = await service.auth.admin.getUserById(art.autore_id); emailAutore = au?.user?.email ?? null; } catch { /* */ }
 
     if (azione === 'approva') {
+      // [15/9/2026, audit XSS-08] Si sanitizza anche qui: fra l'invio e
+      // l'approvazione il corpo puo' essere stato modificato, e la pagina
+      // pubblica lo rende con set:html.
       const esito = await scrivi({
         stato: 'pubblicato', pubblicato: true, pubblicato_at: now, approvato_da: userId, updated_at: now,
+        corpo_html: sanitize(String(art.corpo_html ?? '')), ...campiTesto,
       });
       // La mail all'autore parte SOLO dopo la riga cambiata: dirgli «e' stato
       // pubblicato» quando non lo e' sarebbe la bugia peggiore delle tre.

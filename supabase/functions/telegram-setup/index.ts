@@ -20,6 +20,18 @@ serve(async (req: Request) => {
   const json = (b: unknown, s = 200) =>
     new Response(JSON.stringify(b, null, 2), { status: s, headers: { 'Content-Type': 'application/json' } });
 
+  // [15/9/2026, audit SIC-14] Cancello amministrativo: senza header
+  // x-ingest-token uguale a INGEST_TOKEN (confronto a tempo costante, come in
+  // invia-push) non si legge getWebhookInfo ne' si rilancia setWebhook. Se il
+  // token non e' configurato si risponde 503, come negli altri canali
+  // amministrativi. La funzione resta, cambia solo chi puo' chiamarla.
+  const atteso = Deno.env.get('INGEST_TOKEN') ?? '';
+  if (!atteso) return json({ error: 'INGEST_TOKEN non configurato' }, 503);
+  const ricevuto = req.headers.get('x-ingest-token') ?? '';
+  let diff = ricevuto.length === atteso.length ? 0 : 1;
+  for (let i = 0; i < atteso.length; i++) diff |= (ricevuto.charCodeAt(i) || 0) ^ atteso.charCodeAt(i);
+  if (diff !== 0) return json({ error: 'non autorizzato' }, 403);
+
   if (!token) return json({ error: 'TELEGRAM_BOT_TOKEN non configurato nei Secrets' }, 400);
 
   const url = new URL(req.url);

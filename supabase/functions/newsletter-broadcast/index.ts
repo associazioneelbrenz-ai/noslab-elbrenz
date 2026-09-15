@@ -54,10 +54,20 @@ serve(async (req: Request) => {
 
   // --- destinatari (dedup per email) ---
   const dedup = new Map<string, string>(); // email -> nome
+  // [15/9/2026, audit PRIV-02] I lead del download hanno solo la spunta del
+  // modulo, non la conferma in doppio opt-in che l'informativa promette:
+  // entrano solo se la stessa email risulta confermata in newsletter_iscritto
+  // (download_lead non ha una colonna di conferma: verificato su
+  // information_schema.columns). Chi non ha confermato non riceve nulla.
+  const confermati = new Set<string>();
+  const { data: iscritti } = await supabase.from('newsletter_iscritto')
+    .select('email').eq('stato', 'confermato');
+  for (const r of iscritti ?? []) confermati.add(String(r.email ?? '').trim().toLowerCase());
   const { data: leads } = await supabase.from('download_lead')
     .select('email, nome').eq('consenso_newsletter', true);
   for (const r of leads ?? []) {
     const e = String(r.email ?? '').trim().toLowerCase();
+    if (!confermati.has(e)) continue; // [15/9/2026, audit PRIV-02]
     if (EMAIL_REGEX.test(e) && !dedup.has(e)) dedup.set(e, String(r.nome ?? '').trim());
   }
   const { data: guard } = await supabase.from('guardiani_contributori')

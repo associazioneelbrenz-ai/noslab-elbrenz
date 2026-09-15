@@ -45,6 +45,27 @@ const LOTTO_STORAGE = 1000;
 const CONSERVA_ULTIMI = 8;
 const PREFISSO_FILE = 'salvataggio-settimanale-';
 
+// [15/9/2026, audit SIC-15] Tabelle volatili o di sessione che NON entrano nel
+// salvataggio: codici usa-e-getta, gettoni di collegamento, contatori orari
+// e il testo delle chat con l'assistente. Perderle non e' una perdita, e
+// tenerle in un file cifrato che gira per mesi e' un rischio senza ragione.
+// Nomi verificati su information_schema.tables il 15/9/2026.
+const TABELLE_ESCLUSE = new Set([
+  'auth_otp',               // codici OTP, vita di minuti
+  'telegram_link_token',    // gettoni di collegamento Telegram, usa e getta
+  'ai_messaggio',           // testo delle conversazioni con l'assistente
+  'ai_rate_limit',          // contatori orari, puliti da pg_cron
+  'ai_rate_limit_pubblico', // idem
+  'convenzioni_rate_limit', // idem (usata da tutti i moduli pubblici)
+  'telegram_rate_limit',    // idem
+]);
+// Tabelle che entrano solo in parte: email_outbox conserva anche l'HTML di
+// ogni mail gia' spedita (o annullata); si tengono soltanto le righe ancora
+// da lavorare, che sono le uniche che servirebbero a una ripartenza.
+const FILTRI_RIGHE: Record<string, (q: any) => any> = {
+  email_outbox: (q) => q.not('stato', 'in', '("inviata","annullata")'),
+};
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body, null, 1), {
     status,
@@ -155,10 +176,13 @@ async function esportaTabelle(
   let righeTotali = 0;
 
   for (const nome of (nomi ?? []) as string[]) {
+    // [15/9/2026, audit SIC-15] lista di esclusione e filtri per riga, sopra.
+    if (TABELLE_ESCLUSE.has(nome)) continue;
+    const filtra = FILTRI_RIGHE[nome] ?? ((q: any) => q);
     const righe: unknown[] = [];
     let offset = 0;
     for (;;) {
-      const { data, error: errSel } = await sb.from(nome).select('*').range(offset, offset + LOTTO_RIGHE - 1);
+      const { data, error: errSel } = await filtra(sb.from(nome).select('*')).range(offset, offset + LOTTO_RIGHE - 1);
       if (errSel) throw new Error(`lettura di ${nome} fallita: ${errSel.message}`);
       righe.push(...(data ?? []));
       if (!data || data.length < LOTTO_RIGHE) break;

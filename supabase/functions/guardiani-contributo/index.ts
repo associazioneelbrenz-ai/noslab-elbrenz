@@ -372,13 +372,24 @@ Deno.serve(async (req: Request) => {
   let marketingToken: string | null = contribEsistente?.marketing_token ?? null;
   if (consensoMarketing && !marketingToken) marketingToken = crypto.randomUUID().replace(/-/g, '');
 
-  const { data: contrib, error: errC } = await supabase.from('guardiani_contributori')
+  // [15/9/2026, audit SIC-05] Se il contributore esiste gia', l'input pubblico
+  // non riscrive nome e consensi (firma, marketing): chiunque conoscesse una
+  // email poteva cambiarli, o spegnere il marketing a un iscritto confermato.
+  // Per chi esiste si aggiornano solo la data e il token marketing se non ce
+  // n'era uno; l'upsert resta com'era per i contributori nuovi.
+  const scritturaContributore = contribEsistente
+    ? supabase.from('guardiani_contributori').update({
+        ...(marketingToken && !contribEsistente.marketing_token ? { marketing_token: marketingToken } : {}),
+        updated_at: new Date().toISOString(),
+      }).eq('id', contribEsistente.id)
+    : supabase.from('guardiani_contributori')
     .upsert({
       nome, email, consenso_glossario: true, consenso_marketing: consensoMarketing,
       consenso_firma: consensoFirma, licenza_accettata: true, licenza_tipo: 'CC BY 4.0',
       ...(marketingToken ? { marketing_token: marketingToken } : {}),
       sorgente_utm: { ...(utm || {}), informativa_versione: INFORMATIVA_VERSIONE }, updated_at: new Date().toISOString(),
-    }, { onConflict: 'email' })
+    }, { onConflict: 'email' });
+  const { data: contrib, error: errC } = await scritturaContributore
     .select('id, marketing_double_optin, marketing_token').single();
   if (errC || !contrib) { console.error('[guardiani] upsert contributore:', errC); return json({ error: 'Errore interno, riprova.' }, 500, c); }
 
@@ -526,8 +537,12 @@ Deno.serve(async (req: Request) => {
       .select('id', { count: 'exact', head: true })
       .eq('contributore_id', contrib.id).eq('stato', 'pubblicato');
     const v = (cfg?.valore ?? {}) as Record<string, number>;
+    // [15/9/2026, audit SIC-05] Quanti lemmi ha pubblicato un contributore gia'
+    // noto non si rivela a chi manda la sua email: la chiave resta (la pagina
+    // la legge e con null dice «i tuoi punti ti aspettano»), il valore c'e'
+    // solo per un contributore appena creato, che ne ha zero.
     punti = {
-      lemmi_pubblicati: count ?? 0,
+      lemmi_pubblicati: contribEsistente ? null : (count ?? 0),
       per_parola: v.lemma_secco ?? 5,
       per_parola_completa: v.lemma_completo ?? 22,
       per_voce: v.lemma_audio ?? 150,
