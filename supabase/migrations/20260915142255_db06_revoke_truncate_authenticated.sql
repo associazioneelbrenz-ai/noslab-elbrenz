@@ -1,0 +1,54 @@
+-- Ondata 2 dell'audit del 13 settembre 2026 (AUDIT_2026-09-13.md), voce DB-06.
+-- Reversibile, nessun dato toccato. Solo privilegi.
+--
+-- IL PROBLEMA. TRUNCATE non passa dalla RLS: una policy che limita DELETE alle
+-- proprie righe non impedisce a chi ha il privilegio TRUNCATE di svuotare la
+-- tabella intera con una chiamata sola. Il privilegio era arrivato per
+-- `grant all` (residuo di quando si creavano tabelle a mano) e per i
+-- privilegi di default del ruolo `postgres` nello schema public, che per
+-- `authenticated` includono la D di TRUNCATE (pg_default_acl, 15/9/2026:
+-- authenticated=arwdDxtm/postgres). `anon` non ha TRUNCATE su nulla
+-- (anon=rxtm/postgres): la revoca su anon qui sotto è solo prudenza.
+--
+-- VERIFICA del 15/9/2026 (information_schema.role_table_grants,
+-- privilege_type='TRUNCATE', grantee in ('anon','authenticated')):
+-- 40 oggetti, tutti per `authenticated`, tutti di proprietà di `postgres`
+-- (select distinct tableowner from pg_tables where schemaname='public').
+--
+-- Le 21 TABELLE (relkind r):
+--   _import_gokollab, glossario_operazione, guardiani_digest_invio,
+--   invito_tesseramento, lemma_commento, lemma_correzione, lemma_relazione,
+--   memoria_evento_reparto, memoria_reparto, modifica_contenuto,
+--   museo_gg_raccolta, museo_gg_raccolta_pezzo, notifica_consegna,
+--   ocr_trascrizione, permesso_anon_lettura_attesa, push_invito, reazione,
+--   registro_curatela, sentinella_pagina, sollecito_quota, vocabolario_voce
+--
+-- Le 19 VISTE (relkind v) con lo stesso bit, innocuo ma inutile:
+--   v_cruscotto_code, v_cruscotto_completezza, v_glossario_fuori_vocabolario,
+--   v_glossario_qualita, v_lemma_commento_pubblico, v_lemma_relazione_pubblica,
+--   v_memoria_conteggi, v_memoria_evento_pubblico,
+--   v_memoria_evento_reparto_pubblico, v_memoria_persona_pubblica,
+--   v_memoria_reparto_pubblico, v_modifiche_recenti, v_movimenti_cassa,
+--   v_ocr_consumo, v_reazioni_conteggio, v_sentinella_rotte,
+--   v_trascrizione_pubblica, v_variante_candidate, vocabolario_pubblico
+--
+-- NESSUN PERCORSO DEL SITO USA TRUNCATE: il client supabase-js non lo espone
+-- (PostgREST non ha un verbo per TRUNCATE) e nessuna edge lo esegue; le
+-- pulizie pianificate (cleanup_otp, cleanup_rate_limit, scadi_ordini) fanno
+-- DELETE/UPDATE mirati come `postgres`. Revocarlo non toglie niente a nessuno.
+--
+-- I privilegi di default di `supabase_admin` nello schema public (anche loro
+-- con la D per anon/authenticated) NON si toccano: appartengono a un ruolo
+-- gestito dalla piattaforma e valgono solo per oggetti creati da quel ruolo.
+-- Se un domani una tabella nascesse da supabase_admin con TRUNCATE concesso,
+-- la si sistema con una migrazione come questa.
+--
+-- RITORNO INDIETRO (solo se servisse davvero, non è mai servito):
+--   grant truncate on <tabella> to authenticated;
+--   alter default privileges for role postgres in schema public
+--     grant truncate on tables to authenticated;
+
+revoke truncate on all tables in schema public from anon, authenticated;
+
+alter default privileges for role postgres in schema public
+  revoke truncate on tables from anon, authenticated;
