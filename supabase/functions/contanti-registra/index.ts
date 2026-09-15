@@ -45,6 +45,14 @@ function corsFor(req: Request) {
   };
 }
 
+// [15/9/2026, audit SIC-18] Stessa lettura dell'AAL dal JWT di tessera-invio-admin.
+function aalDalJwt(jwt: string): string {
+  try {
+    const p = jwt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    return JSON.parse(atob(p)).aal ?? "";
+  } catch { return ""; }
+}
+
 Deno.serve(async (req: Request) => {
   const CORS = corsFor(req);
   const J = (o: unknown, status = 200) =>
@@ -63,6 +71,10 @@ Deno.serve(async (req: Request) => {
   const asUser = createClient(SUPABASE_URL, ANON, { global: { headers: { Authorization: `Bearer ${token}` } } });
   const { data: { user }, error: uerr } = await asUser.auth.getUser();
   if (uerr || !user) return J({ error: "unauthorized" }, 401);
+
+  // [15/9/2026, audit SIC-18] AAL2 obbligatorio, come in tessera-invio-admin:
+  // scritture di cassa e domande solo con la verifica in due passaggi.
+  if (aalDalJwt(token) !== "aal2") return J({ error: "Serve la verifica in due passaggi (2FA)." }, 403);
 
   const admin = createClient(SUPABASE_URL, SERVICE);
 
@@ -128,6 +140,16 @@ Deno.serve(async (req: Request) => {
   if (!Number.isFinite(importo) || importo <= 0 || importo > 1000) return J({ error: "importo_non_valido" }, 400);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(incassatoIl)) return J({ error: "data_non_valida" }, 400);
   if (!incassatoDa) return J({ error: "incassante_mancante" }, 400);
+  // [15/9/2026, audit SIC-18] incassato_da: un UUID, e o chi chiama o un altro
+  // membro del direttivo (ruolo >= 50, letto come sopra). Un id qualunque non
+  // puo' firmare un incasso.
+  if (!/^[0-9a-f-]{36}$/i.test(incassatoDa)) return J({ error: "incassante_non_valido" }, 400);
+  if (incassatoDa !== user.id) {
+    const { data: ruoliInc } = await admin
+      .from("utente_ruolo").select("ruolo:ruolo_id(livello)").eq("utente_id", incassatoDa);
+    const livelloInc = Math.max(0, ...(((ruoliInc ?? []) as any[]).map((r) => r?.ruolo?.livello ?? 0)));
+    if (livelloInc < LIVELLO_MINIMO) return J({ error: "incassante_non_autorizzato" }, 403);
+  }
   if (b?.attestazione !== true) return J({ error: "attestazione_mancante" }, 400);
   if (!["cartaceo", "verbale"].includes(modalita)) return J({ error: "modalita_non_valida" }, 400);
 

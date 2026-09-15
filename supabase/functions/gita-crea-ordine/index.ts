@@ -19,6 +19,7 @@ import {
   paypalAccessToken,
   paypalApiBase,
 } from '../_shared/paypal.ts';
+import { INFORMATIVA_VERSIONE } from '../_shared/consenso.ts';
 
 const EVENTO = 'gita-giochi-medievali-2026';
 const ANTICIPO_UNIT = 30; // € per posto — deliberato, MAI dal client
@@ -170,6 +171,8 @@ Deno.serve(async (req: Request) => {
       bonus_preorder: bonus,
       metodo: 'paypal',
       consenso_privacy: true,
+      // [15/9/2026, audit PRIV-05] Quale informativa era in vigore al consenso.
+      informativa_versione: INFORMATIVA_VERSIONE,
       sorgente_utm: utm,
     })
     .select('id')

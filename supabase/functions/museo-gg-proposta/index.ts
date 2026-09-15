@@ -14,6 +14,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { notificaDirettivo } from "../_shared/notificaDirettivo.ts"
+import { INFORMATIVA_VERSIONE } from "../_shared/consenso.ts"
 
 const ALLOWED_ORIGINS = [
   'https://elbrenz-app.netlify.app',
@@ -114,7 +115,10 @@ serve(async (req) => {
 
   // INSERT (service-role) — prima della notifica (mai notificare senza scrittura).
   const { data: inserted, error: insErr } = await supabase.from('museo_gg_proposta')
-    .insert({ nome, contatto, tipo, descrizione })
+    // [15/9/2026, audit PRIV-05] Consenso (gia' validato sopra) e versione
+    // dell'informativa scritti a registro: colonne aggiunte dalla migrazione
+    // 20260915100000_priv05_informativa_versione.sql, da applicare PRIMA.
+    .insert({ nome, contatto, tipo, descrizione, consenso_privacy: true, informativa_versione: INFORMATIVA_VERSIONE })
     .select('id').single()
 
   if (insErr || !inserted) {

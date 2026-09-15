@@ -15,6 +15,12 @@ import {
   paypalApiBase,
 } from '../_shared/paypal.ts';
 
+// [15/9/2026, audit SIC-04] La "rete di sicurezza" che creava una riga
+// mancante come 'completato' (tipo quota per default, importo dell'ordine)
+// e' chiusa: senza riga si risponde 404 PRIMA di catturare, e le catture
+// perse le riconcilia paypal-webhook. Il codice resta, irraggiungibile.
+const RETE_SICUREZZA_RIGA_MANCANTE = false;
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get('Origin');
   const cors = buildCorsHeaders(origin);
@@ -44,6 +50,28 @@ Deno.serve(async (req: Request) => {
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   );
+
+  // [15/9/2026, audit SIC-04] La riga si cerca PRIMA di catturare: senza una
+  // riga nata da paypal-create-order non si tocca PayPal. Con un orderID
+  // qualunque del merchant (un anticipo gita, un ordine creato lato client)
+  // prima si catturava e si scriveva una quota nel libro cassa.
+  // 'completato' resta ammesso per il ricaricamento della pagina (PayPal
+  // risponde ORDER_ALREADY_CAPTURED e la riga non cambia sostanza).
+  const { data: riga, error: rigaErr } = await supabase
+    .from('pagamenti_tesseramento')
+    .select('id, anonimo, nome, stato, importo, valuta')
+    .eq('order_id', orderID)
+    .maybeSingle();
+  if (rigaErr) {
+    console.error('[paypal-capture-order] lettura riga fallita:', rigaErr.message);
+    return jsonResponse({ error: 'Errore interno nella cattura.' }, 500, cors);
+  }
+  if (!riga) {
+    return jsonResponse({ error: 'Ordine non trovato.' }, 404, cors);
+  }
+  if (riga.stato !== 'creato' && riga.stato !== 'completato') {
+    return jsonResponse({ error: 'Questo ordine non e\' piu\' catturabile. Se pensi sia un errore scrivici a info@elbrenz.eu.' }, 409, cors);
+  }
 
   try {
     const token = await paypalAccessToken();
@@ -75,11 +103,19 @@ Deno.serve(async (req: Request) => {
       [data?.payer?.name?.given_name, data?.payer?.name?.surname].filter(Boolean).join(' ').trim() || null;
 
     // riga esistente (creata da paypal-create-order)
-    const { data: riga } = await supabase
-      .from('pagamenti_tesseramento')
-      .select('id, anonimo, nome')
-      .eq('order_id', orderID)
-      .maybeSingle();
+    // [15/9/2026, audit SIC-04] La lettura della riga e' salita prima della
+    // cattura (vedi sopra): qui `riga` e' gia' certa.
+
+    // [15/9/2026, audit SIC-04] Importo e valuta catturati devono coincidere
+    // con la riga: se no la riga NON si marca completata, l'anomalia va nei
+    // log e la riconciliazione resta al webhook.
+    const valutaCatturata: string | null = capture?.amount?.currency_code ?? null;
+    const importoCoerente = importo === null || Number(importo) === Number(riga.importo);
+    const valutaCoerente = valutaCatturata === null || valutaCatturata === (riga.valuta ?? 'EUR');
+    if (!importoCoerente || !valutaCoerente) {
+      console.error(`[paypal-capture-order] importo/valuta non coerenti con la riga ${riga.id}: atteso ${riga.importo} ${riga.valuta ?? 'EUR'}, catturato ${importo} ${valutaCatturata}`);
+      return jsonResponse({ error: 'Il pagamento non corrisponde all\'ordine registrato: lo verifichiamo noi, scrivici a info@elbrenz.eu.' }, 409, cors);
+    }
 
     const aggiorna: Record<string, unknown> = {
       stato: 'completato',
@@ -92,7 +128,7 @@ Deno.serve(async (req: Request) => {
       if (!riga.anonimo && payerEmail) aggiorna.payer_email = payerEmail;
       if (!riga.anonimo && payerName && !riga.nome) aggiorna.nome = payerName;
       await supabase.from('pagamenti_tesseramento').update(aggiorna).eq('id', riga.id);
-    } else {
+    } else if (RETE_SICUREZZA_RIGA_MANCANTE) {
       // rete di sicurezza: riga mancante (non dovrebbe accadere) — creala.
       // Prudenza privacy: nessun payer_email, tipo non determinabile qui.
       await supabase.from('pagamenti_tesseramento').upsert(

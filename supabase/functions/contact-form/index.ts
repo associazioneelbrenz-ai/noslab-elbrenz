@@ -30,6 +30,7 @@ import { firmaToken, TOKEN_TTL_MS } from "../_shared/admin.ts"
 import { notificaDirettivo } from "../_shared/notificaDirettivo.ts"
 import { confermaDomandaHtml } from '../_shared/sollecitoQuota.ts'
 import { quotaAnno } from '../_shared/quota.ts'
+import { INFORMATIVA_VERSIONE } from '../_shared/consenso.ts'
 
 // =============================================================================
 // CONFIG
@@ -524,6 +525,8 @@ serve(async (req) => {
         // validato server-side sopra (step 8a, blocca con 400 se !gdpr), qui lo
         // persistiamo nella colonna strutturata. Additivo, migration 13/07.
         consenso_privacy: true,
+        // [15/9/2026, audit PRIV-05] Quale informativa era in vigore al consenso.
+        informativa_versione: INFORMATIVA_VERSIONE,
         sorgente_utm: sorgenteUtm,
         metodo_scelto: metodoScelto || null,
         // Vuoti finche' il modulo non li chiede: le colonne accettano il vuoto

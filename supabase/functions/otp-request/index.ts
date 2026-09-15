@@ -81,7 +81,11 @@ Deno.serve(async (req: Request) => {
   if (!resendKey) return new Response(JSON.stringify({ error: "missing_resend_key" }), { status: 500, headers: CORS });
 
   // IP e User-Agent per audit
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  // [15/9/2026, audit SIC-12] Prima cf-connecting-ip (lo scrive il bordo, il
+  // client non lo governa), altrimenti il primo di x-forwarded-for come prima.
+  const ip = req.headers.get("cf-connecting-ip")?.trim()
+    || req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || null;
   const ua = req.headers.get("user-agent") ?? null;
 
   // Rate-limit anti abuso (audit 14/7): per-IP e per-EMAIL contro l'email
@@ -94,10 +98,18 @@ Deno.serve(async (req: Request) => {
       supabase.rpc("convenzioni_rl_hit", { p_ip_hash: ipHash, p_max: 8 }),
       supabase.rpc("convenzioni_rl_hit", { p_ip_hash: emailHash, p_max: 3 }),
     ]);
+    // [15/9/2026, audit SIC-12] Un errore della RPC non e' un via libera.
+    if (ipRes.error || emailRes.error) throw (ipRes.error ?? emailRes.error);
     if (ipRes.data === false || emailRes.data === false) {
       return new Response(JSON.stringify({ error: "rate_limited", message: "Troppe richieste di codice. Riprova tra un po'." }), { status: 429, headers: CORS });
     }
-  } catch { /* fail-open sul limiter: non bloccare il login se l'RPC ha un problema */ }
+  } catch (e) {
+    // [15/9/2026, audit SIC-12] Fail-closed: se il limitatore non risponde non
+    // si spedisce nessun codice (prima si proseguiva). I codici gia' emessi
+    // restano intatti: genera_otp (che li invalida) viene chiamata solo dopo.
+    console.error("[otp-request] limitatore non disponibile:", e);
+    return new Response(JSON.stringify({ error: "rate_limiter_unavailable", message: "Non riusciamo a spedire il codice in questo momento. Riprova fra poco." }), { status: 503, headers: CORS });
+  }
 
   // Genera OTP via RPC (torna codice in chiaro solo qui, mai al client)
   const { data: otpData, error: otpErr } = await supabase.rpc("genera_otp", {

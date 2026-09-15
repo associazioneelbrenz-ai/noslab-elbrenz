@@ -25,6 +25,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts"
 import { createClient } from "jsr:@supabase/supabase-js@2"
 import { firmaToken, verificaToken, TOKEN_TTL_MS } from "../_shared/admin.ts"
 import { notificaDirettivo } from "../_shared/notificaDirettivo.ts"
+import { INFORMATIVA_VERSIONE } from "../_shared/consenso.ts"
 
 // =============================================================================
 // CONFIG
@@ -578,6 +579,8 @@ serve(async (req) => {
     referente_nome, referente_email,
     referente_telefono: referente_telefono || null,
     accettazione_schema_tipo, accettazione_privacy,
+    // [15/9/2026, audit PRIV-05] Quale informativa era in vigore al consenso.
+    informativa_versione: INFORMATIVA_VERSIONE,
   }).select('id').single()
 
   if (insErr || !inserted) {

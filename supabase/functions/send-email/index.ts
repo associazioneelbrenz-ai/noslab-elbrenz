@@ -51,10 +51,20 @@ function jsonResponse(body: unknown, status = 200) {
 // AUTH — verifica manuale, JWT runtime check è OFF
 // =============================================================================
 
+// [15/9/2026, audit SIC-16] Confronto a tempo costante (XOR sui charCode,
+// come verificaToken in _shared/admin.ts): il tempo di risposta non deve
+// dire quanti caratteri del secret erano giusti.
+function confrontoCostante(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
+}
+
 function isAuthenticated(req: Request): { ok: boolean; method: string } {
   const sharedSecretEnv = Deno.env.get('SEND_EMAIL_SHARED_SECRET')
   const headerSecret = req.headers.get('x-send-email-secret')
-  if (sharedSecretEnv && headerSecret && headerSecret === sharedSecretEnv) {
+  if (sharedSecretEnv && headerSecret && confrontoCostante(headerSecret, sharedSecretEnv)) {
     return { ok: true, method: 'shared-secret' }
   }
 
@@ -111,8 +121,15 @@ serve(async (req) => {
     const senderDefault =
       Deno.env.get('RESEND_FROM') || 'El Brenz <noreply@elbrenz.eu>'
 
+    // [15/9/2026, audit SIC-16] Il mittente si accetta solo su @elbrenz.eu
+    // (nudo o «Nome <...>»): qualunque altro `from` si ignora e parte il
+    // mittente di default. Oggi nessun chiamante passa `from`.
+    const fromRichiesto = typeof from === 'string' ? from.trim() : ''
+    const fromAmmesso = /@elbrenz\.eu>?$/i.test(fromRichiesto)
+    if (fromRichiesto && !fromAmmesso) console.warn('[send-email] mittente fuori dominio ignorato, uso il default')
+
     const payload: Record<string, unknown> = {
-      from: from || senderDefault,
+      from: fromAmmesso ? fromRichiesto : senderDefault,
       to: Array.isArray(to) ? to : [to],
       subject,
       html,
@@ -145,11 +162,13 @@ serve(async (req) => {
       )
     }
 
-    console.log(`[send-email] sent id=${result.id} to=${JSON.stringify(to)} via=${auth.method}`)
+    // [15/9/2026, audit SIC-16] Nei log solo id e conteggio, mai gli indirizzi.
+    console.log(`[send-email] sent id=${result.id} destinatari=${Array.isArray(to) ? to.length : 1} via=${auth.method}`)
     return jsonResponse({ success: true, id: result.id }, 200)
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error)
     console.error(`[send-email] error: ${msg}`)
-    return jsonResponse({ error: 'Internal server error', message: msg }, 500)
+    // [15/9/2026, audit SIC-16] Il dettaglio dell'eccezione resta nei log.
+    return jsonResponse({ error: 'Internal server error' }, 500)
   }
 })
