@@ -24,7 +24,7 @@ Sito pubblico in produzione: **`https://elbrenz.eu`** (apex, dominio primario; c
 - **Feature Convenzioni (M5.0 v2)** live: tabella `convenzioni` + vista `convenzioni_pubbliche` + edge `convenzioni-proposta` + pagine `/convenzioni` e `/convenzioni/schema-tipo`.
 - **KB Andreas**: sorgente Baratter (Athesia 2017), 30 chunk, via nuova edge `ingest-chunks`. `andreas-chat` resta INTOCCABILE.
 - **Link HMAC nelle email**: SEMPRE nel PATH, mai in query string (`=`+2 hex si corrompe in quoted-printable). Vale per scheda-domanda e convenzioni-proposta.
-- Handoff corrente: **`docs/HANDOFF_2026-09-05_backup.md`** (precedente: `docs/HANDOFF_2026-08-04_tesseramento.md`).
+- Handoff corrente: **`docs/HANDOFF_2026-09-16_audit_ondate.md`** (precedenti: `docs/HANDOFF_2026-09-05_backup.md`, `docs/HANDOFF_2026-08-04_tesseramento.md`).
 
 ---
 
@@ -59,7 +59,7 @@ Sito pubblico in produzione: **`https://elbrenz.eu`** (apex, dominio primario; c
 
 | Componente | Tecnologia | Note |
 |---|---|---|
-| Framework | **Astro v6.3.7** (Vite v5.4.21) | SSG + alcune route SSR via adapter Netlify |
+| Framework | **Astro v6.4.8** (Vite v7.3.6) | SSG + alcune route SSR via adapter Netlify (versioni lette da `node_modules` il 16/9/2026; `package.json` chiede `^6.1.9`) |
 | Adapter | `@astrojs/netlify` | edge functions per route dinamiche |
 | Styling | **Tailwind CSS** (utility classes, no `<style>` scoped) | colori brand in tema |
 | Backend | **Supabase** (project: `wacknihvdjxltiqvxtqr`) | auth + DB + storage + edge functions |
@@ -382,6 +382,38 @@ cosa giusta.
 > solo"), mai il solo fatto che la build sia riuscita o che il push sia
 > andato a buon fine.
 
+### Trappola 18 — Il deploy via MCP decodifica le sequenze `\uXXXX`
+
+15/9/2026, ondate 1 e 2 dell'audit. Le edge function deployate dalla
+sessione cloud passano dal tool MCP `deploy_edge_function`, che riceve il
+sorgente dentro un JSON: ogni sequenza di escape scritta nel codice come
+`\u0000`, `\u001F`, `\u007F` (tipiche delle regex che tolgono i caratteri di
+controllo, e delle sentinelle di confronto) arriva in produzione come il
+**carattere letterale**, non come i sei caratteri della sequenza. A runtime
+il valore e' lo stesso (una regex che contiene il byte NUL vero filtra il NUL
+esattamente come `\u0000`), quindi il comportamento non cambia. Ma:
+
+- il confronto byte per byte fra repository e produzione segnala una
+  differenza che non e' un difetto (visto su `newsletter-gestione` v13 e
+  `articolo-azione` v14/v15);
+- se si copia il sorgente vivo dentro il repository, git vede un file con
+  byte NUL e lo tratta come binario (successo con `newsletter-gestione`,
+  corretto in `7dde5fd`).
+
+> Regola: dopo un deploy via MCP si rilegge il sorgente con
+> `get_edge_function` e lo si confronta con il file locale. Se le sole
+> differenze sono sequenze `\uXXXX` diventate caratteri, il deploy e' buono e
+> si annota; al primo `supabase functions deploy` dalla CLI si riallinea da
+> solo. **Non si riporta mai il sorgente vivo nel repository**: il file
+> locale con le sequenze scritte in chiaro e' quello giusto.
+
+Nella stessa sessione si e' visto anche che `apply_migration` via MCP
+**assegna la propria versione** (il timestamp del momento) e ignora il nome
+del file locale: subito dopo si legge `select version, name from
+supabase_migrations.schema_migrations order by version desc limit 1` e si
+rinomina il file locale con quella versione, altrimenti `supabase migration
+list` vede la stessa migrazione due volte (Trappola 16, secondo tempo).
+
 ## Cose da NON fare mai
 
 - ❌ Modificare il codice direttamente in produzione (anche se il sito è giù)
@@ -429,4 +461,4 @@ cosa giusta.
 
 ---
 
-*Ultimo aggiornamento: 8 agosto 2026 (Trappole 13 e 14). Mantenere sincronizzato con HANDOFF e debt_tracker.*
+*Ultimo aggiornamento: 16 settembre 2026 (Trappola 18, versione Astro reale, handoff dell'audit). Mantenere sincronizzato con HANDOFF e debt_tracker.*
