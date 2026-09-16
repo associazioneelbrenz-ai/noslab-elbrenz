@@ -7,7 +7,7 @@ Ramo di lavoro, su entrambi i repository: `claude/happy-cori-0d7d75`.
 
 | Repository | Ultimo commit | Stato |
 |---|---|---|
-| `noslab-elbrenz` | `8cca3c4` | pushato, non deployato |
+| `noslab-elbrenz` | `42505e9` | pushato, non deployato |
 | `elbrenz-community` | `6c51839` | pushato, non deployato |
 
 ---
@@ -64,7 +64,7 @@ grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs
 
 netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2
 
-curl -s https://elbrenz.eu/versione.json   # il commit deve essere 8cca3c4
+curl -s https://elbrenz.eu/versione.json   # il commit deve essere 42505e9
 ```
 
 ### Collaudo da browser, in ordine di rischio
@@ -216,3 +216,45 @@ migrazione.
 Guardiani che registrava un rifiuto al posto di un sì (`b17408c`, già in
 produzione), il gate del deploy nel CLAUDE.md, la Trappola 18 e la
 Trappola 19.
+
+---
+
+## 6. Rilettura avversariale dell'ondata 3, fatta il 16 settembre
+
+Novantacinque agenti, trenta rilievi grezzi, ventuno demoliti dai
+verificatori, nove rimasti in piedi. **Quattro erano difetti introdotti
+dall'ondata 3 stessa e sono gia' corretti** nel commit `42505e9`: il taglio
+della descrizione finito anche sull'anteprima social, l'ora di chiusura
+attaccata alla fine di eventi che durano piu' giorni, il confronto sul
+marchio sensibile alle maiuscole, il testo alternativo che ripeteva il
+titolo.
+
+I cinque rimasti non li ho toccati, perche' vogliono una scelta tua o un
+dato che non c'e'.
+
+1. **In home due nodi dei dati strutturati hanno lo stesso identificativo e
+   si fondono in una sola entita' con due loghi, due descrizioni e due
+   canali YouTube.** Il Layout emette il suo nodo, `index.astro` ne emette
+   un altro. Ora condividono l'identificativo, quindi per un motore sono la
+   stessa cosa, ma dicono cose diverse. Va deciso quale delle due versioni
+   vale e tolto l'altro nodo: e' una rimozione, quindi la decidi tu.
+2. **`autoreEnte()` non riconosce l'unico autore che esiste a database**:
+   centoventinove articoli continuano a firmarsi «Masterbrenz» come persona
+   invece che come Associazione. Serve sapere da te se «Masterbrenz» va
+   trattato come l'Associazione o come una persona vera.
+3. **`dateModified` dichiara il falso su 134 articoli su 135**: il
+   parametro c'e' ma nessuno lo passa, e la vista non espone `updated_at`.
+   O si aggiunge la colonna alla vista, o si toglie il campo.
+4. **Diciotto pagine statiche hanno una descrizione oltre le 155 battute** e
+   vengono tagliate dalla macchina all'ultimo spazio. Il taglio e' una rete,
+   non una scelta editoriale: quelle diciotto andrebbero riscritte a mano.
+   Le piu' visibili: home, eventi, tesseramento, convenzioni, mappa,
+   a proposito di Tirolo, lingua, i tre hub del glossario.
+5. **La lista delle rotte riservate filtra per sottostringa**: un domani un
+   lemma del glossario che contenga «ascolta» o «redazione» sparirebbe dalla
+   sitemap senza che nessuno se ne accorga. Oggi non succede, l'ho
+   verificato sui dati veri.
+
+I ventuno rilievi demoliti stanno nel giornale della rilettura, dentro la
+cartella della sessione: se un domani uno di loro si ripresenta, li' c'e'
+scritto perche' non reggeva.
