@@ -80,7 +80,9 @@ const t = useTranslations(lang);
 const SUFFISSO_BRAND = ' · El Brenz';
 const fullTitle = title === 'El Brenz da le Val del Nos'
   ? `${title} · Associazione Storico Culturale Linguistica`
-  : title.includes('El Brenz')
+  // [16/9/2026, rilettura avversariale] senza toLowerCase un titolo scritto
+  // «EL BRENZ» non veniva riconosciuto e il marchio finiva due volte.
+  : title.toLowerCase().includes('el brenz')
     ? title
     : title + SUFFISSO_BRAND;
 
@@ -101,6 +103,15 @@ function accorciaDescrizione(d: string): string {
   return base.replace(/[\s.,;:·—-]+$/, '') + '…';
 }
 const descrizioneMeta = accorciaDescrizione(description);
+// [16/9/2026, rilettura avversariale] IL TAGLIO VALE PER GOOGLE, NON PER LE
+// ANTEPRIME. I centocinquantacinque caratteri sono la misura del risultato di
+// ricerca. Su og:description e twitter:description quel limite non esiste
+// (Facebook e WhatsApp ne mostrano circa trecento), e applicarlo li' toglieva
+// testo che prima arrivava intero: l'anteprima della home si fermava a «Val di
+// Sole…», perdendo Val di Rabbi e Val di Pejo, cioe' due delle quattro valli
+// che danno il nome all'Associazione. Qui si torna al testo pieno, che e'
+// quello che c'era prima dell'ondata 3.
+const descrizioneAnteprima = description;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = new URL(ogImage, Astro.site);
@@ -268,7 +279,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     )}
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={ogTitle ?? fullTitle} />
-    <meta property="og:description" content={descrizioneMeta} />
+    <meta property="og:description" content={descrizioneAnteprima} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={ogImageURL} />
     <meta property="og:image:width" content="1200" />
@@ -282,7 +293,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     <meta property="og:locale" content={ogLocale[pl]} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={ogTitle ?? fullTitle} />
-    <meta name="twitter:description" content={descrizioneMeta} />
+    <meta name="twitter:description" content={descrizioneAnteprima} />
     <meta name="twitter:image" content={ogImageURL} />
     {/* AUD-E3 (10/7/2026): font self-hosted in /fonts/ via src/styles/fonts.css
         — rimossi i link a fonts.googleapis.com/gstatic.com (privacy + TBT).

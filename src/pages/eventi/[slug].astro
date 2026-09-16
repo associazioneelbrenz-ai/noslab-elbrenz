@@ -157,10 +157,23 @@ const schemaEvento: Record<string, unknown> = {
   url: new URL(`/eventi/${evento.slug}`, Astro.site).toString(),
   image: new URL(ogEvento, Astro.site).toString(),
 };
-// La fine: se c'e' l'ora di chiusura vale anche per una giornata sola.
+// La fine.
+//
+// [16/9/2026, rilettura avversariale] L'ora di chiusura si attacca alla data
+// SOLO quando l'evento sta in una giornata sola. Su un evento di piu' giorni
+// `ora_fine` e' l'ora in cui si chiude ogni sera, non l'istante in cui finisce
+// la rassegna: attaccarla all'ultimo giorno diceva due bugie. La prima, che una
+// rassegna di tre settimane sia un appuntamento unico e continuo che finisce
+// alle 18:00 del 26 agosto. La seconda, peggiore: con `ora_fine` a mezzanotte
+// (due eventi pubblicati ce l'hanno, fra cui Pomaria) l'ultimo giorno spariva,
+// perche' le 00:00 del 18 ottobre sono l'inizio di quel giorno, non la sua
+// fine, e chi cercava la domenica mattina trovava un evento gia' chiuso.
+// La data secca, senza ora, per i motori copre la giornata intera: e' quello
+// che faceva il codice prima dell'ondata 3, ed e' giusto.
 const giornoFine = evento.data_fine ?? (evento.ora_fine ? evento.data_inizio : null);
 if (giornoFine) {
-  schemaEvento.endDate = evento.ora_fine
+  const unaGiornataSola = !evento.data_fine || evento.data_fine === evento.data_inizio;
+  schemaEvento.endDate = (unaGiornataSola && evento.ora_fine && evento.ora_fine !== '00:00:00')
     ? `${giornoFine}T${evento.ora_fine}${offsetRoma(giornoFine)}`
     : giornoFine;
 }
