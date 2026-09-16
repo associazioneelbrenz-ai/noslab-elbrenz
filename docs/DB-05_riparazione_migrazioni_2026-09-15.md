@@ -222,80 +222,137 @@ Caso particolare, l'ultimo della lista: `20260915100000_priv05_informativa_versi
 è la migrazione PRIV-05 dell'ondata 1, applicata via MCP il 15/9 come
 `20260915012305`. Stessa regola degli altri.
 
-### A2. Senza omonima nel database (21): verificare prima, poi marcare
+### A2. Senza omonima nel database (21): verificate il 16/9/2026
 
-Per questi 21 file non c'è una riga del registro con lo stesso nome. Possono
+Per questi 21 file non c'è una riga del registro con lo stesso nome. Potevano
 essere stati applicati via MCP con un nome diverso, oppure a mano dallo SQL
-editor, oppure **mai**. Prima di marcarli `applied` bisogna aprire il file,
-prendere gli oggetti che crea (tabelle, viste, funzioni, policy, cron) e
-controllare che esistano:
+editor, oppure **mai**. Il 16 settembre 2026 sono stati aperti uno per uno,
+catalogando quello che ciascuno crea (tabelle, colonne, viste, funzioni,
+trigger, policy, grant, indici, lavori pg_cron, righe di riferimento) e
+confrontandolo con il database vivo.
+
+Esito: **18 confermate**, **2 superate da una migrazione successiva senza
+perdita**, **1 che nel database non ha lasciato traccia**. Venti su ventuno si
+possono marcare `applied`; una sola,
+`20260801090000_radar_eventi_cron.sql`, va decisa con Cristian.
+
+Le query usate per il controllo, per chi dovesse rifarlo:
 
 ```sql
 -- tabelle / viste
 select table_name, table_type from information_schema.tables
  where table_schema='public' and table_name in ('...');
--- funzioni
-select proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+-- colonne
+select table_name, column_name, data_type from information_schema.columns
+ where table_schema='public' and table_name in ('...');
+-- funzioni, con i grant residui
+select proname, pg_get_function_identity_arguments(oid), prosecdef, proacl
+ from pg_proc p join pg_namespace n on n.oid=p.pronamespace
  where n.nspname='public' and proname in ('...');
 -- policy
-select tablename, policyname from pg_policies where schemaname='public' and policyname in ('...');
+select tablename, policyname, cmd, qual, with_check from pg_policies
+ where schemaname='public' and tablename in ('...');
+-- trigger, indici, vincoli
+select tgname from pg_trigger where not tgisinternal;
+select indexname from pg_indexes where schemaname='public' and indexname in ('...');
+select conname, pg_get_constraintdef(oid) from pg_constraint where conname in ('...');
+-- grant residui ad anon e authenticated
+select table_name, grantee, privilege_type from information_schema.role_table_grants
+ where table_schema='public' and grantee in ('anon','authenticated');
 -- lavori pianificati
-select jobname, schedule, command from cron.job where jobname in ('...');
+select jobid, jobname, schedule, command from cron.job order by jobid;
 ```
 
-Se **tutto** quello che il file crea esiste già: `--status applied`. Se manca
-qualcosa: il file **non** va marcato, e va deciso se applicarlo (con `db push`
-dopo la riparazione degli altri) o se il suo contenuto è stato superato.
+| File locale | Indizio | Verifica 16/9/2026 |
+|---|---|---|
+| `20260801090000_radar_eventi_cron.sql` | i 5 cron radar esistono in cron.job (jobid 15-19); vedi anche 20260828100100 | **MANCA** — `radar_chiama_edge(text,text)` non esiste in pg_proc; i tre cron `radar-harvest-notturno`, `radar-classifica-notturna`, `radar-digest-settimanale` non esistono in cron.job. Il segreto `ingest_token` nel Vault c'è. Il radar gira per altra via, con i cinque lavori `radar-eventi-*` di 20260828100100 |
+| `20260801101000_museo_gg_guardia_curatore.sql` | nel DB c'è `museo_gg_guardia_riconosce_curatore` (20260801074206): probabile stesso contenuto, nome diverso | **CONFERMATA** — funzione `museo_gg_guardia_pubblicazione()` presente, corpo con `curatore_museo_gg`, `has_ruolo_min(auth.uid(), 50)` e i tre blocchi (fonte, immagini, consenso); trigger `trg_museo_gg_guardia` before insert or update su museo_gg_pezzo |
+| `20260801160000_email_outbox_allineamento.sql` | confrontare con `email_outbox_invio_da_chat_e_pannello` e `email_outbox_origini_newsletter` | **CONFERMATA** — tabella `email_outbox` con tutte le colonne del file (64 righe), RLS attiva, le tre policy `email_outbox_admin_select/insert/update` con `has_ruolo_min(50)`, indice `idx_email_outbox_da_processare`, nessun TRUNCATE ad anon e authenticated. Il vincolo `email_outbox_origine_check` elenca oggi sette origini invece di tre, allargato da `email_outbox_origini_newsletter`: il file lo crea solo se manca, quindi non toglie niente |
+| `20260801200000_audit_1_agosto.sql` | confrontare con `allineamento_audit_completo` (20260802011241) | **CONFERMATA** — le otto viste elencate hanno solo SELECT per anon e authenticated; `_mappa_img_wp` ha RLS attiva, anon nessun privilegio, authenticated il solo SELECT; `scadi_ordini_creato_vecchi()` ha ACL postgres e service_role; `get_mia_tessera()` non ha più anon; `cerca_soci(text)` contiene `has_ruolo_min(auth.uid(), 10)` nella WHERE; il record della gita dice «Giochi Medievali del Südtirol», luogo «Sluderno, Val Venosta (Südtirol)» |
+| `20260802110000_mappa_anteprima.sql` | versione doppia con articolo_flag_archivio: rinominare prima | **CONFERMATA, ma il file va rinominato prima del repair** — colonna `luoghi_interesse.in_anteprima` presente, sei righe a true (Castel Thun, Santuario di San Romedio, Castel San Michele, Sacrario del Passo del Tonale, Segheria veneziana Bègoi, Museo di Punta Linke), vista `v_luoghi_mappa` con `in_anteprima` e solo SELECT ad anon e authenticated. Unica differenza, non sostanziale: la vista è oggi `security_invoker = true`, impostato da una migrazione successiva. La versione `20260802110000` è occupata anche da `articolo_flag_archivio`: finché il file non è rinominato (per esempio a `20260802110100`) il comando `repair` non può distinguerli |
+| `20260802120000_ai_quota_atomica.sql` | nel DB ci sono `ai_consuma_quota_atomica` e `ai_somma_token` (20260802100038/101120) | **CONFERMATA** — `ai_consuma_quota(uuid, text, integer)` e `ai_somma_token(uuid, text, integer)` presenti, entrambe SECURITY DEFINER e con ACL ridotta a postgres e service_role (le revoche del file sono in effetto); riga `ai_config_ruolo` per `admin_capo` con limite_giornaliero -1 |
+| `20260803090000_allineamento_schema_pagamenti.sql` | verificare colonne di pagamenti_tesseramento | **CONFERMATA** — `pagamenti_tesseramento.sorgente_utm` è jsonb; `pagamenti_tesseramento_tipo_check` elenca quota, donazione, integrazione, anticipo_gita; `domande_tesseramento_stato_check` elenca in_attesa, approvata, respinta, annullata; `domande_tesseramento.sorgente_utm` è jsonb |
+| `20260803210000_blocca_approvazione_senza_incasso.sql` | cercare il trigger/funzione sulla tabella domande_tesseramento | **CONFERMATA** — colonna `domande_tesseramento.deroga_pagamento_motivo` presente; funzione `blocca_approvazione_senza_incasso()` presente, definer, con la deroga nel corpo; trigger `trg_blocca_approvazione_senza_incasso` before update su domande_tesseramento |
+| `20260804034000_quota_anno_e_posizioni.sql` | nel DB c'è `quota_anno_e_posizioni_soci` (20260804013650) | **CONFERMATA** — `config_app.quota_sociale_per_anno` vale `{"2025": 10, "2026": 20}`; funzione `quota_anno(integer)` presente con ACL postgres e service_role; le quattro colonne `data_ricostruita`, `annullato_il`, `annullato_da`, `annullato_motivo` ci sono su pagamenti_tesseramento; anche `blocca_approvazione_senza_incasso()` non è più eseguibile da anon, authenticated e public |
+| `20260804181000_newsletter_destinatari_dedup.sql` | nel DB c'è `newsletter_destinatari_dedup_per_indirizzo` (20260804105628) | **CONFERMATA** — vista `v_newsletter_destinatari` presente, definizione con `min(v.nome)` e i quattro gruppi, nessun grant ad anon e authenticated. Dedup verificato sul vivo: gruppo soci_tutti 31 righe e 31 indirizzi distinti |
+| `20260808100000_correzioni_e_account_doppi.sql` | nel DB c'è `correzioni_ai_lemmi` (20260808135305)? confrontare | **CONFERMATA** — il file non contiene nessuna istruzione SQL, sono solo commenti: marcarlo o applicarlo per il database è lo stesso. Quello che descrive esiste: tabella `lemma_correzione` presente, con due righe |
+| `20260808113000_traccia_modifiche_dopo_pubblicazione.sql` | nel DB c'è `traccia_modifiche_dopo_la_pubblicazione` (20260808152558) | **CONFERMATA** — anche qui soli commenti, nessuna istruzione SQL. Gli oggetti descritti esistono: tabella `modifica_contenuto` con 139 righe, vista `v_modifiche_recenti`, funzione `tg_traccia_modifica` con i tre trigger su articolo, dizionario_lemma e museo_gg_pezzo |
+| `20260808140000_audit_profondo_fix.sql` | confrontare con `fix_audit_viste_invoker` / `audit_revoca_execute_anon` (20260808194758/194939) | **CONFERMATA** — soli commenti anche questo. Le tre correzioni descritte sono in effetto: `v_modifiche_recenti` e `v_ocr_consumo` sono `security_invoker = true`; `lancia_guardiani_digest(boolean)` e `annuncia_lemmi_pubblicati()` hanno ACL ridotta a postgres e service_role |
+| `20260825150000_memoria_planimetria_geo_male.sql` | nel DB c'è `memoria_fondo_pubblico_planimetria_geo` (20260825152944) | **CONFERMATA** — `memoria_fondo.planimetria_geo` del fondo `cimitero-militare-male` contiene nove righe da ventiquattro e ventuno posizioni civili, come il file |
+| `20260826090000_luoghi_cimitero_male.sql` | cercare la riga del cimitero di Malè in luoghi | **CONFERMATA** — riga `luoghi_interesse` con slug `cimitero-militare-male`: «Cimitero militare di Malè», categoria grande_guerra, valle val_di_sole, 46.3507631 / 10.9151196, stato pubblicato, geo_stato manuale |
+| `20260826095000_memoria_evento_pubblico_e_persona_arricchita.sql` | nel DB c'è `memoria_evento_pubblico_e_arricchimento_persona` (20260825154918) | **SUPERATA** da `20260828100000_recupero_schema_servizi_reparti_cruscotto.sql`, senza perdita — `v_memoria_evento_pubblico` esiste, security_invoker, con SELECT ad anon e authenticated; `v_memoria_persona_pubblica` esiste, security_invoker, e ha `fondo_slug_breve` ed `evento_slug` (le aggiunte di questo file) più `relazione_registrazione`, che arriva dal 28/8 |
+| `20260826100000_memoria_racconto_completo.sql` | nel DB c'è `memoria_fondo_racconto_html_completo` (20260825155143) | **CONFERMATA** — `memoria_fondo.racconto_html` del fondo `cimitero-militare-male` conta 13.638 caratteri e contiene sia il titolo di apertura sia la chiusa del file |
+| `20260828100000_recupero_schema_servizi_reparti_cruscotto.sql` | recupero del 28/8 (Trappola 16): descrive oggetti già esistenti, per costruzione | **CONFERMATA** — le quattro tabelle (servizio, servizio_battito, memoria_reparto, memoria_evento_reparto) esistono con RLS attiva e le policy attese (`memoria_reparto_lettura` true, `memoria_reparto_scrittura` e `mer_scrittura` con has_ruolo_min 20); le quattro colonne aggiunte a memoria_persona e i due vincoli ci sono; le dieci funzioni ci sono con i grant dichiarati (cruscotto e ascolto ad authenticated, battito e radar al solo service_role); le sette viste ci sono, tutte security_invoker, con v_servizi_stato senza grant, v_cruscotto_code e v_cruscotto_completezza senza SELECT ad anon, v_coda_ascolto al solo authenticated |
+| `20260828100100_recupero_cron_radar_eventi.sql` | recupero del 28/8 (Trappola 16): descrive oggetti già esistenti, per costruzione | **CONFERMATA** — i cinque lavori sono in cron.job con jobid 15-19, orari e comandi identici al file: radar-eventi-harvest `20 3 * * *`, radar-eventi-classifica `40 3 * * *`, radar-eventi-classifica-coda `10 4 * * *`, radar-eventi-digest `30 7 * * 1`, radar-eventi-battito `15 8 * * 1` |
+| `20260828100200_recupero_dati_riferimento.sql` | recupero del 28/8 (Trappola 16): descrive oggetti già esistenti, per costruzione | **CONFERMATA** — `memoria_reparto` ha 55 righe, quante ne inserisce il file (73.FliegerKp e Russ.16.IR verificate una per una); `servizio` contiene tutti e otto i nomi del file, più `salvataggio-settimanale` che arriva da un'altra migrazione |
+| `20260829084902_archivio_audio_stretta_visibilita.sql` | verificare le policy su archivio_audio (l'ondata 1 le ha poi cambiate: 20260915002255) | **SUPERATA** da `20260915002255_ondata1_push_secret_archivio_audio_revoke.sql`, senza perdita — la policy `aa_select_per_visibilita` non esiste più: l'ondata 1 l'ha eliminata e messa al suo posto `aa_select_curatori` (`for select to authenticated using has_ruolo_min(uid, 20)`). La stretta è andata oltre a quella del file: oggi un autenticato che non sia curatore non legge nemmeno le righe pubblicate. Il file non è ri-eseguibile da solo, perché un `alter policy` su una policy che non c'è fallisce: marcarlo `applied` è l'unica strada |
 
-| File locale | Indizio |
-|---|---|
-| `20260801090000_radar_eventi_cron.sql` | i 5 cron radar esistono in cron.job (jobid 15-19); vedi anche 20260828100100 |
-| `20260801101000_museo_gg_guardia_curatore.sql` | nel DB c'è `museo_gg_guardia_riconosce_curatore` (20260801074206): probabile stesso contenuto, nome diverso |
-| `20260801160000_email_outbox_allineamento.sql` | confrontare con `email_outbox_invio_da_chat_e_pannello` e `email_outbox_origini_newsletter` |
-| `20260801200000_audit_1_agosto.sql` | confrontare con `allineamento_audit_completo` (20260802011241) |
-| `20260802110000_mappa_anteprima.sql` | versione doppia con articolo_flag_archivio: rinominare prima |
-| `20260802120000_ai_quota_atomica.sql` | nel DB ci sono `ai_consuma_quota_atomica` e `ai_somma_token` (20260802100038/101120) |
-| `20260803090000_allineamento_schema_pagamenti.sql` | verificare colonne di pagamenti_tesseramento |
-| `20260803210000_blocca_approvazione_senza_incasso.sql` | cercare il trigger/funzione sulla tabella domande_tesseramento |
-| `20260804034000_quota_anno_e_posizioni.sql` | nel DB c'è `quota_anno_e_posizioni_soci` (20260804013650) |
-| `20260804181000_newsletter_destinatari_dedup.sql` | nel DB c'è `newsletter_destinatari_dedup_per_indirizzo` (20260804105628) |
-| `20260808100000_correzioni_e_account_doppi.sql` | nel DB c'è `correzioni_ai_lemmi` (20260808135305)? confrontare |
-| `20260808113000_traccia_modifiche_dopo_pubblicazione.sql` | nel DB c'è `traccia_modifiche_dopo_la_pubblicazione` (20260808152558) |
-| `20260808140000_audit_profondo_fix.sql` | confrontare con `fix_audit_viste_invoker` / `audit_revoca_execute_anon` (20260808194758/194939) |
-| `20260825150000_memoria_planimetria_geo_male.sql` | nel DB c'è `memoria_fondo_pubblico_planimetria_geo` (20260825152944) |
-| `20260826090000_luoghi_cimitero_male.sql` | cercare la riga del cimitero di Malè in luoghi |
-| `20260826095000_memoria_evento_pubblico_e_persona_arricchita.sql` | nel DB c'è `memoria_evento_pubblico_e_arricchimento_persona` (20260825154918) |
-| `20260826100000_memoria_racconto_completo.sql` | nel DB c'è `memoria_fondo_racconto_html_completo` (20260825155143) |
-| `20260828100000_recupero_schema_servizi_reparti_cruscotto.sql` | recupero del 28/8 (Trappola 16): descrive oggetti già esistenti, per costruzione |
-| `20260828100100_recupero_cron_radar_eventi.sql` | recupero del 28/8 (Trappola 16): descrive oggetti già esistenti, per costruzione |
-| `20260828100200_recupero_dati_riferimento.sql` | recupero del 28/8 (Trappola 16): descrive oggetti già esistenti, per costruzione |
-| `20260829084902_archivio_audio_stretta_visibilita.sql` | verificare le policy su archivio_audio (l'ondata 1 le ha poi cambiate: 20260915002255) |
+#### A2 verificate: si possono lanciare
 
-Comandi, **da lanciare solo dopo la verifica di ciascuno**:
+Venti file su ventuno. Il commento `# verificata 16/9` sta a dire che il
+contenuto è stato confrontato con il database vivo, riga per riga.
+
+Attenzione all'ordine: `20260802110000_mappa_anteprima.sql` va **rinominato
+prima**, altrimenti la versione `20260802110000` è ambigua (vedi «Due anomalie
+nella cartella»). Il comando qui sotto porta già la versione nuova proposta,
+`20260802110100`.
 
 ```bash
-supabase migration repair --status applied 20260801090000 --project-ref wacknihvdjxltiqvxtqr   # radar_eventi_cron  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260801101000 --project-ref wacknihvdjxltiqvxtqr   # museo_gg_guardia_curatore  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260801160000 --project-ref wacknihvdjxltiqvxtqr   # email_outbox_allineamento  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260801200000 --project-ref wacknihvdjxltiqvxtqr   # audit_1_agosto  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260802110000 --project-ref wacknihvdjxltiqvxtqr   # mappa_anteprima  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260802120000 --project-ref wacknihvdjxltiqvxtqr   # ai_quota_atomica  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260803090000 --project-ref wacknihvdjxltiqvxtqr   # allineamento_schema_pagamenti  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260803210000 --project-ref wacknihvdjxltiqvxtqr   # blocca_approvazione_senza_incasso  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260804034000 --project-ref wacknihvdjxltiqvxtqr   # quota_anno_e_posizioni  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260804181000 --project-ref wacknihvdjxltiqvxtqr   # newsletter_destinatari_dedup  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260808100000 --project-ref wacknihvdjxltiqvxtqr   # correzioni_e_account_doppi  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260808113000 --project-ref wacknihvdjxltiqvxtqr   # traccia_modifiche_dopo_pubblicazione  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260808140000 --project-ref wacknihvdjxltiqvxtqr   # audit_profondo_fix  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260825150000 --project-ref wacknihvdjxltiqvxtqr   # memoria_planimetria_geo_male  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260826090000 --project-ref wacknihvdjxltiqvxtqr   # luoghi_cimitero_male  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260826095000 --project-ref wacknihvdjxltiqvxtqr   # memoria_evento_pubblico_e_persona_arricchita  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260826100000 --project-ref wacknihvdjxltiqvxtqr   # memoria_racconto_completo  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260828100000 --project-ref wacknihvdjxltiqvxtqr   # recupero_schema_servizi_reparti_cruscotto  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260828100100 --project-ref wacknihvdjxltiqvxtqr   # recupero_cron_radar_eventi  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260828100200 --project-ref wacknihvdjxltiqvxtqr   # recupero_dati_riferimento  (SOLO DOPO VERIFICA)
-supabase migration repair --status applied 20260829084902 --project-ref wacknihvdjxltiqvxtqr   # archivio_audio_stretta_visibilita  (SOLO DOPO VERIFICA)
+supabase migration repair --status applied 20260801101000 --project-ref wacknihvdjxltiqvxtqr   # museo_gg_guardia_curatore  # verificata 16/9
+supabase migration repair --status applied 20260801160000 --project-ref wacknihvdjxltiqvxtqr   # email_outbox_allineamento  # verificata 16/9
+supabase migration repair --status applied 20260801200000 --project-ref wacknihvdjxltiqvxtqr   # audit_1_agosto  # verificata 16/9
+supabase migration repair --status applied 20260802110100 --project-ref wacknihvdjxltiqvxtqr   # mappa_anteprima (DOPO la rinomina del file)  # verificata 16/9
+supabase migration repair --status applied 20260802120000 --project-ref wacknihvdjxltiqvxtqr   # ai_quota_atomica  # verificata 16/9
+supabase migration repair --status applied 20260803090000 --project-ref wacknihvdjxltiqvxtqr   # allineamento_schema_pagamenti  # verificata 16/9
+supabase migration repair --status applied 20260803210000 --project-ref wacknihvdjxltiqvxtqr   # blocca_approvazione_senza_incasso  # verificata 16/9
+supabase migration repair --status applied 20260804034000 --project-ref wacknihvdjxltiqvxtqr   # quota_anno_e_posizioni  # verificata 16/9
+supabase migration repair --status applied 20260804181000 --project-ref wacknihvdjxltiqvxtqr   # newsletter_destinatari_dedup  # verificata 16/9
+supabase migration repair --status applied 20260808100000 --project-ref wacknihvdjxltiqvxtqr   # correzioni_e_account_doppi (soli commenti)  # verificata 16/9
+supabase migration repair --status applied 20260808113000 --project-ref wacknihvdjxltiqvxtqr   # traccia_modifiche_dopo_pubblicazione (soli commenti)  # verificata 16/9
+supabase migration repair --status applied 20260808140000 --project-ref wacknihvdjxltiqvxtqr   # audit_profondo_fix (soli commenti)  # verificata 16/9
+supabase migration repair --status applied 20260825150000 --project-ref wacknihvdjxltiqvxtqr   # memoria_planimetria_geo_male  # verificata 16/9
+supabase migration repair --status applied 20260826090000 --project-ref wacknihvdjxltiqvxtqr   # luoghi_cimitero_male  # verificata 16/9
+supabase migration repair --status applied 20260826095000 --project-ref wacknihvdjxltiqvxtqr   # memoria_evento_pubblico_e_persona_arricchita (superata da 20260828100000)  # verificata 16/9
+supabase migration repair --status applied 20260826100000 --project-ref wacknihvdjxltiqvxtqr   # memoria_racconto_completo  # verificata 16/9
+supabase migration repair --status applied 20260828100000 --project-ref wacknihvdjxltiqvxtqr   # recupero_schema_servizi_reparti_cruscotto  # verificata 16/9
+supabase migration repair --status applied 20260828100100 --project-ref wacknihvdjxltiqvxtqr   # recupero_cron_radar_eventi  # verificata 16/9
+supabase migration repair --status applied 20260828100200 --project-ref wacknihvdjxltiqvxtqr   # recupero_dati_riferimento  # verificata 16/9
+supabase migration repair --status applied 20260829084902 --project-ref wacknihvdjxltiqvxtqr   # archivio_audio_stretta_visibilita (superata da 20260915002255)  # verificata 16/9
 ```
+
+#### A2 da decidere con Cristian
+
+Un file solo, e non si marca finché la decisione non è presa.
+
+`20260801090000_radar_eventi_cron.sql`. Nel database non c'è niente di quello
+che crea:
+
+- la funzione `radar_chiama_edge(text, text)` non esiste in `pg_proc`;
+- i tre lavori `radar-harvest-notturno` (`30 0 * * *`),
+  `radar-classifica-notturna` (`15 1 * * *`) e `radar-digest-settimanale`
+  (`0 6 * * 1`) non esistono in `cron.job`;
+- il solo prerequisito che c'è è il segreto `ingest_token` nel Vault, presente.
+
+Il radar però funziona, per un'altra strada: i cinque lavori `radar-eventi-*`
+(jobid 15-19, migrazione `20260828100100`) chiamano `lancia_radar_eventi`,
+`lancia_radar_classifica` e `controlla_radar_eventi`, che leggono il token dal
+Vault per conto loro. Il file del 1 agosto è quindi una versione precedente e
+mai applicata della stessa idea.
+
+Le due vie:
+
+1. **Marcarlo `applied` lo stesso**, dichiarando che il suo contenuto è stato
+   superato da `20260828100100`. Il registro torna pulito, ma resta in
+   `supabase/migrations/` un file che descrive oggetti che non esistono: chi
+   ricostruisse il database dalle migrazioni si ritroverebbe tre cron doppioni
+   e una funzione in più.
+2. **Applicarlo davvero** con `db push`: crea `radar_chiama_edge` e tre cron che
+   si sovrappongono ai cinque già attivi, cioè raccolta e classificazione due
+   volte per notte. Non è quello che si vuole.
+
+La strada sensata è la prima, accompagnata dallo spostamento del file fuori da
+`supabase/migrations/` oppure dalla sua riscrittura come nota storica. Decide
+Cristian: è una rimozione, e vale la regola ferrea.
 
 ## B. Versioni nel database senza file locale (231)
 
@@ -791,8 +848,13 @@ supabase migration repair --status reverted 20260825155143 --project-ref wacknih
 1. `git pull`, `gh auth status` (account `associazioneelbrenz-ai`), `supabase login`.
 2. Sistemare le due anomalie della cartella (versione doppia, file `.bak`).
 3. Lanciare i 68 `--status applied` della sezione A1.
-4. Verificare uno per uno i 21 della sezione A2 e marcare `applied` quelli
-   confermati.
+4. I 21 della sezione A2 sono già stati verificati uno per uno il 16/9/2026:
+   18 confermate, 2 superate senza perdita, 1 senza traccia nel database.
+   Lanciare i 20 `--status applied` del blocco «A2 verificate: si possono
+   lanciare», dopo aver rinominato `20260802110000_mappa_anteprima.sql` come
+   dice il punto 2. Il ventunesimo, `20260801090000_radar_eventi_cron.sql`,
+   resta fermo finché Cristian non decide (blocco «A2 da decidere con
+   Cristian»).
 5. `supabase migration list --project-ref wacknihvdjxltiqvxtqr`: i file
    locali devono risultare tutti "applied", compresi i 5 dell'ondata 2
    (`20260915142252` … `20260915142339`, vedi nota sotto), tranne gli
