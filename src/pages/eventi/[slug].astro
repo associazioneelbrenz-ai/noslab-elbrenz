@@ -91,38 +91,93 @@ const pilastroLabel = evento.pilastro ? PILASTRO[evento.pilastro] ?? '' : '';
 // L'OG dedicata e' un asset statico committato: se l'evento e' stato
 // pubblicato dopo l'ultimo deploy la sua immagine non c'e' ancora, e si
 // ripiega sull'OG del calendario, che e' comunque in stile.
-const ogEvento = `/og/eventi/${evento.slug}.jpg`;
+//
+// [16/9/2026, audit SEO-09] Il ripiego era promesso qui sopra e non era
+// scritto da nessuna parte: la pagina dichiarava comunque il file, e ogni
+// evento pubblicato dal pannello dopo l'ultimo deploy andava in giro su
+// WhatsApp e Facebook con l'anteprima a 404 — cioe' proprio i nuovi, quelli
+// che si condividono. L'elenco delle OG presenti si costruisce durante la
+// build, quindi a ogni richiesta e' solo una ricerca in memoria.
+const OG_EVENTI_PRESENTI = new Set(
+  Object.keys(import.meta.glob('/public/og/eventi/*.jpg'))
+    .map((p) => (p.split('/').pop() ?? '').replace(/\.jpg$/i, '')),
+);
+const ogEvento = OG_EVENTI_PRESENTI.has(evento.slug)
+  ? `/og/eventi/${evento.slug}.jpg`
+  : '/og/og-eventi.jpg';
+
+/**
+ * L'ora di Roma scritta per intero (+01:00 d'inverno, +02:00 d'estate).
+ * Senza fuso un «ore 20:30» viene letto come UTC e l'appuntamento nei
+ * risultati di ricerca scivola di un'ora o due: chi arriva, arriva tardi.
+ * L'ora legale la decide il fuso, non un calendario scritto a mano.
+ */
+function offsetRoma(giorno: string): string {
+  const d = new Date(`${giorno}T12:00:00Z`);
+  const parti = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Rome', timeZoneName: 'longOffset',
+  }).formatToParts(d);
+  const nome = parti.find((p) => p.type === 'timeZoneName')?.value ?? '';
+  const off = nome.replace('GMT', '');
+  return /^[+-]\d{2}:\d{2}$/.test(off) ? off : '+01:00';
+}
 
 const descrizioneMeta = (evento.descrizione ?? `${quando}${dove ? ` · ${dove}` : ''}`)
   .replace(/\s+/g, ' ')
   .slice(0, 200);
 
 // JSON-LD: l'evento come lo capiscono i motori di ricerca.
+// [16/9/2026, audit SEO-09] eventStatus resta fisso su EventScheduled perche'
+// il dato non esiste: la vista eventi_esterni_pubblici espone solo gli eventi
+// gia' pubblicati e non ha una colonna per «annullato» o «rinviato». Il giorno
+// che il Radar imparera' a dirlo, qui va letta quella colonna.
 const schemaEvento: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'Event',
   name: evento.titolo,
-  startDate: evento.ora_inizio ? `${evento.data_inizio}T${evento.ora_inizio}` : evento.data_inizio,
+  startDate: evento.ora_inizio
+    ? `${evento.data_inizio}T${evento.ora_inizio}${offsetRoma(evento.data_inizio)}`
+    : evento.data_inizio,
   eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
   eventStatus: 'https://schema.org/EventScheduled',
   url: new URL(`/eventi/${evento.slug}`, Astro.site).toString(),
   image: new URL(ogEvento, Astro.site).toString(),
 };
-if (evento.data_fine) schemaEvento.endDate = evento.data_fine;
+// La fine: se c'e' l'ora di chiusura vale anche per una giornata sola.
+const giornoFine = evento.data_fine ?? (evento.ora_fine ? evento.data_inizio : null);
+if (giornoFine) {
+  schemaEvento.endDate = evento.ora_fine
+    ? `${giornoFine}T${evento.ora_fine}${offsetRoma(giornoFine)}`
+    : giornoFine;
+}
 if (evento.descrizione) schemaEvento.description = evento.descrizione;
 if (evento.organizzatore) {
   schemaEvento.organizer = { '@type': 'Organization', name: evento.organizzatore };
 }
-if (dove) {
-  schemaEvento.location = {
-    '@type': 'Place',
-    name: evento.luogo ?? evento.comune ?? 'Valli del Noce',
-    address: {
-      '@type': 'PostalAddress',
-      addressLocality: evento.comune ?? undefined,
-      addressRegion: VALLE[evento.valle ?? ''] ?? 'Trentino',
-      addressCountry: 'IT',
-    },
+// Il luogo c'e' sempre: un Event senza location non e' un appuntamento per
+// nessun motore di ricerca. Quando del posto preciso non sappiamo niente,
+// diciamo almeno le valli, che e' vero e non e' poco.
+schemaEvento.location = {
+  '@type': 'Place',
+  name: evento.luogo ?? evento.comune ?? VALLE[evento.valle ?? ''] ?? 'Valli del Noce',
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: evento.comune ?? undefined,
+    addressRegion: 'TN',
+    addressCountry: 'IT',
+  },
+};
+// Il prezzo come lo abbiamo: `gratuito` e `offerta` sono zero all'ingresso,
+// e questo si puo' dichiarare. `pagamento` no: la cifra la fonte non la dice,
+// e un importo inventato in un dato strutturato e' peggio di un dato assente.
+if (evento.prezzo === 'gratuito' || evento.prezzo === 'offerta') {
+  schemaEvento.offers = {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'EUR',
+    availability: 'https://schema.org/InStock',
+    url: new URL(`/eventi/${evento.slug}`, Astro.site).toString(),
+    ...(evento.prezzo === 'offerta' ? { description: 'Ingresso a offerta libera' } : {}),
   };
 }
 ---

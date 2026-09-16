@@ -27,6 +27,7 @@
  */
 
 import Layout from './Layout.astro';
+import { jsonPerScript } from '../lib/jsonPerScript';
 
 interface Props {
   title: string;
@@ -48,6 +49,11 @@ interface Props {
   heroAlt?: string;
   heroCaption?: string;
   description?: string;
+  /** [16/9/2026, audit SEO-07] I nodi JSON-LD dell'articolo. Prima li scriveva
+   *  la pagina PRIMA di chiamare questo layout, e nel costruito finivano fra il
+   *  DOCTYPE e il tag html: un posto dove per l'HTML non ci puo' stare niente.
+   *  Passandoli di qui escono dentro il documento, dove li si cerca. */
+  jsonLd?: unknown[];
 }
 
 const {
@@ -65,6 +71,7 @@ const {
   heroAlt,
   heroCaption,
   description,
+  jsonLd = [],
 } = Astro.props;
 
 // Auto-deriva path WebP/mobile dalle estensioni jpg — solo quando c'è un hero
@@ -80,6 +87,10 @@ const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
 ---
 <Layout title={titoloSeo || title} description={description || subtitle || title} ogType="article" ogImage={ogImage || heroImage} noindex={noindex} publishedTime={publishedTime}>
 
+  {jsonLd.map((nodo) => (
+    <script type="application/ld+json" set:html={jsonPerScript(nodo)} />
+  ))}
+
   <article class="article">
 
     {heroImage ? (
@@ -93,7 +104,7 @@ const heroImageMobileWebp = heroImageMobileJpg.replace(/\.jpe?g$/i, '.webp');
             <source type="image/webp" srcset={heroImageWebp} />
           </>
         )}
-        <img src={heroImage} alt={heroAlt} class="w-full h-full object-cover" loading="eager" fetchpriority="high" />
+        <img src={heroImage} alt={heroAlt ?? ''} class="w-full h-full object-cover" loading="eager" fetchpriority="high" />
       </picture>
 
       <div class="absolute inset-0" style="background: linear-gradient(180deg, rgba(15,15,15,0.40) 0%, rgba(15,15,15,0.55) 50%, rgba(15,15,15,0.85) 100%);"></div>

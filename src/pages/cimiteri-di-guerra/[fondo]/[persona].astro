@@ -93,7 +93,10 @@ const jsonLd = persona.ignoto ? null : {
   '@type': 'Person',
   name: persona.nome_completo,
   deathDate: persona.data_morte ?? undefined,
-  birthYear: persona.anno_nascita ?? undefined,
+  // [16/9/2026, audit SEO-18] Era `birthYear`, che in schema.org non esiste:
+  // il vocabolario ha `birthDate`, e accetta anche la data parziale del solo
+  // anno. Di questi ragazzi spesso l'anno e' tutto cio' che resta.
+  birthDate: persona.anno_nascita ? String(persona.anno_nascita) : undefined,
   birthPlace: persona.luogo_nascita ?? undefined,
 };
 

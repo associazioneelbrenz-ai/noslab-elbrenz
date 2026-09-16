@@ -37,7 +37,11 @@ if (id && /^[0-9a-fA-F-]{36}$/.test(id)) {
     s = (data as Storia) ?? null;
   } catch (e) { console.error('[storia] lettura fallita:', e); }
 }
-if (!s) return Astro.redirect('/storie');
+// [16/9/2026, audit SEO-15] Uno slug che non esiste non e' un invito a
+// tornare all'indice: e' un indirizzo che non c'e'. Il 302 diceva ai motori
+// «la pagina si e' spostata li'», e l'indice si riempiva di doppioni fantasma
+// (soft-404). Ora si risponde come fanno gia' articoli ed eventi.
+if (!s) return new Response(null, { status: 404, statusText: 'Storia non trovata' });
 
 /**
  * [13/8/2026] IL TESTO DENTRO LE FOTOGRAFIE DELLE PAGINE.
@@ -77,7 +81,7 @@ const ogStoria = `/og/storie/${s.id}.jpg`;
 ---
 
 <Layout title={`${s.titolo} · Storie El Brenz`} description={descr} ogImage={ogStoria}>
-  <main class="bg-[#F8F1E4] min-h-screen">
+  <section class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
       <p class="mb-6"><a href="/storie" class="text-[#8a6215] text-sm no-underline hover:underline" style="font-family: 'Inter', sans-serif;">← Storie dalle valli</a></p>
 
@@ -121,5 +125,5 @@ const ogStoria = `/og/storie/${s.id}.jpg`;
         <Condividi titolo={s.titolo} testo={`Una storia dalle Valli del Noce, di ${s.autore_nome}.`} />
       </div>
     </div>
-  </main>
+  </section>
 </Layout>

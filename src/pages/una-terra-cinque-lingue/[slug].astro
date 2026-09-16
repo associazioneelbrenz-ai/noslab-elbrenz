@@ -10,7 +10,7 @@
  * Attributi lang per accessibilità: l'HTML renderizzato (entry.rendered.html
  * del Content Layer) viene suddiviso sui tre heading fissi e ogni sezione è
  * avvolta in un <section lang="...">. NB: il brief chiedeva lang="lad", ma
- * "lad" è il codice ISO del giudeo-spagnolo: si usa "lld-anau" (ladino,
+ * "lad" è il codice ISO del giudeo-spagnolo: si usa "lld-x-anau" (ladino,
  * variante anaunica), già convenzione del sito (motto in home). Se un
  * heading manca, fallback: contenuto intero senza wrapper (pagina comunque
  * funzionante).
@@ -31,7 +31,7 @@ const { uscita } = Astro.props;
 await render(uscita); // popola uscita.rendered per il loader glob
 
 const SEZIONI = [
-  { id: 'ladin-anaunic', label: 'Ladin anaunic', lang: 'lld-anau' },
+  { id: 'ladin-anaunic', label: 'Ladin anaunic', lang: 'lld-x-anau' },
   { id: 'italiano', label: 'Italiano', lang: 'it' },
   { id: 'deutsch', label: 'Deutsch', lang: 'de' },
 ] as const;
@@ -65,7 +65,7 @@ if (indici.every((i) => i >= 0) && indici[0] < indici[1] && indici[1] < indici[2
       <h1
         class="text-3xl md:text-5xl leading-[1.12] tracking-tight m-0 mb-3"
         style="font-family: 'Playfair Display', serif; font-weight: 500;"
-        lang="lld-anau"
+        lang="lld-x-anau"
       >
         {uscita.data.titolo_lad}
       </h1>

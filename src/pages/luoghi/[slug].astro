@@ -50,7 +50,11 @@ const { data: luogo } = await supabase
   .eq('slug', slug)
   .maybeSingle<Luogo>();
 
-if (!luogo) return Astro.redirect('/luoghi', 302);
+// [16/9/2026, audit SEO-15] Uno slug che non esiste non e' un invito a
+// tornare all'indice: e' un indirizzo che non c'e'. Il 302 diceva ai motori
+// «la pagina si e' spostata li'», e l'indice si riempiva di doppioni fantasma
+// (soft-404). Ora si risponde come fanno gia' articoli ed eventi.
+if (!luogo) return new Response(null, { status: 404, statusText: 'Luogo non trovato' });
 
 // Attestazioni storiche (§6.3 brief 23/8): dalla piu' antica. RLS pubblica
 // gia' filtra sui soli luoghi pubblicati (luogo_e_pubblico), qui non serve
@@ -106,8 +110,18 @@ const titoloSeo = `${luogo.nome} · ${valleLabel} | El Brenz`;
 const descrizione = luogo.meta_description || luogo.descrizione_breve ||
   `${luogo.nome}, ${categoriaLabel.toLowerCase()} in ${valleLabel}. Coordinate, mappa e come arrivare.`;
 
+// [16/9/2026, audit SEO-13] La fotografia del luogo, quando c'e', e' l'unica
+// anteprima onesta: finora anche i luoghi con le foto uscivano su WhatsApp e
+// Facebook con la cartolina generica del sito, tutti uguali fra loro.
+const ogLuogo = luogo.immagini_urls?.[0] || undefined;
+
 // Dati strutturati Place: e' cio' che rende il luogo comprensibile alle mappe
 // e alle ricerche locali.
+// [16/9/2026, audit SEO-18] Due correzioni ai campi. `image` mancava del tutto
+// pur avendo le fotografie a portata di mano. E `addressRegion` portava il nome
+// della valle: la valle e' un luogo che contiene, non la ripartizione
+// amministrativa che quel campo si aspetta, e infatti nessuna mappa sapeva che
+// farsene. La valle ora si dichiara dove si capisce, in containedInPlace.
 const schemaPlace = {
   '@context': 'https://schema.org',
   '@type': 'Place',
@@ -115,13 +129,15 @@ const schemaPlace = {
   ...([luogo.nome_ladino, luogo.nome_tedesco].filter(Boolean).length
     ? { alternateName: [luogo.nome_ladino, luogo.nome_tedesco].filter(Boolean) } : {}),
   description: descrizione,
+  ...(luogo.immagini_urls?.length ? { image: luogo.immagini_urls } : {}),
   geo: { '@type': 'GeoCoordinates', latitude: luogo.lat, longitude: luogo.lng },
-  address: { '@type': 'PostalAddress', addressRegion: valleLabel, addressCountry: 'IT' },
+  address: { '@type': 'PostalAddress', addressRegion: 'TN', addressCountry: 'IT' },
+  containedInPlace: { '@type': 'Place', name: valleLabel },
   url: `https://elbrenz.eu/luoghi/${luogo.slug}`,
 };
 ---
 
-<Layout title={titoloSeo} description={descrizione}>
+<Layout title={titoloSeo} description={descrizione} ogImage={ogLuogo}>
   <script type="application/ld+json" set:html={jsonPerScript(schemaPlace)} />
   <script type="application/ld+json" set:html={jsonPerScript(schemaBreadcrumb([
     { nome: 'El Brenz', url: '/' },

@@ -39,16 +39,22 @@ Disallow: /tessera/
 Disallow: /guardiani/conferma
 Disallow: /newsletter/conferma
 Disallow: /newsletter/disiscrizione
-
-# Le quattro curatele che ancora NON hanno il noindex nella pagina (audit
-# SEO-04: /guardiani-curatela, /convenzioni-curatela, /custodi-curatela,
-# /museo-gg-curatela). Finche' non ce l'hanno, il Disallow e' l'unica cosa
-# che le tiene fuori e resta dov'e': toglierlo adesso vorrebbe dire aprirle.
-# Il giorno che il noindex arriva, queste quattro righe se ne vanno.
 Disallow: /guardiani-curatela
 Disallow: /convenzioni-curatela
-Disallow: /custodi-curatela
-Disallow: /museo-gg-curatela
+
+# [16/9/2026, ondata 3] Il noindex e' arrivato, e le quattro righe delle
+# curatele se ne sono andate come promesso. Non tutte allo stesso modo, pero',
+# perche' le quattro curatele non erano la stessa cosa:
+#
+#   - /custodi-curatela e /museo-gg-curatela sono pannelli interni con un
+#     indirizzo qualunque: ora portano il noindex nella pagina e il Disallow
+#     e' sparito, cosi' il motore entra, lo legge e le lascia fuori per sempre.
+#
+#   - /guardiani-curatela e /convenzioni-curatela si aprono con un gettone
+#     firmato e valgono una decisione presa al posto del Direttivo: sono
+#     collegamenti firmati, quindi hanno traslocato due righe piu' su, dove
+#     stanno i loro pari, e alla regola di quelli si sono aggiunte il
+#     noindex nella pagina e l'X-Robots-Tag sulla risposta.
 
 # Rotta non servita da questo sito: l'app dei soci vive su un sottodominio
 # suo. Riga inerte, tenuta per prudenza.

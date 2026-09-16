@@ -12,9 +12,12 @@ import AndreasChat from '../../components/andreas/AndreasChat.astro';
 const pageTitle = 'Andreas · Assistente digitale';
 const pageDescription = 'Chiedi ad Andreas della storia, della lingua e della cultura delle Valli del Noce. Storia tirolese, ladino anaunico, Guerre Rustiche, costumi solandri.';
 
-// Open Graph: usa il master Andreas come immagine social (1200×630 ideale, ma
-// qui passiamo il PNG quadrato che funziona comunque su Facebook/LinkedIn/WhatsApp)
-const ogImage = '/assets/branding/andreas/andreas-sorriso-master.png';
+// Open Graph. [16/9/2026, audit SEO-13] Fino a ieri qui passava il master di
+// Andreas: un PNG quadrato da 2048 pixel e 2,5 MB. WhatsApp e Telegram le
+// anteprime cosi' pesanti le scartano e basta, e la pagina finiva in giro
+// spoglia. La versione giusta esisteva gia' in public/og, 1200×630 e 87 KB:
+// e' quella che si usa. Il master resta dov'e', serve altrove.
+const ogImage = '/og/og-andreas.jpg';
 ---
 
 <Layout
@@ -22,7 +25,7 @@ const ogImage = '/assets/branding/andreas/andreas-sorriso-master.png';
   description={pageDescription}
   ogImage={ogImage}
 >
-  <main class="andreas-page">
+  <section class="andreas-page">
     <AndreasChat />
     {/* [funnel 2/8] Una riga sola, sempre visibile, mai in mezzo alla
         conversazione: il momento della richiesta e' il limite o questo pie'
@@ -50,7 +53,7 @@ const ogImage = '/assets/branding/andreas/andreas-sorriso-master.png';
         } catch (_) {}
       })();
     </script>
-  </main>
+  </section>
 </Layout>
 
 <style>

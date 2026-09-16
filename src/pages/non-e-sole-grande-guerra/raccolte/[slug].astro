@@ -57,7 +57,11 @@ try {
   console.error('[raccolte/slug] lettura fallita:', e);
 }
 
-if (!raccolta) return Astro.redirect('/non-e-sole-grande-guerra', 302);
+// [16/9/2026, audit SEO-15] Uno slug che non esiste non e' un invito a
+// tornare all'indice: e' un indirizzo che non c'e'. Il 302 diceva ai motori
+// «la pagina si e' spostata li'», e l'indice si riempiva di doppioni fantasma
+// (soft-404). Ora si risponde come fanno gia' articoli ed eventi.
+if (!raccolta) return new Response(null, { status: 404, statusText: 'Raccolta non trovata' });
 
 const TIPO: Record<string, string> = {
   foto: 'Fotografia', fotografia: 'Fotografia', cartolina: 'Cartolina',
@@ -97,7 +101,7 @@ const jsonLd = {
 >
   <script type="application/ld+json" set:html={jsonPerScript(jsonLd)} />
 
-  <main class="bg-[#F8F1E4] min-h-screen">
+  <section class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
 
       <a href="/non-e-sole-grande-guerra"
@@ -162,5 +166,5 @@ const jsonLd = {
       </p>
 
     </div>
-  </main>
+  </section>
 </Layout>

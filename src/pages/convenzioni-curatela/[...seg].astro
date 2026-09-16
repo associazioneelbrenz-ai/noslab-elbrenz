@@ -11,6 +11,12 @@ import Layout from '../../layouts/Layout.astro';
 
 export const prerender = false;
 
+// [16/9/2026, audit SEO-04] Indirizzo con gettone firmato: fuori dagli indici
+// per due vie, come gia' fanno /tessera e /integrazione. L'intestazione vale
+// per la risposta (anche quando nessuno rende l'HTML), il noindex nel markup
+// vale per chi la pagina la legge davvero.
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+
 const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
 const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
 // seg atteso: azione/{approva|rifiuta}/{id}/{exp}/{token}
@@ -21,14 +27,14 @@ const valido = (azione === 'approva' || azione === 'rifiuta')
 const EDGE = valido ? `${SB_URL}/functions/v1/convenzioni-proposta/json/azione/${azione}/${_id}/${_exp}/${_token}` : '';
 ---
 
-<Layout title="Curatela · Convenzioni" description="Curatela delle proposte di convenzione, riservata al Direttivo El Brenz." ogImage="/og/og-default.jpg">
-  <main class="bg-[#F8F1E4] min-h-screen flex items-start justify-center px-4 py-12">
+<Layout title="Curatela · Convenzioni" description="Curatela delle proposte di convenzione, riservata al Direttivo El Brenz." ogImage="/og/og-default.jpg" noindex={true}>
+  <section class="bg-[#F8F1E4] min-h-screen flex items-start justify-center px-4 py-12">
     <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9" style="font-family: 'Inter', sans-serif;"
          data-edge={EDGE} data-azione={azione} id="cur-card">
       <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · Convenzioni · curatela</p>
       <div id="cur-body"><p class="text-[#1E2E26]/70 m-0">Carico…</p></div>
     </div>
-  </main>
+  </section>
 </Layout>
 
 <script>

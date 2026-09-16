@@ -1,5 +1,4 @@
 ---
-import { jsonPerScript } from '../../lib/jsonPerScript';
 /**
  * /articoli/[slug] — pagina di dettaglio di un singolo articolo.
  *
@@ -101,9 +100,8 @@ const ldBreadcrumb = schemaBreadcrumb([
   { nome: articolo.titolo, url: `/articoli/${articolo.slug}` },
 ]);
 ---
-<script type="application/ld+json" set:html={jsonPerScript(ldArticle)} />
-<script type="application/ld+json" set:html={jsonPerScript(ldBreadcrumb)} />
 <ArticleLayout
+  jsonLd={[ldArticle, ldBreadcrumb]}
   title={articolo.titolo}
   titoloSeo={titoloPagina}
   pillar={pillar || undefined}

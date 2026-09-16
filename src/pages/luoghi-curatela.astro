@@ -55,7 +55,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
 ---
 
 <Layout title="Luoghi · El Brenz" description="Area riservata: censimento dei luoghi di interesse storico e culturale delle Valli del Noce." ogImage="/og/og-default.jpg" noindex={true}>
-  <main class="bg-[#F8F1E4] min-h-screen">
+  <section class="bg-[#F8F1E4] min-h-screen">
     <div class="max-w-4xl mx-auto px-6 py-12 md:py-16" style="font-family: 'Inter', sans-serif;">
       <p class="text-[11px] tracking-[0.22em] uppercase text-[#8a6215] font-semibold m-0 mb-2">Area riservata · Direttivo e curatela</p>
       <h1 class="text-3xl md:text-4xl text-[#1E2E26] m-0 mb-3" style="font-family: 'Playfair Display', serif; font-weight: 500;">
@@ -188,7 +188,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
               <div class="grid md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label class={labelCls} for="lg-nome-ladino">Nome in ladino anaunico</label>
-                  <input id="lg-nome-ladino" type="text" class={inputCls} maxlength="120" lang="lld-anau" />
+                  <input id="lg-nome-ladino" type="text" class={inputCls} maxlength="120" lang="lld-x-anau" />
                 </div>
                 <div>
                   <label class={labelCls} for="lg-parlata">Parlata</label>
@@ -285,7 +285,7 @@ const labelCls = 'block text-[12px] tracking-[0.08em] uppercase text-[#8a6215] f
         </div>
       </section>
     </div>
-  </main>
+  </section>
 </Layout>
 
 <script>

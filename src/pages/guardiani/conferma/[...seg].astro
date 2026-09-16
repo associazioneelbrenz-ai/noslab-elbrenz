@@ -16,6 +16,12 @@ import Layout from '../../../layouts/Layout.astro';
 
 export const prerender = false;
 
+// [16/9/2026, audit SEO-04] Indirizzo con gettone firmato: fuori dagli indici
+// per due vie, come gia' fanno /tessera e /integrazione. L'intestazione vale
+// per la risposta (anche quando nessuno rende l'HTML), il noindex nel markup
+// vale per chi la pagina la legge davvero.
+Astro.response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+
 const SB_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
 const seg = (Astro.params.seg ?? '').split('/').filter(Boolean);
 const [id, token] = seg;
@@ -27,8 +33,9 @@ const EDGE = valido ? `${SB_URL}/functions/v1/guardiani-contributo/conferma-news
   title="Conferma iscrizione · Guardiani de la lenga"
   description="Conferma dell'iscrizione agli aggiornamenti sul glossario del ladino anaunico."
   ogImage="/og/og-default.jpg"
+  noindex={true}
 >
-  <main class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
+  <section class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
     <div
       id="gc-card"
       data-edge={EDGE}
@@ -41,7 +48,7 @@ const EDGE = valido ? `${SB_URL}/functions/v1/guardiani-contributo/conferma-news
         <p class="text-[#1E2E26]/70 m-0">Confermo l'iscrizione…</p>
       </div>
     </div>
-  </main>
+  </section>
 </Layout>
 
 <script>

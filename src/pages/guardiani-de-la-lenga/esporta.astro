@@ -81,7 +81,7 @@ const oggi = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'lo
   ogImage="/og/og-guardiani.jpg"
   noindex={true}
 >
-  <main class="bg-white min-h-screen">
+  <div class="bg-white min-h-screen">
     <div class="max-w-3xl mx-auto px-6 py-10 md:py-14">
 
       <div class="gc-nostampa">
@@ -129,7 +129,7 @@ const oggi = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'lo
             {gruppo.righe.map((v) => (
               <div class="mb-4 break-inside-avoid">
                 <dt class="m-0">
-                  <span class="text-lg text-[#1E2E26]" style="font-family: 'Playfair Display', serif;" lang="lld-anau">{v.termine}</span>
+                  <span class="text-lg text-[#1E2E26]" style="font-family: 'Playfair Display', serif;" lang="lld-x-anau">{v.termine}</span>
                   <span class="text-[12px] text-[#1E2E26]/55 ml-2" style="font-family: 'Inter', sans-serif;">
                     {[v.categoria_gramm, v.comune].filter(Boolean).join(' · ')}
                   </span>
@@ -137,7 +137,7 @@ const oggi = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'lo
                 <dd class="m-0 ml-0 text-[#1E2E26]/90" style="font-family: 'Source Serif 4', Georgia, serif;">
                   {v.significato_it}
                   {v.esempio_uso && (
-                    <span class="block text-[#1E2E26]/70 italic" lang="lld-anau">« {v.esempio_uso} »</span>
+                    <span class="block text-[#1E2E26]/70 italic" lang="lld-x-anau">« {v.esempio_uso} »</span>
                   )}
                   {v.etimologia && (
                     <span class="block text-[13px] text-[#1E2E26]/65">Etimologia: {v.etimologia}</span>
@@ -162,7 +162,7 @@ const oggi = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'lo
         Raìs fonde no le ’nglacia · Associazione El Brenz APS · info@elbrenz.eu
       </p>
     </div>
-  </main>
+  </div>
 </Layout>
 
 <style>
