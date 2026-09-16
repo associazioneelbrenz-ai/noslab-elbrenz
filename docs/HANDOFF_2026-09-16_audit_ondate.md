@@ -51,10 +51,30 @@ Indice del corso senza i testi delle lezioni e cache di tre minuti
 letture del forum in parallelo, avvio con ruolo e 2FA insieme. Build e
 lint puliti.
 
+## 2-bis. Ondata 3, chiusa il 16 settembre (solo nel repository)
+
+| Commit | Contenuto |
+|---|---|
+| `ebf9797` | SEO del Layout e della configurazione: glossario indicizzabile per difetto, un solo predicato per le traduzioni, glossario e storie dichiarati in sitemap, marchio una volta sola nel titolo, description a 155, hreflang non piu' sulle pagine noindex |
+| `19aae03` | SEO delle pagine di dettaglio: curatele fuori dagli indici, un solo `<main>` per pagina su 38 pagine, 404 veri al posto dei redirect, dati strutturati di eventi e luoghi, tag della lingua ladina corretto in 46 occorrenze |
+| `01478d8` | Prestazioni: 43 copie dello stesso script diventano una, cache di bordo su 26 rotte pubbliche e nessuna personale, service worker con la cache vecchia che ora sparisce davvero, timbro di versione scritto anche da `npx astro build` |
+| `8cca3c4` | Trenta pagine dichiaravano un'anteprima social che non esisteva |
+
+Correzioni su lavoro gia' consegnato, fatte lo stesso giorno: `b17408c` (il
+consenso dei Guardiani che registrava un rifiuto al posto di un si', gia' in
+produzione) e `f90e514` (gate del deploy e Trappola 19 nel CLAUDE.md).
+
+Emerso tirando il filo della rilettura: **il salvataggio settimanale non ha
+mai prodotto un backup**, e il promemoria che doveva dirlo e' a sua volta
+guasto. Rapporto con le prove: `docs/REPORT_battito_2026-09-16.md`.
+
+**La lista ordinata di cosa fare dall'Air sta in
+`docs/DA_FARE_DALL_AIR_2026-09-16.md`.**
+
 ## 3. Cosa resta, in ordine
 
-1. **Deploy del sito dall'Air** per `5299e77`/`e8f77fd` (`versione.json`
-   atteso `e8f77fd`), con il gate sull'anon key prima di `netlify deploy`.
+1. **Deploy del sito dall'Air**, ora fino a `8cca3c4` (`versione.json`
+   atteso `8cca3c4`), con il gate sull'anon key prima di `netlify deploy`.
    Smoke test: chat di Andreas (librerie da `/vendor/`), logout dopo due
    ricariche di una pagina riservata, iscrizione vera alla newsletter,
    date sulle pagine privacy e cookie policy.
