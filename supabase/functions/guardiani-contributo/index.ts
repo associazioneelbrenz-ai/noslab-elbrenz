@@ -162,8 +162,22 @@ Deno.serve(async (req: Request) => {
     }
     const gia = contrib.marketing_double_optin === true;
     if (!gia) {
+      // [16/9/2026] IL CONSENSO SI ACCENDE QUI, NON NEL MODULO.
+      //
+      // Dal 15/9 (audit SIC-05) il modulo pubblico non riscrive piu' i consensi
+      // di un contributore gia' noto: giusto, perche' bastava conoscere una
+      // email per cambiarli. Ma cosi' `consenso_marketing` non si accendeva
+      // piu' per nessuno dei gia' noti, e newsletter-broadcast li pretende
+      // tutti e due (consenso_marketing E marketing_double_optin): chiedevamo
+      // a una persona di confermare, lei confermava, e noi registravamo un
+      // rifiuto. Verificato il 16/9: tre contributori in attesa di conferma.
+      //
+      // Il posto giusto per accenderlo e' questo, ed e' anche il piu' sicuro:
+      // qui ci arriva solo chi ha in mano il gettone spedito al SUO indirizzo,
+      // quindi nessuno puo' iscrivere un altro. Il modulo pubblico resta come
+      // l'ha lasciato SIC-05 e non tocca niente.
       await supabase.from('guardiani_contributori')
-        .update({ marketing_double_optin: true, marketing_confermato_il: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .update({ consenso_marketing: true, marketing_double_optin: true, marketing_confermato_il: new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq('id', id);
     }
     return json({ ok: true, gia }, 200, c);
@@ -377,6 +391,8 @@ Deno.serve(async (req: Request) => {
   // email poteva cambiarli, o spegnere il marketing a un iscritto confermato.
   // Per chi esiste si aggiornano solo la data e il token marketing se non ce
   // n'era uno; l'upsert resta com'era per i contributori nuovi.
+  // [16/9/2026] `consenso_marketing` di un gia' noto si accende alla conferma
+  // del doppio opt-in, non qui: vedi il ramo conferma-newsletter in testa.
   const scritturaContributore = contribEsistente
     ? supabase.from('guardiani_contributori').update({
         ...(marketingToken && !contribEsistente.marketing_token ? { marketing_token: marketingToken } : {}),
