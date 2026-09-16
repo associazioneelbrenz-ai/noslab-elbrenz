@@ -294,6 +294,18 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     <link rel="dns-prefetch" href="https://wacknihvdjxltiqvxtqr.supabase.co" />
     <link rel="preload" href="/fonts/playfair-display.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    {/* [16/9/2026, audit PERF-13] Il terzo font mancante. Source Serif 4 e' il
+        corpo del testo, ma il browser lo scopriva solo dopo aver letto il CSS:
+        i paragrafi partivano con il font di ripiego e cambiavano sotto gli
+        occhi di chi legge. Preannunciarlo qui lo mette in coda insieme agli
+        altri due. */}
+    <link rel="preload" href="/fonts/source-serif-4.woff2" as="font" type="font/woff2" crossorigin />
+    {/* [16/9/2026, audit PERF-03] Una feritoia nella testa della pagina, per
+        chi ha qualcosa da far partire prima del corpo: oggi la usa solo la
+        home, per annunciare la foto del lago che e' il suo elemento piu'
+        grande. Chi non passa niente non trova niente: la feritoia resta
+        vuota e l'HTML di tutte le altre pagine e' identico a prima. */}
+    <slot name="testa" />
   </head>
   <body class="bg-[#F8F1E4] text-[#0F0F0F] min-h-screen flex flex-col">
 
@@ -307,9 +319,16 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
       <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-14">
 
         <div class="flex items-start gap-5">
+          {/* [16/9/2026, audit PERF-06] Il timbro si vede a 80 pixel, e fin qui
+              per mostrarlo si scaricava un file da 800 pixel e 185 KB su ogni
+              pagina, retina o no. Lo stesso disegno, nella stessa tinta crema,
+              esiste gia' a 256 pixel e 22 KB in assets/branding/logo: 256 basta
+              e avanza anche per uno schermo a tre volte la densita', quindi una
+              sola candidata copre tutti i casi e la seconda densita' non serve
+              piu' dichiararla. I due file grandi restano dove sono. */}
           <img
-            src="/logo-eb-footer.png"
-            srcset="/logo-eb-footer.png 1x, /logo-eb-footer@2x.png 2x"
+            src="/assets/branding/logo/logo-eb-256-crema.png"
+            srcset="/assets/branding/logo/logo-eb-256-crema.png 1x"
             alt="Timbro Associazione El Brenz"
             width="80"
             height="80"

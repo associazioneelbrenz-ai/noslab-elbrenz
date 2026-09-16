@@ -349,6 +349,15 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
   title="El Brenz da le Val del Nos"
   description="Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce. Custodiamo la lingua ladino-anaunica e la storia di Val di Non, Val di Sole, Val di Rabbi e Val di Pejo."
 >
+  {/* [16/9/2026, audit PERF-03] La foto del lago e' l'elemento piu' grande
+      della home: annunciarla qui la fa partire insieme al foglio di stile,
+      invece che quando il parser arriva alla sezione. Le due condizioni di
+      schermo e il tipo ricalcano una per una le source del picture piu' sotto:
+      se divergessero, il browser scaricherebbe due immagini invece di una. */}
+  <Fragment slot="testa">
+    <link rel="preload" as="image" href="/hero-lago-mobile.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high" />
+    <link rel="preload" as="image" href="/hero-lago.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high" />
+  </Fragment>
 
   {/* A5 — dati strutturati dell'ente (una sola volta, in home) */}
   <script type="application/ld+json" set:html={jsonPerScript(schemaOrganization())} />
@@ -897,6 +906,8 @@ const PILL_TENUE = "text-[11px] tracking-[0.14em] uppercase border border-[#F5EE
       src={OG_CIMITERI_ORIZZONTALE}
       alt=""
       aria-hidden="true"
+      width="1200"
+      height="630"
       class="absolute inset-0 w-full h-full object-cover opacity-30"
       loading="lazy" decoding="async"
     />

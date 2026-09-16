@@ -318,6 +318,30 @@ export default defineConfig({
   },
 
   integrations: [
+    // [16/9/2026, audit PERF-16] Il timbro di versione dentro la build.
+    // `versione.json` nasceva solo nello script `prebuild` di package.json:
+    // `npm run build` lo esegue, `npx astro build` no. Chi lanciava il comando
+    // corto pubblicava un sito senza timbro, e il controllo della Trappola 17
+    // (l'hash vivo letto da /versione.json contro quello atteso) non aveva
+    // piu' niente da leggere: la verifica del deploy restava muta proprio
+    // quando serviva. Ora lo scrive la build stessa, comunque la si avvii.
+    // Lo `prebuild` resta dov'e': lo script e' idempotente, e la' dentro ci
+    // sono anche le OG card, che `npx astro build` continua a non rigenerare
+    // (riusa quelle committate — e va bene cosi').
+    {
+      name: 'elbrenz-timbro-versione',
+      hooks: {
+        'astro:config:setup': async () => {
+          try {
+            await import('./scripts/scrivi-versione.mjs');
+          } catch (e) {
+            // Stessa scelta dello script: un timbro mancante e' meno grave
+            // di un sito che non si costruisce.
+            console.warn('[versione] timbro non scritto:', e?.message ?? e);
+          }
+        },
+      },
+    },
     react(),
     // Sitemap con hreflang per-locale (solo lingue con pagine: it/de/en).
     // Esclude le pagine DE/EN finché le traduzioni non sono "live": restano

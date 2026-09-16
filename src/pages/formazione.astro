@@ -16,6 +16,20 @@ import PaginaIstituzionale from '../components/PaginaIstituzionale.astro';
 
 export const prerender = false;
 
+// [16/9/2026, audit PERF-05] Cache di bordo, come gia' fanno la home e le
+// schede del glossario. Questa pagina e' pubblica e uguale per tutti: non
+// legge la sessione, non guarda i cookie, mostra solo viste pubbliche. Con
+// `s-maxage` Netlify risponde dal bordo invece di risvegliare la funzione a
+// ogni visita, e `stale-while-revalidate` fa servire la copia vecchia mentre
+// quella nuova si prepara, cosi' nessuno aspetta il database.
+// Il giorno che qui dentro comparisse qualcosa che dipende da chi guarda,
+// queste righe vanno tolte PRIMA di quel giorno, non dopo.
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
+Astro.response.headers.set(
+  'Netlify-CDN-Cache-Control',
+  'public, s-maxage=300, stale-while-revalidate=86400',
+);
+
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 
 type Lezione = { titolo: string; durata_min: number | null };
@@ -62,7 +76,7 @@ try {
         <article>
           {c.immagine_copertina_url && (
             <div class="mb-6 -mx-6 md:mx-0 md:rounded-lg overflow-hidden aspect-video">
-              <img src={c.immagine_copertina_url} alt={'Immagine di copertina del corso ' + c.titolo} class="w-full h-full object-cover" loading="lazy" />
+              <img src={c.immagine_copertina_url} alt={'Immagine di copertina del corso ' + c.titolo} width="1600" height="900" class="w-full h-full object-cover" loading="lazy" />
             </div>
           )}
           <h2 class="text-2xl md:text-3xl text-[#1E2E26] m-0 mb-2" style="font-family: 'Playfair Display', serif; font-weight: 500;">{c.titolo}</h2>

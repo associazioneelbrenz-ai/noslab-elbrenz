@@ -28,6 +28,10 @@ export const GET: APIRoute = async () => {
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'public, max-age=300',
+      // [16/9/2026, audit PERF-05] Anche il bordo Netlify tiene la risposta:
+      // qui non c'e' niente di personale (eventi pubblici, gia' filtrati da
+      // bozza e annullati) e il bot Telegram la chiede spesso.
+      'Netlify-CDN-Cache-Control': 'public, s-maxage=300, stale-while-revalidate=86400',
       'Access-Control-Allow-Origin': '*',
     },
   });

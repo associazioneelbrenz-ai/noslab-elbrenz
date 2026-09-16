@@ -113,7 +113,24 @@ const { compatto = false } = Astro.props;
   /* Foglio importato globalmente per leggibilità: vedi import sotto. */
 </style>
 
-<link rel="stylesheet" href="/styles/andreas-chat.css" />
+{/* [16/9/2026, audit PERF-14] Nella variante compatta la chat vive dentro il
+    pannello del bottone galleggiante, che sta su ogni pagina del sito e resta
+    chiuso finche' qualcuno non lo apre: tredici chilobyte di foglio di stile
+    fermavano il disegno della pagina per un pannello che quasi nessuno apre.
+    Con media="print" il foglio si scarica senza bloccare niente e diventa
+    valido appena arrivato, molto prima di qualunque clic. Sulla pagina
+    /andreas e dentro l'embed, invece, la chat E' la pagina: li' il foglio
+    resta bloccante com'era, perche' non ci sia un istante di chat spoglia.
+    Il noscript e' per chi ha il JavaScript spento: l'onload non scatterebbe e
+    il foglio resterebbe per la sola stampa. */}
+{compatto ? (
+  <link rel="stylesheet" href="/styles/andreas-chat.css" media="print" onload="this.media='all'" />
+) : (
+  <link rel="stylesheet" href="/styles/andreas-chat.css" />
+)}
+{compatto && (
+  <noscript><link rel="stylesheet" href="/styles/andreas-chat.css" /></noscript>
+)}
 
 <!-- =========================================================================
      CONFIG RUNTIME passata al client via window.ANDREAS_CONFIG.

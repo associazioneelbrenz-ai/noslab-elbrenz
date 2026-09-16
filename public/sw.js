@@ -18,7 +18,11 @@
 // [15/9/2026, audit XSS-06 / PERF-01] Bump a v3: la cache runtime v2 teneva
 // anche pagine personali e risposte no-store; l'activate qui sotto cancella
 // tutte le cache con nome diverso da questi due, quindi le vecchie spariscono.
-const CACHE_NAME = 'el-brenz-v2';
+// [16/9/2026, audit PERF-01] Il bump annunciato qui sopra era arrivato solo
+// alla cache runtime: il precache era rimasto a v2, e con lui le copie vecchie
+// degli asset non hashati messi da parte all'install. Ora salgono insieme, e
+// l'activate qui sotto porta via la v2.
+const CACHE_NAME = 'el-brenz-v3';
 const RUNTIME_CACHE = 'el-brenz-runtime-v3';
 
 // [15/9/2026, audit XSS-06] Cosa NON entra mai nella cache runtime.
@@ -55,6 +59,18 @@ function rispostaCachabile(response) {
   return !cc.includes('no-store') && !cc.includes('private');
 }
 
+// [16/9/2026, audit PERF-01] caches.match() senza nome interroga le cache
+// nell'ordine in cui sono nate: il precache, aperto all'install, vince sempre
+// sulla runtime. Cosi' un asset non hashato che sta in PRECACHE_ASSETS (le
+// icone, i due logo) resterebbe fermo alla copia dell'install anche dopo che
+// lo stale-while-revalidate ne ha scaricata una nuova. Qui si guarda prima
+// nella runtime, che e' la piu' fresca, e solo dopo dappertutto.
+function cercaInCache(request) {
+  return caches.open(RUNTIME_CACHE)
+    .then((cache) => cache.match(request))
+    .then((trovato) => trovato || caches.match(request));
+}
+
 // Asset minimi da pre-cachare durante install
 const PRECACHE_ASSETS = [
   '/',
@@ -69,8 +85,12 @@ const PRECACHE_ASSETS = [
   '/pwa-512x512-maskable.png',
   '/logo-eb-header.png',
   '/logo-eb-header@2x.png',
-  '/logo-eb-footer.png',
-  '/logo-eb-footer@2x.png'
+  // [16/9/2026, audit PERF-06] Il timbro del pie' di pagina non e' piu'
+  // /logo-eb-footer.png + @2x (400 e 800 pixel per uno spazio da 80): il sito
+  // punta ora alla copia a 256 pixel, che pesa 22 KB invece di 277. Qui si
+  // mette da parte quella, se no all'install si scaricherebbero due file che
+  // nessuna pagina chiede piu'. I due grandi restano in public/, intatti.
+  '/assets/branding/logo/logo-eb-256-crema.png'
 ];
 
 // Install: pre-cache asset critici
@@ -135,7 +155,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+        .catch(() => cercaInCache(request).then((cached) => cached || caches.match('/')))
     );
     return;
   }
@@ -146,7 +166,7 @@ self.addEventListener('fetch', (event) => {
     && PREFISSI_IMMUTABILI.some((p) => url.pathname.startsWith(p));
   if (immutabile) {
     event.respondWith(
-      caches.match(request).then((cached) => {
+      cercaInCache(request).then((cached) => {
         if (cached) return cached;
         return fetch(request).then((response) => {
           if (rispostaCachabile(response)) {
@@ -164,7 +184,7 @@ self.addEventListener('fetch', (event) => {
   // stale-while-revalidate. Si risponde subito con la copia in cache se c'e',
   // e intanto si aggiorna dalla rete per la prossima volta.
   event.respondWith(
-    caches.match(request).then((cached) => {
+    cercaInCache(request).then((cached) => {
       const dallaRete = fetch(request).then((response) => {
         if (rispostaCachabile(response)) {
           const clone = response.clone();

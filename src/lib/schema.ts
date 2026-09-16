@@ -29,9 +29,16 @@ export const ORGANIZATION = {
   name: 'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce',
   alternateName: 'El Brenz',
   url: SITO,
+  // [16/9/2026, audit PERF-08] Il logo dichiarato ai motori era il master:
+  // 2048 pixel e 608 KB, scaricati da ogni crawler che passa, su ogni pagina,
+  // per un dato che Google chiede grande almeno 112 pixel. La stessa immagine
+  // a 512 pixel esiste gia' nella stessa cartella e pesa 151 KB. Il master
+  // resta dov'e': serve per la stampa, non per una scheda di dati strutturati.
   logo: {
     '@type': 'ImageObject',
-    url: `${SITO}/assets/branding/logo/logo-eb-master.png`,
+    url: `${SITO}/assets/branding/logo/logo-eb-512.png`,
+    width: 512,
+    height: 512,
   },
   description:
     'Associazione che studia e tiene viva la storia, la lingua e la cultura delle Valli del Noce: Val di Non, Val di Sole, Val di Rabbi e Val di Pejo.',

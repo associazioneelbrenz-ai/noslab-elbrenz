@@ -36,6 +36,20 @@ import Condividi from '../../components/Condividi.astro';
 
 export const prerender = false;
 
+// [16/9/2026, audit PERF-05] Cache di bordo, come gia' fanno la home e le
+// schede del glossario. Questa pagina e' pubblica e uguale per tutti: non
+// legge la sessione, non guarda i cookie, mostra solo viste pubbliche. Con
+// `s-maxage` Netlify risponde dal bordo invece di risvegliare la funzione a
+// ogni visita, e `stale-while-revalidate` fa servire la copia vecchia mentre
+// quella nuova si prepara, cosi' nessuno aspetta il database.
+// Il giorno che qui dentro comparisse qualcosa che dipende da chi guarda,
+// queste righe vanno tolte PRIMA di quel giorno, non dopo.
+Astro.response.headers.set('Cache-Control', 'public, max-age=300');
+Astro.response.headers.set(
+  'Netlify-CDN-Cache-Control',
+  'public, s-maxage=300, stale-while-revalidate=86400',
+);
+
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL || 'https://wacknihvdjxltiqvxtqr.supabase.co';
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY || '';
 
