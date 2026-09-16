@@ -1,37 +1,36 @@
 User-agent: *
 Allow: /
 
-# [6/8/2026] Fuori dalla scansione le pagine di servizio.
+# [16/9/2026, audit SEO-08] QUALE REGOLA VALE QUI.
 #
-# Due ragioni, e la seconda pesa piu' della prima.
+# Le liste erano tre e non dicevano la stessa cosa: questo file, l'elenco
+# RISERVATE che tiene le pagine fuori dalla sitemap (astro.config.mjs) e il
+# noindex scritto dentro le pagine. Su undici pagine c'erano insieme il
+# Disallow e il noindex, che e' il modo piu' sicuro per NON essere
+# deindicizzati: un motore a cui si vieta la scansione non entra, quindi non
+# legge nemmeno il noindex con cui gli si chiede di stare fuori. La pagina
+# resta nell'indice, e nessuno capisce perche'.
 #
-# I consumi: sono le pagine generate a ogni richiesta, e un motore che ne
-# scandisce quaranta piu' volte al giorno consuma piu' di tutti i soci messi
-# insieme. I soci sono trentadue.
+# Da oggi la regola e' una sola, e si legge cosi':
 #
-# La prudenza: alcune si aprono con un collegamento firmato. Un crawler che
-# segue quei collegamenti non consuma soltanto, puo' compiere un'operazione al
-# posto di una persona. E' lo stesso motivo per cui la conferma della newsletter
-# e' stata portata su una pagina intermedia.
+#   - pagina interna, con niente di personale nell'indirizzo (pannelli di
+#     curatela, console, code di lavoro, modulo di accesso): SOLO il noindex
+#     dentro la pagina, nessun Disallow qui. Il motore entra, legge che non
+#     deve indicizzare, e la lascia fuori per sempre.
+#
+#   - pagina che si apre con un collegamento firmato, cioe' con il gettone
+#     nell'indirizzo: Disallow qui, E X-Robots-Tag sulla risposta. Qui non
+#     vogliamo che il motore entri affatto: seguire quel collegamento non
+#     significa solo consumare, significa compiere un'operazione al posto di
+#     una persona.
+#
+# Le une e le altre restano comunque fuori dalla sitemap (RISERVATE).
+#
+# Perche' i consumi contano lo stesso: sono pagine generate a ogni richiesta,
+# e un motore che ne scandisce quaranta piu' volte al giorno consuma piu' di
+# tutti i soci messi insieme. I soci sono trentadue.
 
-# Pannelli di curatela e aree riservate
-Disallow: /libro-soci
-Disallow: /tesseramento-curatela
-Disallow: /newsletter-curatela
-Disallow: /guardiani-curatela
-Disallow: /convenzioni-curatela
-Disallow: /custodi-curatela
-Disallow: /museo-gg-curatela
-Disallow: /luoghi-curatela
-Disallow: /glossario-console
-Disallow: /trascrizioni
-Disallow: /redazione
-Disallow: /radar-eventi
-Disallow: /accedi
-Disallow: /app/
-
-# Pagine personali e collegamenti firmati: non c'e' niente da indicizzare, e
-# dichiararle sarebbe solo un invito a provarci.
+# Collegamenti firmati: qui il Disallow ci vuole.
 Disallow: /paga-quota
 Disallow: /scheda-domanda
 Disallow: /rinnovo
@@ -40,5 +39,28 @@ Disallow: /tessera/
 Disallow: /guardiani/conferma
 Disallow: /newsletter/conferma
 Disallow: /newsletter/disiscrizione
+
+# Le quattro curatele che ancora NON hanno il noindex nella pagina (audit
+# SEO-04: /guardiani-curatela, /convenzioni-curatela, /custodi-curatela,
+# /museo-gg-curatela). Finche' non ce l'hanno, il Disallow e' l'unica cosa
+# che le tiene fuori e resta dov'e': toglierlo adesso vorrebbe dire aprirle.
+# Il giorno che il noindex arriva, queste quattro righe se ne vanno.
+Disallow: /guardiani-curatela
+Disallow: /convenzioni-curatela
+Disallow: /custodi-curatela
+Disallow: /museo-gg-curatela
+
+# Rotta non servita da questo sito: l'app dei soci vive su un sottodominio
+# suo. Riga inerte, tenuta per prudenza.
+Disallow: /app/
+
+# Fuori dal Disallow, per scelta e non per dimenticanza: /libro-soci,
+# /tesseramento-curatela, /newsletter-curatela, /luoghi-curatela,
+# /glossario-console, /trascrizioni, /redazione, /radar-eventi, /accedi,
+# /registro-curatela, /ascolta, /collega-telegram, /guardiani-correzioni.
+# Tutte portano il noindex nella pagina (verificato il 16/9/2026) e nessuna
+# ha dati nell'indirizzo: il motore deve poterle leggere, altrimenti il
+# noindex non lo vede nessuno. I dati che mostrano arrivano dopo l'accesso,
+# mai nella pagina servita a chi non ha le chiavi.
 
 Sitemap: https://elbrenz.eu/sitemap-index.xml

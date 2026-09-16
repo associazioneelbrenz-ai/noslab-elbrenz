@@ -66,9 +66,41 @@ const pl: PublicLocale = (['it', 'de', 'en'] as const).includes(lang as PublicLo
   : 'it';
 const t = useTranslations(lang);
 
+// [16/9/2026, audit SEO-10] IL MARCHIO UNA VOLTA SOLA.
+//
+// Il suffisso « · El Brenz da le Val del Nos» pesa ventinove caratteri, e
+// quarantacinque pagine il marchio se lo portavano gia' dietro per conto loro
+// (le istituzionali, i pilastri, le schede del museo): il titolo che usciva era
+// «Chi siamo · El Brenz · El Brenz da le Val del Nos», e i sessanta caratteri
+// che Google mostra se ne andavano quasi tutti nel nome ripetuto due volte.
+//
+// Ora il suffisso e' « · El Brenz» e si aggiunge SOLO se il titolo non nomina
+// gia' l'Associazione. Nessun titolo di pagina viene riscritto: chi il marchio
+// ce l'ha resta com'e', e la duplicazione sparisce da sola.
+const SUFFISSO_BRAND = ' · El Brenz';
 const fullTitle = title === 'El Brenz da le Val del Nos'
   ? `${title} · Associazione Storico Culturale Linguistica`
-  : `${title} · El Brenz da le Val del Nos`;
+  : title.includes('El Brenz')
+    ? title
+    : title + SUFFISSO_BRAND;
+
+// [16/9/2026, audit SEO-11] LA DESCRIZIONE STA IN CENTOCINQUANTACINQUE BATTUTE.
+//
+// Google ne mostra circa centosessanta e taglia il resto dove capita, spesso a
+// meta' di una parola. Meglio tagliare noi, all'ultimo spazio utile e con i
+// puntini di sospensione: chi legge il risultato vede una frase che finisce,
+// non un troncone. Le descrizioni che ci stanno gia' non cambiano di una
+// virgola, e questo vale anche per le pagine lette dal database, che qui
+// passano tutte.
+const LIMITE_DESCRIZIONE = 155;
+function accorciaDescrizione(d: string): string {
+  if (d.length <= LIMITE_DESCRIZIONE) return d;
+  const taglio = d.slice(0, LIMITE_DESCRIZIONE - 1);
+  const spazio = taglio.lastIndexOf(' ');
+  const base = spazio > 80 ? taglio.slice(0, spazio) : taglio;
+  return base.replace(/[\s.,;:·—-]+$/, '') + '…';
+}
+const descrizioneMeta = accorciaDescrizione(description);
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 const ogImageURL = new URL(ogImage, Astro.site);
@@ -100,6 +132,15 @@ const currentPath = Astro.url.pathname;
 //
 // Con `!== 'false'` il predefinito e' acceso e lo spegnimento resta possibile,
 // ma diventa una decisione esplicita invece di una dimenticanza.
+//
+// [16/9/2026, audit SEO-02] LO STESSO PREDICATO, ANCHE NELLA SITEMAP.
+// Fino a ieri questo file diceva «indicizzabili salvo spegnimento esplicito» e
+// astro.config.mjs diceva l'opposto («escluse salvo accensione esplicita»): con
+// le variabili assenti - cioe' su ogni macchina senza .env.local - le pagine
+// DE ed EN uscivano indicizzabili, con gli hreflang reciproci, e insieme fuori
+// dalla sitemap. Due segnali opposti sulla stessa pagina. La forma buona e'
+// questa, `!== 'false'`, e ora e' scritta identica anche la' (filtro della
+// sitemap): si cambia in due punti o in nessuno.
 const localeLive: Record<PublicLocale, boolean> = {
   it: true,
   de: import.meta.env.TRADUZIONI_DE_LIVE !== 'false',
@@ -127,7 +168,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
-    <meta name="description" content={description} />
+    <meta name="description" content={descrizioneMeta} />
     {effectiveNoindex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="generator" content={Astro.generator} />
 
@@ -191,7 +232,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
         '@id': canonicalURL.href + '#pagina',
         url: canonicalURL.href,
         name: fullTitle,
-        description: description,
+        description: descrizioneMeta,
         inLanguage: pl,
         isPartOf: { '@id': 'https://elbrenz.eu/#sito' },
         about: { '@id': 'https://elbrenz.eu/#associazione' },
@@ -212,14 +253,22 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     <meta name="apple-mobile-web-app-title" content="El Brenz" />
     <link rel="canonical" href={canonicalURL} />
     {/* hreflang reciproci (i18n Fase 1a) + x-default → IT. In 1a solo la home
-        ha versioni DE/EN; le altre pagine restano solo IT (nessun alternate). */}
-    {alternates.map((alt) => (
-      <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
-    ))}
-    <link rel="alternate" hreflang="x-default" href={xDefaultHref} />
+        ha versioni DE/EN; le altre pagine restano solo IT (nessun alternate).
+        [16/9/2026, audit SEO-17] Sulle pagine noindex non si emettono, x-default
+        compreso: dire a un motore «questa pagina non indicizzarla» e nella riga
+        dopo «ed eccoti le sue altre lingue» e' il segnale contraddittorio che il
+        commento qui sopra, sui dati strutturati, gia' escludeva. */}
+    {!effectiveNoindex && (
+      <Fragment>
+        {alternates.map((alt) => (
+          <link rel="alternate" hreflang={alt.hreflang} href={alt.href} />
+        ))}
+        <link rel="alternate" hreflang="x-default" href={xDefaultHref} />
+      </Fragment>
+    )}
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={ogTitle ?? fullTitle} />
-    <meta property="og:description" content={description} />
+    <meta property="og:description" content={descrizioneMeta} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:image" content={ogImageURL} />
     <meta property="og:image:width" content="1200" />
@@ -233,7 +282,7 @@ const xDefaultHref = new URL(localizedUrl(canonicalPath, 'it'), Astro.site).href
     <meta property="og:locale" content={ogLocale[pl]} />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={ogTitle ?? fullTitle} />
-    <meta name="twitter:description" content={description} />
+    <meta name="twitter:description" content={descrizioneMeta} />
     <meta name="twitter:image" content={ogImageURL} />
     {/* AUD-E3 (10/7/2026): font self-hosted in /fonts/ via src/styles/fonts.css
         — rimossi i link a fonts.googleapis.com/gstatic.com (privacy + TBT).

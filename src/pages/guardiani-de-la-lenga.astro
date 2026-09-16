@@ -8,9 +8,11 @@
  * `glossario_pubblico` (mai dati personali) a ogni richiesta. Il form POSTa
  * a `guardiani-contributo`; ogni contributo passa da curatela umana.
  *
- * FLAG GUARDIANI_LIVE (default false): finché OFF la pagina è noindex e non
- * è linkata (card home + voce menu nascoste) — si evita di esporre un guscio
- * vuoto. GUARDIANI_CLASSIFICA_LIVE (default false): V2, classifica/premi non
+ * FLAG GUARDIANI_LIVE (dal 16/9/2026 acceso salvo `GUARDIANI_LIVE=false`,
+ * audit SEO-01): se spento la pagina è noindex e mostra l'avviso di anteprima
+ * — si evita di esporre un guscio vuoto. La card in home e la voce di menu
+ * restano legate al flag come prima (Header.astro, index.astro).
+ * GUARDIANI_CLASSIFICA_LIVE (default false): V2, classifica/premi non
  * implementati (solo colonna punti predisposta a DB).
  *
  * GRAFIA da confermare con Union Ladin Nonesa: "de la lenga" vs "dla lenga".
@@ -25,7 +27,15 @@ const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 const ENDPOINT = `${SUPABASE_URL}/functions/v1/guardiani-contributo`;
 const ENDPOINT_AUDIO = `${SUPABASE_URL}/functions/v1/glossario-audio`;
-const LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
+// [16/9/2026, audit SEO-01] ACCESO SALVO SPEGNIMENTO ESPLICITO.
+//
+// Con `=== 'true'` bastava una build da una macchina senza .env.local per
+// mettere l'intero glossario in noindex - in tre lingue - lasciandolo pero'
+// dichiarato in sitemap: ai motori si diceva «eccoti la pagina» e, entrando,
+// «non indicizzarla». Ed era la stessa trappola gia' chiusa il 9 agosto per le
+// traduzioni DE ed EN nel Layout, con le stesse parole. Ora lo spegnimento
+// resta possibile, ma e' una decisione da scrivere, non una dimenticanza.
+const LIVE = import.meta.env.GUARDIANI_LIVE !== 'false';
 
 const VARIANTI: [string, string][] = [
   ['noneso', 'Noneso · Val di Non'],

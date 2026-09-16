@@ -10,9 +10,22 @@
  */
 const SITO = 'https://elbrenz.eu';
 
+/**
+ * [16/9/2026, audit SEO-06] UN SOLO IDENTIFICATIVO PER L'ENTE.
+ *
+ * L'Associazione aveva due nomi in schema.org: `#organization` qui e
+ * `#associazione` nel Layout, che lo emette su ogni pagina. Gli articoli
+ * dichiaravano editore e autore puntando al primo, che pero' esiste solo in
+ * home: su centoquindici pagine il riferimento cadeva nel vuoto, e un Article
+ * senza editore valido non entra fra i risultati ricchi di Google.
+ * Vale `#associazione`, che e' quello presente ovunque; i due nodi, avendo
+ * ora lo stesso identificativo, per un motore sono la stessa entita'.
+ */
+const ID_ENTE = `${SITO}/#associazione`;
+
 export const ORGANIZATION = {
   '@type': 'NGO',
-  '@id': `${SITO}/#organization`,
+  '@id': ID_ENTE,
   name: 'Associazione Storico Culturale Linguistica El Brenz delle Valli del Noce',
   alternateName: 'El Brenz',
   url: SITO,
@@ -34,12 +47,27 @@ export function schemaOrganization() {
   return { '@context': 'https://schema.org', ...ORGANIZATION };
 }
 
+/**
+ * [16/9/2026, audit SEO-06] «El Brenz» non e' una persona: quando l'articolo
+ * non porta la firma di un socio l'autore e' l'Associazione, e si dichiara
+ * come tale (Organization) invece che come Person con quel nome.
+ */
+function autoreEnte(nome?: string | null) {
+  if (!nome) return true;
+  const n = nome.trim().toLowerCase().replace(/[«»"'\u2019]/g, '').replace(/\s+/g, ' ');
+  return n === 'el brenz'
+    || n === 'associazione el brenz'
+    || n.startsWith('associazione storico culturale linguistica el brenz');
+}
+
 export function schemaArticle(a: {
   titolo: string;
   descrizione?: string | null;
   url: string;
   immagine?: string | null;
   pubblicatoIso?: string | null;
+  /** Ultima modifica nota (ISO). Se manca vale la data di pubblicazione. */
+  aggiornatoIso?: string | null;
   autore?: string | null;
   sezione?: string | null;
 }) {
@@ -50,13 +78,19 @@ export function schemaArticle(a: {
     mainEntityOfPage: { '@type': 'WebPage', '@id': a.url },
     url: a.url,
     // L'autore e' quasi sempre un socio che scrive per l'Associazione: se il
-    // nome c'e' lo dichiariamo come Person, altrimenti l'ente stesso.
-    author: a.autore ? { '@type': 'Person', name: a.autore } : { '@id': `${SITO}/#organization` },
-    publisher: { '@id': `${SITO}/#organization` },
+    // nome c'e' ed e' quello di una persona lo dichiariamo come Person,
+    // altrimenti l'ente stesso.
+    author: autoreEnte(a.autore) ? { '@id': ID_ENTE } : { '@type': 'Person', name: a.autore },
+    publisher: { '@id': ID_ENTE },
   };
   if (a.descrizione) s.description = a.descrizione;
   if (a.immagine) s.image = a.immagine;
   if (a.pubblicatoIso) s.datePublished = a.pubblicatoIso;
+  // [16/9/2026, audit SEO-06] `dateModified` mancava del tutto: e' il campo con
+  // cui Google decide se una pagina e' ancora fresca. Dove la data di revisione
+  // non c'e', vale quella di pubblicazione - che e' la verita': quel testo da
+  // allora non e' stato toccato.
+  if (a.aggiornatoIso || a.pubblicatoIso) s.dateModified = a.aggiornatoIso || a.pubblicatoIso;
   if (a.sezione) s.articleSection = a.sezione;
   return s;
 }

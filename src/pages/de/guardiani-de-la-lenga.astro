@@ -9,7 +9,15 @@ export const prerender = false;
 const SUPABASE_URL = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 const ENDPOINT = `${SUPABASE_URL}/functions/v1/guardiani-contributo`;
-const LIVE = import.meta.env.GUARDIANI_LIVE === 'true';
+// [16/9/2026, audit SEO-01] ACCESO SALVO SPEGNIMENTO ESPLICITO.
+//
+// Con `=== 'true'` bastava una build da una macchina senza .env.local per
+// mettere l'intero glossario in noindex - in tre lingue - lasciandolo pero'
+// dichiarato in sitemap: ai motori si diceva «eccoti la pagina» e, entrando,
+// «non indicizzarla». Ed era la stessa trappola gia' chiusa il 9 agosto per le
+// traduzioni DE ed EN nel Layout, con le stesse parole. Ora lo spegnimento
+// resta possibile, ma e' una decisione da scrivere, non una dimenticanza.
+const LIVE = import.meta.env.GUARDIANI_LIVE !== 'false';
 
 const VARIANTI: [string, string][] = [
   ['noneso', 'Noneso · Nonsberg'],

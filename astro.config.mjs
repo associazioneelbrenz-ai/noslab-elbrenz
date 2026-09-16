@@ -176,6 +176,83 @@ async function urlArticoli() {
 }
 const ARTICOLI = await urlArticoli();
 
+/**
+ * [16/9/2026, audit SEO-03] LE VOCI DEL GLOSSARIO.
+ *
+ * Trecentodue schede al 16/9/2026 - una per parola del ladino anaunico,
+ * ciascuna con la sua definizione, la parlata e il paese - non erano
+ * dichiarate in nessuna sitemap: il contenuto piu' raro che il sito abbia, quello che
+ * nessun altro pubblica, era l'unico che ai motori non avevamo mai detto di
+ * avere. Stessa regola delle altre letture: vista pubblica, e se il database
+ * non risponde lista vuota, la build non fallisce.
+ *
+ * Il flag e' lo stesso della pagina (GUARDIANI_LIVE, spento solo se vale
+ * esplicitamente 'false'): se il glossario e' dichiarato non pubblico, le sue
+ * voci non si dichiarano ai motori.
+ */
+async function urlGlossario() {
+  if (process.env.GUARDIANI_LIVE === 'false') return [];
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return [];
+  try {
+    const r = await fetch(`${url}/rest/v1/glossario_pubblico?select=slug&limit=2000`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return [];
+    const righe = await r.json();
+    return righe
+      .map((x) => x.slug)
+      .filter(Boolean)
+      .map((s) => `https://elbrenz.eu/guardiani-de-la-lenga/${s}`);
+  } catch {
+    return []; // degrado silenzioso
+  }
+}
+const GLOSSARIO = await urlGlossario();
+
+/**
+ * [16/9/2026, audit SEO-03] LE STORIE DEI SOCI.
+ *
+ * /storie/<id> e' SSR e la vista espone solo le storie rese pubbliche da chi
+ * le ha scritte: quelle private non compaiono qui ne' altrove. Sono poche e
+ * crescono piano, ma sono racconti che nessun archivio ha - l'emigrazione, le
+ * miniere, le pietre scritte - e meritano di essere trovati.
+ */
+async function urlStorie() {
+  const url = process.env.PUBLIC_SUPABASE_URL;
+  const anon = process.env.PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return [];
+  try {
+    const r = await fetch(`${url}/rest/v1/v_storia_pubblica?select=id`, {
+      headers: { apikey: anon, Authorization: `Bearer ${anon}` },
+    });
+    if (!r.ok) return [];
+    const righe = await r.json();
+    return righe
+      .map((x) => x.id)
+      .filter(Boolean)
+      .map((id) => `https://elbrenz.eu/storie/${id}`);
+  } catch {
+    return []; // degrado silenzioso
+  }
+}
+const STORIE = await urlStorie();
+
+/**
+ * [16/9/2026, audit SEO-02] IL PREDICATO DELLE TRADUZIONI, UNO SOLO.
+ *
+ * Qui si leggeva `=== 'true'` (escluse dalla sitemap salvo accensione
+ * esplicita) mentre il Layout scrive `!== 'false'` (indicizzabili salvo
+ * spegnimento esplicito): con le variabili assenti - ogni macchina senza
+ * .env.local - le pagine DE ed EN uscivano indicizzabili, con gli hreflang
+ * reciproci, e nello stesso tempo fuori dalla sitemap. Vale la forma del
+ * Layout, che il 9/8 era gia' stata scelta per lo stesso motivo: un file
+ * dimenticato non deve poter far sparire delle pagine da Google in silenzio.
+ * Se si cambia idea, si cambia in tutti e due i posti.
+ */
+const localeLive = (v) => v !== 'false';
+
 // https://astro.build/config
 export default defineConfig({
   // URL canonico del sito in produzione.
@@ -247,7 +324,7 @@ export default defineConfig({
     // noindex, quindi non devono comparire nella sitemap (audit 14/7).
     sitemap({
       // Pagine luogo, evento e articolo (SSR): non scoperte in automatico.
-      customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI, ...MUSEO, ...RACCOLTE],
+      customPages: [...LUOGHI, ...EVENTI, ...ARTICOLI, ...MUSEO, ...RACCOLTE, ...GLOSSARIO, ...STORIE],
       filter: (page) => {
         // [6/8/2026] LE PAGINE DI SERVIZIO, IN UN POSTO SOLO.
         //
@@ -274,11 +351,24 @@ export default defineConfig({
           // area riservata al direttivo (ruolo>=50), noindex, non deve
           // comparire in sitemap ne' essere indicizzata.
           '/cruscotto',
+          // [16/9/2026, audit SEO-05] LE DIECI CHE MANCAVANO.
+          // Erano tutte dichiarate in sitemap e tutte servite con noindex:
+          // dieci pagine su cui il sito diceva ai motori una cosa e il
+          // contrario. Sono le code di lavoro dei curatori, la console del
+          // glossario, il registro delle modifiche, la pagina che collega
+          // Telegram, la chat da inglobare nell'app e l'esportazione del
+          // glossario: nessuna ha qualcosa da mostrare a chi non ha le
+          // chiavi. E' lo stesso elenco che il 6 agosto era stato messo «in
+          // un posto solo»; rimanerne fuori e' stato solo questione di tempo.
+          '/ascolta', '/collega-telegram', '/glossario-console',
+          '/guardiani-correzioni', '/luoghi-curatela', '/redazione',
+          '/registro-curatela', '/trascrizioni', '/andreas/embed',
+          '/guardiani-de-la-lenga/esporta',
         ];
         for (const p of RISERVATE) if (page.includes(p)) return false;
 
-        const deLive = process.env.TRADUZIONI_DE_LIVE === 'true';
-        const enLive = process.env.TRADUZIONI_EN_LIVE === 'true';
+        const deLive = localeLive(process.env.TRADUZIONI_DE_LIVE);
+        const enLive = localeLive(process.env.TRADUZIONI_EN_LIVE);
         if (!deLive && page.includes('/de/')) return false;
         if (!enLive && page.includes('/en/')) return false;
         // A1: fuori dalla sitemap gli articoli marcati noindex nel DB.
