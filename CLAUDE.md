@@ -48,6 +48,15 @@ Sito pubblico in produzione: **`https://elbrenz.eu`** (apex, dominio primario; c
 - **Gate obbligatorio fra `npm run build` e `netlify deploy`**:
   `grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs`
   → se stampa `SUPABASE_ANON = ""` **fermarsi**, manca `.env.local`.
+- **CORREZIONE 16/9/2026, due punti.** (1) Oggi una build senza `.env.local`
+  **non riesce affatto**: si ferma con `supabaseUrl is required` perché
+  `src/lib/memoria.ts:10` crea il client a livello di modulo senza ripiego
+  (verificato il 16/9 sia su `e8f77fd` sia su `ebf9797`). La trappola della
+  chiave vuota silenziosa è quindi chiusa da sé, e il fallimento è rumoroso.
+  (2) Se ne è aperta un'altra: una build fatta con una chiave **finta o
+  sbagliata** riesce e **passa il gate qui sopra**, che guarda solo se la
+  stringa è vuota. Il gate va letto con gli occhi: i primi caratteri devono
+  combaciare con la chiave vera, non solo essere diversi da niente.
 - **Netlify non builda da git** (`deploy_source: cli`): un push su `main` non
   cambia nulla in produzione finche' non si lancia il deploy da una macchina
   con i secret.
@@ -414,6 +423,20 @@ supabase_migrations.schema_migrations order by version desc limit 1` e si
 rinomina il file locale con quella versione, altrimenti `supabase migration
 list` vede la stessa migrazione due volte (Trappola 16, secondo tempo).
 
+### Trappola 19 — Un backup dentro `public/` si pubblica
+
+16/9/2026, ondata 3. La regola dei backup `.bak` prima di ogni modifica è
+buona ovunque tranne che dentro `public/`: quella cartella finisce nel
+`dist/` così com'è, quindi un `sw.js.bak-ondata2` diventa un file scaricabile
+da chiunque ne indovini l'indirizzo. Trovati tre backup dell'ondata 2
+(`_headers`, `scripts/andreas-chat.js`, `sw.js`) già copiati nel `dist/` di
+una build locale. Non erano tracciati da git, quindi in produzione non ci
+sono mai arrivati, ma sarebbe bastata una build dalla macchina sbagliata.
+
+> I backup dei file di `public/` vanno in `backup-pubblici/`, che il
+> `.gitignore` prevede già apposta. Dentro `public/` non si lascia mai un
+> `.bak`. Prima di ogni deploy: `find public -name '*.bak*'` deve dare zero.
+
 ## Cose da NON fare mai
 
 - ❌ Modificare il codice direttamente in produzione (anche se il sito è giù)
@@ -461,4 +484,4 @@ list` vede la stessa migrazione due volte (Trappola 16, secondo tempo).
 
 ---
 
-*Ultimo aggiornamento: 16 settembre 2026 (Trappola 18, versione Astro reale, handoff dell'audit). Mantenere sincronizzato con HANDOFF e debt_tracker.*
+*Ultimo aggiornamento: 16 settembre 2026 (Trappole 18 e 19, gate del deploy corretto, versione Astro reale, handoff dell'audit). Mantenere sincronizzato con HANDOFF e debt_tracker.*
