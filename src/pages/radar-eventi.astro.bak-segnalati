@@ -24,7 +24,7 @@ const inputCls = 'w-full border-2 border-[#E5DFCF] bg-white px-4 py-2.5 text-[#1
 <Layout
   title="Radar eventi · Curatela · El Brenz"
   description="Coda riservata di curatela degli eventi delle Valli del Noce."
-  ogImage="/og/og-default.jpg"
+  ogImage="/og-image.png"
   noindex={true}
 >
   <main class="bg-[#F8F1E4] min-h-screen">

@@ -28,7 +28,7 @@ const valido = /^[A-Za-z0-9_-]+$/.test(emailSeg ?? '') && /^\d+$/.test(exp ?? ''
 const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/conferma/${emailSeg}/${exp}/${token}`;
 ---
 
-<Layout title="Iscrizione confermata · El Brenz" description="Conferma dell'iscrizione alle notizie di El Brenz." ogImage="/og/og-default.jpg" noindex={true}>
+<Layout title="Iscrizione confermata · El Brenz" description="Conferma dell'iscrizione alle notizie di El Brenz." ogImage="/og-image.png" noindex={true}>
   <section class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
     <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9 text-center"
          style="font-family: 'Inter', sans-serif;" data-edge={valido ? EDGE : ''} data-anon={ANON} id="conf-card">

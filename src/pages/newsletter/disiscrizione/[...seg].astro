@@ -30,7 +30,7 @@ const valido = /^[A-Za-z0-9_-]+$/.test(emailSeg ?? '') && /^\d+$/.test(exp ?? ''
 const EDGE = `${SB_URL}/functions/v1/newsletter-gestione/disiscrizione/${emailSeg}/${exp}/${token}`;
 ---
 
-<Layout title="Le tue comunicazioni · El Brenz" description="Gestisci le comunicazioni di El Brenz." ogImage="/og/og-default.jpg" noindex={true}>
+<Layout title="Le tue comunicazioni · El Brenz" description="Gestisci le comunicazioni di El Brenz." ogImage="/og-image.png" noindex={true}>
   <section class="bg-[#F8F1E4] min-h-screen flex items-center justify-center px-4 py-16">
     <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9 text-center" style="font-family: 'Inter', sans-serif;" data-edge={valido ? EDGE : ''} id="unsub-card">
       <p class="text-[11px] tracking-[0.2em] uppercase text-[#C8923E] font-semibold m-0 mb-2">El Brenz · comunicazioni</p>

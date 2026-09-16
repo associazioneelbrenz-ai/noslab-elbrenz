@@ -27,7 +27,7 @@ const valido = (azione === 'approva' || azione === 'rifiuta')
 const EDGE = valido ? `${SB_URL}/functions/v1/convenzioni-proposta/json/azione/${azione}/${_id}/${_exp}/${_token}` : '';
 ---
 
-<Layout title="Curatela · Convenzioni" description="Curatela delle proposte di convenzione, riservata al Direttivo El Brenz." ogImage="/og/og-default.jpg" noindex={true}>
+<Layout title="Curatela · Convenzioni" description="Curatela delle proposte di convenzione, riservata al Direttivo El Brenz." ogImage="/og-image.png" noindex={true}>
   <section class="bg-[#F8F1E4] min-h-screen flex items-start justify-center px-4 py-12">
     <div class="bg-white border-t-4 border-[#C8923E] rounded-lg shadow-xl w-full max-w-lg p-7 md:p-9" style="font-family: 'Inter', sans-serif;"
          data-edge={EDGE} data-azione={azione} id="cur-card">
