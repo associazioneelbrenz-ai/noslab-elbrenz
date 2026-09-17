@@ -109,9 +109,21 @@ Deno.serve(async (req: Request) => {
   // dice niente su cosa gira davvero. Una riga sola nel promemoria, letta
   // dallo stesso /versione.json del cruscotto. Se non risponde, non deve
   // rompere il resto del digest: si dice "sconosciuta" e si va avanti.
+  //
+  // [17/9/2026] IL GUARDIANO NON PUO' MORIRE PERCHE' IL SITO E' LENTO.
+  //
+  // Questa `fetch` non aveva un tetto di tempo. pg_net chiama la funzione con
+  // `timeout_milliseconds := 20000`: se elbrenz.eu tardava, la funzione veniva
+  // tagliata a meta' e il battito, che sta in fondo, non veniva mai scritto.
+  // E' successo davvero il 14 settembre («Gateway Timeout») e da allora il
+  // promemoria del direttivo ha smesso di partire, senza che nessuno lo
+  // sapesse: e' il guasto peggiore possibile, perche' e' proprio questa la
+  // funzione che dovrebbe raccontare i guasti. Cinque secondi bastano e
+  // avanzano per un file di tre righe; se non arriva, si dice «sconosciuta» e
+  // si va avanti, che era gia' l'intenzione scritta qui sotto.
   let versione: { commit: string; giorni: number | null } = { commit: 'sconosciuta', giorni: null };
   try {
-    const rv = await fetch('https://elbrenz.eu/versione.json', { cache: 'no-store' });
+    const rv = await fetch('https://elbrenz.eu/versione.json', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
     if (rv.ok) {
       const v = await rv.json();
       const giorni = v.costruito_il ? Math.floor((Date.now() - new Date(v.costruito_il).getTime()) / 86400000) : null;
@@ -123,23 +135,35 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, giro_a_vuoto: true, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti, versione });
   }
 
-  await notificaDirettivo(supabase, 'cruscotto_allarmi', {
-    tuttoAPosto,
-    servizi: serviziGuasti,
-    code,
-    versione,
-    lavori: lavoriGuasti,
-    radarUltimo: dataOraLeggibile(radarUltimo),
-  }).catch(() => {});
+  // [17/9/2026] Stesso motivo del tetto qui sopra: `notificaDirettivo` fa una
+  // sua `fetch` verso telegram-bot, anche quella senza limite di tempo, e sta
+  // PRIMA della scrittura del battito. Se Telegram non risponde, senza questa
+  // corsa la funzione muore qui e il battito non si scrive: resteremmo di
+  // nuovo senza sapere niente. Otto secondi, poi si prosegue comunque, e il
+  // battito dira' se il messaggio e' partito o no.
+  let messaggioInviato = true;
+  try {
+    await Promise.race([
+      notificaDirettivo(supabase, 'cruscotto_allarmi', {
+        tuttoAPosto,
+        servizi: serviziGuasti,
+        code,
+        versione,
+        lavori: lavoriGuasti,
+        radarUltimo: dataOraLeggibile(radarUltimo),
+      }),
+      new Promise((_, ko) => setTimeout(() => ko(new Error('telegram_lento')), 8000)),
+    ]);
+  } catch (_) { messaggioInviato = false; }
 
   // Battito (brief "Il battito dei servizi", 28/8/2026 §3).
   try {
     await supabase.rpc('registra_battito', {
       p_servizio: 'cruscotto-digest',
       p_esito: 'ok',
-      p_dettaglio: { tutto_a_posto: tuttoAPosto, servizi_guasti: serviziGuasti.length, code_in_allarme: code.length, lavori_guasti: lavoriGuasti.length },
+      p_dettaglio: { tutto_a_posto: tuttoAPosto, servizi_guasti: serviziGuasti.length, code_in_allarme: code.length, lavori_guasti: lavoriGuasti.length, messaggio_inviato: messaggioInviato },
     });
   } catch (_) { /* il battito non deve mai rompere il lavoro */ }
 
-  return json({ ok: true, inviato: true, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti });
+  return json({ ok: true, inviato: messaggioInviato, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti });
 });
