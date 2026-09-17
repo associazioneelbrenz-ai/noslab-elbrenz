@@ -9,7 +9,7 @@ Ramo di lavoro, su entrambi i repository: `claude/happy-cori-0d7d75`.
 
 | Repository | Ultimo commit | Stato |
 |---|---|---|
-| `noslab-elbrenz` | `615763a` | pushato; database e `solleciti-quota` già in produzione, sito e tre edge no |
+| `noslab-elbrenz` | `d4a28ed` | pushato; database e `solleciti-quota` già in produzione, sito e tre edge no |
 | `elbrenz-community` | `6c51839` | pushato, non deployato |
 
 ---
@@ -66,7 +66,8 @@ grep -o 'SUPABASE_ANON = "[^"]\{0,12\}' .netlify/build/chunks/iscrizione_*.mjs
 
 netlify deploy --prod --dir=dist --site=a8922ddb-53ec-4541-ac15-99570b61a1b2
 
-curl -s https://elbrenz.eu/versione.json   # il commit deve essere 615763a
+curl -s https://elbrenz.eu/versione.json   # deve combaciare con:
+git rev-parse --short HEAD                 # l'hash del ramo al momento della build
 ```
 
 ### Collaudo da browser, in ordine di rischio
