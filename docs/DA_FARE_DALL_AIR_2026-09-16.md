@@ -346,30 +346,51 @@ letta.**
 3. **`solleciti-quota`**: c'è una persona che aspetta un promemoria dal 28
    agosto. Vedi la sezione 5.
 
-### Un residuo di REPO-01 che l'audit non aveva visto
+### Un residuo di REPO-01 che l'audit non aveva visto, ora redatto
 
 L'audit del 13 settembre elencava i dati personali in `docs/` e in due
-migrazioni, e l'ondata 1 li ha redatti. Cercando altro ne sono saltati
-fuori altri, negli stessi commenti del codice, in un repository pubblico:
+migrazioni, e l'ondata 1 li ha redatti. Erano rimasti fuori i commenti del
+codice, dove un repository pubblico raccontava per esteso chi non aveva
+versato la quota, chi condivide la casella di posta con chi, chi aveva due
+account e chi aveva quanti lemmi.
 
-| File | Cosa c'è scritto |
-|---|---|
-| `supabase/functions/solleciti-quota/index.ts` (righe 4 e 7) | due soci con nome e cognome, numero di tessera e il fatto che non avevano versato la quota |
-| `supabase/functions/_shared/sollecitoQuota.ts` (riga 3) | lo stesso caso |
-| `supabase/functions/contanti-registra/index.ts` (righe 182-183) | quattro persone accoppiate per casella di posta condivisa, più un caso di domande doppie |
-| `supabase/migrations/20260803210000_blocca_approvazione_senza_incasso.sql` | gli stessi due soci con i numeri di tessera |
-| `supabase/migrations/20260804140000`, `20260804200000`, `20260807120227`, `20260808061517`, `20260809020000` | nomi di soci legati a numero di iscrizione, indirizzi doppi, account sbagliati |
+**Fatto il 17 settembre**, commit `dceab92`: diciassette file, trentanove
+righe, tutte di commento. Nessuna riga di codice, nessuna condizione,
+nessun dato.
 
-I nomi di chi è **pubblicamente nel Direttivo o è il curatore del Museo**
-(Presidente, consiglieri, curatore) stanno già sul sito e non sono un
-problema. Gli altri sì: sono persone private accostate a un dato sul
-pagamento della quota.
+- Va alle iniziali chi è una persona privata nominata insieme a un fatto
+  suo: la quota non versata, il numero di socio, la casella condivisa,
+  l'account doppio, il conto dei lemmi.
+- Dove le iniziali avrebbero reso incomprensibile la frase, la frase è
+  stata riscritta senza nessun nome: l'esempio su come si spezza un nome in
+  due, l'elenco di chi aveva i punti arretrati, la socia che vedeva
+  «Socio» al posto del proprio nome.
+- **Restano**, ed è voluto, i nomi che stanno già sul sito come ruolo
+  pubblico: il curatore del Museo che chiede una funzione e prova il suo
+  pannello, la riga di credito «elaborazione <curatore>» che è il contenuto
+  vero di una colonna, i contatti nella procedura di ripristino, la storia
+  istituzionale dentro `andreas-chat` (intoccabile), la citazione di una
+  vecchia pagina WordPress. Se vuoi che vadano alle iniziali anche quelli,
+  è mezz'ora.
 
-**Non l'ho toccato**, perché REPO-01 è una tua decisione e perché la via
-più semplice è sempre la stessa: **rendere privato il repository** chiude
-tutta la voce in un colpo, redigere i commenti uno per uno è il ripiego. Se
-scegli il ripiego, dimmelo e li sostituisco con le iniziali come ha fatto
-l'ondata 1.
+Due cose da sapere.
+
+1. **La storia di git conserva le versioni di prima.** Chi ha già clonato
+   il repository ha già tutto. La redazione vale per chi arriva da oggi in
+   avanti; la mossa che chiude davvero la voce resta **rendere privato il
+   repository**.
+2. **Un numero di cellulare in un articolo d'archivio.**
+   `1-concorso-poetico-musicale-os-dal-nos` riporta «Cristian Bresadola
+   cell. 3396383790». Non l'ho toccato perché è contenuto pubblicato, non
+   un commento, ed è pubblico sul sito da anni. Ma vale la pena decidere se
+   tenerlo.
+
+Le edge function toccate (`solleciti-quota`, `contanti-registra`,
+`guardiani-contributo`, `guardiani-digest`, `scheda-domanda`,
+`ocr-trascrivi`, più `_shared/sollecitoQuota.ts`) adesso differiscono dalla
+produzione **per i soli commenti**. Non cambia niente a runtime e non c'è
+nessuna urgenza: si riallineano da sole al prossimo
+`supabase functions deploy` di ciascuna.
 
 ### Controlli fatti, che non hanno trovato niente
 
