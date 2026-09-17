@@ -365,13 +365,22 @@ nessun dato.
   stata riscritta senza nessun nome: l'esempio su come si spezza un nome in
   due, l'elenco di chi aveva i punti arretrati, la socia che vedeva
   «Socio» al posto del proprio nome.
-- **Restano**, ed è voluto, i nomi che stanno già sul sito come ruolo
-  pubblico: il curatore del Museo che chiede una funzione e prova il suo
-  pannello, la riga di credito «elaborazione <curatore>» che è il contenuto
-  vero di una colonna, i contatti nella procedura di ripristino, la storia
-  istituzionale dentro `andreas-chat` (intoccabile), la citazione di una
-  vecchia pagina WordPress. Se vuoi che vadano alle iniziali anche quelli,
-  è mezz'ora.
+- **Secondo giro**, commit `e377a13`: alle iniziali anche i nomi di ruolo
+  pubblico nei commenti (il curatore del Museo, i contatti della procedura
+  di ripristino, la citazione della vecchia pagina Contatti di WordPress, i
+  commenti in testa a `IndicatoreScorri`, `Condividi` e
+  `non-e-sole-grande-guerra`). Otto file, dieci righe.
+- **Restano soltanto i nomi che l'Associazione pubblica apposta**, e non
+  sono commenti: le pagine del Direttivo nelle tre lingue, le firme della
+  rubrica, il testo dello schema di convenzione, i crediti del Museo, la
+  Commissione Linguistica, le etichette dei tasti WhatsApp. Più due casi
+  che non si possono redigere senza rompere qualcosa: il prompt di
+  `andreas-chat`, che è intoccabile per regola e che deve poter rispondere
+  chi è il presidente e chi il segretario; e il valore di default
+  dell'autore in `content.config.ts`, che è la firma stampata su 108
+  articoli (redigere solo il commento sopra lascerebbe il file a
+  contraddirsi due righe più sotto). E «Mulino Bertagnolli» in
+  `radar-eventi-classifica`, che è un mulino.
 
 Due cose da sapere.
 
