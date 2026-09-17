@@ -179,10 +179,10 @@ Deno.serve(async (req: Request) => {
     // [6/8/2026] QUI L'EMAIL FACEVA DA CHIAVE, E SU DUE CASE NON REGGE.
     // Prima si prendeva `.ilike(email).limit(1)`, senza ordine e senza filtro di
     // stato. Due situazioni reali la rompono:
-    //   - la casella condivisa (Diego Magnoni e Nadia Pangrazzi stanno sullo
-    //     stesso indirizzo, come Monica Valentinotti e Maria Luisa Battistini):
+    //   - la casella condivisa (D. M. e N. P. stanno sullo stesso indirizzo,
+    //     come M. V. e M. L. B.):
     //     l'incasso di una poteva finire sulla posizione dell'altra;
-    //   - il doppione chiuso (il caso di Clarissa e Franca): il versamento poteva
+    //   - il doppione chiuso (il caso di C. e F.): il versamento poteva
     //     attaccarsi alla domanda annullata.
     // Su un movimento di cassa attribuire alla persona sbagliata e' peggio che
     // fermarsi, perche' produce due errori insieme: manca a una e avanza all'altra.

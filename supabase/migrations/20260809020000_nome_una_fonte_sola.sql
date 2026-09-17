@@ -4,8 +4,8 @@
 -- corregge) e `auth.users.raw_user_meta_data->>'nome'` (che si scrive una volta
 -- sola all'iscrizione, e con l'accesso tramite codice via email non si scrive
 -- affatto). TREDICI account su quattordici avevano il nome nel primo e il vuoto
--- nel secondo, e il profilo leggeva il secondo: Monica Valentinotti apriva il
--- suo profilo e vedeva «Socio» al posto del proprio nome.
+-- nel secondo, e il profilo leggeva il secondo: una socia apriva il suo
+-- profilo e vedeva «Socio» al posto del proprio nome.
 --
 -- Applicato: allineamento dei tredici, piu' un trigger che tiene la copia in
 -- pari quando il nome cambia. Il trigger e' la cintura, non la cura: la cura e'

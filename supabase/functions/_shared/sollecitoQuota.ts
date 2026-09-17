@@ -1,6 +1,6 @@
 // sollecitoQuota — la mail che chiede a una persona di completare la quota.
 //
-// [3/8/2026] Nasce da un caso concreto: Stefano Schwarz ha ricevuto la tessera
+// [3/8/2026] Nasce da un caso concreto: S. S. ha ricevuto la tessera
 // 26 il 21 luglio senza aver versato la quota, e per tredici giorni nessuno
 // gliel'ha detto. La mail della tessera non nominava il pagamento, quindi lui
 // aveva tutte le ragioni per credersi a posto.

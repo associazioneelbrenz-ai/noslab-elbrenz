@@ -3,8 +3,8 @@
 -- IL LIBRO DEGLI ASSOCIATI NON PUO' USARE `numero_tessera`. L'Associazione
 -- tiene dal 2009 un registro cartaceo con un proprio progressivo di iscrizione
 -- che arriva a centodieci, e le due numerazioni non coincidono nemmeno da
--- lontano: Cristian Bresadola e' il socio 1 e ha la tessera 4, Diego Magnoni e'
--- il socio 11 e ha la tessera 1. Un funzionario che affianca i due registri
+-- lontano: C. B. e' il socio 1 e ha la tessera 4, D. M. e' il socio 11 e ha
+-- la tessera 1. Un funzionario che affianca i due registri
 -- trova la stessa persona con due numeri diversi, ed e' il tipo di discrepanza
 -- che fa mettere in dubbio anche cio' che e' corretto.
 --

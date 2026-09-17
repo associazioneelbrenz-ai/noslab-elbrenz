@@ -319,8 +319,8 @@ async function eseguiApprova(supabase: any, secret: string, d: string, derogaMot
 
   // [4/8/2026] IL NUMERO DI SOCIO, che non e' il numero di tessera.
   // Il libro degli associati usa il progressivo del registro cartaceo tenuto
-  // dal 2009, non il numero stampato sulla tessera: Cristian Bresadola e' il
-  // socio 1 e ha la tessera 4.
+  // dal 2009, non il numero stampato sulla tessera: C. B. e' il socio 1 e ha
+  // la tessera 4.
   //
   // Si prende SEMPRE il massimo piu' uno, MAI il primo buco libero: i buchi
   // (4, 5, 16, 40, 95 e altri novanta) appartengono a soci storici che non
@@ -394,7 +394,7 @@ async function eseguiApprova(supabase: any, secret: string, d: string, derogaMot
           nome: socio.nome, numero, anno: ANNO, qrUrl, urlVerifica: uv,
           intro: `Benvenuto nella <em>nosa Sociazion</em>! La tua domanda è stata approvata dal Consiglio Direttivo: questa email vale come tessera digitale per l'anno ${ANNO}.`,
           // In deroga la tessera parte lo stesso, ma la mail dice che la quota
-          // manca: tacerlo e' cio' che ha lasciato Schwarz convinto di essere a
+          // manca: tacerlo e' cio' che ha lasciato S. S. convinto di essere a
           // posto per tredici giorni.
           ...(deroga ? { quotaDaSaldare: { importo: await quotaAnno(supabase, ANNO, QUOTA_FALLBACK), urlPagamento: urlPagaQuota } } : {}),
         });

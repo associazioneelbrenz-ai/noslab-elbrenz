@@ -6,8 +6,8 @@
 -- senza la protezione.
 --
 -- Perche' esiste. In tredici giorni l'Associazione ha emesso e spedito due
--- tessere a chi non aveva versato la quota, la 26 a Stefano Schwarz e la 29 a
--- Lorenzo Conci. Nessuno se n'e' accorto: la schermata di curatela prometteva
+-- tessere a chi non aveva versato la quota, la 26 a S. S. e la 29 a L. C.
+-- Nessuno se n'e' accorto: la schermata di curatela prometteva
 -- «verranno assegnati numero di tessera e QR» e non nominava il pagamento, e il
 -- segretario ha fatto esattamente quello che gli veniva chiesto. L'errore non
 -- e' stato suo, e' stato di un sistema che gli nascondeva l'unica informazione

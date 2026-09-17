@@ -1,4 +1,4 @@
--- [8/8/2026] «Nel momento in cui Roberta diventa socia si attivano i punti.»
+-- [8/8/2026] «Nel momento in cui R. diventa socia si attivano i punti.»
 --
 -- Detto da Cristian come un fatto, quindi reso un fatto: finora sarebbe stato un
 -- buon proposito, perche' il riconoscimento degli arretrati era una passata a
@@ -9,13 +9,13 @@
 -- account lascia quindi del lavoro in sospeso, NON perso: il trigger lo
 -- raccoglie nel momento esatto in cui l'account nasce.
 --
--- Vale per Roberta con i suoi 5 lemmi, e per Marco Bertagnolli, socio n. 117 dal
--- 14 luglio con 2 lemmi pubblicati e nessun accesso mai fatto: il giorno che
--- entra, i punti lo aspettano gia'.
+-- Vale per R. con i suoi 5 lemmi, e per M. B., socio n. 117 dal 14 luglio con
+-- 2 lemmi pubblicati e nessun accesso mai fatto: il giorno che entra, i punti
+-- lo aspettano gia'.
 --
 -- Idempotente: gam_add salta se il punto per quel lemma esiste gia'.
 --
--- COLLAUDO (transazione annullata): simulata l'iscrizione di Roberta ->
+-- COLLAUDO (transazione annullata): simulata l'iscrizione di R. ->
 -- 125 punti da 5 lemmi e 1 distintivo, immediati.
 create or replace function public.tg_punti_arretrati_al_primo_accesso()
 returns trigger

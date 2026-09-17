@@ -10,8 +10,8 @@
 -- `nome`, che oggi contiene nome e cognome insieme per trentacinque righe.
 -- `cognome` gli si affianca e i due convivono: separare i dati esistenti lo fa
 -- una persona che puo' controllare caso per caso, non uno script che spezza
--- sulla prima spaziatura e trasforma «Maria Luisa Battistini» in «Maria» piu'
--- «Luisa Battistini».
+-- sulla prima spaziatura e trasforma un «primo nome secondo nome cognome» in
+-- «primo nome» piu' «secondo nome cognome»: nell'anagrafica ce n'e' piu' di uno.
 --
 -- NESSUNA COLONNA E' NOT NULL, nemmeno quelle obbligatorie. I soci storici
 -- verranno completati un po' per volta, e un vincolo di obbligatorieta' a

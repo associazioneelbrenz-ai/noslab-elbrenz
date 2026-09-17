@@ -6,8 +6,8 @@
 -- cosa che succede negli inserimenti in blocco e in certi flussi di curatela -
 -- non ha mai fruttato niente a nessuno.
 --
--- Chi ne ha fatto le spese: @LADIN NONES 4 lemmi, Cristian 2, Marco Bertagnolli
--- 2, Roberta 5. Non un errore di calcolo: un lavoro fatto e non riconosciuto.
+-- Chi ne ha fatto le spese: quattro persone, con 4, 2, 2 e 5 lemmi a testa.
+-- Non un errore di calcolo: un lavoro fatto e non riconosciuto.
 --
 -- E' la stessa famiglia dei difetti di questi giorni: la macchina c'era, non era
 -- collegata al momento giusto.

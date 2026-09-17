@@ -43,7 +43,7 @@ const TIPI = ['parola', 'frase', 'espressione', 'scotum'];
 // obbligatorio che non si capisce non viene compilato meglio, viene riempito a
 // caso, e un'etimologia inventata dentro un dizionario e' un danno permanente.
 //
-// C'e' anche il conto delle persone: Simone ha portato sessantatre parole. Con
+// C'e' anche il conto delle persone: S. ha portato sessantatre parole. Con
 // cinque campi obbligatori ne avrebbe portate cinque.
 //
 // Quindi qui si chiedono solo: il termine, la parlata, IL PAESE (mancava in
@@ -53,7 +53,7 @@ const TIPI = ['parola', 'frase', 'espressione', 'scotum'];
 // Tutto il resto resta facoltativo, e si puo' aggiungere dopo.
 //
 // [10/8/2026, poche ore dopo] LA REGOLA DEI QUINDICI CARATTERI ERA SBAGLIATA,
-// e l'ha scoperto Monica Valentinotti in mezz'ora: «Come faccio a scrivere una
+// e l'ha scoperto M. V. in mezz'ora: «Come faccio a scrivere una
 // riga per spiegare la parola "asá"?». Asá vuol dire «abbastanza». Non esiste
 // una definizione di quindici caratteri di «abbastanza» che non sia fuffa messa
 // li' per superare un controllo.
@@ -142,8 +142,8 @@ Deno.serve(async (req: Request) => {
     const [, id, token] = mNews;
     // [5/8/2026] Qui si rispondeva in HTML, e la piattaforma Supabase lo serve
     // come text/plain con nosniff: chi apriva il link dalla mail si vedeva il
-    // sorgente della pagina invece del ringraziamento (segnalato da Monica
-    // Valentinotti). Stessa cura del ramo curatela: la pagina la rende
+    // sorgente della pagina invece del ringraziamento (segnalato da M. V.).
+    // Stessa cura del ramo curatela: la pagina la rende
     // elbrenz.eu, l'edge parla JSON. Un browser viene rimandato alla pagina,
     // che poi chiama questo stesso endpoint in JSON — cosi' i link GIA' spediti
     // restano validi. Effetto collaterale gradito: gli scanner antispam che
@@ -439,7 +439,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // [6/8/2026] L'avviso per SINGOLO lemma e' stato spento: il 6 agosto sono
-  // arrivati 32 termini da cinque persone, 23 dei quali da Simone in una sola
+  // arrivati 32 termini da cinque persone, 23 dei quali da S. in una sola
   // seduta, e il sistema trattava un lavoro fatto in blocco come 23 eventi
   // separati (23 mail e 23 messaggi nel gruppo). Ora il riepilogo lo fa
   // `guardiani-digest`, una volta al giorno e solo se e' arrivato qualcosa.
@@ -454,7 +454,7 @@ Deno.serve(async (req: Request) => {
   }).catch(() => {});
 
   // [6/8/2026] LA MAIL PER SINGOLO TERMINE E' SPENTA. Era il fastidio vero: 23
-  // contributi di Simone in una seduta = 23 mail nella casella. Ora il riepilogo
+  // contributi di S. in una seduta = 23 mail nella casella. Ora il riepilogo
   // lo fa `guardiani-digest` una volta al giorno, e porta DENTRO di se' i link
   // valida/rifiuta di ogni lemma: nessuna maniglia si perde per strada.
   //

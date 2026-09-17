@@ -91,7 +91,7 @@ Deno.serve(async (req) => {
   // chiunque abbia scritto un racconto, non solo un curatore che rivede
   // materiale d'archivio. Ogni trascrizione paga token Anthropic, e non deve
   // poterla avviare chiunque abbia raggiunto il livello collaboratore (25) —
-  // qui serve il livello admin (50), che oggi e' solo Cristian Bresadola.
+  // qui serve il livello admin (50), che oggi ha una persona sola.
   // museo_pezzo/archivio restano ai curatori, come da regola originale.
   if (oggetto_tipo === 'storia') {
     const { data: puoStoria } = await sb.rpc('has_ruolo_min', { p_utente_id: udata.user.id, p_livello_min: 50 });

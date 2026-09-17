@@ -1,10 +1,10 @@
 // solleciti-quota — il promemoria della quota a chi e' stato ammesso ma non
 // risulta aver versato.
 //
-// [4/8/2026] Nasce da Stefano Schwarz: tessera 26 il 21 luglio, quota mai
+// [4/8/2026] Nasce dal caso di S. S.: tessera 26 il 21 luglio, quota mai
 // arrivata, e per tredici giorni nessuno gliel'ha detto. La mail della tessera
 // non nominava il pagamento, quindi lui aveva tutte le ragioni per credersi a
-// posto. Con Lorenzo Conci sarebbe successo lo stesso se non fosse intervenuto
+// posto. Con L. C. sarebbe successo lo stesso se non fosse intervenuto
 // il segretario a mano.
 //
 // NON confondere con `solleciti-domande`, che avvisa il DIRETTIVO delle

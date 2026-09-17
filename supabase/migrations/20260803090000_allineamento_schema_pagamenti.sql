@@ -10,7 +10,7 @@
 --
 -- NOTA IMPORTANTE. Le correzioni ai DATI fatte la stessa mattina (due
 -- pagamenti riclassificati, due domande fantasma annullate, il pagamento di
--- Corradini ricollegato) NON stanno qui e non ci devono stare: rieseguirle su
+-- M. C. ricollegato) NON stanno qui e non ci devono stare: rieseguirle su
 -- un database nuovo inventerebbe dati. Sono documentate in
 -- docs/CHANGELOG_dati.md, che e' un registro, non uno script.
 

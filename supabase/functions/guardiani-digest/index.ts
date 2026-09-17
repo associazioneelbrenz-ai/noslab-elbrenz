@@ -2,7 +2,7 @@
 // glossario, al posto di una notifica per ogni termine.
 //
 // PERCHE': il 6 agosto sono arrivati 32 termini da cinque persone, 23 dei quali
-// da Simone in una sola seduta. Il sistema trattava un lavoro fatto in blocco
+// da S. in una sola seduta. Il sistema trattava un lavoro fatto in blocco
 // come 23 eventi separati: 23 mail nella casella e 23 messaggi nel gruppo. Il
 // problema non e' il volume dei contributi, che e' una benedizione: e' che
 // l'avviso era dimensionato per otto lemmi al mese.

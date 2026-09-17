@@ -6,9 +6,9 @@
 -- solita insistenza che allontana.
 --
 -- IL DIFETTO CHE HA DECISO IL DISEGNO. Confrontando i soli indirizzi, tre
--- contributori risultavano non soci: Simone (17 lemmi), Diego Magnoni (6) e
--- Roberta (5). Ma Simone e Diego SONO soci, con un secondo indirizzo. Diego
--- Magnoni e' il Presidente. Una funzione ingenua avrebbe mandato al Presidente
+-- contributori risultavano non soci: S. (17 lemmi), D. M. (6) e R. (5). Ma S.
+-- e D. SONO soci, con un secondo indirizzo, e D. M. e' il Presidente. Una
+-- funzione ingenua avrebbe mandato al Presidente
 -- un cortese invito a tesserarsi. Quindi qui si guarda l'indirizzo E il nome, e
 -- nel dubbio non si manda: e' meglio perdere un invito che farne uno ridicolo.
 --
@@ -24,4 +24,4 @@
 -- COLLAUDO ESEGUITO (transazioni annullate):
 --   forestiero con 4 lemmi pubblicati  -> candidato
 --   omonimo del Presidente con 9 lemmi -> ESCLUSO
---   stato reale oggi                   -> nessun candidato (Roberta gia' invitata)
+--   stato reale oggi                   -> nessun candidato (R. gia' invitata)

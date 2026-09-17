@@ -1,13 +1,13 @@
 -- IL PONTE FRA ACCOUNT E NUMERO DI SOCIO (7/8/2026)
 --
--- Il caso che lo rende necessario: Diego Magnoni si e' registrato nell'app con
+-- Il caso che lo rende necessario: D. M. si e' registrato nell'app con
 -- [indirizzo personale, omesso], mentre a registro ha [indirizzo personale, omesso], che e' poi
 -- la casella che CONDIVIDE con N. P.. Per il sistema e' una persona
 -- nuova: livello ospite, niente tessera, niente Comunita', niente Museo.
 --
 -- L'email non puo' fare da identita' qui, e i motivi sono tre e tutti reali:
--- due soci su una casella (Diego e Nadia, Monica e Maria Luisa), una persona su
--- due caselle (Simone, Diego), e un indirizzo che cambia restando la persona.
+-- due soci su una casella (D. e N., M. e M. L.), una persona su due caselle
+-- (S., D.), e un indirizzo che cambia restando la persona.
 --
 -- Il ponte e' il CODICE DELLA TESSERA: ce l'ha solo chi l'ha ricevuta, e' unico,
 -- e non cambia. Chi si registra con un altro indirizzo lo inserisce una volta e
