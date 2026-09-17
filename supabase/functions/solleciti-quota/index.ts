@@ -133,6 +133,21 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!esegui) {
+    // [17/9/2026] UN GIRO A VUOTO LASCIA TRACCIA (migrazione
+    // 20260917073434_battito_giro_a_vuoto). Fino a ieri il giro di collaudo
+    // usciva di qui senza scrivere niente, e un servizio che non scrive un
+    // battito e' indistinguibile da un servizio che non c'e' piu'.
+    // Solleciti-quota lo fa ogni giorno: il lavoro pianificato
+    // solleciti-quota-giornaliero lo chiama con p_esegui => false.
+    // L'esito 'giro_a_vuoto' dice «sono vivo e non ho lavorato». Non spegne
+    // l'allarme, e non deve: v_servizi_stato guarda l'ultimo giro VERO per
+    // decidere se allarmarsi, e usa questo solo per dire «gira a vuoto da N
+    // giorni» invece di «silenzioso».
+    try {
+      await sb.rpc('registra_battito', {
+        p_servizio: 'solleciti-quota', p_esito: 'giro_a_vuoto', p_dettaglio: { quanti: daFare.length, saltati: saltati.length },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
     return json({
       dryrun: true,
       messaggio: 'Nessuna email inviata, nessuna riga scritta. Ripeti con ?esegui=1 per spedire.',

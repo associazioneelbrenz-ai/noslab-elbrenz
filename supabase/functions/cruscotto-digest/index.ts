@@ -132,6 +132,22 @@ Deno.serve(async (req: Request) => {
   } catch (_) { /* il digest non deve mai rompersi per questo */ }
 
   if (!esegui) {
+    // [17/9/2026] UN GIRO A VUOTO LASCIA TRACCIA (migrazione
+    // 20260917073434_battito_giro_a_vuoto). Fino a ieri il giro di collaudo
+    // usciva di qui senza scrivere niente, e un servizio che non scrive un
+    // battito e' indistinguibile da un servizio che non c'e' piu'.
+    // Qui il giro a vuoto si fa solo a mano, ma la regola vale per
+    // tutti e quattro i promemoria: una regola applicata a meta' e'
+    // quella che morde dopo.
+    // L'esito 'giro_a_vuoto' dice «sono vivo e non ho lavorato». Non spegne
+    // l'allarme, e non deve: v_servizi_stato guarda l'ultimo giro VERO per
+    // decidere se allarmarsi, e usa questo solo per dire «gira a vuoto da N
+    // giorni» invece di «silenzioso».
+    try {
+      await supabase.rpc('registra_battito', {
+        p_servizio: 'cruscotto-digest', p_esito: 'giro_a_vuoto', p_dettaglio: { tutto_a_posto: tuttoAPosto, servizi_guasti: serviziGuasti.length, code_in_allarme: code.length, lavori_guasti: lavoriGuasti.length },
+      });
+    } catch (_) { /* il battito non deve mai rompere il lavoro */ }
     return json({ ok: true, giro_a_vuoto: true, tutto_a_posto: tuttoAPosto, servizi: serviziGuasti, code, lavori_guasti: lavoriGuasti, versione });
   }
 
