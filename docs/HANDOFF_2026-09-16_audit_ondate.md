@@ -114,9 +114,41 @@ guasto. Rapporto con le prove: `docs/REPORT_battito_2026-09-16.md`.
   erano 8 e i post 3. Il peso vero era altrove (i testi di 23 lezioni
   scaricati per un elenco di titoli, e i viaggi verso il gateway in fila).
 
+## 2-ter. Robustezza, 17 settembre (database gia' in produzione)
+
+Non un'ondata dell'audit: il seguito del rapporto sul battito. Quattro
+commit.
+
+| Commit | Contenuto | Stato in produzione |
+|---|---|---|
+| `72d29f7` | `cruscotto-digest` non muore piu' per una chiamata esterna lenta: tetto di 5 secondi sulla lettura di `/versione.json`, di 8 sull'invio Telegram, e il battito dice se il messaggio e' partito | edge deployata v7, verificata, provata dal vivo |
+| `0550968` | l'esito `giro_a_vuoto`, `v_servizi_stato` che legge due date invece di una, i sette lanciatori SQL che annotano quando sospendono | migrazione `20260917073434` applicata; `solleciti-quota` deployata v7 e verificata; tre edge solo nel repository |
+| `a41d40d` | `pulizia_conservazione()` con una sottotransazione per blocco, e il suo battito | migrazione `20260917074356` applicata e provata |
+| `615763a` | `battito_lanciatore` era chiamabile da `anon`: chiusa | migrazione `20260917074702` applicata e verificata |
+
+Effetto letto sul cruscotto: gli allarmi passano da cinque a quattro, e i
+quattro rimasti dicono la verita'. `coda-ascolto-promemoria` era sano e
+inoperoso, non morto. `solleciti-quota` «gira a vuoto da 20 giorni», e
+resta in allarme perche' c'e' davvero una persona che aspetta.
+
+Lezione da mettere via, costata un difetto introdotto e corretto in
+giornata: **una revoca non e' fatta finche' non la si e' letta.** In questo
+progetto un `ALTER DEFAULT PRIVILEGES` concede EXECUTE ad `anon` e
+`authenticated` su ogni funzione nuova dello schema `public`: togliere
+PUBLIC non basta, vanno nominati tutti e tre, e poi si controlla con
+`has_function_privilege`.
+
+Trovato di passaggio e **non toccato**, perche' e' una decisione: REPO-01
+ha un residuo che l'audit non aveva elencato, nomi di soci privati legati
+al pagamento della quota nei commenti di due edge function e di sei
+migrazioni. Elenco completo dei file in `docs/DA_FARE_DALL_AIR_2026-09-16.md`,
+sezione 7.
+
 ## 5. Stato di chiusura
 
-Repository `noslab-elbrenz`: ramo `claude/happy-cori-0d7d75` a `e8f77fd`
-piu' questo handoff, tutto pushato, working tree pulito. Produzione: edge e
-database all'ondata 2, sito all'ondata 1 (`7dde5fd`). Repository
-`elbrenz-community`: ramo a `6c51839`, pushato, non deployato.
+Repository `noslab-elbrenz`: ramo `claude/happy-cori-0d7d75` a `615763a`,
+tutto pushato, working tree pulito. Produzione: database all'ondata 2 piu'
+le tre migrazioni del 17 settembre; edge all'ondata 2 piu' `cruscotto-digest`
+v7 e `solleciti-quota` v7; **sito ancora all'ondata 1** (`7dde5fd`, letto
+oggi da `/versione.json`). Repository `elbrenz-community`: ramo a `6c51839`,
+pushato, non deployato.
