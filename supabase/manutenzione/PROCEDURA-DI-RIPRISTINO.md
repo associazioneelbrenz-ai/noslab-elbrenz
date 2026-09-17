@@ -115,4 +115,4 @@ restano illeggibili per sempre, ma i nuovi torneranno protetti.
 
 ## Contatti
 
-Cristian Bresadola, segretario — associazione.elbrenz@gmail.com
+C. B., segretario — associazione.elbrenz@gmail.com

@@ -16,7 +16,7 @@ create table if not exists public.museo_gg_pezzo (
   luogo         text,
   valle         text,                               -- val_di_non|val_di_sole|val_di_rabbi|val_di_pejo|piu_valli
   fonte         text not null,                      -- provenienza/collocazione: OBBLIGATORIA (cartellino)
-  elaborazione  text,                               -- es. 'elaborazione Michele Corradini'
+  elaborazione  text,                               -- es. 'elaborazione <nome del curatore>'
   donatore      text,                               -- nome pubblico di chi dona; 'Anonimo' se richiesto
   immagini_urls text[] not null default '{}',       -- una o piu' immagini (es. fronte/retro cartolina)
   consenso_dichiarato boolean not null default false,

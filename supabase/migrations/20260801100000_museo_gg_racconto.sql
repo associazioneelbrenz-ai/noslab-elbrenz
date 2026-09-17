@@ -1,5 +1,5 @@
 -- Museo Grande Guerra: spazio di narrazione lungo per il curatore.
--- Richiesta di Michele Corradini (1/8/2026): «come per le storie, un ricco
+-- Richiesta di M. C., curatore del Museo (1/8/2026): «come per le storie, un ricco
 -- spazio per la narrazione piu' il caricamento di 2/3 immagini».
 --
 -- PERCHE' UN CAMPO NUOVO E NON UNA TEXTAREA PIU' GRANDE SU descrizione:

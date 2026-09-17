@@ -4,8 +4,8 @@
 --
 -- 1) Via le pagine di servizio del vecchio WordPress, giudicate una per una
 --    sul contenuto e non sul titolo:
---    - «Contatti»: di servizio e DANNOSA (diceva «Presidente: Cristian
---      Bresadola»: una delle fonti della carica sbagliata).
+--    - «Contatti»: di servizio e DANNOSA (dava per presidente in carica chi
+--      non lo e' piu': una delle fonti della carica sbagliata).
 --    - «Chi siamo»: testo promozionale del vecchio sito.
 --    - «Portale Memoria»: pagina progetto del 2014, nominata dal brief.
 --    - «Lo Statuto» (pagina WP): doppione dello Statuto 2014 gia' in KB come

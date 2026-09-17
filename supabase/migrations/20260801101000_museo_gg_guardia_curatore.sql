@@ -1,7 +1,7 @@
 -- Il curatore del Museo puo' davvero curare.
 --
--- IL BUG, verificato l'1/8/2026 simulando la sessione di Michele Corradini:
--- la guardia riportava a 'in_attesa' chiunque non fosse livello >= 50. Corradini
+-- IL BUG, verificato l'1/8/2026 simulando la sessione del curatore, M. C.:
+-- la guardia riportava a 'in_attesa' chiunque non fosse livello >= 50. M. C.
 -- e' `curatore_museo_gg`, livello 20. Risultato: il suo pannello gli mostrava i
 -- bottoni Valida e Pubblica, lui li premeva, l'update andava a buon fine e lo
 -- stato tornava indietro da solo. Nessun errore a schermo, nessun pezzo mai
